@@ -1,12 +1,13 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import { url } from '@utils/url';
 
-const lastUpdated = '21 June 2026';
+const lastUpdated = '6 July 2026';
 ---
 
 <BaseLayout
   title="Terms of Service"
-  description="Ketentuan penggunaan bot dan layanan Vanillate Studio."
+  description="Ketentuan penggunaan seluruh produk dan layanan Vanillate Studio."
 >
   <section class="container-page pt-20 md:pt-28 pb-12 max-w-3xl">
     <p class="eyebrow mb-6">Legal</p>
@@ -22,99 +23,136 @@ const lastUpdated = '21 June 2026';
     <div class="space-y-12 text-ink-700 dark:text-cream-200 leading-relaxed">
       <div>
         <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">1. Acceptance of Terms</h2>
+        <p class="mb-4">
+          These Terms of Service ("Terms") govern your access to and use of the products and services developed and operated by Vanillate Studio ("Vanillate Studio", "we", "our", or "us").
+        </p>
         <p>
-          By inviting, accessing, or using Vanillate ("the Bot"), you agree to be bound by these Terms of Service. If you do not agree with these terms, you must stop using the Bot immediately.
+          By inviting, accessing, or using any of our Services, you agree to be bound by these Terms. If you do not agree with these Terms, you must stop using the Services immediately.
         </p>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">2. Description of Service</h2>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">2. Scope of These Terms</h2>
         <p class="mb-4">
-          Vanillate is a Discord bot that provides interactive word-chain (Sambung Kata) gameplay and related features. These include, but are not limited to:
+          These Terms apply to all products and services operated by Vanillate Studio (collectively, the "Services"), including but not limited to:
         </p>
-        <ul class="space-y-2 pl-0 list-none">
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Multiplayer gameplay systems</span></li>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span><strong class="text-ink-900 dark:text-cream-50">Vanillate Sambung Kata</strong> — an interactive word-chain game bot for Discord</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span><strong class="text-ink-900 dark:text-cream-50">Vanillate Tahu Bulat</strong> — an idle business simulation game bot for Discord</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>The official Vanillate Studio website and any related features</span></li>
+        </ul>
+        <p>
+          These Terms also apply to any new bots, applications, or services released by Vanillate Studio in the future, unless that product is expressly provided with its own separate terms.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">3. Description of Services</h2>
+        <p class="mb-4">
+          Our Services primarily consist of Discord bots that provide interactive gameplay and community features. Depending on the Service, these may include, but are not limited to:
+        </p>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Multiplayer and single-player gameplay systems</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Player statistics and progression tracking</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Leaderboards and ranking systems</span></li>
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Economy, boost, or reward systems</span></li>
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Achievements and community engagement features</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Virtual economy, item, boost, or reward systems</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Achievements, quests, and community engagement features</span></li>
         </ul>
-        <p class="mt-4">
-          We may modify, update, add, or remove features at any time without prior notice to improve service quality or ensure stability.
+        <p>
+          Feature availability varies between Services. We may modify, update, add, or remove features of any Service at any time without prior notice to improve service quality or ensure stability.
         </p>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">3. User Responsibilities</h2>
-        <p class="mb-4">Users agree to use Vanillate responsibly and must:</p>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">4. User Responsibilities</h2>
+        <p class="mb-4">Users agree to use the Services responsibly and must:</p>
         <ul class="space-y-2 pl-0 list-none">
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Follow Discord Terms of Service and Community Guidelines</span></li>
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Use the Bot only for its intended purposes</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Use the Services only for their intended purposes</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not exploit bugs, glitches, or unintended mechanics</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not use automated scripts, bots, or external tools to gain unfair advantages</span></li>
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not interfere with or disrupt the Bot's normal operation</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not interfere with or disrupt the normal operation of any Service</span></li>
         </ul>
-        <p class="mt-4">Violation of these rules may result in restricted access to the Bot.</p>
+        <p class="mt-4">Violation of these rules may result in restricted access to some or all of the Services.</p>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">4. Server Owner Responsibilities</h2>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">5. Server Owner Responsibilities</h2>
         <p class="mb-4">Server owners and administrators are responsible for:</p>
         <ul class="space-y-2 pl-0 list-none">
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Managing the permissions granted to Vanillate</span></li>
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Ensuring the Bot is used appropriately within their server</span></li>
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Removing the Bot if they no longer wish to use it</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Managing the permissions granted to any Vanillate Studio bot in their server</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Ensuring the Services are used appropriately within their server</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Removing a bot if they no longer wish to use it</span></li>
         </ul>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">5. Data Usage and Privacy</h2>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">6. Virtual Items and In-Game Economy</h2>
         <p class="mb-4">
-          Vanillate may process and store limited Discord-related data necessary for functionality, including user IDs, server IDs, and gameplay-related data such as statistics, progression, and configuration settings.
+          Some Services include virtual currencies, items, boosts, or other in-game content ("Virtual Items"). Virtual Items:
         </p>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Have no real-world monetary value and cannot be redeemed, exchanged, or sold for real money or anything of value outside the Services</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>May be adjusted, rebalanced, or reset when necessary for fairness, stability, or feature updates</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Remain part of the Services and are not owned by users</span></li>
+        </ul>
         <p>
-          This data is used solely to operate gameplay systems, maintain leaderboards, improve features, and ensure fair usage. We do not sell or share user data with third parties for commercial purposes.
+          Buying, selling, or trading Virtual Items or accounts outside the Services is prohibited.
         </p>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">6. Availability</h2>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">7. Data Usage and Privacy</h2>
         <p class="mb-4">
-          We aim to provide stable service, but we do not guarantee uninterrupted or error-free availability. The Bot may experience downtime due to maintenance, updates, or unexpected issues.
+          The Services may process and store limited Discord-related data necessary for functionality, including user IDs, server IDs, and gameplay-related data such as statistics, progression, and configuration settings.
+        </p>
+        <p>
+          This data is used solely to operate gameplay systems, maintain leaderboards, improve features, and ensure fair usage. We do not sell or share user data with third parties for commercial purposes. For more details, please see our
+          <a
+            href={url('/privacy')}
+            class="text-amber-600 dark:text-amber-500 underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-400"
+          >Privacy Policy</a>.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">8. Availability</h2>
+        <p class="mb-4">
+          We aim to provide stable Services, but we do not guarantee uninterrupted or error-free availability. The Services may experience downtime due to maintenance, updates, or unexpected issues.
         </p>
         <p>In some cases, data resets or adjustments may occur when required for system stability or feature updates.</p>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">7. Suspension and Termination</h2>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">9. Suspension and Termination</h2>
         <p>
-          We reserve the right to restrict, suspend, or terminate access to the Bot for users or servers that violate these Terms or engage in abusive behavior. We may also remove data associated with such violations where necessary.
+          We reserve the right to restrict, suspend, or terminate access to any Service for users or servers that violate these Terms or engage in abusive behavior. We may also remove data associated with such violations where necessary.
         </p>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">8. Limitation of Liability</h2>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">10. Limitation of Liability</h2>
         <p class="mb-4">
-          The Bot is provided on an "as is" and "as available" basis without warranties of any kind.
+          The Services are provided on an "as is" and "as available" basis without warranties of any kind.
         </p>
         <p class="mb-4">To the maximum extent permitted by law, we are not responsible for:</p>
         <ul class="space-y-2 pl-0 list-none">
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Loss of data</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Service interruptions or downtime</span></li>
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Damages resulting from Bot usage</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Damages resulting from use of the Services</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Indirect, incidental, or consequential losses</span></li>
         </ul>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">9. Changes to Terms</h2>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">11. Changes to Terms</h2>
         <p>
-          We may update these Terms of Service at any time. Continued use of the Bot after updates become effective constitutes acceptance of the revised Terms.
+          We may update these Terms of Service at any time. Continued use of the Services after updates become effective constitutes acceptance of the revised Terms.
         </p>
       </div>
 
       <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">10. Contact</h2>
+        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">12. Contact</h2>
         <p>
           For questions, support, privacy requests, or data-related inquiries, please contact us through our
           <a
@@ -128,7 +166,7 @@ const lastUpdated = '21 June 2026';
 
       <div class="pt-8 border-t border-ink-900/10 dark:border-cream-100/10">
         <p class="text-sm text-ink-500 dark:text-cream-300/60">
-          &copy; 2026 Vanillate. All rights reserved.
+          &copy; 2026 Vanillate Studio. All rights reserved.
         </p>
       </div>
     </div>
