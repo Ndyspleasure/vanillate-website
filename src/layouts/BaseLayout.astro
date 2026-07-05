@@ -3,6 +3,7 @@ import '../styles/global.css';
 import SEO from '@components/SEO.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
+import { url } from '@utils/url';
 
 export interface Props {
   title?: string;
@@ -19,8 +20,8 @@ const { title, description, image, noindex } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate" type="application/xml" href="/sitemap-index.xml" title="Sitemap" />
+    <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+    <link rel="alternate" type="application/xml" href={url('/sitemap-index.xml')} title="Sitemap" />
 
     <!-- Anti-flash theme init: harus inline sebelum CSS untuk hindari FOUC -->
     <script is:inline>

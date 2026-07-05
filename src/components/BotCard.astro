@@ -1,6 +1,7 @@
 ---
 import type { Bot } from '@data/bots';
 import { buildInviteUrl } from '@data/bots';
+import { url } from '@utils/url';
 
 export interface Props {
   bot: Bot;
@@ -78,13 +79,13 @@ const statusLabel = {
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
     </a>
     <a
-      href={`/bots/${bot.slug}`}
+      href={url(`/bots/${bot.slug}`)}
       class="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5"
     >
       Detail
     </a>
     <a
-      href={`/docs/${bot.docsSlug}`}
+      href={url(`/docs/${bot.docsSlug}`)}
       class="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5"
     >
       Docs

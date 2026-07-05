@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import { bots, buildInviteUrl } from '@data/bots';
+import { url } from '@utils/url';
 
 export function getStaticPaths() {
   return bots.map((bot) => ({ params: { slug: bot.slug }, props: { bot } }));
@@ -16,7 +17,7 @@ const inviteUrl = buildInviteUrl(bot);
     <div class="aurora h-[400px] w-[400px] top-[-80px] left-[10%] opacity-30" style={`background: ${bot.color}`} aria-hidden="true"></div>
 
     <div class="container-page relative">
-      <a href="/bots" class="inline-flex items-center gap-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 mb-8">
+      <a href={url('/bots')} class="inline-flex items-center gap-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 mb-8">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Semua bot
       </a>

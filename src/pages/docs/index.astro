@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { bots } from '@data/bots';
+import { url } from '@utils/url';
 ---
 
 <BaseLayout title="Dokumentasi" description="Dokumentasi resmi seluruh bot Vanillate Studio.">
@@ -18,7 +19,7 @@ import { bots } from '@data/bots';
     <div class="grid gap-4 md:grid-cols-2">
       {bots.map((bot) => (
         <a
-          href={`/docs/${bot.docsSlug}`}
+          href={url(`/docs/${bot.docsSlug}`)}
           class="group flex items-start gap-4 p-6 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-colors"
         >
           <span

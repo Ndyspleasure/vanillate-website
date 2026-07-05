@@ -1,4 +1,6 @@
 ---
+import { url } from '@utils/url';
+
 export interface Props {
   href: string;
   variant?: 'primary' | 'secondary' | 'ghost';
@@ -14,6 +16,9 @@ const {
   external = false,
   class: className = '',
 } = Astro.props;
+
+// Internal path di-prefix dengan base; external URL passthrough
+const finalHref = external ? href : url(href);
 
 const base =
   'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 select-none';
@@ -36,7 +41,7 @@ const cls = `${base} ${sizes[size]} ${variants[variant]} ${className}`.trim();
 const target = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
 ---
 
-<a href={href} class={cls} {...target}>
+<a href={finalHref} class={cls} {...target}>
   <slot />
   {external && (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
