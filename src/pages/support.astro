@@ -1,0 +1,95 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Button from '@components/Button.astro';
+import { site } from '@data/site';
+import { bots } from '@data/bots';
+---
+
+<BaseLayout title="Support" description="Butuh bantuan atau ingin melaporkan bug? Gabung ke server Discord Support Vanillate Studio.">
+  <section class="container-page pt-20 pb-16 md:pt-28">
+    <p class="eyebrow mb-6">Support</p>
+    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
+      Kami di sini<br />untuk membantu.
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+      Semua dukungan Vanillate Studio berpusat di server Discord kami. Di sana kamu bisa bertanya, melaporkan bug, memberi saran, dan berdiskusi langsung dengan tim.
+    </p>
+  </section>
+
+  <section class="container-page pb-16">
+    <div class="rounded-3xl bg-ink-900 dark:bg-ink-800 p-10 md:p-14 relative overflow-hidden">
+      <div class="aurora bg-amber-500/25 h-[350px] w-[350px] top-[-80px] right-[-50px]" aria-hidden="true"></div>
+      <div class="relative max-w-2xl">
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-amber-400 mb-4">Discord Support</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest text-cream-50 mb-4">
+          Gabung Server Vanillate Studio
+        </h2>
+        <p class="text-cream-100/80 text-lg leading-relaxed mb-8">
+          Channel bantuan, pengumuman pembaruan bot, dan komunitas pemain aktif — semuanya ada di satu tempat.
+        </p>
+        <a
+          href={site.links.discordSupport}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-7 py-3.5 text-base font-medium hover:bg-amber-400 transition-colors"
+        >
+          Gabung Discord Support
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow mb-3">Sebelum bertanya</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Cek dokumentasi dulu.</h2>
+      </div>
+      <div class="md:col-span-2">
+        <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">
+          Banyak pertanyaan sudah terjawab di halaman dokumentasi masing-masing bot.
+        </p>
+        <div class="grid gap-3 sm:grid-cols-2">
+          {bots.map((bot) => (
+            <a
+              href={`/docs/${bot.docsSlug}`}
+              class="group flex items-center gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 transition-colors"
+            >
+              <span
+                class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none"
+                style={`background: ${bot.color}20; color: ${bot.color};`}
+                aria-hidden="true"
+              >
+                {bot.icon}
+              </span>
+              <div class="flex-1">
+                <p class="font-medium text-sm">Dokumentasi {bot.shortName}</p>
+                <p class="text-xs text-ink-500 dark:text-cream-300/60">Panduan lengkap</p>
+              </div>
+              <svg class="text-ink-400 dark:text-cream-300/40 group-hover:text-amber-500 transition-colors" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow mb-3">Legal</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Ketentuan Layanan</h2>
+      </div>
+      <div class="md:col-span-2">
+        <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">
+          Baca ketentuan penggunaan dan kebijakan privasi kami sebelum menggunakan bot Vanillate.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <Button href="/terms" variant="secondary">Syarat Layanan</Button>
+          <Button href="/privacy" variant="secondary">Kebijakan Privasi</Button>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

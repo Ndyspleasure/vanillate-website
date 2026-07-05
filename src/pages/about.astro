@@ -1,0 +1,141 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Button from '@components/Button.astro';
+---
+
+<BaseLayout title="Tentang" description="Vanillate Studio adalah tim pengembang Discord Bot yang berfokus pada kualitas, stabilitas, dan pengalaman pengguna.">
+  <section class="container-page pt-20 pb-16 md:pt-28">
+    <p class="eyebrow mb-6">Tentang Kami</p>
+    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
+      Kami membangun Discord Bot dengan <span class="italic text-amber-600 dark:text-amber-500">standar</span> yang tidak biasa.
+    </h1>
+    <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
+      Vanillate Studio adalah tim pengembang Discord Bot asal Indonesia. Kami tidak sekadar meluncurkan bot — kami merawatnya, mengembangkannya, dan memastikan setiap pengguna mendapat pengalaman yang layak dibanggakan.
+    </p>
+  </section>
+
+  <!-- WHO WE ARE -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow">01 / Identitas</p>
+      </div>
+      <div class="md:col-span-2 max-w-prose">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Siapa Vanillate Studio</h2>
+        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
+          <p>
+            Vanillate Studio adalah studio independen yang berfokus penuh pada pengembangan Discord Bot. Kami tumbuh dari kecintaan pada game, komunitas, dan rekayasa perangkat lunak — tiga elemen yang menyatu dalam setiap bot yang kami rilis.
+          </p>
+          <p>
+            Kami bekerja dalam skala kecil, dengan kendali penuh atas kode, infrastruktur, dan pengalaman pengguna. Pendekatan ini memungkinkan kami menjaga kualitas yang konsisten dan merespons kebutuhan komunitas dengan cepat.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISION -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow">02 / Visi</p>
+      </div>
+      <div class="md:col-span-2 max-w-prose">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Visi dan Tujuan</h2>
+        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
+          <p>
+            Visi kami sederhana: <strong class="text-ink-900 dark:text-cream-50">menjadi studio Discord Bot yang paling dipercaya di Indonesia</strong>. Dipercaya bukan karena banyak fitur, tapi karena setiap bot berjalan stabil, terus berkembang, dan benar-benar menyenangkan untuk digunakan.
+          </p>
+          <p>
+            Kami ingin komunitas Discord Indonesia — dan lebih jauh lagi — memiliki bot berkualitas tinggi yang dibangun dengan pemahaman kultural yang mendalam. Bot yang tidak terasa seperti terjemahan mentah dari produk asing.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOCUS -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow">03 / Fokus</p>
+      </div>
+      <div class="md:col-span-2 max-w-prose">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Fokus Pengembangan</h2>
+        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
+          <p>
+            Kami fokus pada satu hal: <strong class="text-ink-900 dark:text-cream-50">Discord Bot dengan mekanik permainan yang mendalam</strong>. Bukan bot serbaguna, bukan bot moderasi, tapi bot yang menghadirkan pengalaman game — sistem progresi, ekonomi, quest, dan interaksi sosial yang bermakna.
+          </p>
+          <p>
+            Setiap bot dibangun di atas fondasi teknis yang solid: <span class="font-mono text-base">Node.js</span>, <span class="font-mono text-base">discord.js v14</span>, arsitektur database yang terstruktur, dan proses deployment yang dapat diaudit.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMITMENT -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow">04 / Komitmen</p>
+      </div>
+      <div class="md:col-span-2">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-8">Komitmen Kami</h2>
+        <div class="grid gap-6 sm:grid-cols-2">
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 bg-cream-100/40 dark:bg-ink-900/40">
+            <h3 class="font-display text-lg font-semibold mb-2">Kualitas</h3>
+            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Testing bertingkat, review kode ketat, dan rilis hanya ketika fitur benar-benar matang.</p>
+          </div>
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 bg-cream-100/40 dark:bg-ink-900/40">
+            <h3 class="font-display text-lg font-semibold mb-2">Performa</h3>
+            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Optimasi database, caching cerdas, dan monitoring real-time menjaga respons bot tetap cepat.</p>
+          </div>
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 bg-cream-100/40 dark:bg-ink-900/40">
+            <h3 class="font-display text-lg font-semibold mb-2">Keamanan</h3>
+            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Data pengguna diperlakukan dengan hati-hati. Backup rutin, validasi input, dan proteksi terhadap penyalahgunaan.</p>
+          </div>
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 bg-cream-100/40 dark:bg-ink-900/40">
+            <h3 class="font-display text-lg font-semibold mb-2">Transparansi</h3>
+            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Perubahan besar dikomunikasikan. Bug diakui dan diperbaiki, bukan disembunyikan.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow">05 / Roadmap</p>
+      </div>
+      <div class="md:col-span-2 max-w-prose">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Rencana Jangka Panjang</h2>
+        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
+          <p>
+            Kami sedang menyempurnakan bot-bot yang sudah rilis sambil merancang produk berikutnya. Rencana jangka panjang kami mencakup:
+          </p>
+          <ul class="space-y-3 pl-0 list-none">
+            <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5">→</span> Ekspansi katalog bot dengan mekanik game baru yang belum banyak dijelajahi di ekosistem Discord Indonesia.</li>
+            <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5">→</span> Dashboard web untuk manajemen konfigurasi bot per server.</li>
+            <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5">→</span> API publik untuk integrasi dengan komunitas developer.</li>
+            <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5">→</span> Program dukungan bagi komunitas dan pengelola server yang aktif.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container-page py-20">
+    <div class="max-w-2xl">
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Siap mencoba bot kami?</h2>
+      <p class="text-lg text-ink-600 dark:text-cream-200/80 mb-8">Lihat daftar lengkap bot Vanillate atau pelajari dokumentasinya.</p>
+      <div class="flex flex-wrap gap-3">
+        <Button href="/bots" variant="primary" size="lg">Lihat Bot Kami</Button>
+        <Button href="/docs" variant="secondary" size="lg">Baca Dokumentasi</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

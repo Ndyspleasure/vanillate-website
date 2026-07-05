@@ -1,0 +1,107 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Button from '@components/Button.astro';
+import BotCard from '@components/BotCard.astro';
+import { bots, getFeaturedBot } from '@data/bots';
+import { site } from '@data/site';
+
+const featured = getFeaturedBot();
+const others = bots.filter((b) => !b.featured);
+---
+
+<BaseLayout>
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 pb-24 md:pt-32 md:pb-32">
+    <!-- Aurora signature -->
+    <div class="aurora bg-amber-500/30 h-[500px] w-[500px] top-[-100px] left-[10%]" aria-hidden="true"></div>
+    <div class="aurora bg-teal-500/20 h-[400px] w-[400px] top-[100px] right-[5%]" style="animation-delay: -6s" aria-hidden="true"></div>
+
+    <div class="container-page relative">
+      <p class="eyebrow mb-8 animate-fade-up">Vanillate Studio · Indonesia</p>
+      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] max-w-4xl animate-fade-up">
+        Discord Bot yang<br />
+        <span class="italic text-amber-600 dark:text-amber-500">dirawat</span>, bukan sekadar dirilis.
+      </h1>
+      <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        {site.description}
+      </p>
+      <div class="mt-10 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
+        <Button href="/bots" variant="primary" size="lg">Jelajahi Bot Kami</Button>
+        <Button href="/about" variant="secondary" size="lg">Tentang Vanillate</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED BOT -->
+  <section class="container-page py-20">
+    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap">
+      <div>
+        <p class="eyebrow mb-3">Highlight</p>
+        <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-xl">
+          Bot unggulan kami saat ini.
+        </h2>
+      </div>
+      <a href="/bots" class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
+        Lihat semua bot
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <BotCard bot={featured} featured />
+      {others.map((bot) => <BotCard bot={bot} />)}
+    </div>
+  </section>
+
+  <!-- VALUES -->
+  <section class="container-page py-24">
+    <div class="max-w-3xl mb-16">
+      <p class="eyebrow mb-3">Prinsip Kami</p>
+      <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest">
+        Tiga hal yang tidak kami kompromikan.
+      </h2>
+    </div>
+
+    <div class="grid gap-8 md:grid-cols-3">
+      <div>
+        <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-lg font-bold">01</div>
+        <h3 class="font-display text-xl font-semibold mb-2">Kualitas</h3>
+        <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap fitur diuji, direview, dan disempurnakan sebelum sampai ke pengguna. Kami menolak rilis yang belum siap.</p>
+      </div>
+      <div>
+        <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-lg font-bold">02</div>
+        <h3 class="font-display text-xl font-semibold mb-2">Stabilitas</h3>
+        <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Uptime tinggi dan data yang aman. Bot berjalan di infrastruktur pribadi dengan monitoring dan proses pemulihan yang matang.</p>
+      </div>
+      <div>
+        <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-lg font-bold">03</div>
+        <h3 class="font-display text-xl font-semibold mb-2">Pengalaman</h3>
+        <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Interaksi yang jelas, respons yang cepat, dan alur permainan yang menyenangkan — dari command pertama hingga endgame.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA STRIP -->
+  <section class="container-page pb-24">
+    <div class="rounded-3xl bg-ink-900 dark:bg-ink-900 p-10 md:p-16 relative overflow-hidden">
+      <div class="aurora bg-amber-500/20 h-[300px] w-[300px] top-[-50px] right-[-50px]" aria-hidden="true"></div>
+      <div class="relative max-w-2xl">
+        <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest text-cream-50">
+          Punya pertanyaan atau ide?
+        </h2>
+        <p class="mt-4 text-cream-100/80 text-lg leading-relaxed">
+          Gabung ke server Discord Support kami. Tim Vanillate aktif menjawab, menerima laporan bug, dan berdiskusi dengan komunitas.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={site.links.discordSupport} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
+            Gabung Discord Support
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+          </a>
+          <a href="/support" class="inline-flex items-center rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
+            Kunjungi halaman Support
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

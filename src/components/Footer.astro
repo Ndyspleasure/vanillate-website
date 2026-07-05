@@ -1,0 +1,49 @@
+---
+import { site } from '@data/site';
+import { bots } from '@data/bots';
+import { t } from '../i18n/id';
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-32 border-t border-ink-900/5 dark:border-cream-100/5">
+  <div class="container-page py-16 grid gap-12 md:grid-cols-4">
+    <div class="md:col-span-2 max-w-sm">
+      <div class="inline-flex items-center gap-2.5 mb-4">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-ink-900 text-amber-400 dark:bg-amber-500 dark:text-ink-950 font-display text-lg font-bold leading-none">V</span>
+        <span class="font-display text-lg font-semibold tracking-tightest">{site.name}</span>
+      </div>
+      <p class="text-sm text-ink-600 dark:text-cream-300 leading-relaxed">{site.description}</p>
+    </div>
+
+    <div>
+      <p class="eyebrow mb-4">Bot Kami</p>
+      <ul class="space-y-2">
+        {bots.map((bot) => (
+          <li>
+            <a href={`/bots/${bot.slug}`} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+              {bot.shortName}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <p class="eyebrow mb-4">Tautan</p>
+      <ul class="space-y-2">
+        <li><a href="/about" class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Tentang</a></li>
+        <li><a href="/docs" class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Dokumentasi</a></li>
+        <li><a href="/support" class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Support</a></li>
+        <li><a href="/terms" class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{t.nav.terms}</a></li>
+        <li><a href="/privacy" class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{t.nav.privacy}</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hairline">
+    <div class="container-page py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p class="text-xs text-ink-500 dark:text-cream-300/60">&copy; {year} {site.name}. {t.footer.rights}</p>
+      <p class="text-xs text-ink-500 dark:text-cream-300/60 font-mono">{t.footer.tagline}</p>
+    </div>
+  </div>
+</footer>

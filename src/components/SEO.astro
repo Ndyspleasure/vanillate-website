@@ -1,0 +1,45 @@
+---
+import { site } from '@data/site';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description = site.description,
+  image = '/og-image.png',
+  noindex = false,
+} = Astro.props;
+
+const fullTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.tagline}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).toString();
+const ogImage = new URL(image, Astro.site ?? site.url).toString();
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex,nofollow" />}
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content={site.name} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:locale" content="id_ID" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+
+<!-- Theme color -->
+<meta name="theme-color" content="#0B0A0E" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#FBF8F1" media="(prefers-color-scheme: light)" />

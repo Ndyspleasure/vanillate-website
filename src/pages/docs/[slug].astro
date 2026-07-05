@@ -1,0 +1,135 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Button from '@components/Button.astro';
+import { bots, buildInviteUrl } from '@data/bots';
+
+export function getStaticPaths() {
+  return bots.map((bot) => ({ params: { slug: bot.docsSlug }, props: { bot } }));
+}
+
+const { bot } = Astro.props;
+const inviteUrl = buildInviteUrl(bot);
+
+// Struktur outline dokumentasi — konten dilengkapi bertahap.
+// Cara update: edit bagian di bawah atau pindahkan ke file MDX terpisah nanti.
+const sections = [
+  { id: 'pendahuluan', title: 'Pendahuluan' },
+  { id: 'cara-memulai', title: 'Cara Memulai' },
+  { id: 'perintah', title: 'Daftar Perintah' },
+  { id: 'sistem-utama', title: 'Sistem Utama' },
+  { id: 'faq', title: 'FAQ' },
+  { id: 'troubleshooting', title: 'Troubleshooting' },
+];
+---
+
+<BaseLayout title={`Dokumentasi ${bot.shortName}`} description={`Panduan penggunaan ${bot.name}.`}>
+  <div class="container-page pt-16 md:pt-24 pb-24">
+    <div class="grid gap-10 lg:grid-cols-[220px_1fr]">
+      <!-- Sidebar TOC -->
+      <aside class="lg:sticky lg:top-24 lg:self-start">
+        <a href="/docs" class="inline-flex items-center gap-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 mb-6">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Semua dokumentasi
+        </a>
+        <p class="eyebrow mb-3">Di halaman ini</p>
+        <nav aria-label="Table of contents">
+          <ul class="space-y-1">
+            {sections.map((s) => (
+              <li>
+                <a href={`#${s.id}`} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                  {s.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- Content -->
+      <article class="max-w-3xl">
+        <div class="flex items-center gap-3 mb-4">
+          <span
+            class="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
+            style={`background: ${bot.color}20; color: ${bot.color};`}
+            aria-hidden="true"
+          >
+            {bot.icon}
+          </span>
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">Dokumentasi</p>
+        </div>
+        <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-5xl leading-tight mb-4">
+          {bot.name}
+        </h1>
+        <p class="text-lg text-ink-600 dark:text-cream-200/80 mb-8">{bot.tagline}</p>
+
+        <div class="flex flex-wrap gap-3 mb-16 pb-8 border-b border-ink-900/10 dark:border-cream-100/10">
+          <Button href={inviteUrl} variant="primary" external>Undang Bot</Button>
+          <Button href={`/bots/${bot.slug}`} variant="ghost">Halaman Bot</Button>
+        </div>
+
+        <!-- SECTION: Pendahuluan -->
+        <section id="pendahuluan" class="mb-16 scroll-mt-24">
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Pendahuluan</h2>
+          <div class="space-y-4 text-ink-700 dark:text-cream-200 leading-relaxed">
+            <p>{bot.description}</p>
+            <p class="text-sm text-ink-500 dark:text-cream-300/60 italic">Bagian ini akan dilengkapi dengan konteks lebih lengkap tentang bot.</p>
+          </div>
+        </section>
+
+        <!-- SECTION: Cara Memulai -->
+        <section id="cara-memulai" class="mb-16 scroll-mt-24">
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Cara Memulai</h2>
+          <ol class="space-y-3 text-ink-700 dark:text-cream-200 leading-relaxed">
+            <li class="flex gap-3"><span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">01</span>Undang {bot.shortName} ke server Discord kamu melalui tombol undangan.</li>
+            <li class="flex gap-3"><span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">02</span>Berikan izin yang diminta agar bot dapat berfungsi dengan optimal.</li>
+            <li class="flex gap-3"><span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">03</span>Jalankan command <code class="font-mono text-sm text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">/main</code> untuk mulai bermain.</li>
+          </ol>
+        </section>
+
+        <!-- SECTION: Perintah -->
+        <section id="perintah" class="mb-16 scroll-mt-24">
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Daftar Perintah</h2>
+          <div class="space-y-2">
+            {bot.commands?.map((cmd) => (
+              <div class="flex items-baseline gap-4 p-4 rounded-lg bg-cream-100/60 dark:bg-ink-900/60 border border-ink-900/5 dark:border-cream-100/5">
+                <code class="font-mono text-sm text-amber-600 dark:text-amber-400 flex-none">{cmd.name}</code>
+                <span class="text-sm text-ink-700 dark:text-cream-200">{cmd.description}</span>
+              </div>
+            ))}
+          </div>
+          <p class="mt-4 text-sm text-ink-500 dark:text-cream-300/60 italic">Daftar perintah lengkap akan ditambahkan bertahap.</p>
+        </section>
+
+        <!-- SECTION: Sistem Utama -->
+        <section id="sistem-utama" class="mb-16 scroll-mt-24">
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Sistem Utama</h2>
+          <p class="text-ink-700 dark:text-cream-200 leading-relaxed mb-6">Ringkasan mekanik inti yang perlu diketahui pemain.</p>
+          <ul class="space-y-3">
+            {bot.features.map((f) => (
+              <li class="flex gap-3 text-ink-700 dark:text-cream-200">
+                <span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1 flex-none">→</span>
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="mt-4 text-sm text-ink-500 dark:text-cream-300/60 italic">Penjelasan detail tiap sistem akan menyusul.</p>
+        </section>
+
+        <!-- SECTION: FAQ -->
+        <section id="faq" class="mb-16 scroll-mt-24">
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">FAQ</h2>
+          <p class="text-ink-500 dark:text-cream-300/60 italic">Pertanyaan yang sering ditanyakan akan dikumpulkan seiring waktu.</p>
+        </section>
+
+        <!-- SECTION: Troubleshooting -->
+        <section id="troubleshooting" class="scroll-mt-24">
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Troubleshooting</h2>
+          <p class="text-ink-700 dark:text-cream-200 leading-relaxed">Jika kamu mengalami masalah, silakan hubungi tim kami di server Discord Support.</p>
+          <div class="mt-6">
+            <Button href="/support" variant="secondary">Buka Halaman Support</Button>
+          </div>
+        </section>
+      </article>
+    </div>
+  </div>
+</BaseLayout>

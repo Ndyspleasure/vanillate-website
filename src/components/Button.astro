@@ -1,0 +1,46 @@
+---
+export interface Props {
+  href: string;
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'md' | 'lg';
+  external?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  variant = 'primary',
+  size = 'md',
+  external = false,
+  class: className = '',
+} = Astro.props;
+
+const base =
+  'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 select-none';
+
+const sizes: Record<string, string> = {
+  md: 'px-5 py-2.5 text-sm',
+  lg: 'px-7 py-3.5 text-base',
+};
+
+const variants: Record<string, string> = {
+  primary:
+    'bg-ink-900 text-cream-50 hover:bg-ink-800 hover:-translate-y-0.5 dark:bg-amber-500 dark:text-ink-950 dark:hover:bg-amber-400',
+  secondary:
+    'bg-cream-100 text-ink-900 border border-ink-900/10 hover:bg-cream-200 dark:bg-ink-800 dark:text-cream-50 dark:border-cream-100/10 dark:hover:bg-ink-700',
+  ghost:
+    'text-ink-900 hover:bg-ink-900/5 dark:text-cream-100 dark:hover:bg-cream-100/5',
+};
+
+const cls = `${base} ${sizes[size]} ${variants[variant]} ${className}`.trim();
+const target = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+---
+
+<a href={href} class={cls} {...target}>
+  <slot />
+  {external && (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M7 17L17 7M17 7H8M17 7v9" />
+    </svg>
+  )}
+</a>

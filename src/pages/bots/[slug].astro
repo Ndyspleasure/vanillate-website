@@ -1,0 +1,107 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Button from '@components/Button.astro';
+import { bots, buildInviteUrl } from '@data/bots';
+
+export function getStaticPaths() {
+  return bots.map((bot) => ({ params: { slug: bot.slug }, props: { bot } }));
+}
+
+const { bot } = Astro.props;
+const inviteUrl = buildInviteUrl(bot);
+---
+
+<BaseLayout title={bot.name} description={bot.tagline}>
+  <section class="relative overflow-hidden pt-20 pb-16 md:pt-28">
+    <div class="aurora h-[400px] w-[400px] top-[-80px] left-[10%] opacity-30" style={`background: ${bot.color}`} aria-hidden="true"></div>
+
+    <div class="container-page relative">
+      <a href="/bots" class="inline-flex items-center gap-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 mb-8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Semua bot
+      </a>
+
+      <div class="flex items-start gap-4 mb-6">
+        <span
+          class="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
+          style={`background: ${bot.color}20; color: ${bot.color};`}
+          aria-hidden="true"
+        >
+          {bot.icon}
+        </span>
+        <div>
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">{bot.category}</p>
+          <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-none">{bot.name}</h1>
+        </div>
+      </div>
+
+      <p class="max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        {bot.description}
+      </p>
+
+      <div class="mt-8 flex flex-wrap gap-3">
+        <Button href={inviteUrl} variant="primary" size="lg" external>
+          Undang {bot.shortName}
+        </Button>
+        <Button href={`/docs/${bot.docsSlug}`} variant="secondary" size="lg">
+          Lihat Dokumentasi
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow mb-3">Fitur</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Apa yang bisa dilakukan.</h2>
+      </div>
+      <div class="md:col-span-2">
+        <ul class="grid gap-4 sm:grid-cols-2">
+          {bot.features.map((feature, i) => (
+            <li class="flex items-start gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10">
+              <span class="mt-0.5 font-mono text-xs text-amber-600 dark:text-amber-500 flex-none">{String(i + 1).padStart(2, '0')}</span>
+              <span class="text-ink-700 dark:text-cream-200 leading-relaxed">{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMANDS -->
+  {bot.commands && bot.commands.length > 0 && (
+    <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+      <div class="grid gap-12 md:grid-cols-3">
+        <div class="md:col-span-1">
+          <p class="eyebrow mb-3">Perintah Utama</p>
+          <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Sekilas command.</h2>
+          <p class="mt-4 text-ink-600 dark:text-cream-200/80">Daftar lengkap perintah dan opsi tersedia di halaman dokumentasi.</p>
+        </div>
+        <div class="md:col-span-2 space-y-2">
+          {bot.commands.map((cmd) => (
+            <div class="flex items-baseline gap-4 p-4 rounded-lg bg-cream-100/60 dark:bg-ink-900/60 border border-ink-900/5 dark:border-cream-100/5">
+              <code class="font-mono text-sm text-amber-600 dark:text-amber-400 flex-none">{cmd.name}</code>
+              <span class="text-sm text-ink-700 dark:text-cream-200">{cmd.description}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- CTA -->
+  <section class="container-page py-20">
+    <div class="rounded-3xl p-10 md:p-14 relative overflow-hidden" style={`background: linear-gradient(135deg, ${bot.color}15, transparent);`}>
+      <div class="max-w-xl">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Coba {bot.shortName} sekarang.</h2>
+        <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Tambahkan ke server Discord kamu — gratis, tanpa syarat berlangganan.</p>
+        <div class="flex flex-wrap gap-3">
+          <Button href={inviteUrl} variant="primary" size="lg" external>Undang {bot.shortName}</Button>
+          <Button href="/support" variant="ghost" size="lg">Butuh bantuan?</Button>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

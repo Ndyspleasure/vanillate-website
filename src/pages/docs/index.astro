@@ -1,0 +1,43 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { bots } from '@data/bots';
+---
+
+<BaseLayout title="Dokumentasi" description="Dokumentasi resmi seluruh bot Vanillate Studio.">
+  <section class="container-page pt-20 pb-12 md:pt-28">
+    <p class="eyebrow mb-6">Dokumentasi</p>
+    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
+      Panduan lengkap<br />bot Vanillate.
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+      Pilih bot untuk melihat panduan penggunaan, daftar command, dan tips-tips penting.
+    </p>
+  </section>
+
+  <section class="container-page pb-24">
+    <div class="grid gap-4 md:grid-cols-2">
+      {bots.map((bot) => (
+        <a
+          href={`/docs/${bot.docsSlug}`}
+          class="group flex items-start gap-4 p-6 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-colors"
+        >
+          <span
+            class="flex h-12 w-12 items-center justify-center rounded-xl text-xl flex-none"
+            style={`background: ${bot.color}20; color: ${bot.color};`}
+            aria-hidden="true"
+          >
+            {bot.icon}
+          </span>
+          <div class="flex-1">
+            <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">{bot.category}</p>
+            <h2 class="font-display text-xl font-semibold tracking-tightest mb-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+              Dokumentasi {bot.shortName}
+            </h2>
+            <p class="text-sm text-ink-600 dark:text-cream-200/70">{bot.tagline}</p>
+          </div>
+          <svg class="text-ink-400 dark:text-cream-300/40 group-hover:text-amber-500 group-hover:translate-x-1 transition-all mt-1 flex-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

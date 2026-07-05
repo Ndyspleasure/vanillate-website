@@ -1,0 +1,23 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import BotCard from '@components/BotCard.astro';
+import { bots } from '@data/bots';
+---
+
+<BaseLayout title="Bot Kami" description="Daftar lengkap Discord Bot yang dikembangkan oleh Vanillate Studio.">
+  <section class="container-page pt-20 pb-12 md:pt-28">
+    <p class="eyebrow mb-6">Bot Kami</p>
+    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
+      Katalog bot Vanillate.
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+      Setiap bot dirancang, dikembangkan, dan dirawat oleh tim Vanillate Studio. Pilih salah satu untuk mulai bermain atau baca dokumentasinya terlebih dahulu.
+    </p>
+  </section>
+
+  <section class="container-page pb-24">
+    <div class="grid gap-6 md:grid-cols-2">
+      {bots.map((bot) => <BotCard bot={bot} featured={bot.featured} />)}
+    </div>
+  </section>
+</BaseLayout>
