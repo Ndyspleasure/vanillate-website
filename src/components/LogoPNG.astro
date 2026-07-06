@@ -12,7 +12,7 @@ const { size = 'header', alt = 'Vanillate Studio', class: className = '' } = Ast
 // Helper: generate srcset untuk responsive images
 function getSrcset(variant: 'header-48' | 'header-40' | 'header-36' | 'footer-40' | '180' | '220', theme: 'light' | 'dark') {
   const type = variant.includes('header') || variant.includes('footer') ? 'horizontal' : 'vertical';
-  const basePath = `/logos/${type}/${theme}/${variant}`;
+  const basePath = `/logos/${type}/${theme}/${variant}px`;
   return `
     ${basePath}.png 1x,
     ${basePath}@2x.png 2x,
