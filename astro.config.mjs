@@ -2,16 +2,16 @@ import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 
-// Ganti SITE_URL saat sudah pakai domain vanillate.com
-// Contoh: 'https://vanillate.com'
-// Untuk GitHub Pages default: 'https://<username>.github.io'
-const SITE_URL = 'https://ndyspleasure.github.io';
+// Custom domain aktif: vanillate.id
+// Jika suatu saat kembali ke GitHub Pages tanpa domain,
+// ganti SITE_URL ke 'https://ndyspleasure.github.io'
+// dan aktifkan lagi base: '/vanillate-website'
+const SITE_URL = 'https://vanillate.id';
 
 export default defineConfig({
   site: SITE_URL,
-  // Jika deploy ke <username>.github.io/vanillate-website (bukan custom domain),
-  // uncomment baris berikut:
-base: '/vanillate-website',
+  // base tidak dipakai saat custom domain (site di root):
+  // base: '/vanillate-website',
   integrations: [
     tailwind({ applyBaseStyles: false }),
     sitemap(),
