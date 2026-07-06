@@ -1,17 +1,23 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
+import LogoPNG from '@components/LogoPNG.astro';
 ---
 
 <BaseLayout title="Tentang" description="Vanillate Studio adalah tim pengembang Discord Bot yang berfokus pada kualitas, stabilitas, dan pengalaman pengguna.">
-  <section class="container-page pt-20 pb-16 md:pt-28">
-    <p class="eyebrow mb-6">Tentang Kami</p>
-    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
-      Kami membangun Discord Bot dengan <span class="italic text-amber-600 dark:text-amber-500">standar</span> yang tidak biasa.
-    </h1>
-    <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-      Vanillate Studio adalah tim pengembang Discord Bot asal Indonesia. Kami tidak sekadar meluncurkan bot — kami merawatnya, mengembangkannya, dan memastikan setiap pengguna mendapat pengalaman yang layak dibanggakan.
-    </p>
+  <section class="container-page pt-20 pb-16 md:pt-28 grid gap-16 md:grid-cols-2 items-center">
+    <div>
+      <p class="eyebrow mb-6">Tentang Kami</p>
+      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-3xl">
+        Kami membangun Discord Bot dengan <span class="italic text-amber-600 dark:text-amber-500">standar</span> yang tidak biasa.
+      </h1>
+      <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Vanillate Studio adalah tim pengembang Discord Bot asal Indonesia. Kami tidak sekadar meluncurkan bot — kami merawatnya, mengembangkannya, dan memastikan setiap pengguna mendapat pengalaman yang layak dibanggakan.
+      </p>
+    </div>
+    <div class="flex justify-center md:justify-end">
+      <LogoPNG size="180" alt="Vanillate Studio" class="w-64" />
+    </div>
   </section>
 
   <!-- WHO WE ARE -->

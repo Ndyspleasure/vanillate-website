@@ -1,6 +1,7 @@
 ---
 import { nav, site } from '@data/site';
 import ThemeToggle from './ThemeToggle.astro';
+import LogoPNG from './LogoPNG.astro';
 import { url } from '@utils/url';
 
 // Normalisasi current path dengan menghilangkan base prefix supaya comparison
@@ -13,8 +14,8 @@ const currentPath = base && rawPath.startsWith(base) ? (rawPath.slice(base.lengt
 <header class="sticky top-0 z-40 backdrop-blur-lg bg-cream-50/70 dark:bg-ink-950/70 border-b border-ink-900/5 dark:border-cream-100/5">
   <div class="container-page flex h-16 items-center justify-between">
     <a href={url('/')} class="group inline-flex items-center gap-2.5" aria-label={site.name}>
-      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-ink-900 text-amber-400 dark:bg-amber-500 dark:text-ink-950 font-display text-lg font-bold leading-none">V</span>
-      <span class="font-display text-lg font-semibold tracking-tightest">{site.shortName}</span>
+      <LogoPNG size="header" alt={site.name} />
+      <span class="font-display text-lg font-semibold tracking-tightest hidden sm:inline">{site.shortName}</span>
     </a>
 
     <nav class="hidden md:flex items-center gap-1" aria-label="Navigasi utama">

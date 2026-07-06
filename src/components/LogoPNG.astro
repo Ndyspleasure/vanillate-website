@@ -1,0 +1,106 @@
+---
+// Logo component dengan theme & responsive support
+// Usage: <LogoH size="header" /> atau <LogoV size="180" />
+export interface Props {
+  size?: 'header' | 'footer' | '180' | '220'; // header = responsive, footer = fixed 40px
+  alt?: string;
+  class?: string;
+}
+
+const { size = 'header', alt = 'Vanillate Studio', class: className = '' } = Astro.props;
+
+// Helper: generate srcset untuk responsive images
+function getSrcset(variant: 'header-48' | 'header-40' | 'header-36' | 'footer-40' | '180' | '220', theme: 'light' | 'dark') {
+  const type = variant.includes('header') || variant.includes('footer') ? 'horizontal' : 'vertical';
+  const basePath = `/logos/${type}/${theme}/${variant}`;
+  return `
+    ${basePath}.png 1x,
+    ${basePath}@2x.png 2x,
+    ${basePath}@3x.png 3x
+  `.trim();
+}
+
+// Generate responsive HTML untuk header
+const isHeader = size === 'header';
+const isFooter = size === 'footer';
+const isVertical = size === '180' || size === '220';
+
+// Default image untuk fallback
+let defaultSrc = '/logos/horizontal/light/header-48px.png';
+if (isFooter) defaultSrc = '/logos/horizontal/light/footer-40px.png';
+if (size === '180') defaultSrc = '/logos/vertical/light/180px.png';
+if (size === '220') defaultSrc = '/logos/vertical/light/220px.png';
+---
+
+{isHeader ? (
+  <picture class={`logo-responsive ${className}`}>
+    {/* Light mode - desktop (48px) */}
+    <source
+      media="(min-width: 769px) and (prefers-color-scheme: light)"
+      srcSet={getSrcset('header-48', 'light')}
+    />
+    {/* Light mode - tablet (40px) */}
+    <source
+      media="(min-width: 641px) and (max-width: 768px) and (prefers-color-scheme: light)"
+      srcSet={getSrcset('header-40', 'light')}
+    />
+    {/* Light mode - mobile (36px) */}
+    <source
+      media="(max-width: 640px) and (prefers-color-scheme: light)"
+      srcSet={getSrcset('header-36', 'light')}
+    />
+    
+    {/* Dark mode - desktop (48px) */}
+    <source
+      media="(min-width: 769px) and (prefers-color-scheme: dark)"
+      srcSet={getSrcset('header-48', 'dark')}
+    />
+    {/* Dark mode - tablet (40px) */}
+    <source
+      media="(min-width: 641px) and (max-width: 768px) and (prefers-color-scheme: dark)"
+      srcSet={getSrcset('header-40', 'dark')}
+    />
+    {/* Dark mode - mobile (36px) */}
+    <source
+      media="(max-width: 640px) and (prefers-color-scheme: dark)"
+      srcSet={getSrcset('header-36', 'dark')}
+    />
+    
+    <img src={defaultSrc} alt={alt} class="logo-img" loading="lazy" />
+  </picture>
+) : isFooter ? (
+  <picture class={`logo-responsive ${className}`}>
+    <source
+      media="(prefers-color-scheme: light)"
+      srcSet={getSrcset('footer-40', 'light')}
+    />
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcSet={getSrcset('footer-40', 'dark')}
+    />
+    <img src={defaultSrc} alt={alt} class="logo-img" loading="lazy" />
+  </picture>
+) : (
+  <picture class={`logo-responsive ${className}`}>
+    <source
+      media="(prefers-color-scheme: light)"
+      srcSet={getSrcset(size as any, 'light')}
+    />
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcSet={getSrcset(size as any, 'dark')}
+    />
+    <img src={defaultSrc} alt={alt} class="logo-img" loading="lazy" />
+  </picture>
+)}
+
+<style>
+  picture {
+    display: inline-block;
+  }
+  .logo-img {
+    display: block;
+    height: auto;
+    width: auto;
+  }
+</style>

@@ -2,6 +2,7 @@
 import { site } from '@data/site';
 import { bots } from '@data/bots';
 import { t } from '../i18n/id';
+import LogoPNG from './LogoPNG.astro';
 import { url } from '@utils/url';
 const year = new Date().getFullYear();
 ---
@@ -10,8 +11,7 @@ const year = new Date().getFullYear();
   <div class="container-page py-16 grid gap-12 md:grid-cols-4">
     <div class="md:col-span-2 max-w-sm">
       <div class="inline-flex items-center gap-2.5 mb-4">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-ink-900 text-amber-400 dark:bg-amber-500 dark:text-ink-950 font-display text-lg font-bold leading-none">V</span>
-        <span class="font-display text-lg font-semibold tracking-tightest">{site.name}</span>
+        <LogoPNG size="footer" alt={site.name} class="h-10" />
       </div>
       <p class="text-sm text-ink-600 dark:text-cream-300 leading-relaxed">{site.description}</p>
     </div>
