@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://vanillate.com/sitemap-index.xml
+Sitemap: https://vanillate.id/sitemap-index.xml
