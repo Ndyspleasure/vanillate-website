@@ -6,13 +6,16 @@ export const site = {
   tagline: 'Studio pengembang Discord Bot yang mengutamakan kualitas, stabilitas, dan pengalaman pengguna.',
   description:
     'Vanillate Studio adalah studio pengembang Discord Bot asal Indonesia yang membangun bot berkualitas tinggi dengan fokus pada performa, keamanan, dan pengalaman pengguna.',
-  url: 'https://vanillate.com',
+  url: 'https://vanillate.id',
   locale: 'id-ID',
+
+  // Google Search Console verification
+  googleSiteVerification: 'U25-rJMHaxtxI6CT73HN72IctS63oFj1X_bl-iHc_to',
 
   // Tautan eksternal
   links: {
     discordSupport: 'https://discord.gg/A7n88d6uRW',
-    github: 'https://github.com/REPLACE_ME',         // opsional
+    github: 'https://github.com/Ndyspleasure',
   },
 
   // Halaman legal
