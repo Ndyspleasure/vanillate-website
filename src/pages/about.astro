@@ -2,145 +2,325 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import LogoPNG from '@components/LogoPNG.astro';
+import { site } from '@data/site';
+
+const values = [
+  {
+    title: 'Innovation',
+    desc: 'Kami tidak takut membongkar cara lama. Kalau ada pendekatan yang lebih baik — arsitektur baru, algoritma baru, cara interaksi baru — kami coba, ukur, dan pakai kalau terbukti.',
+  },
+  {
+    title: 'Simplicity',
+    desc: 'Fitur yang hebat adalah fitur yang tidak perlu dijelaskan panjang lebar. Kami memangkas kerumitan di sisi pengguna, dan menanggung kerumitannya di sisi kode.',
+  },
+  {
+    title: 'Quality',
+    desc: 'Setiap rilis melewati pengujian dan review. Kami lebih memilih menunda satu fitur daripada mengirim sesuatu yang setengah jadi ke ribuan pengguna.',
+  },
+  {
+    title: 'Reliability',
+    desc: 'Bot yang bagus adalah bot yang ada saat dibutuhkan. Kami menjaga uptime, memantau performa, dan memastikan data pemain aman — setiap hari, bukan hanya saat launching.',
+  },
+  {
+    title: 'Community',
+    desc: 'Produk kami hidup di tengah komunitas, jadi komunitas ikut menentukan arahnya. Laporan bug, kritik, dan ide dari pemain adalah bahan bakar roadmap kami.',
+  },
+  {
+    title: 'Continuous Improvement',
+    desc: 'Tidak ada versi final. Selalu ada yang bisa dibuat lebih cepat, lebih adil, lebih menyenangkan. Changelog kami adalah bukti bahwa kami terus mengerjakannya.',
+  },
+];
+
+const reasons = [
+  {
+    title: 'Fokus pada kualitas',
+    desc: 'Kami studio kecil dengan standar besar. Jumlah produk kami sedikit, justru karena masing-masing dirawat dengan serius.',
+  },
+  {
+    title: 'Performa tinggi',
+    desc: 'Respons cepat itu bukan bonus, tapi syarat. Kami mengoptimalkan query, caching, dan algoritma sampai interaksi terasa instan.',
+  },
+  {
+    title: 'Desain modern',
+    desc: 'Dari embed di Discord sampai halaman web ini — tampilan yang rapi dan konsisten adalah bagian dari pengalaman, bukan hiasan.',
+  },
+  {
+    title: 'Pengalaman pengguna',
+    desc: 'Alur dirancang dari sudut pandang pemain: onboarding jelas, feedback instan, dan tidak ada langkah yang membingungkan.',
+  },
+  {
+    title: 'Update berkelanjutan',
+    desc: 'Produk kami berkembang tiap pekan — perbaikan bug, penyeimbangan gameplay, dan fitur baru yang lahir dari masukan komunitas.',
+  },
+  {
+    title: 'Dukungan komunitas',
+    desc: 'Ada masalah? Server support kami aktif. Laporan direspons langsung oleh orang yang menulis kodenya, bukan bot balasan otomatis.',
+  },
+];
+
+const roadmap = [
+  {
+    title: 'Discord Bot',
+    desc: 'Memperluas portofolio bot — game baru, utilitas komunitas, dan pendalaman fitur untuk Sambung Kata serta Tahu Bulat.',
+  },
+  {
+    title: 'AI Tools',
+    desc: 'Menghadirkan kecerdasan buatan yang benar-benar berguna: lawan main yang lebih natural, moderasi yang lebih cerdas, dan alat bantu kreator.',
+  },
+  {
+    title: 'Automation Platform',
+    desc: 'Otomasi untuk pengelola server — dari workflow komunitas hingga tugas berulang yang seharusnya tidak dikerjakan manual.',
+  },
+  {
+    title: 'Web Platform',
+    desc: 'Dashboard web untuk mengelola bot, melihat statistik, dan mengatur konfigurasi server tanpa meninggalkan browser.',
+  },
+  {
+    title: 'Mobile Application',
+    desc: 'Pendamping di genggaman — memantau progres, klaim reward, dan tetap terhubung dengan komunitas dari mana saja.',
+  },
+  {
+    title: 'Cloud Services',
+    desc: 'Fondasi infrastruktur yang menopang semua layanan Vanillate: skalabel, aman, dan siap tumbuh bersama pengguna.',
+  },
+];
 ---
 
-<BaseLayout title="Tentang" description="Vanillate Studio adalah tim pengembang Discord Bot yang berfokus pada kualitas, stabilitas, dan pengalaman pengguna.">
-  <section class="container-page pt-20 pb-16 md:pt-28 grid gap-16 md:grid-cols-2 items-center">
+<BaseLayout
+  title="Tentang"
+  description="Cerita, filosofi, dan arah Vanillate Studio — studio teknologi Indonesia di balik Sambung Kata dan Tahu Bulat."
+>
+  <!-- HERO -->
+  <section class="container-page pt-20 pb-16 md:pt-28 grid gap-12 md:grid-cols-[1fr_auto] items-center">
     <div>
       <p class="eyebrow mb-6">Tentang Kami</p>
       <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-3xl">
-        Kami membangun Discord Bot dengan <span class="italic text-amber-600 dark:text-amber-500">standar</span> yang tidak biasa.
+        Studio kecil, <span class="italic text-amber-600 dark:text-amber-500">standar</span> yang tidak kecil.
       </h1>
       <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-        Vanillate Studio adalah tim pengembang Discord Bot asal Indonesia. Kami tidak sekadar meluncurkan bot — kami merawatnya, mengembangkannya, dan memastikan setiap pengguna mendapat pengalaman yang layak dibanggakan.
+        Vanillate Studio adalah studio teknologi independen asal Indonesia. Kami membangun Discord Bot yang dimainkan setiap hari — lalu merawatnya seperti produk yang layak dibanggakan, bukan proyek yang ditinggal setelah rilis.
       </p>
     </div>
-    <div class="flex justify-center md:justify-end">
-      <LogoPNG size="180" alt="Vanillate Studio" class="w-64" />
+    <div class="hidden md:flex justify-end">
+      <LogoPNG variant="vertical" alt="Vanillate Studio" class="h-52 lg:h-56" />
     </div>
   </section>
 
-  <!-- WHO WE ARE -->
+  <!-- 01 CERITA -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1">
-        <p class="eyebrow">01 / Identitas</p>
+        <p class="eyebrow">01 / Cerita</p>
       </div>
       <div class="md:col-span-2 max-w-prose">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Siapa Vanillate Studio</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Berawal dari satu game sederhana</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
           <p>
-            Vanillate Studio adalah studio independen yang berfokus penuh pada pengembangan Discord Bot. Kami tumbuh dari kecintaan pada game, komunitas, dan rekayasa perangkat lunak — tiga elemen yang menyatu dalam setiap bot yang kami rilis.
+            Vanillate Studio lahir pada 2026 dari sebuah pengamatan yang sederhana: komunitas Discord Indonesia penuh dengan orang-orang yang senang bermain bersama, tapi pilihan bot game berbahasa Indonesia yang benar-benar digarap serius bisa dihitung dengan jari. Banyak bot menjanjikan segalanya, lalu perlahan mati — tidak diupdate, penuh bug, dan akhirnya ditinggalkan pembuatnya.
           </p>
           <p>
-            Kami bekerja dalam skala kecil, dengan kendali penuh atas kode, infrastruktur, dan pengalaman pengguna. Pendekatan ini memungkinkan kami menjaga kualitas yang konsisten dan merespons kebutuhan komunitas dengan cepat.
+            Kami memulai dari satu game: Sambung Kata. Permainan kata yang semua orang kenal sejak kecil, dibawa ke Discord dengan sistem progresi yang dalam — class, quest, dungeon, dan ekonomi yang seimbang. Responsnya membuat kami sadar bahwa pemain Indonesia tidak butuh bot yang banyak; mereka butuh bot yang digarap dengan sungguh-sungguh.
+          </p>
+          <p>
+            Dari sana Vanillate tumbuh menjadi studio. Tahu Bulat menyusul sebagai produk kedua — simulasi bisnis idle bertema kuliner yang sangat Indonesia. Dua produk, satu prinsip yang sama: rilis adalah garis start, bukan garis finis.
+          </p>
+          <p>
+            Hari ini kami masih tim kecil, dan itu disengaja. Skala kecil memberi kami kendali penuh atas kode, infrastruktur, dan kualitas — serta kecepatan untuk merespons komunitas tanpa birokrasi.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- VISION -->
+  <!-- 02 FILOSOFI BRAND -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1">
-        <p class="eyebrow">02 / Visi</p>
-      </div>
-      <div class="md:col-span-2 max-w-prose">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Visi dan Tujuan</h2>
-        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
-          <p>
-            Visi kami sederhana: <strong class="text-ink-900 dark:text-cream-50">menjadi studio Discord Bot yang paling dipercaya di Indonesia</strong>. Dipercaya bukan karena banyak fitur, tapi karena setiap bot berjalan stabil, terus berkembang, dan benar-benar menyenangkan untuk digunakan.
-          </p>
-          <p>
-            Kami ingin komunitas Discord Indonesia — dan lebih jauh lagi — memiliki bot berkualitas tinggi yang dibangun dengan pemahaman kultural yang mendalam. Bot yang tidak terasa seperti terjemahan mentah dari produk asing.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FOCUS -->
-  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="grid gap-12 md:grid-cols-3">
-      <div class="md:col-span-1">
-        <p class="eyebrow">03 / Fokus</p>
-      </div>
-      <div class="md:col-span-2 max-w-prose">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Fokus Pengembangan</h2>
-        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
-          <p>
-            Kami fokus pada satu hal: <strong class="text-ink-900 dark:text-cream-50">Discord Bot dengan mekanik permainan yang mendalam</strong>. Bukan bot serbaguna, bukan bot moderasi, tapi bot yang menghadirkan pengalaman game — sistem progresi, ekonomi, quest, dan interaksi sosial yang bermakna.
-          </p>
-          <p>
-            Setiap bot dibangun di atas fondasi teknis yang solid: <span class="font-mono text-base">Node.js</span>, <span class="font-mono text-base">discord.js v14</span>, arsitektur database yang terstruktur, dan proses deployment yang dapat diaudit.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- COMMITMENT -->
-  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="grid gap-12 md:grid-cols-3">
-      <div class="md:col-span-1">
-        <p class="eyebrow">04 / Komitmen</p>
+        <p class="eyebrow">02 / Filosofi</p>
       </div>
       <div class="md:col-span-2">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-8">Komitmen Kami</h2>
-        <div class="grid gap-6 sm:grid-cols-2">
-          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 bg-cream-100/40 dark:bg-ink-900/40">
-            <h3 class="font-display text-lg font-semibold mb-2">Kualitas</h3>
-            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Testing bertingkat, review kode ketat, dan rilis hanya ketika fitur benar-benar matang.</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Di balik nama dan logo</h2>
+        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed max-w-prose">
+          <p>
+            Nama <strong class="text-ink-900 dark:text-cream-50">Vanillate</strong> berangkat dari kata <em>vanilla</em>. Di dunia perangkat lunak, "vanilla" berarti versi paling murni — tanpa tambahan yang tidak perlu. Akhiran "-ate" mengubahnya menjadi kata kerja: sebuah proses. Vanillate berarti mengolah sesuatu yang sederhana menjadi pengalaman yang matang. Itulah cara kami bekerja — mulai dari fondasi yang bersih, lalu menyempurnakannya lapis demi lapis.
+          </p>
+          <p>
+            Logo kami adalah huruf <strong class="text-ink-900 dark:text-cream-50">V</strong> yang terbentuk dari tiga pita geometris yang saling mengunci. Tiga pita itu mewakili tiga pilar yang menopang setiap produk Vanillate: <em>komunitas</em> yang memainkannya, <em>teknologi</em> yang menjalankannya, dan <em>pengalaman bermain</em> yang menyatukan keduanya. Bentuknya melingkar tanpa putus — pengingat bahwa pekerjaan kami tidak pernah benar-benar selesai; selalu ada iterasi berikutnya.
+          </p>
+        </div>
+
+        <div class="mt-10 grid gap-4 sm:grid-cols-3">
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+            <div class="h-8 w-8 rounded-lg mb-4" style="background: #17171E;"></div>
+            <h3 class="font-display font-semibold mb-1.5">Hitam</h3>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Fondasi dan fokus. Keseriusan engineering di balik setiap fitur yang terlihat sederhana.</p>
           </div>
-          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 bg-cream-100/40 dark:bg-ink-900/40">
-            <h3 class="font-display text-lg font-semibold mb-2">Performa</h3>
-            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Optimasi database, caching cerdas, dan monitoring real-time menjaga respons bot tetap cepat.</p>
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+            <div class="h-8 w-8 rounded-lg mb-4" style="background: #F0DCAE;"></div>
+            <h3 class="font-display font-semibold mb-1.5">Emas Vanilla</h3>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Kehangatan dan kualitas. Sentuhan premium pada hal-hal yang biasa — persis seperti vanilla.</p>
           </div>
-          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 bg-cream-100/40 dark:bg-ink-900/40">
-            <h3 class="font-display text-lg font-semibold mb-2">Keamanan</h3>
-            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Data pengguna diperlakukan dengan hati-hati. Backup rutin, validasi input, dan proteksi terhadap penyalahgunaan.</p>
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+            <div class="h-8 w-8 rounded-lg mb-4" style="background: #6C3BEB;"></div>
+            <h3 class="font-display font-semibold mb-1.5">Ungu</h3>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Imajinasi dan energi digital — warna dunia tempat produk kami hidup setiap hari.</p>
           </div>
-          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 bg-cream-100/40 dark:bg-ink-900/40">
-            <h3 class="font-display text-lg font-semibold mb-2">Transparansi</h3>
-            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Perubahan besar dikomunikasikan. Bug diakui dan diperbaiki, bukan disembunyikan.</p>
-          </div>
+        </div>
+
+        <p class="mt-8 max-w-prose text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
+          Identitas ini kami pilih karena jujur menggambarkan siapa kami: serius dalam pengerjaan, hangat dalam pengalaman, dan tumbuh di ekosistem digital. Tidak lebih, tidak kurang.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 VISI -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow">03 / Visi</p>
+      </div>
+      <div class="md:col-span-2 max-w-prose">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Ke mana Vanillate menuju</h2>
+        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
+          <p>
+            Visi kami sederhana untuk diucapkan dan panjang untuk dikerjakan: menjadi studio teknologi Indonesia yang produknya dipakai, dipercaya, dan dinantikan — dimulai dari Discord, tapi tidak berhenti di sana.
+          </p>
+          <p>
+            Kami percaya game development di platform chat baru menyentuh permukaannya. Interaksi real-time, komunitas yang sudah terbentuk, dan teknologi AI yang semakin matang membuka ruang untuk pengalaman bermain yang belum pernah ada. Kami ingin berada di garis depan eksplorasi itu — bukan sekadar mengikuti tren, tapi ikut menentukan bentuknya.
+          </p>
+          <p>
+            Dalam jangka panjang, produk-produk Vanillate akan saling terhubung menjadi satu ekosistem digital: game yang bisa dipantau dari web, otomasi yang meringankan pengelola komunitas, layanan cloud yang menopang semuanya, dan AI yang bekerja diam-diam membuat setiap interaksi terasa lebih hidup. Teknologi dan automation bagi kami adalah alat untuk satu tujuan — pengalaman pengguna yang lebih baik — bukan pajangan.
+          </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ROADMAP -->
+  <!-- 04 MISI -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1">
-        <p class="eyebrow">05 / Roadmap</p>
+        <p class="eyebrow">04 / Misi</p>
       </div>
       <div class="md:col-span-2 max-w-prose">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Rencana Jangka Panjang</h2>
-        <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
-          <p>
-            Kami sedang menyempurnakan bot-bot yang sudah rilis sambil merancang produk berikutnya. Rencana jangka panjang kami mencakup:
-          </p>
-          <ul class="space-y-3 pl-0 list-none">
-            <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5">→</span> Ekspansi katalog bot dengan mekanik game baru yang belum banyak dijelajahi di ekosistem Discord Indonesia.</li>
-            <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5">→</span> Dashboard web untuk manajemen konfigurasi bot per server.</li>
-            <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5">→</span> API publik untuk integrasi dengan komunitas developer.</li>
-            <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5">→</span> Program dukungan bagi komunitas dan pengelola server yang aktif.</li>
-          </ul>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-8">Apa yang kami kerjakan setiap hari</h2>
+        <ol class="space-y-7">
+          <li class="flex gap-4">
+            <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">01</span>
+            <div>
+              <h3 class="font-display text-lg font-semibold mb-1">Membangun produk yang dirawat jangka panjang</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap bot yang kami rilis mendapat komitmen perawatan: update rutin, perbaikan cepat, dan pengembangan fitur yang tidak berhenti setelah minggu pertama.</p>
+            </div>
+          </li>
+          <li class="flex gap-4">
+            <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">02</span>
+            <div>
+              <h3 class="font-display text-lg font-semibold mb-1">Menomorsatukan pengalaman pengguna</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Keputusan teknis kami selalu berangkat dari pertanyaan yang sama: apakah ini membuat pengalaman pemain lebih baik? Kalau tidak, kami tidak mengerjakannya.</p>
+            </div>
+          </li>
+          <li class="flex gap-4">
+            <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">03</span>
+            <div>
+              <h3 class="font-display text-lg font-semibold mb-1">Menjaga teknologi tetap efisien</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kode yang cepat, infrastruktur yang hemat, dan arsitektur yang mudah dikembangkan. Efisiensi bukan soal pelit — ini soal produk yang responsif dan tahan lama.</p>
+            </div>
+          </li>
+          <li class="flex gap-4">
+            <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">04</span>
+            <div>
+              <h3 class="font-display text-lg font-semibold mb-1">Tumbuh bersama komunitas</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kami mendengarkan sebelum membangun. Fitur terbaik kami lahir dari percakapan di server support — dan kami ingin terus begitu.</p>
+            </div>
+          </li>
+          <li class="flex gap-4">
+            <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">05</span>
+            <div>
+              <h3 class="font-display text-lg font-semibold mb-1">Bekerja secara transparan</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kebijakan yang jelas, changelog yang jujur, dan komunikasi terbuka saat ada masalah. Kepercayaan dibangun dari keterbukaan, bukan kesempurnaan.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 NILAI -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="max-w-3xl mb-12">
+      <p class="eyebrow mb-3">05 / Nilai Kami</p>
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+        Enam hal yang menjadi pegangan
+      </h2>
+    </div>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {values.map((v) => (
+        <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6">
+          <h3 class="font-display text-lg font-semibold mb-2">{v.title}</h3>
+          <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{v.desc}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- 06 MENGAPA VANILLATE -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <p class="eyebrow">06 / Mengapa Vanillate</p>
+      </div>
+      <div class="md:col-span-2">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-8">Alasan untuk memilih kami</h2>
+        <div class="grid gap-x-8 gap-y-7 sm:grid-cols-2">
+          {reasons.map((r) => (
+            <div>
+              <h3 class="font-display text-lg font-semibold mb-1.5 flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-amber-500 flex-none"></span>
+                {r.title}
+              </h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed text-[0.95rem]">{r.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- 07 MASA DEPAN -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="max-w-3xl mb-4">
+      <p class="eyebrow mb-3">07 / Masa Depan</p>
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+        Arah yang sedang kami bangun
+      </h2>
+      <p class="mt-5 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Ini bukan daftar janji dengan tanggal, melainkan peta arah — area yang sedang dan akan kami garap seiring bertumbuhnya studio. Semuanya bermuara pada satu hal: ekosistem digital Vanillate yang saling terhubung.
+      </p>
+    </div>
+    <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {roadmap.map((r, i) => (
+        <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6">
+          <p class="font-mono text-xs text-amber-600 dark:text-amber-500 mb-3">{String(i + 1).padStart(2, '0')}</p>
+          <h3 class="font-display text-lg font-semibold mb-2">{r.title}</h3>
+          <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{r.desc}</p>
+        </div>
+      ))}
     </div>
   </section>
 
   <!-- CTA -->
-  <section class="container-page py-20">
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="max-w-2xl">
-      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Siap mencoba bot kami?</h2>
-      <p class="text-lg text-ink-600 dark:text-cream-200/80 mb-8">Lihat daftar lengkap bot Vanillate atau pelajari dokumentasinya.</p>
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">
+        Ikut jadi bagian ceritanya
+      </h2>
+      <p class="text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed mb-8">
+        Cara terbaik mengenal Vanillate adalah mencoba produknya — lalu mampir ke server support dan bilang apa yang menurutmu bisa lebih baik. Kami benar-benar membaca semuanya.
+      </p>
       <div class="flex flex-wrap gap-3">
         <Button href="/bots" variant="primary" size="lg">Lihat Bot Kami</Button>
-        <Button href="/docs" variant="secondary" size="lg">Baca Dokumentasi</Button>
+        <Button href={site.links.discordSupport} variant="secondary" size="lg" external>Gabung Discord</Button>
       </div>
     </div>
   </section>

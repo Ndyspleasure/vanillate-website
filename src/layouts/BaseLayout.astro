@@ -22,7 +22,9 @@ const { title, description, image, noindex } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google-site-verification" content={site.googleSiteVerification} />
-    <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+    <link rel="icon" type="image/png" sizes="32x32" href={url('/favicon-32.png')} />
+    <link rel="icon" type="image/png" sizes="64x64" href={url('/favicon-64.png')} />
+    <link rel="apple-touch-icon" sizes="180x180" href={url('/apple-touch-icon.png')} />
     <link rel="alternate" type="application/xml" href={url('/sitemap-index.xml')} title="Sitemap" />
 
     <!-- Anti-flash theme init: harus inline sebelum CSS untuk hindari FOUC -->

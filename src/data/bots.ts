@@ -38,9 +38,9 @@ export const bots: Bot[] = [
     slug: 'sambung-kata',
     name: 'Vanillate Sambung Kata',
     shortName: 'Sambung Kata',
-    tagline: 'Bot game sambung kata paling lengkap untuk komunitas Discord Indonesia.',
+    tagline: 'Game sambung kata yang kamu kenal sejak kecil — dengan kedalaman yang belum pernah kamu mainkan.',
     description:
-      'Vanillate Sambung Kata menghadirkan pengalaman permainan sambung kata modern dengan sistem EXP, Dungeon, Class, Quest, dan Campaign. Dirancang untuk komunitas Discord berbahasa Indonesia yang menginginkan permainan kata dengan progresi mendalam.',
+      'Permainan kata klasik Indonesia, dibangun ulang untuk Discord. Sambung kata bersama teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon — sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 21.000+ kata memastikan setiap jawaban dinilai adil.',
     status: 'live',
     featured: true,
     category: 'Word Game',
@@ -71,9 +71,9 @@ export const bots: Bot[] = [
     slug: 'tahu-bulat',
     name: 'Vanillate Tahu Bulat',
     shortName: 'Tahu Bulat',
-    tagline: 'Idle & business simulation bot bertema kuliner khas Indonesia.',
+    tagline: 'Bangun kerajaan tahu bulat — dari gerobak kayu sampai food truck.',
     description:
-      'Vanillate Tahu Bulat adalah bot idle dan simulasi bisnis di mana pemain membangun kerajaan tahu bulat mereka sendiri. Kelola armada gerobak, hitung offline income, lakukan rebirth, dan naik level bersama teman-teman satu server.',
+      'Simulasi bisnis idle bertema kuliner paling Indonesia. Jual tahu, upgrade gerobak sampai jadi food truck, dan biarkan tokomu tetap menghasilkan bahkan saat kamu sedang offline. Buat yang sabar, Rebirth menghadiahkan bonus permanen yang menumpuk selamanya.',
     status: 'live',
     featured: false,
     category: 'Idle Simulation',

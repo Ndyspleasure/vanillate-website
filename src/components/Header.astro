@@ -13,9 +13,8 @@ const currentPath = base && rawPath.startsWith(base) ? (rawPath.slice(base.lengt
 
 <header class="sticky top-0 z-40 backdrop-blur-lg bg-cream-50/70 dark:bg-ink-950/70 border-b border-ink-900/5 dark:border-cream-100/5">
   <div class="container-page flex h-16 items-center justify-between">
-    <a href={url('/')} class="group inline-flex items-center gap-2.5" aria-label={site.name}>
-      <LogoPNG size="header" alt={site.name} />
-      <span class="font-display text-lg font-semibold tracking-tightest hidden sm:inline">{site.shortName}</span>
+    <a href={url('/')} class="inline-flex items-center" aria-label={site.name}>
+      <LogoPNG variant="header" alt={site.name} class="h-9 sm:h-10 md:h-12" eager />
     </a>
 
     <nav class="hidden md:flex items-center gap-1" aria-label="Navigasi utama">
