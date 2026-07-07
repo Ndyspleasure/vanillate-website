@@ -13,7 +13,7 @@ import { url } from '@utils/url';
       Kami di sini<br />untuk membantu.
     </h1>
     <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-      Semua dukungan Vanillate berpusat di satu server Discord. Bertanya, melaporkan bug, atau melempar ide — semuanya dibalas langsung oleh orang yang menulis kodenya, bukan template balasan otomatis.
+      Semua dukungan Vanillate berpusat di satu server Discord. Bertanya, melaporkan bug, atau melempar ide, semuanya dibalas langsung oleh orang yang menulis kodenya, bukan template balasan otomatis.
     </p>
   </section>
 
@@ -26,7 +26,7 @@ import { url } from '@utils/url';
           Gabung Server Vanillate Studio
         </h2>
         <p class="text-cream-100/80 text-lg leading-relaxed mb-8">
-          Channel bantuan, pengumuman pembaruan bot, dan komunitas pemain aktif — semuanya ada di satu tempat.
+          Channel bantuan, pengumuman pembaruan bot, dan komunitas pemain aktif, semuanya ada di satu tempat.
         </p>
         <a
           href={site.links.discordSupport}
@@ -57,13 +57,11 @@ import { url } from '@utils/url';
               href={url(`/docs/${bot.docsSlug}`)}
               class="group flex items-center gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 transition-colors"
             >
-              <span
-                class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none"
-                style={`background: ${bot.color}20; color: ${bot.color};`}
-                aria-hidden="true"
-              >
-                {bot.icon}
-              </span>
+              {bot.thumbnail ? (
+            <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
+          ) : (
+            <span class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+          )}
               <div class="flex-1">
                 <p class="font-medium text-sm">Dokumentasi {bot.shortName}</p>
                 <p class="text-xs text-ink-500 dark:text-cream-300/60">Panduan lengkap</p>

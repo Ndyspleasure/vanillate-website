@@ -2,10 +2,10 @@
 // Logo Vanillate Studio (PNG, dual-theme).
 //
 // Cara kerja: render DUA <img> (varian light & dark), lalu CSS menampilkan
-// salah satunya mengikuti class `html.dark` — sinkron dengan toggle tema
+// salah satunya mengikuti class `html.dark`, sinkron dengan toggle tema
 // website (bukan prefers-color-scheme OS, yang bisa beda dengan toggle).
 //
-// Retina: setiap slot punya srcset 1x/2x/3x — browser memilih sesuai
+// Retina: setiap slot punya srcset 1x/2x/3x. Browser memilih sesuai
 // device pixel ratio. Tinggi dikontrol lewat prop `class` (mis. h-9 md:h-12),
 // lebar selalu auto mengikuti aspect ratio.
 //

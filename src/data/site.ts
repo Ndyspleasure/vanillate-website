@@ -5,7 +5,7 @@ export const site = {
   shortName: 'Vanillate',
   tagline: 'Studio teknologi Indonesia di balik Discord Bot yang dimainkan setiap hari.',
   description:
-    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius: cepat, stabil, dan terus diperbarui. Dua game kami — Sambung Kata dan Tahu Bulat — dimainkan komunitas setiap hari.',
+    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius: cepat, stabil, dan terus diperbarui. Dua game kami, Sambung Kata dan Tahu Bulat, dimainkan komunitas setiap hari.',
   url: 'https://vanillate.id',
   locale: 'id-ID',
 

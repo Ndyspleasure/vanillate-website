@@ -1,5 +1,5 @@
 // Konten dokumentasi per bot.
-// Update dokumentasi? Cukup edit file ini — halaman /docs/[slug] akan render otomatis.
+// Update dokumentasi? Cukup edit file ini. Halaman /docs/[slug] akan render otomatis.
 // Bot baru tanpa entry di sini akan menampilkan placeholder default.
 
 export type DocSubsection = {
@@ -33,7 +33,7 @@ export const docs: Record<string, BotDoc> = {
     quickStart: [
       'Undang bot ke server Discord kamu.',
       'Jalankan `/sambungkata mode:pvp` untuk buka lobby, atau `mode:pvb` untuk lawan bot.',
-      'Jawab dengan kata yang diawali huruf yang ditentukan — kata harus ada di kamus.',
+      'Jawab dengan kata yang diawali huruf yang ditentukan. Kata harus ada di kamus.',
       'Kumpulkan EXP & Coin, buka Class di Level 3, dan taklukkan Dungeon!',
     ],
     sections: [
@@ -115,10 +115,10 @@ export const docs: Record<string, BotDoc> = {
             items: [
               'Bermain sendirian melawan bot AI.',
               'Command: `/sambungkata mode:pvb kesulitan:[easy|normal|hard|impossible]`.',
-              '🟢 Easy — bot lambat, sering salah.',
-              '🟡 Normal — bot seimbang.',
-              '🔴 Hard — bot cepat, jarang salah.',
-              '☠️ Impossible — bot hampir tidak pernah kalah.',
+              '🟢 Easy: bot lambat, sering salah.',
+              '🟡 Normal: bot seimbang.',
+              '🔴 Hard: bot cepat, jarang salah.',
+              '☠️ Impossible: bot hampir tidak pernah kalah.',
             ],
           },
           {
@@ -126,7 +126,7 @@ export const docs: Record<string, BotDoc> = {
             items: [
               'Mode solo menantang: kamu vs Dungeon Guardian, 5 wave.',
               'Command: `/sambungkata mode:dungeon` (butuh 🗝️ Golden Key).',
-              'Guardian membalas beberapa kata per giliran — makin cepat tiap wave.',
+              'Guardian membalas beberapa kata per giliran, makin cepat tiap wave.',
               'Reward x2 + bonus besar & drop pasti jika tamat.',
               'Detail lengkap ada di section Dungeon & Events.',
             ],
@@ -159,25 +159,25 @@ export const docs: Record<string, BotDoc> = {
           {
             title: '🎯 Pre-Match Boost',
             items: [
-              '❤️ Extra Life (Legendary) — tambah 1 nyawa ekstra sebelum game.',
-              '🛡️ Shield (Epic) — proteksi dari 1 kesalahan dalam game.',
-              '⏳ Extra Time (Common) — tambah +5 detik per giliran.',
+              '❤️ Extra Life (Legendary): tambah 1 nyawa ekstra sebelum game.',
+              '🛡️ Shield (Epic): proteksi dari 1 kesalahan dalam game.',
+              '⏳ Extra Time (Common): tambah +5 detik per giliran.',
             ],
           },
           {
             title: '⚡ In-Game Boost',
             items: [
-              '💡 Hint (Common) — tampilkan 1 kata valid sebagai jawaban.',
-              '🔄 Reroll (Rare) — ganti huruf awalan dengan huruf lain.',
+              '💡 Hint (Common): tampilkan 1 kata valid sebagai jawaban.',
+              '🔄 Reroll (Rare): ganti huruf awalan dengan huruf lain.',
             ],
           },
           {
             title: '⭐ Rarity System',
             items: [
-              '⚪ Common — Hint, Extra Time (peluang tertinggi).',
-              '🔵 Rare — Reroll.',
-              '🟣 Epic — Shield.',
-              '🟡 Legendary — Extra Life (peluang terendah).',
+              '⚪ Common: Hint, Extra Time (peluang tertinggi).',
+              '🔵 Rare: Reroll.',
+              '🟣 Epic: Shield.',
+              '🟡 Legendary: Extra Life (peluang terendah).',
             ],
           },
           {
@@ -218,7 +218,7 @@ export const docs: Record<string, BotDoc> = {
             items: [
               'Tersedia dari Level 3: 📚 Scholar, ⚡ Speedster, 🛡️ Guardian, 🍀 Lucky, 🏹 Hunter.',
               'Terbuka bertahap (Lv.8 / 12 / 16 / 20): 🎲 Gambler, 🧪 Alchemist, 🧠 Linguist, ⚔️ Berserker.',
-              'Pilih pertama GRATIS — ganti class 750🪙.',
+              'Pilih pertama GRATIS, ganti class 750🪙.',
               'Setiap class punya passive nyata: bonus reward, boost harian ekstra, peluang selamat dari eliminasi, damage ekstra di Dungeon, dan lainnya.',
               'Gunakan `/class list` untuk melihat semua class.',
             ],
@@ -262,11 +262,11 @@ export const docs: Record<string, BotDoc> = {
             title: '📅 Quest System',
             items: [
               '`/quest` → dashboard quest (Harian + Mingguan).',
-              '4 Daily Quest — reset tengah malam.',
-              '6 Weekly Quest — reset setiap Senin.',
+              '4 Daily Quest: reset tengah malam.',
+              '6 Weekly Quest: reset setiap Senin.',
               '⚡ Kilat Kata (weekly): 20 jawaban ≤5 detik → hadiah 🗝️ Golden Key!',
               'Selesaikan semua → Bonus Chest (Coin + Mystery Box).',
-              'Quest yang selesai diumumkan di akhir match — jangan lupa klaim!',
+              'Quest yang selesai diumumkan di akhir match, jangan lupa klaim!',
             ],
           },
           {
@@ -312,12 +312,12 @@ export const docs: Record<string, BotDoc> = {
         intro: 'Tantangan solo paling berat dan kejutan yang bisa muncul di tengah pertandingan!',
         subsections: [
           {
-            title: '🗝️ Golden Key — 3 Cara Mendapatkan',
+            title: '🗝️ Golden Key: 3 Cara Mendapatkan',
             items: [
               '🏪 `/shop` → beli langsung 350🪙.',
               '📆 Weekly quest ⚡ Kilat Kata → 20 jawaban ≤5 detik = kunci gratis.',
               '🧳 Traveling Merchant → sering menjual dengan harga diskon (250🪙).',
-              'Kunci habis dipakai setiap masuk Dungeon — maksimal pegang 1.',
+              'Kunci habis dipakai setiap masuk Dungeon. Maksimal pegang 1.',
             ],
           },
           {
@@ -326,7 +326,7 @@ export const docs: Record<string, BotDoc> = {
               'Solo: kamu vs Dungeon Guardian, total 5 wave.',
               'Damage kata: dasar 2 | ≥6 huruf +1 | ≥8 huruf +1 | akhiran langka +2.',
               'Guardian membalas 4–8 kata per giliran (bertambah tiap wave).',
-              'Waktu berpikir menyusut tiap wave — nyawa habis = Game Over.',
+              'Waktu berpikir menyusut tiap wave. Nyawa habis = Game Over.',
               'Class perks aktif di sini: Guardian +1 nyawa, Hunter & Berserker +damage.',
             ],
           },
@@ -341,9 +341,9 @@ export const docs: Record<string, BotDoc> = {
           {
             title: '🎲 In-Game Events (muncul acak di PvP/PvB)',
             items: [
-              '🤖 AI Challenger — AI menantang seisi room; kalahkan untuk reward x2.',
-              '🧳 Traveling Merchant — toko dadakan berisi item diskon & langka.',
-              '📡 Lost Signal — kumpulkan fragmen untuk hadiah misterius.',
+              '🤖 AI Challenger: AI menantang seisi room; kalahkan untuk reward x2.',
+              '🧳 Traveling Merchant: toko dadakan berisi item diskon & langka.',
+              '📡 Lost Signal: kumpulkan fragmen untuk hadiah misterius.',
               'Event muncul di tengah match dan hanya menjeda game sebentar.',
             ],
           },
@@ -356,34 +356,34 @@ export const docs: Record<string, BotDoc> = {
           {
             title: '🎮 Bermain',
             items: [
-              '`/sambungkata mode:pvp` — buka lobby PvP.',
-              '`/sambungkata mode:pvb kesulitan:...` — lawan bot AI.',
-              '`/sambungkata mode:dungeon` — masuk Dungeon (butuh 🗝️).',
+              '`/sambungkata mode:pvp`: buka lobby PvP.',
+              '`/sambungkata mode:pvb kesulitan:...`: lawan bot AI.',
+              '`/sambungkata mode:dungeon`: masuk Dungeon (butuh 🗝️).',
             ],
           },
           {
             title: '📊 Progress & Info',
             items: [
-              '`/stats` — statistik lengkap & Player ID.',
-              '`/leaderboard` — papan peringkat global.',
-              '`/class` — pilih class & beli talent.',
-              '`/quest` — dashboard quest harian/mingguan.',
-              '`/kamus [kata]` — cek apakah kata ada di kamus.',
+              '`/stats`: statistik lengkap & Player ID.',
+              '`/leaderboard`: papan peringkat global.',
+              '`/class`: pilih class & beli talent.',
+              '`/quest`: dashboard quest harian/mingguan.',
+              '`/kamus [kata]`: cek apakah kata ada di kamus.',
             ],
           },
           {
             title: '💰 Ekonomi',
             items: [
-              '`/claim` — claim boost harian, server reward, & promo.',
-              '`/shop` — beli boost & Golden Key.',
-              '`/inventory` — lihat boost yang dimiliki.',
+              '`/claim`: claim boost harian, server reward, & promo.',
+              '`/shop`: beli boost & Golden Key.',
+              '`/inventory`: lihat boost yang dimiliki.',
             ],
           },
           {
             title: '🛠️ Lainnya',
             items: [
-              '`/help` — panduan lengkap di dalam Discord.',
-              '`/masukan` — kirim saran atau laporan bug.',
+              '`/help`: panduan lengkap di dalam Discord.',
+              '`/masukan`: kirim saran atau laporan bug.',
             ],
           },
         ],
@@ -396,11 +396,11 @@ export const docs: Record<string, BotDoc> = {
   // ═══════════════════════════════════════════════════════════════════
   'tahu-bulat': {
     intro:
-      'Tahu Bulat adalah game simulasi bisnis idle. Kembangkan usahamu dari gerobak kecil hingga jadi sultan tahu — bahkan saat kamu sedang tidak bermain, tokomu tetap menghasilkan.',
+      'Tahu Bulat adalah game simulasi bisnis idle. Kembangkan usahamu dari gerobak kecil hingga jadi sultan tahu, bahkan saat kamu sedang tidak bermain, tokomu tetap menghasilkan.',
     quickStart: [
       'Ketik `/tahu` untuk membuka dashboard.',
       'Tekan 🥟 Jual Tahu untuk berjualan.',
-      'Tunggu 5 detik — coin masuk otomatis.',
+      'Tunggu 5 detik, coin masuk otomatis.',
       'Pakai coin untuk 🔧 Upgrade biar makin cuan.',
     ],
     sections: [
@@ -414,7 +414,7 @@ export const docs: Record<string, BotDoc> = {
           },
           {
             title: '🥟 Jual Tahu',
-            text: 'Tekan tombol Jual Tahu. Kendaraan mulai berjualan selama beberapa detik (cooldown awal 5 detik). Selama menggoreng, semua tombol terkunci — tidak perlu pencet apa pun.',
+            text: 'Tekan tombol Jual Tahu. Kendaraan mulai berjualan selama beberapa detik (cooldown awal 5 detik). Selama menggoreng, semua tombol terkunci, tidak perlu pencet apa pun.',
           },
           {
             title: '✨ Otomatis Masuk',
@@ -422,7 +422,7 @@ export const docs: Record<string, BotDoc> = {
           },
           {
             title: '🌙 Pendapatan Offline',
-            text: 'Saat kamu pergi, tokomu tetap menghasilkan — hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/tahu` lagi untuk mengklaimnya.',
+            text: 'Saat kamu pergi, tokomu tetap menghasilkan, hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/tahu` lagi untuk mengklaimnya.',
           },
         ],
         note: 'Rumus pendapatan: Base × Kendaraan × Peralatan × Bahan × Promosi × Rebirth.',
@@ -457,8 +457,8 @@ export const docs: Record<string, BotDoc> = {
           {
             title: '⚙️ Peralatan Spesial',
             items: [
-              '🔥 Kompor — memangkas cooldown jualan (Lv1: 5 detik → Lv5: 2 detik). Cooldown lebih cepat = lebih sering jual.',
-              '📢 Banner Promosi — memperkuat efek promosi.',
+              '🔥 Kompor: memangkas cooldown jualan (Lv1: 5 detik → Lv5: 2 detik). Cooldown lebih cepat = lebih sering jual.',
+              '📢 Banner Promosi: memperkuat efek promosi.',
             ],
           },
           {
@@ -481,7 +481,7 @@ export const docs: Record<string, BotDoc> = {
             ],
           },
         ],
-        note: 'Fokus bahan saat sudah kuat — ini kunci pendapatan besar di late game.',
+        note: 'Fokus bahan saat sudah kuat. Ini kunci pendapatan besar di late game.',
       },
       {
         id: 'promosi',
@@ -507,7 +507,7 @@ export const docs: Record<string, BotDoc> = {
         id: 'rebirth',
         title: 'Rebirth',
         intro:
-          'Rebirth mengulang usaha dari awal demi bonus permanen +20% setiap kali melakukannya — dan bonusnya menumpuk selamanya.',
+          'Rebirth mengulang usaha dari awal demi bonus permanen +20% setiap kali melakukannya, dan bonusnya menumpuk selamanya.',
         subsections: [
           {
             title: '✅ Syarat Rebirth',
@@ -563,7 +563,7 @@ export const docs: Record<string, BotDoc> = {
             items: [
               '12 pencapaian yang terbuka otomatis saat mencapai target tertentu (misal: jualan pertama, jutawan, armada lengkap, rebirth).',
               'Notifikasi muncul di dashboard.',
-              'Permanen — tidak hilang saat Rebirth.',
+              'Permanen, tidak hilang saat Rebirth.',
               'Buka: `/tahu` → 🎖️ Achievement.',
             ],
           },
@@ -576,9 +576,9 @@ export const docs: Record<string, BotDoc> = {
           {
             title: '💡 Tips',
             items: [
-              'Tidak perlu pencet Refresh — dashboard update sendiri saat jualan selesai.',
+              'Tidak perlu pencet Refresh. Dashboard update sendiri saat jualan selesai.',
               'Malas klik satu-satu? Buka 🔧 Upgrade → ⬆️ Upgrade Semua untuk menaikkan semua peralatan & bahan sekaligus (beli yang termurah dulu).',
-              'Pergi lama? Tokomu tetap jualan (pendapatan offline) — rajin buka `/tahu`.',
+              'Pergi lama? Tokomu tetap jualan (pendapatan offline). Rajin buka `/tahu`.',
               'Prioritaskan Kompor dulu → cooldown cepat → lebih sering jual.',
               'Bahan adalah kunci penghasilan besar; sabar naikkan sedikit demi sedikit.',
               'Kumpulkan untuk Rebirth demi bonus permanen.',
@@ -587,9 +587,9 @@ export const docs: Record<string, BotDoc> = {
           {
             title: '❓ FAQ',
             items: [
-              'Progresku hilang? Tidak — semua tersimpan otomatis di server.',
+              'Progresku hilang? Tidak. Semua tersimpan otomatis di server.',
               'Bisa main bareng teman? Bisa; tiap orang punya usaha sendiri, lalu adu di 🏆 Peringkat.',
-              'Kenapa tombol terkunci? Sedang menggoreng — tunggu beberapa detik, nanti terbuka sendiri.',
+              'Kenapa tombol terkunci? Sedang menggoreng. Tunggu beberapa detik, nanti terbuka sendiri.',
             ],
           },
         ],
@@ -597,12 +597,12 @@ export const docs: Record<string, BotDoc> = {
       {
         id: 'commands',
         title: 'Daftar Command',
-        intro: 'Tahu Bulat dirancang simpel — hanya 2 command:',
+        intro: 'Tahu Bulat dirancang simpel, hanya 2 command:',
         subsections: [
           {
             items: [
-              '`/tahu` — buka dashboard usaha (semua fitur ada di sini: jual, upgrade, promosi, misi, peringkat, achievement).',
-              '`/help` — panduan lengkap di dalam Discord.',
+              '`/tahu`: buka dashboard usaha (semua fitur ada di sini: jual, upgrade, promosi, misi, peringkat, achievement).',
+              '`/help`: panduan lengkap di dalam Discord.',
             ],
           },
         ],

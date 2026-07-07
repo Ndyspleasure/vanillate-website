@@ -23,13 +23,23 @@ const inviteUrl = buildInviteUrl(bot);
       </a>
 
       <div class="flex items-start gap-4 mb-6">
-        <span
-          class="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
-          style={`background: ${bot.color}20; color: ${bot.color};`}
-          aria-hidden="true"
-        >
-          {bot.icon}
-        </span>
+        {bot.thumbnail ? (
+          <img
+            src={url(bot.thumbnail)}
+            alt=""
+            class="h-16 w-16 rounded-2xl object-cover flex-none"
+            loading="eager"
+            decoding="async"
+          />
+        ) : (
+          <span
+            class="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
+            style={`background: ${bot.color}20; color: ${bot.color};`}
+            aria-hidden="true"
+          >
+            {bot.icon}
+          </span>
+        )}
         <div>
           <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">{bot.category}</p>
           <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-none">{bot.name}</h1>
@@ -97,7 +107,7 @@ const inviteUrl = buildInviteUrl(bot);
     <div class="rounded-3xl p-10 md:p-14 relative overflow-hidden" style={`background: linear-gradient(135deg, ${bot.color}15, transparent);`}>
       <div class="max-w-xl">
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Coba {bot.shortName} sekarang.</h2>
-        <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Tambahkan ke server Discord kamu — gratis, tanpa syarat berlangganan.</p>
+        <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Tambahkan ke server Discord kamu. Gratis, tanpa syarat berlangganan.</p>
         <div class="flex flex-wrap gap-3">
           <Button href={inviteUrl} variant="primary" size="lg" external>Undang {bot.shortName}</Button>
           <Button href="/support" variant="ghost" size="lg">Butuh bantuan?</Button>

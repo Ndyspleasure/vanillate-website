@@ -15,7 +15,8 @@ export type Bot = {
   permissions: string;          // Bitwise permission integer
   scopes: string[];             // OAuth2 scopes
   color: string;                // Aksen warna bot (hex)
-  icon: string;                 // Emoji / simbol pendek
+  icon: string;
+  thumbnail?: string;           // Path thumbnail PNG persegi di /public                 // Emoji / simbol pendek
   features: string[];           // 3-6 poin fitur utama
   commands?: { name: string; description: string }[]; // sample command untuk halaman detail
   docsSlug: string;             // slug halaman dokumentasi: /docs/<docsSlug>
@@ -36,11 +37,12 @@ export function buildInviteUrl(bot: Bot): string {
 export const bots: Bot[] = [
   {
     slug: 'sambung-kata',
+    thumbnail: '/bots/sambung-kata.png',
     name: 'Vanillate Sambung Kata',
     shortName: 'Sambung Kata',
-    tagline: 'Game sambung kata yang kamu kenal sejak kecil — dengan kedalaman yang belum pernah kamu mainkan.',
+    tagline: 'Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.',
     description:
-      'Permainan kata klasik Indonesia, dibangun ulang untuk Discord. Sambung kata bersama teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon — sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 21.000+ kata memastikan setiap jawaban dinilai adil.',
+      'Permainan kata klasik Indonesia, dibangun ulang untuk Discord. Sambung kata bersama teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon, sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 21.000+ kata memastikan setiap jawaban dinilai adil.',
     status: 'live',
     featured: true,
     category: 'Word Game',
@@ -58,7 +60,7 @@ export const bots: Bot[] = [
       'Leaderboard global, win streak, dan Dungeon Trophy',
     ],
     commands: [
-      { name: '/sambungkata', description: 'Mulai permainan — mode PvP, PvB, atau Dungeon' },
+      { name: '/sambungkata', description: 'Mulai permainan: mode PvP, PvB, atau Dungeon' },
       { name: '/stats', description: 'Statistik lengkap & Player ID' },
       { name: '/class', description: 'Pilih class & beli talent' },
       { name: '/quest', description: 'Dashboard quest harian & mingguan' },
@@ -69,9 +71,10 @@ export const bots: Bot[] = [
   },
   {
     slug: 'tahu-bulat',
+    thumbnail: '/bots/tahu-bulat.png',
     name: 'Vanillate Tahu Bulat',
     shortName: 'Tahu Bulat',
-    tagline: 'Bangun kerajaan tahu bulat — dari gerobak kayu sampai food truck.',
+    tagline: 'Bangun kerajaan tahu bulat, dari gerobak kayu sampai food truck.',
     description:
       'Simulasi bisnis idle bertema kuliner paling Indonesia. Jual tahu, upgrade gerobak sampai jadi food truck, dan biarkan tokomu tetap menghasilkan bahkan saat kamu sedang offline. Buat yang sabar, Rebirth menghadiahkan bonus permanen yang menumpuk selamanya.',
     status: 'live',
@@ -91,7 +94,7 @@ export const bots: Bot[] = [
       'Peringkat 3 kategori antar pemain',
     ],
     commands: [
-      { name: '/tahu', description: 'Buka dashboard usaha — semua fitur ada di sini' },
+      { name: '/tahu', description: 'Buka dashboard usaha: semua fitur ada di sini' },
       { name: '/help', description: 'Panduan lengkap di dalam Discord' },
     ],
     docsSlug: 'tahu-bulat',

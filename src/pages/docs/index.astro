@@ -11,7 +11,7 @@ import { url } from '@utils/url';
       Panduan lengkap<br />bot Vanillate.
     </h1>
     <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-      Aturan main, daftar command, tabel harga, strategi, sampai FAQ — semuanya ditulis rapi dan diperbarui mengikuti versi bot yang sedang berjalan. Kalau ada yang berubah di dalam game, halaman ini ikut berubah.
+      Aturan main, daftar command, tabel harga, strategi, sampai FAQ, semuanya ditulis rapi dan diperbarui mengikuti versi bot yang sedang berjalan. Kalau ada yang berubah di dalam game, halaman ini ikut berubah.
     </p>
   </section>
 
@@ -22,13 +22,11 @@ import { url } from '@utils/url';
           href={url(`/docs/${bot.docsSlug}`)}
           class="group flex items-start gap-4 p-6 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-colors"
         >
-          <span
-            class="flex h-12 w-12 items-center justify-center rounded-xl text-xl flex-none"
-            style={`background: ${bot.color}20; color: ${bot.color};`}
-            aria-hidden="true"
-          >
-            {bot.icon}
-          </span>
+          {bot.thumbnail ? (
+            <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-12 w-12 rounded-xl object-cover flex-none" loading="lazy" decoding="async" />
+          ) : (
+            <span class="flex h-12 w-12 items-center justify-center rounded-xl text-xl flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+          )}
           <div class="flex-1">
             <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">{bot.category}</p>
             <h2 class="font-display text-xl font-semibold tracking-tightest mb-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
