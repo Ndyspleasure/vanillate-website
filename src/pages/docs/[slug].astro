@@ -6,7 +6,9 @@ import { docs } from '@data/docs';
 import { url } from '@utils/url';
 
 export function getStaticPaths() {
-  return bots.map((bot) => ({ params: { slug: bot.docsSlug }, props: { bot } }));
+  return bots
+    .filter((bot) => bot.docsSlug)
+    .map((bot) => ({ params: { slug: bot.docsSlug }, props: { bot } }));
 }
 
 const { bot } = Astro.props;

@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import { bots, buildInviteUrl } from '@data/bots';
+import { site } from '@data/site';
 import { url } from '@utils/url';
 
 export function getStaticPaths() {
@@ -10,6 +11,7 @@ export function getStaticPaths() {
 
 const { bot } = Astro.props;
 const inviteUrl = buildInviteUrl(bot);
+const comingSoon = bot.status === 'coming-soon';
 ---
 
 <BaseLayout title={bot.name} description={bot.tagline}>
@@ -41,7 +43,15 @@ const inviteUrl = buildInviteUrl(bot);
           </span>
         )}
         <div>
-          <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">{bot.category}</p>
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">
+            {bot.category}
+            {comingSoon && (
+              <span class="ml-2 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-amber-600 dark:text-amber-500 align-middle">
+                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                Dalam Pengembangan
+              </span>
+            )}
+          </p>
           <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-none">{bot.name}</h1>
         </div>
       </div>
@@ -51,15 +61,38 @@ const inviteUrl = buildInviteUrl(bot);
       </p>
 
       <div class="mt-8 flex flex-wrap gap-3">
-        <Button href={inviteUrl} variant="primary" size="lg" external>
-          Undang {bot.shortName}
-        </Button>
-        <Button href={`/docs/${bot.docsSlug}`} variant="secondary" size="lg">
-          Lihat Dokumentasi
-        </Button>
+        {inviteUrl && (
+          <Button href={inviteUrl} variant="primary" size="lg" external>
+            Undang {bot.shortName}
+          </Button>
+        )}
+        {comingSoon && (
+          <Button href={site.links.discordSupport} variant="primary" size="lg" external>
+            Ikuti Perkembangannya di Discord
+          </Button>
+        )}
+        {bot.docsSlug && (
+          <Button href={`/docs/${bot.docsSlug}`} variant="secondary" size="lg">
+            Lihat Dokumentasi
+          </Button>
+        )}
       </div>
     </div>
   </section>
+
+  {bot.longIntro && bot.longIntro.length > 0 && (
+    <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+      <div class="grid gap-12 md:grid-cols-3">
+        <div class="md:col-span-1">
+          <p class="eyebrow mb-3">Dunia {bot.shortName}</p>
+          <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Seperti apa rasanya.</h2>
+        </div>
+        <div class="md:col-span-2 max-w-prose space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
+          {bot.longIntro.map((p) => <p>{p}</p>)}
+        </div>
+      </div>
+    </section>
+  )}
 
   <!-- FEATURES -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
@@ -106,12 +139,25 @@ const inviteUrl = buildInviteUrl(bot);
   <section class="container-page py-20">
     <div class="rounded-3xl p-10 md:p-14 relative overflow-hidden" style={`background: linear-gradient(135deg, ${bot.color}15, transparent);`}>
       <div class="max-w-xl">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Coba {bot.shortName} sekarang.</h2>
-        <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Tambahkan ke server Discord kamu. Gratis, tanpa syarat berlangganan.</p>
-        <div class="flex flex-wrap gap-3">
-          <Button href={inviteUrl} variant="primary" size="lg" external>Undang {bot.shortName}</Button>
-          <Button href="/support" variant="ghost" size="lg">Butuh bantuan?</Button>
-        </div>
+        {comingSoon ? (
+          <>
+            <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">{bot.shortName} sedang dimasak.</h2>
+            <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Gabung server Discord kami untuk mengikuti progres pengembangan, memberi masukan, dan jadi yang pertama tahu saat rilis.</p>
+            <div class="flex flex-wrap gap-3">
+              <Button href={site.links.discordSupport} variant="primary" size="lg" external>Gabung Discord</Button>
+              <Button href="/bots" variant="ghost" size="lg">Lihat bot lainnya</Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Coba {bot.shortName} sekarang.</h2>
+            <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Tambahkan ke server Discord kamu. Gratis, tanpa syarat berlangganan.</p>
+            <div class="flex flex-wrap gap-3">
+              <Button href={inviteUrl} variant="primary" size="lg" external>Undang {bot.shortName}</Button>
+              <Button href="/support" variant="ghost" size="lg">Butuh bantuan?</Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   </section>

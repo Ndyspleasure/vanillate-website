@@ -16,6 +16,18 @@ const statusLabel = {
   beta: 'Beta',
   'coming-soon': 'Segera',
 }[bot.status];
+
+const statusClass = {
+  live: 'bg-teal-500/10 text-teal-500',
+  beta: 'bg-teal-500/10 text-teal-500',
+  'coming-soon': 'bg-amber-500/10 text-amber-600 dark:text-amber-500',
+}[bot.status];
+
+const dotClass = {
+  live: 'bg-teal-500 animate-pulse',
+  beta: 'bg-teal-500 animate-pulse',
+  'coming-soon': 'bg-amber-500',
+}[bot.status];
 ---
 
 <article
@@ -57,8 +69,8 @@ const statusLabel = {
         </h3>
       </div>
     </div>
-    <span class="inline-flex items-center gap-1.5 rounded-full bg-teal-500/10 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-teal-500">
-      <span class="h-1.5 w-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+    <span class:list={['inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider', statusClass]}>
+      <span class:list={['h-1.5 w-1.5 rounded-full', dotClass]}></span>
       {statusLabel}
     </span>
   </div>
@@ -79,26 +91,40 @@ const statusLabel = {
   )}
 
   <div class="mt-auto flex flex-wrap items-center gap-2">
-    <a
-      href={inviteUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2 text-sm font-medium hover:-translate-y-0.5 transition-transform"
-    >
-      Undang {bot.shortName}
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-    </a>
-    <a
-      href={url(`/bots/${bot.slug}`)}
-      class="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5"
-    >
-      Detail
-    </a>
-    <a
-      href={url(`/docs/${bot.docsSlug}`)}
-      class="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5"
-    >
-      Docs
-    </a>
+    {inviteUrl ? (
+      <a
+        href={inviteUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2 text-sm font-medium hover:-translate-y-0.5 transition-transform"
+      >
+        Undang {bot.shortName}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    ) : (
+      <a
+        href={url(`/bots/${bot.slug}`)}
+        class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2 text-sm font-medium hover:-translate-y-0.5 transition-transform"
+      >
+        Intip {bot.shortName}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    )}
+    {inviteUrl && (
+      <a
+        href={url(`/bots/${bot.slug}`)}
+        class="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5"
+      >
+        Detail
+      </a>
+    )}
+    {bot.docsSlug && (
+      <a
+        href={url(`/docs/${bot.docsSlug}`)}
+        class="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5"
+      >
+        Docs
+      </a>
+    )}
   </div>
 </article>

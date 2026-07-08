@@ -11,21 +11,23 @@ export type Bot = {
   status: 'live' | 'beta' | 'coming-soon';
   featured: boolean;            // Highlight utama di beranda
   category: string;             // ex: "Word Game", "Idle Simulation"
-  clientId: string;             // Discord Application/Client ID (untuk invite)
+  clientId?: string;            // Discord Application/Client ID (kosongkan jika belum rilis)
   permissions: string;          // Bitwise permission integer
   scopes: string[];             // OAuth2 scopes
   color: string;                // Aksen warna bot (hex)
   icon: string;
-  thumbnail?: string;           // Path thumbnail PNG persegi di /public                 // Emoji / simbol pendek
+  thumbnail?: string;           // Path thumbnail PNG persegi di /public
   features: string[];           // 3-6 poin fitur utama
   commands?: { name: string; description: string }[]; // sample command untuk halaman detail
-  docsSlug: string;             // slug halaman dokumentasi: /docs/<docsSlug>
+  docsSlug?: string;            // slug dokumentasi /docs/<docsSlug> (kosongkan jika belum ada)
+  longIntro?: string[];         // Paragraf narasi panjang untuk halaman detail (opsional)
 };
 
 /**
  * Bangun invite URL Discord dari clientId + permissions + scopes.
  */
-export function buildInviteUrl(bot: Bot): string {
+export function buildInviteUrl(bot: Bot): string | null {
+  if (!bot.clientId || bot.status === 'coming-soon') return null;
   const params = new URLSearchParams({
     client_id: bot.clientId,
     permissions: bot.permissions,
@@ -98,6 +100,40 @@ export const bots: Bot[] = [
       { name: '/help', description: 'Panduan lengkap di dalam Discord' },
     ],
     docsSlug: 'tahu-bulat',
+  },
+  {
+    slug: 'story',
+    name: 'Vanillate Story',
+    shortName: 'Story',
+    tagline: 'Mulai dari nol di Kota Vanillate dan tulis kisah hidupmu sendiri.',
+    description:
+      'Life Simulation RPG berbasis Discord. Kamu datang ke Kota Vanillate sebagai pendatang baru tanpa pekerjaan, tanpa harta, dan tanpa pengalaman. Dari titik nol itu, jalan hidupmu sepenuhnya milikmu.',
+    status: 'coming-soon',
+    featured: false,
+    category: 'Life Simulation RPG',
+    permissions: '277025770496',
+    scopes: ['bot', 'applications.commands'],
+    color: '#6C3BEB',
+    icon: '✧',
+    longIntro: [
+      'Kota Vanillate adalah kota yang penuh peluang, tantangan, dan cerita. Bangun karier dengan melamar berbagai pekerjaan, tingkatkan kemampuan lewat belajar dan berlatih, kumpulkan uang, beli rumah, koleksi kendaraan, pelihara hewan, dirikan bisnis, sampai menjadi salah satu warga paling sukses di kota.',
+      'Tapi hidup di Vanillate bukan cuma soal bekerja. Kota ini dihuni banyak NPC dengan kepribadian, rutinitas, kesukaan, impian, dan cerita hidupnya masing-masing. Kenali mereka, bantu selesaikan masalahnya, beri hadiah favoritnya, dan bangun pertemanan. Siapa tahu, salah satunya menjadi pasangan hidupmu.',
+      'Di luar rutinitas, ada banyak area untuk dijelajahi, quest untuk diselesaikan, event musiman untuk diikuti, dan achievement untuk dibuka. Setiap keputusan memengaruhi perkembangan karaktermu: skill yang kamu latih membuka profesi baru, pekerjaan bergaji lebih tinggi, peluang bisnis lebih besar, dan akses ke aktivitas eksklusif.',
+      'Ekonominya pun hidup. Toko memperbarui stoknya, event tertentu bisa mengguncang pasar, dan setiap pemain punya cara berbeda untuk membangun kekayaannya.',
+      'Tidak ada jalan yang benar atau salah. Kamu bisa jadi pekerja teladan yang meniti karier sampai puncak, pengusaha dengan banyak bisnis, petani yang hidup tenang, pemancing legendaris, kolektor barang langka, koki terkenal, atau sekadar menikmati hidup sederhana bersama orang yang kamu sayangi. Di Vanillate Story, setiap pemain punya cerita yang berbeda.',
+    ],
+    features: [
+      'Ciptakan dan kembangkan karaktermu sendiri',
+      'Puluhan profesi dengan jalur karier yang unik',
+      'Tingkatkan berbagai skill untuk membuka peluang baru',
+      'Beli, tingkatkan, dan hias rumah impianmu',
+      'Koleksi kendaraan untuk mendukung aktivitasmu',
+      'Bangun bisnis dan ciptakan penghasilan pasif',
+      'Berteman, berkencan, hingga menikah dengan NPC',
+      'Memancing, bertani, memasak, menambang, berburu, dan crafting',
+      'Quest, event musiman, achievement, dan item langka',
+      'Jelajahi area Kota Vanillate yang terus berkembang',
+    ],
   },
 ];
 

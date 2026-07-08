@@ -52,7 +52,7 @@ import { url } from '@utils/url';
           Banyak pertanyaan sudah terjawab di halaman dokumentasi masing-masing bot.
         </p>
         <div class="grid gap-3 sm:grid-cols-2">
-          {bots.map((bot) => (
+          {bots.filter((b) => b.docsSlug).map((bot) => (
             <a
               href={url(`/docs/${bot.docsSlug}`)}
               class="group flex items-center gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 transition-colors"
