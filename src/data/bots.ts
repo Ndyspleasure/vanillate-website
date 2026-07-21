@@ -8,7 +8,7 @@ export type Bot = {
   shortName: string;            // Nama pendek untuk tombol/badge
   tagline: string;              // Kalimat singkat 1 baris
   description: string;          // Paragraf pendek untuk halaman detail
-  status: 'live' | 'beta' | 'coming-soon';
+  status: 'live' | 'beta' | 'preorder' | 'coming-soon';
   featured: boolean;            // Highlight utama di beranda
   category: string;             // ex: "Word Game", "Idle Simulation"
   clientId?: string;            // Discord Application/Client ID (kosongkan jika belum rilis)
@@ -21,13 +21,21 @@ export type Bot = {
   commands?: { name: string; description: string }[]; // sample command untuk halaman detail
   docsSlug?: string;            // slug dokumentasi /docs/<docsSlug> (kosongkan jika belum ada)
   longIntro?: string[];         // Paragraf narasi panjang untuk halaman detail (opsional)
+  ctaNote?: string;             // Catatan kecil di bawah tombol invite (mis. status preorder)
+  founding?: {                  // Program Founding Members / early access (opsional)
+    title: string;
+    intro: string;
+    perks: string[];
+    requirements?: string[];
+    footnote?: string;
+  };
 };
 
 /**
  * Bangun invite URL Discord dari clientId + permissions + scopes.
  */
 export function buildInviteUrl(bot: Bot): string | null {
-  if (!bot.clientId || bot.status === 'coming-soon') return null;
+  if (!bot.clientId || bot.status === 'coming-soon') return null; // preorder tetap boleh diundang
   const params = new URLSearchParams({
     client_id: bot.clientId,
     permissions: bot.permissions,
@@ -100,6 +108,61 @@ export const bots: Bot[] = [
       { name: '/help', description: 'Panduan lengkap di dalam Discord' },
     ],
     docsSlug: 'tahu-bulat',
+  },
+  {
+    slug: 'anonymous-chat',
+    thumbnail: '/bots/anonymous-chat.png',
+    name: 'Anonymous Chat Vanillate',
+    shortName: 'Anonymous Chat',
+    tagline: 'Ketemu orang baru dan ngobrol tanpa mengungkap identitasmu.',
+    description:
+      'Discord Bot untuk bertemu dan mengobrol dengan orang baru secara anonim. Identitas Discord kamu disembunyikan, obrolan berlangsung di channel privat berdua, dan semuanya dirancang mengutamakan privasi, keamanan, serta kenyamanan.',
+    status: 'preorder',
+    featured: false,
+    category: 'Social',
+    clientId: '1528619351844982965',
+    permissions: '268561488',
+    scopes: ['bot', 'applications.commands'],
+    color: '#14B8A6',
+    icon: '◐',
+    ctaNote: 'Preorder dibuka · masih tahap beta',
+    longIntro: [
+      'Anonymous Chat mempertemukanmu dengan pengguna lain di Discord tanpa perlu berteman lebih dulu. Sistem matchmaking-nya bisa memasangkanmu secara acak dalam hitungan detik, atau mencarikan partner dengan minat yang sama lewat Interest Match.',
+      'Setiap pasangan mendapat channel privat yang hanya bisa diakses berdua. Kirim teks, gambar, GIF, sticker, dan emoji dengan bebas. Bosan atau ingin suasana baru? Pakai Next Partner untuk lompat ke obrolan berikutnya kapan saja.',
+      'Privasi jadi inti dari semuanya. Identitas Discord disembunyikan sepanjang percakapan, dan channel otomatis terhapus setelah sesi berakhir sehingga tidak ada jejak yang tertinggal. Sistem report, block, dan filter otomatis menjaga obrolan tetap aman dan nyaman.',
+      'Mau cari teman ngobrol, berbagi cerita, berdiskusi, atau sekadar mengisi waktu luang, Anonymous Chat siap mempertemukanmu dengan orang-orang baru dari berbagai komunitas.',
+    ],
+    features: [
+      'Identitas Discord disembunyikan selama percakapan',
+      'Random matchmaking, temukan partner secara acak dalam detik',
+      'Interest Match, cari partner dengan minat atau topik yang sama',
+      'Gender Preference untuk memilih partner (fitur Premium)',
+      'Next Partner, lewati dan cari partner baru kapan saja',
+      'Channel privat yang hanya bisa diakses kalian berdua',
+      'Dukungan media: gambar, GIF, sticker, dan emoji',
+      'Report dan block untuk pengguna yang mengganggu',
+      'Moderasi dan filter otomatis demi kenyamanan',
+      'Channel terhapus otomatis setelah sesi berakhir',
+      'Matchmaking cepat dengan antrean real-time',
+      'Terhubung dengan seluruh pengguna tanpa perlu berteman dulu',
+    ],
+    founding: {
+      title: 'Founding Members Program',
+      intro:
+        'Jadi bagian dari pengguna pertama Anonymous Chat. Semua pemain yang bergabung selama masa beta mendapat hadiah eksklusif sebagai apresiasi atas dukungannya. Hadiah otomatis aktif begitu Anonymous Chat memasuki rilis resmi.',
+      perks: [
+        'Premium GRATIS selama 3 bulan setelah rilis resmi',
+        'Akses fitur Gender Preference untuk memilih partner',
+        'Badge Beta Tester eksklusif di profil',
+        'Akses lebih awal ke fitur terbaru sebelum pengguna lain',
+      ],
+      requirements: [
+        'Bergabung selama periode beta',
+        'Menggunakan bot dan ikut menguji selama masa beta',
+      ],
+      footnote:
+        'Terima kasih telah menjadi bagian dari perjalanan awal Anonymous Chat. Dukungan dan masukanmu membantu kami membangun pengalaman anonymous chat terbaik di Discord.',
+    },
   },
   {
     slug: 'story',

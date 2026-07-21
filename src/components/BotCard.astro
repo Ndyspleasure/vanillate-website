@@ -10,22 +10,26 @@ export interface Props {
 
 const { bot, featured = false } = Astro.props;
 const inviteUrl = buildInviteUrl(bot);
+const inviteLabel = bot.status === 'preorder' ? `Preorder ${bot.shortName}` : `Undang ${bot.shortName}`;
 
 const statusLabel = {
   live: 'Live',
   beta: 'Beta',
+  preorder: 'Preorder',
   'coming-soon': 'Segera',
 }[bot.status];
 
 const statusClass = {
   live: 'bg-teal-500/10 text-teal-500',
   beta: 'bg-teal-500/10 text-teal-500',
+  preorder: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
   'coming-soon': 'bg-amber-500/10 text-amber-600 dark:text-amber-500',
 }[bot.status];
 
 const dotClass = {
   live: 'bg-teal-500 animate-pulse',
   beta: 'bg-teal-500 animate-pulse',
+  preorder: 'bg-teal-500 animate-pulse',
   'coming-soon': 'bg-amber-500',
 }[bot.status];
 ---
@@ -98,7 +102,7 @@ const dotClass = {
         rel="noopener noreferrer"
         class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2 text-sm font-medium hover:-translate-y-0.5 transition-transform"
       >
-        Undang {bot.shortName}
+        {inviteLabel}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </a>
     ) : (
