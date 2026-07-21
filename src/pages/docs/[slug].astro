@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
-import { bots, buildInviteUrl } from '@data/bots';
+import { bots, buildInviteUrl, inviteCtaLabel } from '@data/bots';
 import { docs } from '@data/docs';
 import { url } from '@utils/url';
 
@@ -36,7 +36,7 @@ function fmt(s: string): string {
 }
 ---
 
-<BaseLayout title={`Dokumentasi ${bot.shortName}`} description={`Panduan penggunaan ${bot.name}.`}>
+<BaseLayout title={`Panduan ${bot.shortName} — Cara Main, Command & FAQ`} description={`Dokumentasi lengkap ${bot.name}: cara bermain, daftar command, tabel harga, strategi, dan pertanyaan yang sering ditanyakan.`}>
   <div class="container-page pt-16 md:pt-24 pb-24">
     <div class="grid gap-10 lg:grid-cols-[230px_1fr]">
       <!-- Sidebar TOC -->
@@ -77,7 +77,7 @@ function fmt(s: string): string {
         <p class="text-lg text-ink-600 dark:text-cream-200/80 mb-8">{doc ? doc.intro : bot.tagline}</p>
 
         <div class="flex flex-wrap gap-3 mb-12 pb-8 border-b border-ink-900/10 dark:border-cream-100/10">
-          <Button href={inviteUrl} variant="primary" external>Undang Bot</Button>
+          <Button href={inviteUrl} variant="primary" external>{inviteCtaLabel(bot)}</Button>
           <Button href={`/bots/${bot.slug}`} variant="ghost">Halaman Bot</Button>
         </div>
 

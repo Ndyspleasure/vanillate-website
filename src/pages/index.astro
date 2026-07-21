@@ -2,12 +2,21 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import BotCard from '@components/BotCard.astro';
+import BotComparison from '@components/BotComparison.astro';
 import { bots, getFeaturedBot } from '@data/bots';
 import { site } from '@data/site';
 import { url } from '@utils/url';
 
 const featured = getFeaturedBot();
 const others = bots.filter((b) => !b.featured);
+
+// Angka untuk stats bar dihitung dari registry supaya selalu jujur & sinkron.
+const liveCount = bots.filter((b) => b.status === 'live').length;
+const stats = [
+  { value: String(liveCount), label: 'Bot live sekarang' },
+  { value: '21.000+', label: 'Kata di kamus' },
+  { value: 'Gratis', label: 'Tanpa langganan' },
+];
 ---
 
 <BaseLayout>
@@ -28,7 +37,17 @@ const others = bots.filter((b) => !b.featured);
       </p>
       <div class="mt-10 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
         <Button href="/bots" variant="primary" size="lg">Jelajahi Bot Kami</Button>
-        <Button href="/about" variant="secondary" size="lg">Tentang Vanillate</Button>
+        <Button href="/pilih" variant="secondary" size="lg">Bantu Aku Memilih</Button>
+      </div>
+
+      <!-- Social proof: angka jujur, dihitung dari katalog bot -->
+      <div class="mt-12 grid max-w-xl grid-cols-3 gap-px overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-ink-900/10 dark:bg-cream-100/10 animate-fade-up" style="animation-delay: 0.3s">
+        {stats.map((s) => (
+          <div class="flex flex-col gap-1 bg-cream-50 dark:bg-ink-950 px-4 py-5 text-center sm:px-6">
+            <span class="font-display text-2xl md:text-3xl font-semibold tracking-tightest text-ink-900 dark:text-cream-50">{s.value}</span>
+            <span class="text-xs md:text-sm text-ink-500 dark:text-cream-300/60 leading-tight">{s.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   </section>
@@ -52,6 +71,27 @@ const others = bots.filter((b) => !b.featured);
       <BotCard bot={featured} featured />
       {others.map((bot) => <BotCard bot={bot} />)}
     </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap">
+      <div>
+        <p class="eyebrow mb-3">Bandingkan</p>
+        <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-xl">
+          Bingung mulai dari mana?
+        </h2>
+        <p class="mt-4 max-w-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Tiga bot, tiga rasa berbeda. Sandingkan sebentar untuk menemukan yang paling cocok dengan gayamu.
+        </p>
+      </div>
+      <a href={url('/pilih')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
+        Masih ragu? Ikuti kuis singkat
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+
+    <BotComparison />
   </section>
 
   <!-- VALUES -->

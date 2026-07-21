@@ -1,0 +1,246 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Button from '@components/Button.astro';
+import { bots, buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import { url } from '@utils/url';
+
+// Bot yang ikut kuis (sudah dirilis / preorder).
+const quizBots = ['sambung-kata', 'tahu-bulat', 'anonymous-chat']
+  .map((slug) => bots.find((b) => b.slug === slug))
+  .filter((b): b is NonNullable<typeof b> => Boolean(b));
+
+// Pertanyaan + bobot skor per bot. Skoring sederhana: pilih total tertinggi.
+const questions: {
+  id: string;
+  title: string;
+  options: { label: string; score: Record<string, number> }[];
+}[] = [
+  {
+    id: 'vibe',
+    title: 'Lagi pengen suasana seperti apa?',
+    options: [
+      { label: 'Kompetitif, seru adu skill', score: { 'sambung-kata': 2 } },
+      { label: 'Santai, tidak bikin pusing', score: { 'tahu-bulat': 2 } },
+      { label: 'Sosial, pengen ngobrol', score: { 'anonymous-chat': 2 } },
+    ],
+  },
+  {
+    id: 'time',
+    title: 'Berapa banyak waktu yang kamu punya?',
+    options: [
+      { label: '15–30 menit untuk main serius', score: { 'sambung-kata': 2 } },
+      { label: 'Cuma sempat cek sebentar-sebentar', score: { 'tahu-bulat': 2 } },
+      { label: 'Fleksibel, kapan saja bisa', score: { 'anonymous-chat': 1, 'tahu-bulat': 1 } },
+    ],
+  },
+  {
+    id: 'progress',
+    title: 'Suka progres dan mengumpulkan sesuatu?',
+    options: [
+      { label: 'Ya, suka naik level & menabung', score: { 'sambung-kata': 1, 'tahu-bulat': 2 } },
+      { label: 'Tidak, yang penting menyenangkan', score: { 'anonymous-chat': 2 } },
+    ],
+  },
+  {
+    id: 'style',
+    title: 'Kamu lebih condong ke mana?',
+    options: [
+      { label: 'Strategi & berpikir', score: { 'sambung-kata': 2 } },
+      { label: 'Santai, biarkan berjalan sendiri', score: { 'tahu-bulat': 2 } },
+      { label: 'Bebas, dua-duanya oke', score: {} },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="Pilih Bot yang Cocok — Kuis Singkat"
+  description="Bingung mulai dari bot mana? Jawab 4 pertanyaan singkat dan temukan bot Vanillate yang paling cocok dengan gaya mainmu."
+>
+  <section class="container-page pt-20 pb-12 md:pt-28">
+    <p class="eyebrow mb-6">Bantu Aku Memilih</p>
+    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
+      Temukan bot<br />yang pas buatmu.
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+      Empat pertanyaan singkat, tanpa daftar akun. Jawab jujur sesuai seleramu, dan kami rekomendasikan satu bot untuk mulai.
+    </p>
+  </section>
+
+  <section class="container-page pb-24">
+    <div class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+      <!-- Form kuis -->
+      <form id="quiz" class="space-y-8" novalidate>
+        {questions.map((q, qi) => (
+          <fieldset class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 md:p-6">
+            <legend class="font-display text-lg font-semibold tracking-tightest flex items-baseline gap-2 mb-4">
+              <span class="font-mono text-sm text-amber-600 dark:text-amber-500">{String(qi + 1).padStart(2, '0')}</span>
+              {q.title}
+            </legend>
+            <div class="grid gap-2.5">
+              {q.options.map((opt, oi) => (
+                <label class="flex items-center gap-3 cursor-pointer rounded-xl border border-ink-900/10 dark:border-cream-100/10 px-4 py-3 transition-colors hover:border-ink-900/25 dark:hover:border-cream-100/25 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-500/5">
+                  <input
+                    type="radio"
+                    name={q.id}
+                    value={oi}
+                    data-scores={JSON.stringify(opt.score)}
+                    class="peer sr-only"
+                  />
+                  <span class="flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-ink-900/25 dark:border-cream-100/25 peer-checked:border-amber-500 transition-colors">
+                    <span class="quiz-dot h-2 w-2 rounded-full bg-amber-500 scale-0 transition-transform"></span>
+                  </span>
+                  <span class="text-ink-700 dark:text-cream-200 leading-snug">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
+
+        <div class="flex flex-wrap items-center gap-4">
+          <button
+            type="submit"
+            class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-7 py-3.5 text-base font-medium hover:-translate-y-0.5 transition-transform"
+          >
+            Lihat Rekomendasi
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+          <p id="quiz-hint" class="text-sm text-ink-500 dark:text-cream-300/60" role="status" aria-live="polite"></p>
+        </div>
+
+        <noscript>
+          <p class="text-sm text-ink-500 dark:text-cream-300/70">
+            Kuis ini butuh JavaScript. Kamu tetap bisa membandingkan bot secara manual di <a class="text-amber-600 dark:text-amber-400 underline" href={url('/bots')}>halaman Bot Kami</a>.
+          </p>
+        </noscript>
+      </form>
+
+      <!-- Hasil (di-reveal oleh JS) -->
+      <div class="lg:sticky lg:top-24">
+        <div id="quiz-placeholder" class="rounded-2xl border border-dashed border-ink-900/15 dark:border-cream-100/15 p-8 text-center">
+          <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 text-xl mb-4" aria-hidden="true">?</span>
+          <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">
+            Jawab keempat pertanyaan di samping, lalu rekomendasimu muncul di sini.
+          </p>
+        </div>
+
+        <div id="quiz-result" hidden>
+          <p class="eyebrow mb-3">Rekomendasi untukmu</p>
+          {quizBots.map((bot) => {
+            const invite = buildInviteUrl(bot);
+            return (
+              <article
+                data-result={bot.slug}
+                hidden
+                class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 overflow-hidden"
+              >
+                <div class="h-1" style={`background: linear-gradient(90deg, ${bot.color}00, ${bot.color}, ${bot.color}00);`} aria-hidden="true"></div>
+                <div class="p-6 md:p-8">
+                  <div class="flex items-center gap-3 mb-4">
+                    {bot.thumbnail ? (
+                      <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-12 w-12 rounded-xl object-cover flex-none" loading="lazy" decoding="async" />
+                    ) : (
+                      <span class="flex h-12 w-12 items-center justify-center rounded-xl text-xl flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+                    )}
+                    <div>
+                      <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">{bot.category}</p>
+                      <h2 class="font-display text-xl font-semibold tracking-tightest">{bot.name}</h2>
+                    </div>
+                  </div>
+                  <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">{bot.tagline}</p>
+                  <div class="flex flex-wrap gap-2">
+                    {invite ? (
+                      <a href={invite} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-5 py-2.5 text-sm font-medium hover:-translate-y-0.5 transition-transform">
+                        {inviteCtaLabel(bot)}
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                      </a>
+                    ) : (
+                      <a href={url(`/bots/${bot.slug}`)} class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-5 py-2.5 text-sm font-medium hover:-translate-y-0.5 transition-transform">
+                        {inviteCtaLabel(bot)}
+                      </a>
+                    )}
+                    <a href={url(`/bots/${bot.slug}`)} class="inline-flex items-center rounded-full px-5 py-2.5 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">
+                      Lihat detail
+                    </a>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+
+          <button id="quiz-reset" type="button" class="mt-4 text-sm text-ink-500 dark:text-cream-300/60 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Ulangi kuis
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* Isi titik radio saat opsi terpilih (inner dot bukan sibling langsung input). */
+  #quiz label:has(input:checked) .quiz-dot {
+    transform: scale(1);
+  }
+</style>
+
+<script>
+  const form = document.getElementById('quiz') as HTMLFormElement | null;
+  if (form) {
+    const hint = document.getElementById('quiz-hint')!;
+    const placeholder = document.getElementById('quiz-placeholder')!;
+    const result = document.getElementById('quiz-result') as HTMLElement;
+    const cards = Array.from(result.querySelectorAll<HTMLElement>('[data-result]'));
+    const resetBtn = document.getElementById('quiz-reset')!;
+    const questionNames = ['vibe', 'time', 'progress', 'style'];
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // Tie-break: bot yang dipilih pada pertanyaan pertama (vibe) diprioritaskan.
+      let tieBreak: string | null = null;
+      const scores: Record<string, number> = {};
+
+      for (const name of questionNames) {
+        const checked = form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
+        if (!checked) {
+          hint.textContent = 'Yuk jawab dulu semua pertanyaannya.';
+          return;
+        }
+        const map = JSON.parse(checked.dataset.scores || '{}') as Record<string, number>;
+        for (const [slug, pts] of Object.entries(map)) {
+          scores[slug] = (scores[slug] || 0) + pts;
+          if (name === 'vibe') tieBreak = slug;
+        }
+      }
+
+      hint.textContent = '';
+
+      // Pemenang: skor tertinggi; jika seri, ambil pilihan "vibe".
+      let winner = cards[0]?.dataset.result || '';
+      let best = -Infinity;
+      for (const card of cards) {
+        const slug = card.dataset.result!;
+        const s = scores[slug] || 0;
+        if (s > best || (s === best && slug === tieBreak)) {
+          best = s;
+          winner = slug;
+        }
+      }
+
+      placeholder.hidden = true;
+      result.hidden = false;
+      for (const card of cards) card.hidden = card.dataset.result !== winner;
+      result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    resetBtn.addEventListener('click', () => {
+      form.reset();
+      result.hidden = true;
+      placeholder.hidden = false;
+      hint.textContent = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+</script>

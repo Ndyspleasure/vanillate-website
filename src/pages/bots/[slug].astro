@@ -1,7 +1,9 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
-import { bots, buildInviteUrl } from '@data/bots';
+import FAQAccordion from '@components/FAQAccordion.astro';
+import { bots, buildInviteUrl, inviteCtaLabel, CTA } from '@data/bots';
+import { faqs } from '@data/faq';
 import { site } from '@data/site';
 import { url } from '@utils/url';
 
@@ -13,10 +15,11 @@ const { bot } = Astro.props;
 const inviteUrl = buildInviteUrl(bot);
 const comingSoon = bot.status === 'coming-soon';
 const isPreorder = bot.status === 'preorder';
-const heroInviteLabel = isPreorder ? `Preorder ${bot.shortName}` : `Undang ${bot.shortName}`;
+const heroInviteLabel = inviteCtaLabel(bot);
+const botFaqs = faqs[bot.slug];
 ---
 
-<BaseLayout title={bot.name} description={bot.tagline}>
+<BaseLayout title={bot.seoTitle ?? bot.name} description={bot.seoDescription ?? bot.description}>
   <section class="relative overflow-hidden pt-20 pb-16 md:pt-28">
     <div class="aurora h-[400px] w-[400px] top-[-80px] left-[10%] opacity-30" style={`background: ${bot.color}`} aria-hidden="true"></div>
 
@@ -76,17 +79,17 @@ const heroInviteLabel = isPreorder ? `Preorder ${bot.shortName}` : `Undang ${bot
         )}
         {comingSoon && (
           <Button href={site.links.discordSupport} variant="primary" size="lg" external>
-            Ikuti Perkembangannya di Discord
+            {CTA.notify}
           </Button>
         )}
         {isPreorder && (
           <Button href={site.links.discordSupport} variant="secondary" size="lg" external>
-            Gabung Discord
+            {CTA.discord}
           </Button>
         )}
         {bot.docsSlug && (
           <Button href={`/docs/${bot.docsSlug}`} variant="secondary" size="lg">
-            Lihat Dokumentasi
+            {CTA.docs}
           </Button>
         )}
       </div>
@@ -197,6 +200,24 @@ const heroInviteLabel = isPreorder ? `Preorder ${bot.shortName}` : `Undang ${bot
     </section>
   )}
 
+  <!-- FAQ -->
+  {botFaqs && botFaqs.length > 0 && (
+    <section id="faq" class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10 scroll-mt-24">
+      <div class="grid gap-12 md:grid-cols-3">
+        <div class="md:col-span-1">
+          <p class="eyebrow mb-3">FAQ</p>
+          <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Pertanyaan yang sering muncul.</h2>
+          <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+            Belum ketemu jawabannya? Tim kami siap membantu di server Discord.
+          </p>
+        </div>
+        <div class="md:col-span-2">
+          <FAQAccordion items={botFaqs} />
+        </div>
+      </div>
+    </section>
+  )}
+
   <!-- CTA -->
   <section class="container-page py-20">
     <div class="rounded-3xl p-10 md:p-14 relative overflow-hidden" style={`background: linear-gradient(135deg, ${bot.color}15, transparent);`}>
@@ -206,7 +227,7 @@ const heroInviteLabel = isPreorder ? `Preorder ${bot.shortName}` : `Undang ${bot
             <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">{bot.shortName} sedang dimasak.</h2>
             <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Gabung server Discord kami untuk mengikuti progres pengembangan, memberi masukan, dan jadi yang pertama tahu saat rilis.</p>
             <div class="flex flex-wrap gap-3">
-              <Button href={site.links.discordSupport} variant="primary" size="lg" external>Gabung Discord</Button>
+              <Button href={site.links.discordSupport} variant="primary" size="lg" external>{CTA.discord}</Button>
               <Button href="/bots" variant="ghost" size="lg">Lihat bot lainnya</Button>
             </div>
           </>
@@ -215,8 +236,8 @@ const heroInviteLabel = isPreorder ? `Preorder ${bot.shortName}` : `Undang ${bot
             <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Amankan tempatmu sekarang.</h2>
             <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Preorder {bot.shortName} ke server Discord kamu selama masa beta dan nikmati semua keuntungan Founding Members saat rilis resmi.</p>
             <div class="flex flex-wrap gap-3">
-              <Button href={inviteUrl} variant="primary" size="lg" external>Preorder {bot.shortName}</Button>
-              <Button href={site.links.discordSupport} variant="ghost" size="lg" external>Gabung Discord</Button>
+              <Button href={inviteUrl} variant="primary" size="lg" external>{CTA.preorder}</Button>
+              <Button href={site.links.discordSupport} variant="ghost" size="lg" external>{CTA.discord}</Button>
             </div>
           </>
         ) : (
@@ -224,7 +245,7 @@ const heroInviteLabel = isPreorder ? `Preorder ${bot.shortName}` : `Undang ${bot
             <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Coba {bot.shortName} sekarang.</h2>
             <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">Tambahkan ke server Discord kamu. Gratis, tanpa syarat berlangganan.</p>
             <div class="flex flex-wrap gap-3">
-              <Button href={inviteUrl} variant="primary" size="lg" external>Undang {bot.shortName}</Button>
+              <Button href={inviteUrl} variant="primary" size="lg" external>{CTA.invite}</Button>
               <Button href="/support" variant="ghost" size="lg">Butuh bantuan?</Button>
             </div>
           </>

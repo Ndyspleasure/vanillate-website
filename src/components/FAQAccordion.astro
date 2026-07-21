@@ -1,0 +1,47 @@
+---
+import type { FaqItem } from '@data/faq';
+
+export interface Props {
+  items: FaqItem[];
+}
+
+const { items } = Astro.props;
+
+// Escape HTML lalu ubah `teks` jadi <code>. Konten dari data internal (faq.ts).
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+const codeClass =
+  'font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded';
+function fmt(s: string): string {
+  return escapeHtml(s).replace(/`([^`]+)`/g, `<code class="${codeClass}">$1</code>`);
+}
+---
+
+<div class="divide-y divide-ink-900/10 dark:divide-cream-100/10 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
+  {items.map((item) => (
+    <details class="group">
+      <summary
+        class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 md:px-6 md:py-5 text-ink-900 dark:text-cream-50 font-display font-semibold tracking-tightest hover:bg-cream-100/50 dark:hover:bg-ink-900/40 transition-colors"
+      >
+        <span class="leading-snug">{item.q}</span>
+        <svg
+          class="flex-none text-amber-600 dark:text-amber-500 transition-transform duration-200 group-open:rotate-180"
+          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </summary>
+      <div class="px-5 pb-5 md:px-6 md:pb-6 -mt-1">
+        <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed max-w-2xl" set:html={fmt(item.a)} />
+      </div>
+    </details>
+  ))}
+</div>
+
+<style>
+  /* Sembunyikan marker default <details> di semua browser */
+  summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

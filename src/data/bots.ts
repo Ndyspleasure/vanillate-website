@@ -22,6 +22,8 @@ export type Bot = {
   docsSlug?: string;            // slug dokumentasi /docs/<docsSlug> (kosongkan jika belum ada)
   longIntro?: string[];         // Paragraf narasi panjang untuk halaman detail (opsional)
   ctaNote?: string;             // Catatan kecil di bawah tombol invite (mis. status preorder)
+  seoTitle?: string;            // <title> khusus SEO (fallback: name). Tanpa suffix brand.
+  seoDescription?: string;      // meta description khusus SEO (fallback: description)
   founding?: {                  // Program Founding Members / early access (opsional)
     title: string;
     intro: string;
@@ -44,6 +46,25 @@ export function buildInviteUrl(bot: Bot): string | null {
   return `https://discord.com/oauth2/authorize?${params.toString()}`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Label CTA standar. Satu sumber kebenaran supaya tombol konsisten di seluruh
+// situs (kartu, halaman detail, docs, footer). Ubah di sini = berubah di mana pun.
+// ─────────────────────────────────────────────────────────────────────────────
+export const CTA = {
+  invite: 'Undang ke Server',   // bot live: implikasi langsung dipakai
+  preorder: 'Amankan Tempat',   // bot preorder: implikasi keuntungan eksklusif
+  notify: 'Ikuti Kabarnya',     // coming soon: implikasi menunggu rilis
+  docs: 'Lihat Panduan',        // dokumentasi
+  discord: 'Gabung Komunitas',  // server Discord
+} as const;
+
+/** Label tombol invite/CTA utama sesuai status bot. */
+export function inviteCtaLabel(bot: Bot): string {
+  if (bot.status === 'preorder') return CTA.preorder;
+  if (bot.status === 'coming-soon') return CTA.notify;
+  return CTA.invite;
+}
+
 export const bots: Bot[] = [
   {
     slug: 'sambung-kata',
@@ -56,6 +77,9 @@ export const bots: Bot[] = [
     status: 'live',
     featured: true,
     category: 'Word Game',
+    seoTitle: 'Sambung Kata — Bot Game Kata Berantai untuk Discord',
+    seoDescription:
+      'Main Sambung Kata di Discord: mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 21.000+ kata. Gratis, tanpa langganan.',
     clientId: '1513806760622817320', // TODO: isi Client ID Discord
     permissions: '277025770496',
     scopes: ['bot', 'applications.commands'],
@@ -90,6 +114,9 @@ export const bots: Bot[] = [
     status: 'live',
     featured: false,
     category: 'Idle Simulation',
+    seoTitle: 'Tahu Bulat — Bot Simulasi Bisnis Idle untuk Discord',
+    seoDescription:
+      'Bangun kerajaan tahu bulat di Discord. Pendapatan offline hingga 8 jam, upgrade gerobak sampai food truck, dan Rebirth untuk bonus permanen. Idle, santai, gratis dimainkan.',
     clientId: '1521948490803187903', // TODO: isi Client ID Discord
     permissions: '277025770496',
     scopes: ['bot', 'applications.commands'],
@@ -120,6 +147,9 @@ export const bots: Bot[] = [
     status: 'preorder',
     featured: false,
     category: 'Social',
+    seoTitle: 'Anonymous Chat — Ngobrol Anonim dengan Orang Baru di Discord',
+    seoDescription:
+      'Bertemu dan mengobrol anonim di Discord. Identitas disembunyikan, channel privat berdua, dan otomatis terhapus setelah sesi. Preorder beta dibuka dengan hadiah Founding Members.',
     clientId: '1528619351844982965',
     permissions: '268561488',
     scopes: ['bot', 'applications.commands'],
@@ -174,6 +204,9 @@ export const bots: Bot[] = [
     status: 'coming-soon',
     featured: false,
     category: 'Life Simulation RPG',
+    seoTitle: 'Vanillate Story — Life Simulation RPG di Discord (Segera)',
+    seoDescription:
+      'Mulai dari nol di Kota Vanillate: bangun karier, kumpulkan harta, berteman hingga menikah dengan NPC. Life Simulation RPG berbasis Discord, segera hadir.',
     permissions: '277025770496',
     scopes: ['bot', 'applications.commands'],
     color: '#6C3BEB',

@@ -1,0 +1,91 @@
+---
+import { bots, inviteCtaLabel, buildInviteUrl } from '@data/bots';
+import { url } from '@utils/url';
+
+// Urutan kolom perbandingan (bot yang sudah dirilis / preorder).
+const order = ['sambung-kata', 'tahu-bulat', 'anonymous-chat'];
+const cols = order
+  .map((slug) => bots.find((b) => b.slug === slug))
+  .filter((b): b is NonNullable<typeof b> => Boolean(b));
+
+type Row = { label: string; values: Record<string, string> };
+const rows: Row[] = [
+  { label: 'Tipe', values: { 'sambung-kata': 'Word Game', 'tahu-bulat': 'Idle Simulation', 'anonymous-chat': 'Social' } },
+  { label: 'Cocok untuk', values: { 'sambung-kata': 'Kompetisi & strategi', 'tahu-bulat': 'Santai & AFK', 'anonymous-chat': 'Ngobrol & kenalan' } },
+  { label: 'Waktu per sesi', values: { 'sambung-kata': '15–30 menit', 'tahu-bulat': 'Idle, cek sesekali', 'anonymous-chat': 'Fleksibel' } },
+  { label: 'Ekonomi in-game', values: { 'sambung-kata': 'EXP & Coin', 'tahu-bulat': 'Coin', 'anonymous-chat': '—' } },
+  { label: 'Multiplayer', values: { 'sambung-kata': 'PvP s/d 10 pemain', 'tahu-bulat': 'Peringkat global', 'anonymous-chat': '1-lawan-1' } },
+  { label: 'Skill utama', values: { 'sambung-kata': 'Kosakata', 'tahu-bulat': 'Kesabaran', 'anonymous-chat': 'Empati' } },
+];
+
+const statusLabel: Record<string, string> = {
+  live: 'Live',
+  beta: 'Beta',
+  preorder: 'Preorder',
+  'coming-soon': 'Segera',
+};
+---
+
+<div class="overflow-x-auto rounded-2xl border border-ink-900/10 dark:border-cream-100/10 -mx-6 px-6 sm:mx-0 sm:px-0">
+  <table class="w-full min-w-[640px] border-collapse text-sm">
+    <thead>
+      <tr class="border-b border-ink-900/10 dark:border-cream-100/10">
+        <th class="w-40 px-4 py-4 text-left align-bottom font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">
+          Fitur
+        </th>
+        {cols.map((bot) => (
+          <th class="px-4 py-4 text-left align-bottom" scope="col">
+            <a href={url(`/bots/${bot.slug}`)} class="group inline-flex flex-col gap-2">
+              <span class="flex items-center gap-2.5">
+                {bot.thumbnail ? (
+                  <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-8 w-8 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
+                ) : (
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+                )}
+                <span class="font-display text-base font-semibold tracking-tightest text-ink-900 dark:text-cream-50 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {bot.shortName}
+                </span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-ink-500 dark:text-cream-300/60">
+                <span class="h-1.5 w-1.5 rounded-full" style={`background: ${bot.color};`}></span>
+                {statusLabel[bot.status]}
+              </span>
+            </a>
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        <tr class="border-b border-ink-900/5 dark:border-cream-100/5">
+          <th scope="row" class="px-4 py-3.5 text-left font-medium text-ink-500 dark:text-cream-300/70 whitespace-nowrap">
+            {row.label}
+          </th>
+          {cols.map((bot) => (
+            <td class="px-4 py-3.5 text-ink-700 dark:text-cream-200">{row.values[bot.slug] ?? '—'}</td>
+          ))}
+        </tr>
+      ))}
+      <tr>
+        <td class="px-4 py-4"></td>
+        {cols.map((bot) => {
+          const invite = buildInviteUrl(bot);
+          const href = invite ?? url(`/bots/${bot.slug}`);
+          const external = Boolean(invite);
+          return (
+            <td class="px-4 py-4 align-top">
+              <a
+                href={href}
+                {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                class="inline-flex items-center gap-1.5 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-3.5 py-2 text-xs font-medium hover:-translate-y-0.5 transition-transform whitespace-nowrap"
+              >
+                {inviteCtaLabel(bot)}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              </a>
+            </td>
+          );
+        })}
+      </tr>
+    </tbody>
+  </table>
+</div>

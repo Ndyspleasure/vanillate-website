@@ -1,6 +1,6 @@
 ---
 import type { Bot } from '@data/bots';
-import { buildInviteUrl } from '@data/bots';
+import { buildInviteUrl, inviteCtaLabel } from '@data/bots';
 import { url } from '@utils/url';
 
 export interface Props {
@@ -10,7 +10,7 @@ export interface Props {
 
 const { bot, featured = false } = Astro.props;
 const inviteUrl = buildInviteUrl(bot);
-const inviteLabel = bot.status === 'preorder' ? `Preorder ${bot.shortName}` : `Undang ${bot.shortName}`;
+const inviteLabel = inviteCtaLabel(bot);
 
 const statusLabel = {
   live: 'Live',
