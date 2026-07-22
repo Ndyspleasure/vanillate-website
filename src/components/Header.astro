@@ -43,10 +43,14 @@ const currentPath = base && rawPath.startsWith(base) ? (rawPath.slice(base.lengt
         type="button"
         aria-label="Buka menu"
         aria-expanded="false"
+        aria-controls="mobile-menu"
         class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-900 hover:bg-ink-900/5 dark:text-cream-100 dark:hover:bg-cream-100/5"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <svg class="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg class="close-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>
     </div>
@@ -54,14 +58,32 @@ const currentPath = base && rawPath.startsWith(base) ? (rawPath.slice(base.lengt
 
   <div id="mobile-menu" class="md:hidden hidden border-t border-ink-900/5 dark:border-cream-100/5">
     <nav class="container-page py-4 flex flex-col gap-1" aria-label="Navigasi mobile">
-      {nav.map((item) => (
-        <a
-          href={url(item.href)}
-          class="px-3 py-2.5 rounded-lg text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5"
-        >
-          {item.label}
-        </a>
-      ))}
+      {nav.map((item) => {
+        const active = currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href));
+        return (
+          <a
+            href={url(item.href)}
+            aria-current={active ? 'page' : undefined}
+            class:list={[
+              'px-3 py-3 rounded-lg text-[0.95rem] transition-colors',
+              active
+                ? 'text-ink-900 dark:text-cream-50 bg-ink-900/5 dark:bg-cream-100/5 font-medium'
+                : 'text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5',
+            ]}
+          >
+            {item.label}
+          </a>
+        );
+      })}
+      <a
+        href={site.links.discordSupport}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 text-ink-950 px-4 py-3 text-sm font-medium hover:bg-amber-400 transition-colors"
+      >
+        Gabung Discord Support
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+      </a>
     </nav>
   </div>
 </header>
@@ -69,8 +91,32 @@ const currentPath = base && rawPath.startsWith(base) ? (rawPath.slice(base.lengt
 <script>
   const btn = document.getElementById('mobile-menu-btn');
   const menu = document.getElementById('mobile-menu');
-  btn?.addEventListener('click', () => {
-    const open = menu?.classList.toggle('hidden');
-    btn.setAttribute('aria-expanded', String(!open));
+  const menuIcon = btn?.querySelector('.menu-icon');
+  const closeIcon = btn?.querySelector('.close-icon');
+
+  function setOpen(open: boolean) {
+    if (!btn || !menu) return;
+    menu.classList.toggle('hidden', !open);
+    menuIcon?.classList.toggle('hidden', open);
+    closeIcon?.classList.toggle('hidden', !open);
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
+  }
+
+  btn?.addEventListener('click', () => setOpen(menu?.classList.contains('hidden') ?? false));
+
+  // Tutup saat sebuah link menu diklik.
+  menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+
+  // Tutup dengan Escape.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu && !menu.classList.contains('hidden')) setOpen(false);
+  });
+
+  // Tutup saat klik di luar header.
+  document.addEventListener('click', (e) => {
+    if (!menu || menu.classList.contains('hidden')) return;
+    const target = e.target as Node;
+    if (!menu.contains(target) && !btn?.contains(target)) setOpen(false);
   });
 </script>

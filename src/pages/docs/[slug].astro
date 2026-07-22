@@ -47,18 +47,41 @@ function fmt(s: string): string {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Semua dokumentasi
         </a>
-        <p class="eyebrow mb-3">Di halaman ini</p>
-        <nav aria-label="Table of contents">
-          <ul class="space-y-1">
-            {tocSections.map((s) => (
-              <li>
-                <a href={`#${s.id}`} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
-                  {s.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+
+        <!-- Mobile: TOC bisa dilipat supaya konten tidak terdorong jauh ke bawah -->
+        <details class="lg:hidden group rounded-xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-mono text-xs uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
+            Di halaman ini
+            <svg class="flex-none transition-transform group-open:rotate-180" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <nav class="border-t border-ink-900/10 dark:border-cream-100/10 px-2 py-2" aria-label="Daftar isi (mobile)">
+            <ul>
+              {tocSections.map((s) => (
+                <li>
+                  <a href={`#${s.id}`} class="toc-link block rounded-lg px-3 py-2.5 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+                    {s.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </details>
+
+        <!-- Desktop: sidebar TOC statis -->
+        <div class="hidden lg:block">
+          <p class="eyebrow mb-3">Di halaman ini</p>
+          <nav aria-label="Table of contents">
+            <ul class="space-y-1">
+              {tocSections.map((s) => (
+                <li>
+                  <a href={`#${s.id}`} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                    {s.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </aside>
 
       <!-- Content -->
@@ -236,3 +259,16 @@ function fmt(s: string): string {
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  // Mobile: tutup TOC yang dilipat setelah salah satu link diklik,
+  // supaya setelah loncat ke section, daftar isi tidak menutupi konten.
+  const tocDetails = document.querySelector<HTMLDetailsElement>('aside details');
+  if (tocDetails) {
+    tocDetails.querySelectorAll('.toc-link').forEach((link) => {
+      link.addEventListener('click', () => {
+        tocDetails.open = false;
+      });
+    });
+  }
+</script>

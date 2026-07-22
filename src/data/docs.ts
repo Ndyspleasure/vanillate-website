@@ -47,7 +47,7 @@ export const docs: Record<string, BotDoc> = {
             title: '📌 Aturan Dasar',
             items: [
               'Kata harus diawali dari huruf yang ditentukan.',
-              'Kata harus ada di kamus Bahasa Indonesia (21.000+ kata).',
+              'Kata harus ada di kamus Bahasa Indonesia (25.000+ kata).',
               'Kata yang sudah pernah dipakai tidak boleh diulang.',
               'Hanya 1 kata per giliran (tanpa spasi).',
               'Kata minimum 2 huruf.',

@@ -79,7 +79,7 @@ export const faqs: Record<string, FaqItem[]> = {
     },
     {
       q: 'Seberapa besar kamusnya, dan bagaimana kata dinilai?',
-      a: 'Kamusnya berisi 21.000+ kata Bahasa Indonesia dengan validasi otomatis. Kata harus diawali huruf yang ditentukan, ada di kamus, minimal 2 huruf, dan belum pernah dipakai di ronde itu. Kamu bisa mengecek sebuah kata dengan `/kamus [kata]`.',
+      a: 'Kamusnya berisi 25.000+ kata Bahasa Indonesia dengan validasi otomatis. Kata harus diawali huruf yang ditentukan, ada di kamus, minimal 2 huruf, dan belum pernah dipakai di ronde itu. Kamu bisa mengecek sebuah kata dengan `/kamus [kata]`.',
     },
     {
       q: 'Bisa main di berapa server?',

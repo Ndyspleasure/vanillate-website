@@ -73,20 +73,20 @@ export const bots: Bot[] = [
     shortName: 'Sambung Kata',
     tagline: 'Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.',
     description:
-      'Permainan kata klasik Indonesia, dibangun ulang untuk Discord. Sambung kata bersama teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon, sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 21.000+ kata memastikan setiap jawaban dinilai adil.',
+      'Permainan kata klasik Indonesia, dibangun ulang untuk Discord. Sambung kata bersama teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon, sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 25.000+ kata memastikan setiap jawaban dinilai adil.',
     status: 'live',
     featured: true,
     category: 'Word Game',
     seoTitle: 'Sambung Kata — Bot Game Kata Berantai untuk Discord',
     seoDescription:
-      'Main Sambung Kata di Discord: mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 21.000+ kata. Gratis, tanpa langganan.',
-    clientId: '1513806760622817320', // TODO: isi Client ID Discord
+      'Main Sambung Kata di Discord: mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis, tanpa langganan.',
+    clientId: '1513806760622817320',
     permissions: '277025770496',
     scopes: ['bot', 'applications.commands'],
     color: '#E8B84A',
     icon: '✦',
     features: [
-      'Kamus Bahasa Indonesia 21.000+ kata dengan validasi otomatis',
+      'Kamus Bahasa Indonesia 25.000+ kata dengan validasi otomatis',
       'Tiga mode: PvP hingga 10 pemain, PvB 4 tingkat kesulitan, dan Dungeon',
       '9 Class dengan passive unik plus Talent Tree',
       'Boost system 5 jenis dengan rarity Common hingga Legendary',
@@ -117,7 +117,7 @@ export const bots: Bot[] = [
     seoTitle: 'Tahu Bulat — Bot Simulasi Bisnis Idle untuk Discord',
     seoDescription:
       'Bangun kerajaan tahu bulat di Discord. Pendapatan offline hingga 8 jam, upgrade gerobak sampai food truck, dan Rebirth untuk bonus permanen. Idle, santai, gratis dimainkan.',
-    clientId: '1521948490803187903', // TODO: isi Client ID Discord
+    clientId: '1521948490803187903',
     permissions: '277025770496',
     scopes: ['bot', 'applications.commands'],
     color: '#4FA89D',

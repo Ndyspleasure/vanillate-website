@@ -75,7 +75,7 @@ export const whyVanillate = [
   },
   {
     title: 'Bahasa Indonesia, konteks lokal',
-    desc: 'Dari kamus 21.000+ kata sampai tema kuliner tahu bulat, produk kami dibuat untuk pemain Indonesia, bukan sekadar terjemahan.',
+    desc: 'Dari kamus 25.000+ kata sampai tema kuliner tahu bulat, produk kami dibuat untuk pemain Indonesia, bukan sekadar terjemahan.',
     icon: '<path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>',
   },
   {
