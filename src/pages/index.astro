@@ -236,6 +236,38 @@ const steps = [
     </div>
   </section>
 
+  <!-- JELAJAHI LEBIH JAUH -->
+  <section class="container-page pb-24">
+    <div class="mb-10 max-w-2xl reveal">
+      <p class="eyebrow mb-3">Jelajahi Lebih Jauh</p>
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+        Semua yang perlu kamu tahu, saling terhubung.
+      </h2>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {[
+        { label: 'Tentang Kami', desc: 'Cerita, filosofi, dan arah studio.', href: '/about', icon: '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 16v-4M12 8h.01"/>' },
+        { label: 'Bot Kami', desc: 'Katalog lengkap dan perbandingan.', href: '/bots', icon: '<rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/>' },
+        { label: 'Dokumentasi', desc: 'Aturan main, command, dan strategi.', href: '/docs', icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' },
+        { label: 'Pilih Bot', desc: 'Kuis singkat cari yang paling cocok.', href: '/pilih', icon: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
+      ].map((item, i) => (
+        <a href={url(item.href)} class="reveal group flex flex-col gap-3 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 transition-colors hover:border-amber-500/40" style={`--reveal-delay: ${i * 80}ms`}>
+          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={item.icon} />
+          </span>
+          <div>
+            <h3 class="font-display text-lg font-semibold group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{item.label}</h3>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed mt-1">{item.desc}</p>
+          </div>
+          <span class="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
+            Buka
+            <svg class="transition-transform group-hover:translate-x-1" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </span>
+        </a>
+      ))}
+    </div>
+  </section>
+
   <!-- CTA STRIP -->
   <section class="container-page pb-24">
     <div class="rounded-3xl bg-ink-900 dark:bg-ink-900 p-10 md:p-16 relative overflow-hidden reveal">

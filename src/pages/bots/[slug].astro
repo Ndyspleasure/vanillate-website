@@ -2,7 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
-import { bots, buildInviteUrl, inviteCtaLabel, CTA } from '@data/bots';
+import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA } from '@data/bots';
 import { faqs } from '@data/faq';
 import { site } from '@data/site';
 import { url } from '@utils/url';
@@ -17,6 +17,9 @@ const comingSoon = bot.status === 'coming-soon';
 const isPreorder = bot.status === 'preorder';
 const heroInviteLabel = inviteCtaLabel(bot);
 const botFaqs = faqs[bot.slug];
+const otherBots = getOtherBots(bot.slug, 3);
+
+const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-soon': 'Segera' } as const;
 ---
 
 <BaseLayout title={bot.seoTitle ?? bot.name} description={bot.seoDescription ?? bot.description}>
@@ -214,6 +217,45 @@ const botFaqs = faqs[bot.slug];
         <div class="md:col-span-2">
           <FAQAccordion items={botFaqs} />
         </div>
+      </div>
+    </section>
+  )}
+
+  <!-- BOT LAINNYA -->
+  {otherBots.length > 0 && (
+    <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+      <div class="mb-8 flex items-end justify-between gap-6 flex-wrap">
+        <div>
+          <p class="eyebrow mb-3">Jelajahi Lebih</p>
+          <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Bot lainnya dari Vanillate.</h2>
+        </div>
+        <a href={url('/bots')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
+          Lihat semua bot
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-3">
+        {otherBots.map((other) => (
+          <a href={url(`/bots/${other.slug}`)} class="group relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 transition-colors hover:border-amber-500/40">
+            <div class="absolute inset-x-0 top-0 h-0.5 opacity-70" style={`background: linear-gradient(90deg, ${other.color}00, ${other.color}, ${other.color}00);`} aria-hidden="true"></div>
+            <div class="flex items-center gap-3 mb-3">
+              {other.thumbnail ? (
+                <img src={url(other.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
+              ) : (
+                <span class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true">{other.icon}</span>
+              )}
+              <div>
+                <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">{other.category}</p>
+                <h3 class="font-display text-lg font-semibold tracking-tightest group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{other.shortName}</h3>
+              </div>
+            </div>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{other.tagline}</p>
+            <span class="mt-4 inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-ink-500 dark:text-cream-300/60">
+              <span class="h-1.5 w-1.5 rounded-full" style={`background: ${other.color};`}></span>
+              {statusLabel[other.status]}
+            </span>
+          </a>
+        ))}
       </div>
     </section>
   )}

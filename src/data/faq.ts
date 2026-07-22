@@ -5,6 +5,45 @@
 
 export type FaqItem = { q: string; a: string };
 
+// ═══════════════════════════════════════════════════════════════════
+// FAQ UMUM (bukan spesifik satu bot)
+// Dipakai di halaman /bots, /docs, dan /support lewat <FAQAccordion>.
+// ═══════════════════════════════════════════════════════════════════
+export const generalFaqs: FaqItem[] = [
+  {
+    q: 'Apakah semua bot Vanillate gratis?',
+    a: 'Ya. Semua game kami, Sambung Kata dan Tahu Bulat, gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional (seperti di Anonymous Chat) hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
+  },
+  {
+    q: 'Bagaimana cara mengundang bot ke server saya?',
+    a: 'Buka halaman bot yang kamu inginkan, tekan tombol `Undang ke Server`, pilih server tujuan, lalu setujui izin yang diminta. Kamu perlu izin `Manage Server` di server tersebut. Setelah itu bot langsung aktif dan bisa dipakai dengan slash command.',
+  },
+  {
+    q: 'Izin apa saja yang dibutuhkan bot?',
+    a: 'Bot hanya meminta izin yang benar-benar diperlukan untuk berfungsi: mengirim pesan, menyematkan embed, membaca jawaban di channel permainan, dan mengelola komponen interaktif. Kami tidak meminta izin administrator dan tidak menyentuh channel di luar keperluan permainan.',
+  },
+  {
+    q: 'Apakah progres dan data saya aman?',
+    a: 'Aman. Semua progres tersimpan otomatis di server kami, tidak ada wipe berkala, dan tidak ada data yang dijual ke pihak ketiga. Detail lengkapnya bisa kamu baca di halaman Kebijakan Privasi.',
+  },
+  {
+    q: 'Bisa main bot yang sama di beberapa server sekaligus?',
+    a: 'Bisa. Progres, statistik, dan leaderboard bersifat global per pemain, jadi capaianmu terbawa ke server mana pun kamu bermain. Kamu bisa mengundang bot ke sebanyak mungkin server tanpa biaya.',
+  },
+  {
+    q: 'Bot tidak merespons command, kenapa?',
+    a: 'Coba beberapa hal ini: pastikan bot punya izin mengirim pesan di channel tersebut, ketik ulang slash command dari awal (mulai dengan `/`), dan tunggu beberapa detik jika Discord sedang lambat memuat command. Kalau masih bermasalah, laporkan di server Discord Support kami, orang yang menulis kodenya akan langsung membantu.',
+  },
+  {
+    q: 'Bagaimana cara memberi masukan atau melaporkan bug?',
+    a: 'Gunakan command `/masukan` langsung di dalam bot, atau gabung ke server Discord Support dan sampaikan di channel yang sesuai. Kami membaca semua laporan dan masukan, dan banyak fitur kami justru lahir dari usulan komunitas.',
+  },
+  {
+    q: 'Seberapa sering bot diperbarui?',
+    a: 'Rutin. Kami merilis perbaikan bug, penyeimbangan gameplay, dan fitur baru secara berkala, sering kali setiap pekan. Bagi kami rilis adalah garis start, bukan garis finis, jadi bot terus dirawat setelah diluncurkan.',
+  },
+];
+
 export const faqs: Record<string, FaqItem[]> = {
   // ═══════════════════════════════════════════════════════════════════
   // SAMBUNG KATA

@@ -1,7 +1,9 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
+import BotComparison from '@components/BotComparison.astro';
 import { bots, buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import { site } from '@data/site';
 import { url } from '@utils/url';
 
 // Bot yang ikut kuis (sudah dirilis / preorder).
@@ -172,6 +174,76 @@ const questions: {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
             Ulangi kuis
           </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KENALAN SINGKAT -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="max-w-3xl mb-12 reveal">
+      <p class="eyebrow mb-3">Kenalan Singkat</p>
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+        Tiga bot, tiga rasa berbeda.
+      </h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Lebih suka memutuskan sendiri? Ini gambaran singkat masing-masing bot dalam satu kalimat.
+      </p>
+    </div>
+    <div class="grid gap-4 md:grid-cols-3">
+      {quizBots.map((bot, i) => (
+        <a href={url(`/bots/${bot.slug}`)} class="reveal group relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 transition-colors hover:border-amber-500/40" style={`--reveal-delay: ${i * 90}ms`}>
+          <div class="absolute inset-x-0 top-0 h-0.5 opacity-70" style={`background: linear-gradient(90deg, ${bot.color}00, ${bot.color}, ${bot.color}00);`} aria-hidden="true"></div>
+          <div class="flex items-center gap-3 mb-4">
+            {bot.thumbnail ? (
+              <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-11 w-11 rounded-xl object-cover flex-none" loading="lazy" decoding="async" />
+            ) : (
+              <span class="flex h-11 w-11 items-center justify-center rounded-xl text-lg flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+            )}
+            <div>
+              <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">{bot.category}</p>
+              <h3 class="font-display text-lg font-semibold tracking-tightest group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{bot.shortName}</h3>
+            </div>
+          </div>
+          <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{bot.tagline}</p>
+          <span class="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
+            Lihat detail
+            <svg class="transition-transform group-hover:translate-x-1" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- PERBANDINGAN -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="mb-10 max-w-2xl reveal">
+      <p class="eyebrow mb-3">Bandingkan Berdampingan</p>
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+        Detailnya dalam satu tabel.
+      </h2>
+      <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Kalau kuis belum meyakinkanmu, sandingkan langsung tipe, ritme, dan skill utama tiap bot.
+      </p>
+    </div>
+    <div class="reveal" style="--reveal-delay: 80ms">
+      <BotComparison />
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container-page pb-24">
+    <div class="rounded-3xl border border-ink-900/10 dark:border-cream-100/10 p-8 md:p-12 reveal">
+      <div class="max-w-2xl">
+        <h2 class="font-display text-2xl md:text-4xl font-semibold tracking-tightest mb-4">
+          Masih bimbang? Coba saja dua-duanya.
+        </h2>
+        <p class="text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed mb-8">
+          Semua bot gratis dan bisa diundang ke server yang sama. Tidak ada salahnya mencoba lebih dari satu, atau tanya rekomendasi langsung ke komunitas kami.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <Button href="/bots" variant="primary" size="lg">Lihat Semua Bot</Button>
+          <Button href={site.links.discordSupport} variant="secondary" size="lg" external>Tanya di Discord</Button>
         </div>
       </div>
     </div>

@@ -1,23 +1,176 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import BotCard from '@components/BotCard.astro';
+import BotComparison from '@components/BotComparison.astro';
+import FAQAccordion from '@components/FAQAccordion.astro';
 import { bots } from '@data/bots';
+import { site, inviteSteps, whyVanillate } from '@data/site';
+import { generalFaqs } from '@data/faq';
+import { url } from '@utils/url';
+
+// Ringkasan status untuk strip angka di bawah hero.
+const liveCount = bots.filter((b) => b.status === 'live').length;
+const totalCount = bots.length;
+const categories = [...new Set(bots.map((b) => b.category))];
 ---
 
-<BaseLayout title="Bot Kami" description="Daftar lengkap Discord Bot yang dikembangkan oleh Vanillate Studio.">
-  <section class="container-page pt-20 pb-12 md:pt-28">
-    <p class="eyebrow mb-6">Bot Kami</p>
-    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
-      Sedikit bot,<br />perhatian penuh.
-    </h1>
-    <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-      Kami sengaja tidak membuat banyak bot. Setiap satu yang dirilis diperlakukan sebagai produk utama: update rutin, gameplay yang terus diseimbangkan, dan telinga yang selalu terbuka untuk komunitasnya. Undang langsung, atau intip dokumentasinya dulu.
-    </p>
+<BaseLayout title="Bot Kami" description="Daftar lengkap Discord Bot buatan Vanillate Studio: Sambung Kata, Tahu Bulat, Anonymous Chat, dan Vanillate Story. Gratis, berbahasa Indonesia, dan dirawat setiap hari.">
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
+    <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
+    <div class="aurora bg-teal-500/20 h-[360px] w-[360px] top-[40px] right-[0%]" style="animation-delay: -7s" aria-hidden="true"></div>
+
+    <div class="container-page relative">
+      <p class="eyebrow mb-6 animate-fade-up">Bot Kami</p>
+      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl animate-fade-up">
+        Sedikit bot,<br /><span class="italic text-amber-600 dark:text-amber-500">perhatian</span> penuh.
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Kami sengaja tidak membuat banyak bot. Setiap satu yang dirilis diperlakukan sebagai produk utama: update rutin, gameplay yang terus diseimbangkan, dan telinga yang selalu terbuka untuk komunitasnya. Undang langsung, atau intip dokumentasinya dulu.
+      </p>
+
+      <!-- Ringkasan katalog -->
+      <div class="mt-10 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          <span class="h-2 w-2 rounded-full bg-teal-500 animate-pulse"></span>
+          {liveCount} bot siap dimainkan
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          {totalCount} produk total
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          {categories.length} kategori berbeda
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          100% gratis dimainkan
+        </span>
+      </div>
+    </div>
   </section>
 
-  <section class="container-page pb-24">
-    <div class="grid gap-6 md:grid-cols-2">
+  <!-- KATALOG BOT -->
+  <section class="container-page pb-8">
+    <div class="grid gap-6 md:grid-cols-2 reveal">
       {bots.map((bot) => <BotCard bot={bot} featured={bot.featured} />)}
+    </div>
+  </section>
+
+  <!-- CARA MENGUNDANG -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="max-w-3xl mb-12 reveal">
+      <p class="eyebrow mb-3">Cara Mengundang</p>
+      <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest">
+        Tiga langkah, langsung main.
+      </h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Tanpa daftar akun, tanpa setup rumit. Semua bot berjalan langsung di dalam Discord memakai slash command.
+      </p>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-3">
+      {inviteSteps.map((step, i) => (
+        <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-7 transition-colors hover:border-amber-500/40" style={`--reveal-delay: ${i * 110}ms`}>
+          <div class="flex items-center justify-between mb-5">
+            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={step.icon} />
+            </span>
+            <span class="font-mono text-3xl font-bold text-ink-900/10 dark:text-cream-100/15 leading-none">{step.n}</span>
+          </div>
+          <h3 class="font-display text-xl font-semibold tracking-tightest mb-2">{step.title}</h3>
+          <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed text-[0.95rem]">{step.desc}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- KENAPA BERBEDA -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">Kenapa Vanillate</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+          Bukan sekadar satu bot lagi di server.
+        </h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Ada ratusan bot game di Discord. Ini yang membuat komunitas memilih dan bertahan dengan bot kami.
+        </p>
+      </div>
+      <div class="md:col-span-2 grid gap-4 sm:grid-cols-2">
+        {whyVanillate.map((item, i) => (
+          <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6" style={`--reveal-delay: ${i * 90}ms`}>
+            <span class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={item.icon} />
+            </span>
+            <h3 class="font-display text-lg font-semibold mb-2">{item.title}</h3>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- PERBANDINGAN -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap reveal">
+      <div>
+        <p class="eyebrow mb-3">Bandingkan</p>
+        <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-xl">
+          Mana yang paling cocok untukmu?
+        </h2>
+        <p class="mt-4 max-w-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Sandingkan ketiganya sekilas. Tiap bot punya rasa, ritme, dan skill utama yang berbeda.
+        </p>
+      </div>
+      <a href={url('/pilih')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
+        Masih ragu? Ikuti kuis singkat
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <div class="reveal" style="--reveal-delay: 80ms">
+      <BotComparison />
+    </div>
+  </section>
+
+  <!-- FAQ UMUM -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">FAQ</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+          Pertanyaan seputar bot kami.
+        </h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Butuh detail spesifik? Tiap bot punya FAQ dan dokumentasi sendiri. Belum ketemu jawabannya? Tanya langsung di Discord.
+        </p>
+      </div>
+      <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
+        <FAQAccordion items={generalFaqs} />
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container-page pb-24">
+    <div class="rounded-3xl bg-ink-900 dark:bg-ink-900 p-10 md:p-16 relative overflow-hidden reveal">
+      <div class="aurora bg-amber-500/20 h-[300px] w-[300px] top-[-50px] right-[-50px]" aria-hidden="true"></div>
+      <div class="relative max-w-2xl">
+        <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest text-cream-50">
+          Belum yakin mulai dari mana?
+        </h2>
+        <p class="mt-4 text-cream-100/80 text-lg leading-relaxed">
+          Jawab empat pertanyaan singkat dan biar kami rekomendasikan satu bot untuk mulai. Atau langsung tanya-tanya di server Discord kami.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={url('/pilih')} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
+            Bantu Aku Memilih
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <a href={site.links.discordSupport} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
+            Gabung Discord Support
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+          </a>
+        </div>
+      </div>
     </div>
   </section>
 </BaseLayout>

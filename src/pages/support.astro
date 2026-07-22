@@ -1,67 +1,181 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
+import FAQAccordion from '@components/FAQAccordion.astro';
 import { site } from '@data/site';
 import { bots } from '@data/bots';
+import { generalFaqs } from '@data/faq';
 import { url } from '@utils/url';
+
+// Apa yang bisa kamu lakukan di server support.
+const channels = [
+  {
+    title: 'Tanya jawab',
+    desc: 'Bingung soal fitur, command, atau cara main? Tanyakan langsung dan dapatkan jawaban dari tim maupun sesama pemain.',
+    icon: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>',
+  },
+  {
+    title: 'Laporan bug',
+    desc: 'Menemukan sesuatu yang aneh? Laporkan dengan detail. Bug yang jelas dilaporkan biasanya diperbaiki dalam hitungan hari.',
+    icon: '<path d="m8 2 1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4"/>',
+  },
+  {
+    title: 'Usul fitur',
+    desc: 'Punya ide yang bikin bot lebih seru? Banyak fitur kami lahir dari usulan komunitas. Suaramu benar-benar dipertimbangkan.',
+    icon: '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.5.4.8 1 .8 1.6V17h6.4v-.7c0-.6.3-1.2.8-1.6A7 7 0 0 0 12 2z"/>',
+  },
+  {
+    title: 'Pengumuman & update',
+    desc: 'Jadi yang pertama tahu soal fitur baru, event, promo code, dan jadwal maintenance lewat channel pengumuman resmi.',
+    icon: '<path d="m3 11 18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  },
+];
+
+// Cara melaporkan bug yang baik.
+const bugSteps = [
+  { title: 'Jelaskan apa yang terjadi', desc: 'Ceritakan langkah yang kamu lakukan dan hasil yang muncul. Semakin spesifik, semakin cepat kami menemukan penyebabnya.' },
+  { title: 'Sebutkan bot & command', desc: 'Bot mana dan command apa yang dipakai saat masalah muncul, misalnya `/sambungkata mode:dungeon`.' },
+  { title: 'Lampirkan bukti', desc: 'Screenshot atau rekaman layar sangat membantu. Kalau ada pesan error, salin teksnya apa adanya.' },
+  { title: 'Sertakan Player ID bila perlu', desc: 'Untuk masalah terkait progres atau akun, cek `/stats` untuk Player ID-mu supaya kami bisa mengecek datanya.' },
+];
 ---
 
-<BaseLayout title="Support" description="Butuh bantuan atau ingin melaporkan bug? Gabung ke server Discord Support Vanillate Studio.">
-  <section class="container-page pt-20 pb-16 md:pt-28">
-    <p class="eyebrow mb-6">Support</p>
-    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
-      Kami di sini<br />untuk membantu.
-    </h1>
-    <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-      Semua dukungan Vanillate berpusat di satu server Discord. Bertanya, melaporkan bug, atau melempar ide, semuanya dibalas langsung oleh orang yang menulis kodenya, bukan template balasan otomatis.
-    </p>
+<BaseLayout title="Support" description="Butuh bantuan, ingin melaporkan bug, atau punya ide fitur? Semua dukungan Vanillate Studio berpusat di satu server Discord yang aktif dijawab langsung oleh tim.">
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
+    <div class="aurora bg-teal-500/20 h-[400px] w-[400px] top-[-100px] right-[5%]" aria-hidden="true"></div>
+    <div class="container-page relative">
+      <p class="eyebrow mb-6 animate-fade-up">Support</p>
+      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl animate-fade-up">
+        Kami di sini<br />untuk <span class="italic text-amber-600 dark:text-amber-500">membantu</span>.
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Semua dukungan Vanillate berpusat di satu server Discord. Bertanya, melaporkan bug, atau melempar ide, semuanya dibalas langsung oleh orang yang menulis kodenya, bukan template balasan otomatis.
+      </p>
+    </div>
   </section>
 
+  <!-- KARTU DISCORD -->
   <section class="container-page pb-16">
-    <div class="rounded-3xl bg-ink-900 dark:bg-ink-800 p-10 md:p-14 relative overflow-hidden">
+    <div class="rounded-3xl bg-ink-900 dark:bg-ink-800 p-10 md:p-14 relative overflow-hidden reveal">
       <div class="aurora bg-amber-500/25 h-[350px] w-[350px] top-[-80px] right-[-50px]" aria-hidden="true"></div>
-      <div class="relative max-w-2xl">
-        <p class="font-mono text-xs uppercase tracking-[0.2em] text-amber-400 mb-4">Discord Support</p>
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest text-cream-50 mb-4">
-          Gabung Server Vanillate Studio
-        </h2>
-        <p class="text-cream-100/80 text-lg leading-relaxed mb-8">
-          Channel bantuan, pengumuman pembaruan bot, dan komunitas pemain aktif, semuanya ada di satu tempat.
-        </p>
-        <a
-          href={site.links.discordSupport}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-7 py-3.5 text-base font-medium hover:bg-amber-400 transition-colors"
-        >
-          Gabung Discord Support
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
-        </a>
+      <div class="relative grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-center">
+        <div class="max-w-2xl">
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-amber-400 mb-4">Discord Support</p>
+          <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest text-cream-50 mb-4">
+            Gabung Server Vanillate Studio
+          </h2>
+          <p class="text-cream-100/80 text-lg leading-relaxed mb-8">
+            Channel bantuan, pengumuman pembaruan bot, dan komunitas pemain aktif, semuanya ada di satu tempat.
+          </p>
+          <a
+            href={site.links.discordSupport}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-7 py-3.5 text-base font-medium hover:bg-amber-400 transition-colors"
+          >
+            Gabung Discord Support
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+          </a>
+        </div>
+        <!-- Ekspektasi respons -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-2xl bg-cream-100/5 border border-cream-100/10 p-5">
+            <p class="font-display text-2xl font-semibold text-cream-50 mb-1">&lt; 24 jam</p>
+            <p class="text-xs text-cream-100/70 leading-snug">Rata-rata waktu respons pertanyaan</p>
+          </div>
+          <div class="rounded-2xl bg-cream-100/5 border border-cream-100/10 p-5">
+            <p class="font-display text-2xl font-semibold text-cream-50 mb-1">Manusia</p>
+            <p class="text-xs text-cream-100/70 leading-snug">Dijawab tim, bukan auto-reply</p>
+          </div>
+          <div class="rounded-2xl bg-cream-100/5 border border-cream-100/10 p-5">
+            <p class="font-display text-2xl font-semibold text-cream-50 mb-1">Gratis</p>
+            <p class="text-xs text-cream-100/70 leading-snug">Tidak ada tiket berbayar</p>
+          </div>
+          <div class="rounded-2xl bg-cream-100/5 border border-cream-100/10 p-5">
+            <p class="font-display text-2xl font-semibold text-cream-50 mb-1">Aktif</p>
+            <p class="text-xs text-cream-100/70 leading-snug">Komunitas & tim setiap hari</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- APA YANG BISA DILAKUKAN -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="max-w-3xl mb-12 reveal">
+      <p class="eyebrow mb-3">Di dalam server</p>
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+        Lebih dari sekadar tempat bertanya.
+      </h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Server support adalah pusat komunitas Vanillate. Ini yang bisa kamu lakukan di sana.
+      </p>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {channels.map((c, i) => (
+        <div class="reveal flex gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6" style={`--reveal-delay: ${i * 90}ms`}>
+          <span class="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={c.icon} />
+          </span>
+          <div>
+            <h3 class="font-display text-lg font-semibold mb-1.5">{c.title}</h3>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{c.desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- CARA MELAPORKAN BUG -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
-      <div class="md:col-span-1">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">Panduan</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Cara melapor bug yang baik.</h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Laporan yang jelas membuat perbaikan jauh lebih cepat. Kamu juga bisa langsung memakai command <code class="font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">/masukan</code> di dalam bot.
+        </p>
+      </div>
+      <div class="md:col-span-2">
+        <ol class="space-y-4">
+          {bugSteps.map((step, i) => (
+            <li class="reveal flex gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5" style={`--reveal-delay: ${i * 80}ms`}>
+              <span class="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-amber-500/10 font-mono text-sm font-bold text-amber-600 dark:text-amber-400">{i + 1}</span>
+              <div>
+                <h3 class="font-display font-semibold mb-1" set:html={step.title.replace(/`([^`]+)`/g, '<code class="font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">$1</code>')} />
+                <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed" set:html={step.desc.replace(/`([^`]+)`/g, '<code class="font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">$1</code>')} />
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- CEK DOKUMENTASI DULU -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
         <p class="eyebrow mb-3">Sebelum bertanya</p>
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Cek dokumentasi dulu.</h2>
       </div>
       <div class="md:col-span-2">
         <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">
-          Banyak pertanyaan sudah terjawab di halaman dokumentasi masing-masing bot.
+          Banyak pertanyaan sudah terjawab di halaman dokumentasi masing-masing bot, lengkap dengan tabel harga dan strategi.
         </p>
         <div class="grid gap-3 sm:grid-cols-2">
-          {bots.filter((b) => b.docsSlug).map((bot) => (
+          {bots.filter((b) => b.docsSlug).map((bot, i) => (
             <a
               href={url(`/docs/${bot.docsSlug}`)}
-              class="group flex items-center gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 transition-colors"
+              class="reveal group flex items-center gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 transition-colors"
+              style={`--reveal-delay: ${i * 70}ms`}
             >
               {bot.thumbnail ? (
-            <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
-          ) : (
-            <span class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
-          )}
+                <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
+              ) : (
+                <span class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+              )}
               <div class="flex-1">
                 <p class="font-medium text-sm">Dokumentasi {bot.shortName}</p>
                 <p class="text-xs text-ink-500 dark:text-cream-300/60">Panduan lengkap</p>
@@ -74,13 +188,30 @@ import { url } from '@utils/url';
     </div>
   </section>
 
+  <!-- FAQ -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
-      <div class="md:col-span-1">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">FAQ</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Bantuan cepat.</h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Jawaban singkat untuk pertanyaan paling umum, sebelum kamu perlu bertanya ke server.
+        </p>
+      </div>
+      <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
+        <FAQAccordion items={generalFaqs} />
+      </div>
+    </div>
+  </section>
+
+  <!-- LEGAL -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
         <p class="eyebrow mb-3">Legal</p>
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Ketentuan Layanan</h2>
       </div>
-      <div class="md:col-span-2">
+      <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
         <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">
           Baca ketentuan penggunaan dan kebijakan privasi kami sebelum menggunakan bot Vanillate.
         </p>

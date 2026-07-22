@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
-import { bots, buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots } from '@data/bots';
 import { docs } from '@data/docs';
 import { url } from '@utils/url';
 
@@ -14,6 +14,8 @@ export function getStaticPaths() {
 const { bot } = Astro.props;
 const inviteUrl = buildInviteUrl(bot);
 const doc = docs[bot.docsSlug];
+// Bot lain yang punya dokumentasi, untuk cross-link di akhir halaman.
+const otherDocs = getOtherBots(bot.slug, 4).filter((b) => b.docsSlug);
 
 // Sidebar TOC: dari data docs, atau fallback default untuk bot tanpa docs
 const tocSections = doc
@@ -206,6 +208,29 @@ function fmt(s: string): string {
               </div>
             </section>
           </>
+        )}
+
+        {/* Dokumentasi bot lain */}
+        {otherDocs.length > 0 && (
+          <section class="mt-16 pt-10 border-t border-ink-900/10 dark:border-cream-100/10">
+            <p class="eyebrow mb-4">Dokumentasi Lain</p>
+            <div class="grid gap-3 sm:grid-cols-2">
+              {otherDocs.map((other) => (
+                <a href={url(`/docs/${other.docsSlug}`)} class="group flex items-center gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 transition-colors">
+                  {other.thumbnail ? (
+                    <img src={url(other.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
+                  ) : (
+                    <span class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true">{other.icon}</span>
+                  )}
+                  <div class="flex-1">
+                    <p class="font-medium text-sm group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Panduan {other.shortName}</p>
+                    <p class="text-xs text-ink-500 dark:text-cream-300/60">{other.category}</p>
+                  </div>
+                  <svg class="text-ink-400 dark:text-cream-300/40 group-hover:text-amber-500 transition-colors flex-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                </a>
+              ))}
+            </div>
+          </section>
         )}
       </article>
     </div>

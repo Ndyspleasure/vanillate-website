@@ -236,3 +236,11 @@ export const bots: Bot[] = [
 export function getFeaturedBot(): Bot {
   return bots.find((b) => b.featured) ?? bots[0];
 }
+
+/**
+ * Bot lain selain `slug` yang diberikan, untuk section cross-link
+ * "bot lainnya" di halaman detail & dokumentasi.
+ */
+export function getOtherBots(slug: string, limit = 3): Bot[] {
+  return bots.filter((b) => b.slug !== slug).slice(0, limit);
+}

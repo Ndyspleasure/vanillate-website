@@ -1,23 +1,70 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import FAQAccordion from '@components/FAQAccordion.astro';
 import { bots } from '@data/bots';
+import { docs } from '@data/docs';
+import { generalFaqs } from '@data/faq';
+import { site } from '@data/site';
 import { url } from '@utils/url';
+
+const documentedBots = bots.filter((b) => b.docsSlug);
+
+// Hitung total section dokumentasi untuk ditampilkan sebagai angka.
+const totalSections = documentedBots.reduce((acc, b) => {
+  const doc = b.docsSlug ? docs[b.docsSlug] : undefined;
+  return acc + (doc ? doc.sections.length : 0);
+}, 0);
+
+// "Topik populer": deep-link langsung ke section dokumentasi tertentu.
+const popularTopics = [
+  { label: 'Cara bermain Sambung Kata', href: '/docs/sambung-kata#cara-bermain', bot: 'Sambung Kata' },
+  { label: 'Class & progression', href: '/docs/sambung-kata#progression', bot: 'Sambung Kata' },
+  { label: 'Dungeon & event', href: '/docs/sambung-kata#dungeon-events', bot: 'Sambung Kata' },
+  { label: 'Rebirth & bonus permanen', href: '/docs/tahu-bulat#rebirth', bot: 'Tahu Bulat' },
+  { label: 'Upgrade kendaraan & bahan', href: '/docs/tahu-bulat#kendaraan', bot: 'Tahu Bulat' },
+  { label: 'Tips & FAQ Tahu Bulat', href: '/docs/tahu-bulat#tips-faq', bot: 'Tahu Bulat' },
+];
+
+// Apa saja yang tercakup di dokumentasi.
+const covers = [
+  { title: 'Aturan main', desc: 'Mekanik inti setiap game dijelaskan langkah demi langkah, dari giliran pertama sampai kondisi menang.', icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' },
+  { title: 'Daftar command', desc: 'Semua slash command beserta opsi dan contoh pemakaiannya, tanpa perlu menebak-nebak.', icon: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>' },
+  { title: 'Tabel harga & data', desc: 'Harga shop, tingkatan upgrade, durasi promosi, dan angka-angka penting lain dalam tabel rapi.', icon: '<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>' },
+  { title: 'Strategi & tips', desc: 'Urutan prioritas, jebakan yang perlu dihindari, dan cara memaksimalkan progres di late game.', icon: '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.5.4.8 1 .8 1.6V17h6.4v-.7c0-.6.3-1.2.8-1.6A7 7 0 0 0 12 2z"/>' },
+];
 ---
 
-<BaseLayout title="Dokumentasi" description="Dokumentasi resmi seluruh bot Vanillate Studio.">
-  <section class="container-page pt-20 pb-12 md:pt-28">
-    <p class="eyebrow mb-6">Dokumentasi</p>
-    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl">
-      Panduan lengkap<br />bot Vanillate.
-    </h1>
-    <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-      Aturan main, daftar command, tabel harga, strategi, sampai FAQ, semuanya ditulis rapi dan diperbarui mengikuti versi bot yang sedang berjalan. Kalau ada yang berubah di dalam game, halaman ini ikut berubah.
-    </p>
+<BaseLayout title="Dokumentasi" description="Dokumentasi resmi seluruh bot Vanillate Studio: aturan main, daftar command, tabel harga, strategi, dan FAQ. Selalu diperbarui mengikuti versi bot yang berjalan.">
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
+    <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
+
+    <div class="container-page relative">
+      <p class="eyebrow mb-6 animate-fade-up">Dokumentasi</p>
+      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl animate-fade-up">
+        Panduan lengkap<br />bot <span class="italic text-amber-600 dark:text-amber-500">Vanillate</span>.
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Aturan main, daftar command, tabel harga, strategi, sampai FAQ, semuanya ditulis rapi dan diperbarui mengikuti versi bot yang sedang berjalan. Kalau ada yang berubah di dalam game, halaman ini ikut berubah.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          {documentedBots.length} dokumentasi lengkap
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          {totalSections}+ bab panduan
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          Selalu diperbarui
+        </span>
+      </div>
+    </div>
   </section>
 
-  <section class="container-page pb-24">
-    <div class="grid gap-4 md:grid-cols-2">
-      {bots.filter((b) => b.docsSlug).map((bot) => (
+  <!-- KARTU DOKUMENTASI -->
+  <section class="container-page pb-8">
+    <div class="grid gap-4 md:grid-cols-2 reveal">
+      {documentedBots.map((bot) => (
         <a
           href={url(`/docs/${bot.docsSlug}`)}
           class="group flex items-start gap-4 p-6 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-colors"
@@ -37,6 +84,131 @@ import { url } from '@utils/url';
           <svg class="text-ink-400 dark:text-cream-300/40 group-hover:text-amber-500 group-hover:translate-x-1 transition-all mt-1 flex-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </a>
       ))}
+    </div>
+  </section>
+
+  <!-- APA YANG ADA DI DALAM -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="max-w-3xl mb-12 reveal">
+      <p class="eyebrow mb-3">Isi Dokumentasi</p>
+      <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest">
+        Semua yang perlu kamu tahu, di satu tempat.
+      </h2>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {covers.map((c, i) => (
+        <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6" style={`--reveal-delay: ${i * 90}ms`}>
+          <span class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={c.icon} />
+          </span>
+          <h3 class="font-display text-lg font-semibold mb-2">{c.title}</h3>
+          <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{c.desc}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- TOPIK POPULER -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">Langsung Loncat</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+          Topik yang paling sering dibuka.
+        </h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Sudah tahu yang kamu cari? Loncat langsung ke bagiannya tanpa perlu scroll.
+        </p>
+      </div>
+      <div class="md:col-span-2 grid gap-3 sm:grid-cols-2">
+        {popularTopics.map((topic, i) => (
+          <a
+            href={url(topic.href)}
+            class="reveal group flex items-center gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 px-4 py-3.5 hover:border-amber-500/50 transition-colors"
+            style={`--reveal-delay: ${i * 60}ms`}
+          >
+            <span class="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10M7 17 17 7"/></svg>
+            </span>
+            <span class="flex-1">
+              <span class="block text-sm font-medium text-ink-800 dark:text-cream-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{topic.label}</span>
+              <span class="block font-mono text-[10px] uppercase tracking-wider text-ink-500 dark:text-cream-300/60">{topic.bot}</span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK START CALLOUT -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-8 md:p-12 reveal">
+      <div class="grid gap-8 md:grid-cols-[1fr_1.4fr] items-center">
+        <div>
+          <p class="eyebrow mb-3">Belum sempat baca?</p>
+          <h2 class="font-display text-2xl md:text-4xl font-semibold tracking-tightest">
+            Intinya cuma tiga baris.
+          </h2>
+          <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+            Kamu tidak harus menghafal dokumentasi untuk mulai. Tiap bot punya bagian <strong class="text-ink-900 dark:text-cream-50">⚡ Mulai Cepat</strong> di awal halamannya.
+          </p>
+        </div>
+        <ol class="space-y-3">
+          <li class="flex gap-3 items-start rounded-xl bg-cream-50/60 dark:bg-ink-950/40 border border-ink-900/10 dark:border-cream-100/10 px-4 py-3">
+            <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">01</span>
+            <span class="text-ink-700 dark:text-cream-200 leading-relaxed">Undang bot ke server Discord kamu.</span>
+          </li>
+          <li class="flex gap-3 items-start rounded-xl bg-cream-50/60 dark:bg-ink-950/40 border border-ink-900/10 dark:border-cream-100/10 px-4 py-3">
+            <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">02</span>
+            <span class="text-ink-700 dark:text-cream-200 leading-relaxed">Ketik <code class="font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">/</code> untuk melihat command yang tersedia.</span>
+          </li>
+          <li class="flex gap-3 items-start rounded-xl bg-cream-50/60 dark:bg-ink-950/40 border border-ink-900/10 dark:border-cream-100/10 px-4 py-3">
+            <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">03</span>
+            <span class="text-ink-700 dark:text-cream-200 leading-relaxed">Jalankan command permainan, dan langsung main!</span>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ UMUM -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">FAQ</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+          Yang sering ditanyakan.
+        </h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Pertanyaan yang lebih spesifik biasanya sudah dijawab di dokumentasi masing-masing bot.
+        </p>
+      </div>
+      <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
+        <FAQAccordion items={generalFaqs} />
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container-page pb-24">
+    <div class="rounded-3xl border border-ink-900/10 dark:border-cream-100/10 p-10 md:p-12 reveal">
+      <div class="max-w-2xl">
+        <h2 class="font-display text-2xl md:text-4xl font-semibold tracking-tightest mb-4">
+          Masih ada yang mengganjal?
+        </h2>
+        <p class="text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed mb-8">
+          Kalau dokumentasi belum menjawab pertanyaanmu, tim kami siap membantu langsung di server Discord Support, atau kirim lewat command <code class="font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">/masukan</code> di dalam bot.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a href={site.links.discordSupport} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-6 py-3 text-sm font-medium hover:-translate-y-0.5 transition-transform">
+            Gabung Discord Support
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+          </a>
+          <a href={url('/bots')} class="inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+            Lihat semua bot
+          </a>
+        </div>
+      </div>
     </div>
   </section>
 </BaseLayout>
