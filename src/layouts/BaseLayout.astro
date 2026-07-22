@@ -30,6 +30,9 @@ const { title, description, image, noindex } = Astro.props;
     <!-- Anti-flash theme init: harus inline sebelum CSS untuk hindari FOUC -->
     <script is:inline>
       (function () {
+        // Tandai bahwa JS aktif, supaya animasi scroll-reveal boleh menyembunyikan
+        // elemen dulu. Tanpa JS, class ini absen dan konten tetap tampil.
+        document.documentElement.classList.add('js');
         try {
           const stored = localStorage.getItem('theme');
           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -58,5 +61,28 @@ const { title, description, image, noindex } = Astro.props;
       <slot />
     </main>
     <Footer />
+
+    <script>
+      // Scroll reveal global: tampilkan elemen .reveal saat masuk viewport.
+      const revealEls = document.querySelectorAll<HTMLElement>('.reveal');
+      if (revealEls.length) {
+        if (!('IntersectionObserver' in window)) {
+          revealEls.forEach((el) => el.classList.add('is-visible'));
+        } else {
+          const io = new IntersectionObserver(
+            (entries, obs) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('is-visible');
+                  obs.unobserve(entry.target);
+                }
+              });
+            },
+            { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+          );
+          revealEls.forEach((el) => io.observe(el));
+        }
+      }
+    </script>
   </body>
 </html>

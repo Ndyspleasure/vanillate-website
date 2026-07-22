@@ -32,3 +32,13 @@ export const nav = [
   { label: 'Dokumentasi', href: '/docs' },
   { label: 'Support', href: '/support' },
 ];
+
+// Angka komunitas untuk social proof di beranda.
+// Ini data nyata dari studio, update manual di sini saat berubah.
+// `hint` menjelaskan maksud tiap angka supaya pengunjung tidak bingung.
+export const homeStats = [
+  { num: 1500, prefix: '', suffix: '+', label: 'Pemain aktif', hint: 'Bermain lintas server setiap hari' },
+  { num: 1000, prefix: '', suffix: '+', label: 'Server memakai bot', hint: 'Komunitas Discord di berbagai daerah' },
+  { num: 25000, prefix: '', suffix: '+', label: 'Kata di kamus', hint: 'Kamus Sambung Kata, tervalidasi otomatis' },
+  { num: 300, prefix: '+', suffix: '%', label: 'Keaktifan chat', hint: 'Kenaikan sejak fitur terbaru rilis' },
+] as const;

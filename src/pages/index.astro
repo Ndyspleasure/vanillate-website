@@ -4,18 +4,44 @@ import Button from '@components/Button.astro';
 import BotCard from '@components/BotCard.astro';
 import BotComparison from '@components/BotComparison.astro';
 import { bots, getFeaturedBot } from '@data/bots';
-import { site } from '@data/site';
+import { site, homeStats } from '@data/site';
 import { url } from '@utils/url';
 
 const featured = getFeaturedBot();
 const others = bots.filter((b) => !b.featured);
 
-// Angka untuk stats bar dihitung dari registry supaya selalu jujur & sinkron.
-const liveCount = bots.filter((b) => b.status === 'live').length;
-const stats = [
-  { value: String(liveCount), label: 'Bot live sekarang' },
-  { value: '21.000+', label: 'Kata di kamus' },
-  { value: 'Gratis', label: 'Tanpa langganan' },
+// Format angka gaya Indonesia (pemisah ribuan titik). Dipakai untuk nilai awal
+// stats; animasi hitung-naik di client memakai formatter yang sama.
+function formatNum(n: number): string {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// Langkah onboarding untuk section "Cara Mulai".
+const steps = [
+  {
+    n: '01',
+    title: 'Pilih bot',
+    desc: 'Tentukan bot yang paling cocok dengan seleramu, pakai kuis singkat atau tabel perbandingan.',
+    href: '/pilih',
+    cta: 'Ikuti kuis singkat',
+    icon: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  },
+  {
+    n: '02',
+    title: 'Undang ke server',
+    desc: 'Satu klik lewat Discord. Beri izin yang diminta, dan bot langsung masuk ke servermu.',
+    href: '/bots',
+    cta: 'Lihat semua bot',
+    icon: '<circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>',
+  },
+  {
+    n: '03',
+    title: 'Jalankan command',
+    desc: 'Ketik command-nya di channel mana pun, dan permainan langsung dimulai. Tanpa setup ribet.',
+    href: '/docs',
+    cta: 'Buka dokumentasi',
+    icon: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>',
+  },
 ];
 ---
 
@@ -40,21 +66,34 @@ const stats = [
         <Button href="/pilih" variant="secondary" size="lg">Bantu Aku Memilih</Button>
       </div>
 
-      <!-- Social proof: angka jujur, dihitung dari katalog bot -->
-      <div class="mt-12 grid max-w-xl grid-cols-3 gap-px overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-ink-900/10 dark:bg-cream-100/10 animate-fade-up" style="animation-delay: 0.3s">
-        {stats.map((s) => (
-          <div class="flex flex-col gap-1 bg-cream-50 dark:bg-ink-950 px-4 py-5 text-center sm:px-6">
-            <span class="font-display text-2xl md:text-3xl font-semibold tracking-tightest text-ink-900 dark:text-cream-50">{s.value}</span>
-            <span class="text-xs md:text-sm text-ink-500 dark:text-cream-300/60 leading-tight">{s.label}</span>
-          </div>
-        ))}
+      <!-- Social proof: angka nyata komunitas, tiap angka diberi penjelasan singkat -->
+      <div class="mt-14 animate-fade-up" style="animation-delay: 0.3s">
+        <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/50 mb-4">
+          Dipercaya komunitas Discord Indonesia
+        </p>
+        <div class="grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-ink-900/10 dark:bg-cream-100/10 md:grid-cols-4">
+          {homeStats.map((s) => (
+            <div class="flex flex-col gap-1 bg-cream-50 dark:bg-ink-950 px-4 py-5 sm:px-5">
+              <span
+                class="font-display text-2xl md:text-[2rem] font-semibold tracking-tightest text-ink-900 dark:text-cream-50 tabular-nums"
+                data-count={String(s.num)}
+                data-prefix={s.prefix}
+                data-suffix={s.suffix}
+              >
+                {s.prefix + formatNum(s.num) + s.suffix}
+              </span>
+              <span class="text-sm font-semibold text-ink-800 dark:text-cream-100">{s.label}</span>
+              <span class="text-xs text-ink-500 dark:text-cream-300/60 leading-snug">{s.hint}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   </section>
 
   <!-- FEATURED BOT -->
   <section class="container-page py-20">
-    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap">
+    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap reveal">
       <div>
         <p class="eyebrow mb-3">Highlight</p>
         <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-xl">
@@ -67,15 +106,57 @@ const stats = [
       </a>
     </div>
 
-    <div class="grid gap-6 md:grid-cols-2">
+    <div class="grid gap-6 md:grid-cols-2 reveal" style="--reveal-delay: 80ms">
       <BotCard bot={featured} featured />
       {others.map((bot) => <BotCard bot={bot} />)}
     </div>
   </section>
 
+  <!-- CARA MULAI (3 LANGKAH) -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="max-w-3xl mb-14 reveal">
+      <p class="eyebrow mb-3">Cara Mulai</p>
+      <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest">
+        Dari nol ke main, cuma tiga langkah.
+      </h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Tidak perlu daftar akun atau setup rumit. Semuanya berjalan langsung di dalam Discord, gratis.
+      </p>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-stretch gap-4 md:gap-3">
+      {steps.map((step, i) => (
+        <>
+          <div
+            class="reveal flex-1 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-7 transition-colors hover:border-amber-500/40"
+            style={`--reveal-delay: ${i * 110}ms`}
+          >
+            <div class="flex items-center justify-between mb-5">
+              <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={step.icon} />
+              </span>
+              <span class="font-mono text-3xl font-bold text-ink-900/10 dark:text-cream-100/15 leading-none">{step.n}</span>
+            </div>
+            <h3 class="font-display text-xl font-semibold tracking-tightest mb-2">{step.title}</h3>
+            <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed text-[0.95rem]">{step.desc}</p>
+            <a href={url(step.href)} class="group mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
+              {step.cta}
+              <svg class="transition-transform group-hover:translate-x-1" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+          {i < steps.length - 1 && (
+            <div class="flex items-center justify-center flex-none text-amber-500/50" aria-hidden="true">
+              <svg class="rotate-90 md:rotate-0" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+            </div>
+          )}
+        </>
+      ))}
+    </div>
+  </section>
+
   <!-- COMPARISON -->
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap">
+    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap reveal">
       <div>
         <p class="eyebrow mb-3">Bandingkan</p>
         <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-xl">
@@ -91,12 +172,14 @@ const stats = [
       </a>
     </div>
 
-    <BotComparison />
+    <div class="reveal" style="--reveal-delay: 80ms">
+      <BotComparison />
+    </div>
   </section>
 
   <!-- VALUES -->
   <section class="container-page py-24">
-    <div class="max-w-3xl mb-16">
+    <div class="max-w-3xl mb-16 reveal">
       <p class="eyebrow mb-3">Prinsip Kami</p>
       <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest">
         Tiga hal yang tidak kami kompromikan.
@@ -104,17 +187,17 @@ const stats = [
     </div>
 
     <div class="grid gap-8 md:grid-cols-3">
-      <div>
+      <div class="reveal" style="--reveal-delay: 0ms">
         <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-lg font-bold">01</div>
         <h3 class="font-display text-xl font-semibold mb-2">Kualitas</h3>
         <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap fitur diuji, direview, dan disempurnakan sebelum sampai ke pengguna. Kami menolak rilis yang belum siap.</p>
       </div>
-      <div>
+      <div class="reveal" style="--reveal-delay: 110ms">
         <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-lg font-bold">02</div>
         <h3 class="font-display text-xl font-semibold mb-2">Stabilitas</h3>
         <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Uptime tinggi dan data yang aman. Bot berjalan di infrastruktur pribadi dengan monitoring dan proses pemulihan yang matang.</p>
       </div>
-      <div>
+      <div class="reveal" style="--reveal-delay: 220ms">
         <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-lg font-bold">03</div>
         <h3 class="font-display text-xl font-semibold mb-2">Pengalaman</h3>
         <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Interaksi yang jelas, respons yang cepat, dan alur permainan yang menyenangkan, dari command pertama hingga endgame.</p>
@@ -124,7 +207,7 @@ const stats = [
 
   <!-- PROSES -->
   <section class="container-page pb-24">
-    <div class="rounded-3xl border border-ink-900/10 dark:border-cream-100/10 p-10 md:p-14">
+    <div class="rounded-3xl border border-ink-900/10 dark:border-cream-100/10 p-10 md:p-14 reveal">
       <div class="grid gap-10 md:grid-cols-[1fr_1.6fr] items-start">
         <div>
           <p class="eyebrow mb-3">Cara Kami Bekerja</p>
@@ -155,7 +238,7 @@ const stats = [
 
   <!-- CTA STRIP -->
   <section class="container-page pb-24">
-    <div class="rounded-3xl bg-ink-900 dark:bg-ink-900 p-10 md:p-16 relative overflow-hidden">
+    <div class="rounded-3xl bg-ink-900 dark:bg-ink-900 p-10 md:p-16 relative overflow-hidden reveal">
       <div class="aurora bg-amber-500/20 h-[300px] w-[300px] top-[-50px] right-[-50px]" aria-hidden="true"></div>
       <div class="relative max-w-2xl">
         <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest text-cream-50">
@@ -177,3 +260,59 @@ const stats = [
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  // Animasi hitung-naik untuk angka stats. Angka final sudah ter-render di HTML
+  // (aman tanpa JS); script ini menghidupkannya saat masuk viewport.
+  function formatNum(n: number): string {
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  const counters = Array.from(document.querySelectorAll<HTMLElement>('[data-count]'));
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function render(el: HTMLElement, value: number) {
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    el.textContent = prefix + formatNum(value) + suffix;
+  }
+
+  function animate(el: HTMLElement) {
+    const target = parseInt(el.dataset.count || '0', 10);
+    if (reduced || !Number.isFinite(target)) {
+      render(el, target);
+      return;
+    }
+    const duration = 1400;
+    const start = performance.now();
+    function tick(now: number) {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      render(el, target * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  if (counters.length) {
+    // Reset ke 0 dulu (kecuali reduced motion) supaya tidak ada lompatan final→0.
+    if (!reduced) counters.forEach((el) => render(el, 0));
+
+    if (!('IntersectionObserver' in window)) {
+      counters.forEach((el) => animate(el));
+    } else {
+      const io = new IntersectionObserver(
+        (entries, obs) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              animate(entry.target as HTMLElement);
+              obs.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.4 },
+      );
+      counters.forEach((el) => io.observe(el));
+    }
+  }
+</script>
