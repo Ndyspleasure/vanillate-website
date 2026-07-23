@@ -1,802 +1,246 @@
-// Konten dokumentasi per bot.
-// Update dokumentasi? Cukup edit file ini. Halaman /docs/[slug] akan render otomatis.
-// Bot baru tanpa entry di sini akan menampilkan placeholder default.
+// Registry bot Vanillate Studio.
+// Tambah bot baru? Cukup tambahkan objek di array `bots` dan buat halaman docs jika perlu.
+// Halaman /bots dan /bots/[slug] akan otomatis menampilkannya.
 
-export type DocSubsection = {
-  title?: string;                                    // Judul kecil, boleh dengan emoji
-  text?: string;                                     // Paragraf biasa
-  items?: string[];                                  // Bullet list
-  table?: { headers: string[]; rows: string[][] };   // Tabel data
+export type Bot = {
+  slug: string;                 // URL segment: /bots/<slug>
+  name: string;                 // Nama lengkap
+  shortName: string;            // Nama pendek untuk tombol/badge
+  tagline: string;              // Kalimat singkat 1 baris
+  description: string;          // Paragraf pendek untuk halaman detail
+  status: 'live' | 'beta' | 'preorder' | 'coming-soon';
+  featured: boolean;            // Highlight utama di beranda
+  category: string;             // ex: "Word Game", "Idle Simulation"
+  clientId?: string;            // Discord Application/Client ID (kosongkan jika belum rilis)
+  permissions: string;          // Bitwise permission integer
+  scopes: string[];             // OAuth2 scopes
+  color: string;                // Aksen warna bot (hex)
+  icon: string;
+  thumbnail?: string;           // Path thumbnail PNG persegi di /public
+  features: string[];           // 3-6 poin fitur utama
+  commands?: { name: string; description: string }[]; // sample command untuk halaman detail
+  docsSlug?: string;            // slug dokumentasi /docs/<docsSlug> (kosongkan jika belum ada)
+  longIntro?: string[];         // Paragraf narasi panjang untuk halaman detail (opsional)
+  ctaNote?: string;             // Catatan kecil di bawah tombol invite (mis. status preorder)
+  seoTitle?: string;            // <title> khusus SEO (fallback: name). Tanpa suffix brand.
+  seoDescription?: string;      // meta description khusus SEO (fallback: description)
+  founding?: {                  // Program Founding Members / early access (opsional)
+    title: string;
+    intro: string;
+    perks: string[];
+    requirements?: string[];
+    footnote?: string;
+  };
 };
 
-// Kartu event yang di-highlight (dirender sebagai kartu berwarna, bukan list biasa).
-// Dipakai untuk menonjolkan event spesial supaya lebih menarik pemain.
-export type DocEventCard = {
-  icon: string;        // Emoji besar sebagai ikon event
-  name: string;        // Nama event (mis. "AI Challenger")
-  tagline: string;     // Satu kalimat penjelas
-  accent: string;      // Warna aksen kartu (hex), tema per event
-  stats: { label: string; value: string }[];  // Chip meta: peluang, kesulitan, tim
-  reward: string;      // Ringkasan reward jika sukses
-  fail: string;        // Ringkasan konsekuensi jika gagal
-};
+/**
+ * Bangun invite URL Discord dari clientId + permissions + scopes.
+ */
+export function buildInviteUrl(bot: Bot): string | null {
+  if (!bot.clientId || bot.status === 'coming-soon') return null; // preorder tetap boleh diundang
+  const params = new URLSearchParams({
+    client_id: bot.clientId,
+    permissions: bot.permissions,
+    scope: bot.scopes.join(' '),
+  });
+  return `https://discord.com/oauth2/authorize?${params.toString()}`;
+}
 
-export type DocSection = {
-  id: string;          // Anchor untuk sidebar TOC
-  title: string;       // Judul section
-  intro?: string;      // Paragraf pembuka section
-  events?: DocEventCard[];  // Kartu event highlight (opsional, dirender di atas subsections)
-  subsections: DocSubsection[];
-  note?: string;       // Catatan/tip penutup section
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// Label CTA standar. Satu sumber kebenaran supaya tombol konsisten di seluruh
+// situs (kartu, halaman detail, docs, footer). Ubah di sini = berubah di mana pun.
+// ─────────────────────────────────────────────────────────────────────────────
+export const CTA = {
+  invite: 'Undang ke Server',   // bot live: implikasi langsung dipakai
+  preorder: 'Amankan Tempat',   // bot preorder: implikasi keuntungan eksklusif
+  notify: 'Ikuti Kabarnya',     // coming soon: implikasi menunggu rilis
+  docs: 'Lihat Panduan',        // dokumentasi
+  discord: 'Gabung Komunitas',  // server Discord
+} as const;
 
-export type BotDoc = {
-  intro: string;
-  quickStart?: string[];
-  sections: DocSection[];
-};
+/** Label tombol invite/CTA utama sesuai status bot. */
+export function inviteCtaLabel(bot: Bot): string {
+  if (bot.status === 'preorder') return CTA.preorder;
+  if (bot.status === 'coming-soon') return CTA.notify;
+  return CTA.invite;
+}
 
-export const docs: Record<string, BotDoc> = {
-  // ═══════════════════════════════════════════════════════════════════
-  // VANILLATE SAMBUNG KATA
-  // ═══════════════════════════════════════════════════════════════════
-  'sambung-kata': {
-    intro:
-      'Vanillate Sambung Kata adalah bot game kata berantai dalam Bahasa Indonesia. Setiap pemain menyambung kata dari huruf yang ditentukan, dengan sistem progresi mendalam: Class, Quest, Boost, hingga Dungeon Mode.',
-    quickStart: [
-      'Undang bot ke server Discord kamu.',
-      'Jalankan `/sambungkata mode:pvp` untuk buka lobby, atau `mode:pvb` untuk lawan bot.',
-      'Jawab dengan kata yang diawali huruf yang ditentukan. Kata harus ada di kamus.',
-      'Kumpulkan EXP & Coin, buka Class di Level 3, dan taklukkan Dungeon!',
+export const bots: Bot[] = [
+  {
+    slug: 'sambung-kata',
+    thumbnail: '/bots/sambung-kata.png',
+    name: 'Vanillate Sambung Kata',
+    shortName: 'Sambung Kata',
+    tagline: 'Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.',
+    description:
+      'Permainan kata klasik Indonesia, dibangun ulang untuk Discord. Sambung kata bersama teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon, sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 25.000+ kata memastikan setiap jawaban dinilai adil.',
+    status: 'live',
+    featured: true,
+    category: 'Word Game',
+    seoTitle: 'Sambung Kata — Bot Game Kata Berantai untuk Discord',
+    seoDescription:
+      'Main Sambung Kata di Discord: mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis, tanpa langganan.',
+    clientId: '1513806760622817320',
+    permissions: '277025770496',
+    scopes: ['bot', 'applications.commands'],
+    color: '#E8B84A',
+    icon: '✦',
+    features: [
+      'Kamus Bahasa Indonesia 25.000+ kata dengan validasi otomatis',
+      'Tiga mode: PvP hingga 10 pemain, PvB 4 tingkat kesulitan, dan Dungeon',
+      '9 Class dengan passive unik plus Talent Tree',
+      'Boost system 5 jenis dengan rarity Common hingga Legendary',
+      'Quest harian & mingguan, promo code, dan event in-game acak',
+      'Leaderboard global, win streak, dan Dungeon Trophy',
     ],
-    sections: [
-      {
-        id: 'cara-bermain',
-        title: 'Cara Bermain',
-        intro:
-          'Sambung Kata adalah permainan kata berantai. Setiap pemain harus menyebut kata yang diawali huruf yang ditentukan dari kata sebelumnya. Contoh: kata `MAKAN` → huruf berikut `N` → jawaban valid: `NASI`, `NAMA`, `NILAI`, dan seterusnya.',
-        subsections: [
-          {
-            title: '📌 Aturan Dasar',
-            items: [
-              'Kata harus diawali dari huruf yang ditentukan.',
-              'Kata harus ada di kamus Bahasa Indonesia (25.000+ kata).',
-              'Kata yang sudah pernah dipakai tidak boleh diulang.',
-              'Hanya 1 kata per giliran (tanpa spasi).',
-              'Kata minimum 2 huruf.',
-            ],
-          },
-          {
-            title: '⏱️ Waktu per Giliran',
-            items: [
-              'Setiap pemain punya waktu terbatas untuk menjawab.',
-              'Waktu habis → kehilangan 1 ❤️ nyawa dan giliran pindah.',
-              'Jawab dalam ≤5 detik → dihitung ke quest ⚡ Kilat Kata.',
-              'Gunakan boost ⏳ Extra Time untuk menambah waktu giliran.',
-            ],
-          },
-          {
-            title: '❤️ Sistem Nyawa',
-            items: [
-              'Setiap pemain mulai dengan 5 nyawa.',
-              'Jawaban salah atau waktu habis = -1 kesempatan.',
-              'Setelah 5 kesempatan gagal = -1 nyawa dan giliran pindah.',
-              'Nyawa habis = 💀 eliminasi dari permainan.',
-            ],
-          },
-          {
-            title: '🏆 Cara Menang',
-            items: [
-              'PvP/PvB: jadilah pemain terakhir yang bertahan.',
-              'Dungeon: tumbangkan Guardian sampai wave 5.',
-              'Jika skor seri saat voting stop → Balapan Ayam 🐔 menentukan pemenang.',
-            ],
-          },
-          {
-            title: '🗳️ Voting Perhentian',
-            items: [
-              'Pemain bisa mengajukan voting untuk menghentikan game.',
-              'Semua pemain aktif punya 30 detik untuk vote.',
-              'Mayoritas memilih Hentikan → game berakhir lebih awal.',
-              'Mayoritas Lanjutkan atau seri → game dilanjutkan.',
-            ],
-          },
-          {
-            title: '📝 Kata Istimewa',
-            items: [
-              'Kata ≥8 huruf → bonus EXP & damage besar di Dungeon.',
-              'Kata berakhiran huruf langka (X, Q, Z, V) → bonus Coin & damage tertinggi.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'mode-permainan',
-        title: 'Mode Permainan',
-        subsections: [
-          {
-            title: '👥 Player vs Player (PvP)',
-            items: [
-              'Minimal 2 pemain manusia, maksimal 10 pemain per room.',
-              'Command: `/sambungkata mode:pvp`.',
-              'Host buka lobby → pemain join → host mulai.',
-              'Lobby otomatis tutup dalam 2 menit jika tidak dimulai.',
-            ],
-          },
-          {
-            title: '🤖 Player vs Bot (PvB)',
-            items: [
-              'Bermain sendirian melawan bot AI.',
-              'Command: `/sambungkata mode:pvb kesulitan:[easy|normal|hard|impossible]`.',
-              '🟢 Easy: bot lambat, sering salah.',
-              '🟡 Normal: bot seimbang.',
-              '🔴 Hard: bot cepat, jarang salah.',
-              '☠️ Impossible: bot hampir tidak pernah kalah.',
-            ],
-          },
-          {
-            title: '🏰 Dungeon Mode',
-            items: [
-              'Mode solo menantang: kamu vs Dungeon Guardian, 5 wave.',
-              'Command: `/sambungkata mode:dungeon` (butuh 🗝️ Golden Key).',
-              'Guardian membalas beberapa kata per giliran, makin cepat tiap wave.',
-              'Reward x2 + bonus besar & drop pasti jika tamat.',
-              'Detail lengkap ada di section Dungeon & Events.',
-            ],
-          },
-          {
-            title: '🎯 Fase Pre-Match (30 detik)',
-            items: [
-              'Sebelum game ada 30 detik fase persiapan.',
-              'Aktifkan boost Pre-Match di fase ini: ❤️ Extra Life (+1 nyawa), 🛡️ Shield (proteksi 1 kesalahan), ⏳ Extra Time (tambah waktu per giliran).',
-              'Beli boost di `/shop` atau klaim di `/claim`.',
-            ],
-          },
-          {
-            title: '🔥 Win Streak',
-            items: [
-              'Menang berturut-turut membangun Win Streak.',
-              'Milestone tertentu memberikan bonus Coin & reward.',
-              'Streak hilang jika kalah atau tidak menang.',
-              'Cek streak di `/stats`.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'boost-system',
-        title: 'Boost System',
-        intro:
-          'Boost adalah item spesial yang membantu kamu dalam permainan. Ada 2 jenis boost berdasarkan waktu penggunaan.',
-        subsections: [
-          {
-            title: '🎯 Pre-Match Boost',
-            items: [
-              '❤️ Extra Life (Legendary): tambah 1 nyawa ekstra sebelum game.',
-              '🛡️ Shield (Epic): proteksi dari 1 kesalahan dalam game.',
-              '⏳ Extra Time (Common): tambah +5 detik per giliran.',
-            ],
-          },
-          {
-            title: '⚡ In-Game Boost',
-            items: [
-              '💡 Hint (Common): tampilkan 1 kata valid sebagai jawaban.',
-              '🔄 Reroll (Rare): ganti huruf awalan dengan huruf lain.',
-            ],
-          },
-          {
-            title: '⭐ Rarity System',
-            items: [
-              '⚪ Common: Hint, Extra Time (peluang tertinggi).',
-              '🔵 Rare: Reroll.',
-              '🟣 Epic: Shield.',
-              '🟡 Legendary: Extra Life (peluang terendah).',
-            ],
-          },
-          {
-            title: '🎁 Cara Mendapatkan Boost',
-            items: [
-              '`/claim` → claim boost gratis setiap 24 jam (class tertentu dapat bonus!).',
-              '`/claim` → reward member Server Support (reset 24 jam).',
-              '`/claim` → redeem Promo Code jika ada kode aktif.',
-              '`/shop` → beli boost dengan Coin.',
-              '📦 Mystery Box → boost acak dari shop (500🪙).',
-              '📅 Quest → reward dari daily & weekly quest.',
-            ],
-          },
-          {
-            title: '📦 Lihat & Kelola Boost',
-            items: [
-              '`/inventory` → lihat semua boost yang kamu miliki.',
-              'Boost otomatis refresh di tombol pre-match setelah klaim/beli.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'progression',
-        title: 'Sistem Progression',
-        subsections: [
-          {
-            title: '👤 Account Level',
-            items: [
-              'Semua pemain dapat Account EXP dari setiap match & quest.',
-              'Butuh 500 EXP per level.',
-              'Level 3 → membuka Class System.',
-              'Cek progress di `/stats`.',
-            ],
-          },
-          {
-            title: '🎭 Class System (9 Class)',
-            items: [
-              'Tersedia dari Level 3: 📚 Scholar, ⚡ Speedster, 🛡️ Guardian, 🍀 Lucky, 🏹 Hunter.',
-              'Terbuka bertahap (Lv.8 / 12 / 16 / 20): 🎲 Gambler, 🧪 Alchemist, 🧠 Linguist, ⚔️ Berserker.',
-              'Pilih pertama GRATIS, ganti class 750🪙.',
-              'Setiap class punya passive nyata: bonus reward, boost harian ekstra, peluang selamat dari eliminasi, damage ekstra di Dungeon, dan lainnya.',
-              'Gunakan `/class list` untuk melihat semua class.',
-            ],
-          },
-          {
-            title: '⭐ EXP per Match',
-            items: [
-              '+1 EXP per kata valid.',
-              '+10 EXP menyelesaikan pertandingan.',
-              '+15 EXP menang, +5 EXP MVP.',
-              'EXP masuk ke Account (semua pemain) dan Class aktif (jika ada).',
-            ],
-          },
-          {
-            title: '🪙 Coin Economy',
-            items: [
-              '+5 Coin selesai pertandingan.',
-              '+10 Coin menang pertandingan.',
-              '+1 Coin per 10 kata valid.',
-              '+1 Coin kata ≥8 huruf.',
-              '+2 Coin huruf langka (X/Q/Z/V).',
-              'Bonus dari quest, win streak, dan passive class.',
-            ],
-          },
-          {
-            title: '🌟 Talent Tree',
-            items: [
-              'Setiap class punya talent eksklusif yang bisa dibeli.',
-              'Talent memberikan bonus pasif saat bermain.',
-              'Dibeli dengan Coin melalui `/class` → tombol talent.',
-              'Cek talent tersedia di `/class info [nama_class]`.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'quest-shop',
-        title: 'Quest & Shop',
-        subsections: [
-          {
-            title: '📅 Quest System',
-            items: [
-              '`/quest` → dashboard quest (Harian + Mingguan).',
-              '4 Daily Quest: reset tengah malam.',
-              '6 Weekly Quest: reset setiap Senin.',
-              '⚡ Kilat Kata (weekly): 20 jawaban ≤5 detik → hadiah 🗝️ Golden Key!',
-              'Selesaikan semua → Bonus Chest (Coin + Mystery Box).',
-              'Quest yang selesai diumumkan di akhir match, jangan lupa klaim!',
-            ],
-          },
-          {
-            title: '🏪 Shop',
-            table: {
-              headers: ['Item', 'Harga'],
-              rows: [
-                ['💡 Hint', '150🪙'],
-                ['🔄 Reroll', '200🪙'],
-                ['⏳ Extra Time', '250🪙'],
-                ['🛡️ Shield', '300🪙'],
-                ['🗝️ Golden Key', '350🪙'],
-                ['❤️ Extra Life', '400🪙'],
-                ['📦 Mystery Box', '500🪙'],
-                ['💡 Hint x5 Bundle', '600🪙'],
-                ['🛡️ Shield x3 Bundle', '750🪙'],
-              ],
-            },
-          },
-          {
-            title: '🎟️ Promo Code',
-            items: [
-              '`/claim` → tombol 🎟️ Redeem Promo Code.',
-              'Kode promo dibagikan lewat pengumuman resmi.',
-              'Setiap kode hanya bisa diklaim 1x per pemain.',
-              'Reward bervariasi: Coin, EXP, atau Boost.',
-            ],
-          },
-          {
-            title: '📝 Masukan & Saran',
-            items: [
-              '`/masukan` → kirim saran, bug report, atau pertanyaan.',
-              'Pilih kategori: 🐛 Bug, 💡 Saran, ❓ Pertanyaan, 📝 Lainnya.',
-              'Bisa dikirim anonim atau dengan nama.',
-              'Masukan langsung diterima tim developer.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'dungeon-events',
-        title: 'Dungeon & In-Game Events',
-        intro: 'Tantangan solo paling berat dan kejutan yang bisa muncul di tengah pertandingan!',
-        subsections: [
-          {
-            title: '🗝️ Golden Key: 3 Cara Mendapatkan',
-            items: [
-              '🏪 `/shop` → beli langsung 350🪙.',
-              '📆 Weekly quest ⚡ Kilat Kata → 20 jawaban ≤5 detik = kunci gratis.',
-              '🧳 Traveling Merchant → sering menjual dengan harga diskon (250🪙).',
-              'Kunci habis dipakai setiap masuk Dungeon. Maksimal pegang 1.',
-            ],
-          },
-          {
-            title: '🏰 Aturan Dungeon',
-            items: [
-              'Solo: kamu vs Dungeon Guardian, total 5 wave.',
-              'Damage kata: dasar 2 | ≥6 huruf +1 | ≥8 huruf +1 | akhiran langka +2.',
-              'Guardian membalas 4–8 kata per giliran (bertambah tiap wave).',
-              'Waktu berpikir menyusut tiap wave. Nyawa habis = Game Over.',
-              'Class perks aktif di sini: Guardian +1 nyawa, Hunter & Berserker +damage.',
-            ],
-          },
-          {
-            title: '🎁 Reward Dungeon',
-            items: [
-              'Semua reward match x2.',
-              'Bonus tamat: +100🪙 + 30🪙/wave (tamat 5 wave = +250🪙).',
-              'Tamat = drop PASTI: ❤️ Extra Life + 📦 boost acak + 🏆 Dungeon Trophy.',
-            ],
-          },
-          {
-            title: '🎲 In-Game Events (muncul acak di PvP)',
-            items: [
-              '🤖 AI Challenger: AI menantang seisi room; kalahkan bersama untuk reward x2.',
-              '🧳 Traveling Merchant: toko dadakan berisi item diskon & langka.',
-              '📡 Lost Signal: kumpulkan 5 fragmen untuk hadiah x2.',
-              '🗡️ Penjajah (Invader): boss musiman 17 Agustus dengan Steal, Block, & Challenge.',
-              'Event muncul di ronde 20–30 dan menjeda game saat intro. Detail lengkap tiap event ada di section **Event Spesial PvP**.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'event-spesial',
-        title: 'Event Spesial PvP',
-        intro:
-          'Di ronde 20–30 mode PvP, ada peluang salah satu dari **4 event spesial** muncul secara acak dan mengubah jalannya pertandingan. Saat intro event, timer dibekukan, jadi kamu punya waktu membaca lore dan menyusun strategi. Tiap event punya mekanik, cara menang, reward sukses, dan konsekuensi gagal yang berbeda.',
-        events: [
-          {
-            icon: '🤖',
-            name: 'AI Challenger',
-            tagline: 'Boss AI menantang seisi room. Kerja sama menumbangkannya sebelum match usai.',
-            accent: '#4FA89D',
-            stats: [
-              { label: 'Peluang', value: 'Sering' },
-              { label: 'Kesulitan', value: 'Sedang' },
-              { label: 'Tim', value: 'Co-op' },
-            ],
-            reward: '×2 Coin & EXP untuk semua pemain',
-            fail: 'Tidak ada reward, game lanjut normal',
-          },
-          {
-            icon: '📡',
-            name: 'Lost Signal',
-            tagline: 'Sistem bahasa pecah jadi 5 fragmen. Kumpulkan semua sebelum match berakhir.',
-            accent: '#5B8DEF',
-            stats: [
-              { label: 'Peluang', value: 'Cukup' },
-              { label: 'Kesulitan', value: 'Mudah–Sedang' },
-              { label: 'Tim', value: 'Co-op' },
-            ],
-            reward: '×2 Coin & EXP untuk semua pemain',
-            fail: 'Tidak ada reward (progress akhir ditampilkan)',
-          },
-          {
-            icon: '🧳',
-            name: 'Traveling Merchant',
-            tagline: 'Toko dadakan berisi item langka & diskon. Aktif hanya 5 menit lalu pergi.',
-            accent: '#E8B84A',
-            stats: [
-              { label: 'Peluang', value: 'Sering' },
-              { label: 'Durasi', value: '5 menit' },
-              { label: 'Tim', value: 'Individu' },
-            ],
-            reward: 'Item boost / Contract multiplier',
-            fail: 'Zonk (Package) atau Contract gagal',
-          },
-          {
-            icon: '🗡️',
-            name: 'Penjajah (Invader)',
-            tagline: 'Event spesial Hari Kemerdekaan RI (17 Agustus). Tahan Steal, Block, & Challenge sampai boss terusir.',
-            accent: '#E5484D',
-            stats: [
-              { label: 'Peluang', value: 'Jarang–Cukup' },
-              { label: 'Kesulitan', value: 'Sulit' },
-              { label: 'Tim', value: 'vs Boss' },
-            ],
-            reward: '×2 Coin & EXP + lore spesial',
-            fail: 'Hard-fail: ×0 reward (match berakhir)',
-          },
-        ],
-        subsections: [
-          {
-            title: '🤖 AI Challenger — Boss Bersama',
-            text:
-              'Boss AI muncul di tengah match untuk menantang semua pemain sekaligus. Tidak ada kompetisi antarpemain, semua bekerja sama menghajar boss sebelum match berakhir.',
-            items: [
-              'Intro 15 detik: game dijeda, embed dramatis mengumumkan kedatangan boss.',
-              'HP Boss: `200 + (jumlah pemain × 20)`. Contoh 3 pemain → boss punya 260 HP.',
-              'Setiap kata valid melukai boss. Menang jika HP boss ≤ 0 sebelum match habis.',
-              'Match berakhir tanpa boss tumbang → tidak ada reward, tapi juga tanpa penalti (bukan hard-fail).',
-              'Embed penutup menampilkan leaderboard kontribusi damage tiap pemain.',
-            ],
-          },
-          {
-            title: '💥 Sistem Damage AI Challenger',
-            text:
-              'Semakin panjang dan langka katamu, semakin sakit untuk boss. Gilir memberi kata berat bersama tim biar boss cepat tumbang. Contoh: `KOMPLEKS` (panjang, akhiran S) = 2 damage.',
-            table: {
-              headers: ['Jenis Kata', 'Damage'],
-              rows: [
-                ['Kata biasa (3–7 huruf)', '1'],
-                ['Kata panjang (≥8 huruf)', '2'],
-                ['Berakhir huruf langka (X / Z / Q / V)', '+1 tambahan'],
-              ],
-            },
-          },
-          {
-            title: '📡 Lost Signal — Kumpulkan 5 Fragmen',
-            text:
-              'Language Core tidak stabil dan sinyalnya pecah jadi 5 fragmen (A–E). Kumpulkan kelimanya sebelum match berakhir untuk restore sistem dan dapat reward.',
-            items: [
-              'Intro 15 detik: embed sistematis, "Language Core tidak stabil, fragmen terpecah".',
-              'Setiap kata valid punya peluang menjatuhkan fragmen (tidak dijamin tiap kata).',
-              'Kata panjang (≥6 huruf) menaikkan peluang drop.',
-              'Sistem memprioritaskan fragmen yang belum terkumpul, jadi tidak ada yang mubazir.',
-              'Menang jika semua 5 fragmen terkumpul. Kurang dari 5 saat match usai → gagal (tanpa penalti).',
-              'Embed mencatat progress tiap fragmen drop: siapa dapat apa dari kata apa.',
-            ],
-          },
-          {
-            title: '🧳 Traveling Merchant — Toko Dadakan',
-            text:
-              'Merchant musafir membuka toko pop-up berisi item langka dengan harga spesial. Toko hanya aktif 5 menit lalu merchant pergi. Beli pakai Coin milikmu sendiri, bukan pool match. Ini bukan musuh, jadi tidak ada menang/kalah.',
-            items: [
-              'Klik tombol item di embed toko; Coin langsung dipotong dari akunmu.',
-              'Item "unknown" baru di-roll saat dibeli.',
-              'Toko tutup otomatis setelah 5 menit atau saat match berakhir (mana lebih dulu).',
-            ],
-          },
-          {
-            title: '🛒 Barang Merchant (4–5 item acak per kunjungan)',
-            table: {
-              headers: ['Item', 'Harga', 'Efek', 'Rarity'],
-              rows: [
-                ['📦 Unknown Package', '100🪙', 'Drop acak: Hint, Reroll, Extra Time, atau ZONK', 'Common'],
-                ['🧳 Merchant Box', '300🪙', 'Drop pasti: Shield, Extra Life, Reroll, atau Hint', 'Rare'],
-                ['📜 Contract', '500🪙', 'HIGH RISK 50/50: reward akhir ×2 atau ×0', 'Epic'],
-                ['⏪ Rewind Ticket', '400🪙', 'Pulihkan 1 nyawa. Maks 1× per match per pemain', 'Rare'],
-                ['🗝️ Golden Key', '250🪙', 'Buka Dungeon Mode (muncul sesekali, langka)', 'Epic'],
-              ],
-            },
-          },
-          {
-            title: '🧠 Strategi Belanja',
-            items: [
-              '📦 Unknown Package: judi murah, bagus kalau hoki dapat boost, apes kalau zonk.',
-              '🧳 Merchant Box: lebih pasti daripada Package, tapi lebih mahal.',
-              '📜 Contract: taruhan tinggi, beli hanya kalau yakin menang. Cuma pembeli yang terpengaruh, pemain lain tetap normal.',
-              '⏪ Rewind Ticket: asuransi, beli saat nyawa tinggal 1 dan khawatir gugur.',
-              '🗝️ Golden Key: jalur alternatif kalau ingin akses Dungeon Mode sekarang.',
-            ],
-          },
-          {
-            title: '🗡️ Penjajah (Invader) — Boss Hari Kemerdekaan',
-            text:
-              'Event paling kompleks, sekaligus event spesial untuk memperingati Hari Kemerdekaan Indonesia (17 Agustus). Boss "Penjajah" hadir musiman dengan tiga mekanik gangguan yang berjalan paralel dan terus menekan pemain. Tahan sampai boss terusir. Intro ±50 detik dengan monolog Penjajah, game dijeda, timer dibekukan.',
-            items: [
-              'Menang: menangkan cukup banyak Challenge (≥3 jawaban benar) → Penjajah diusir, match lanjut.',
-              'Kalah: terlalu banyak Challenge salah (≥2 salah) → Penjajah menang, match berakhir.',
-              'Steal & Block bukan hard-fail, cuma buang waktu. Skor, giliran, nyawa, huruf target tetap utuh.',
-            ],
-          },
-          {
-            title: '⚔️ 3 Mekanik Gangguan Penjajah',
-            table: {
-              headers: ['Mekanik', 'Efek', 'Catatan'],
-              rows: [
-                ['🔓 Steal', 'Kata valid dirampas, tidak dihitung', 'Skor/giliran/nyawa utuh, timer tetap jalan'],
-                ['⛓️ Block', 'Tidak bisa input ~10 detik', 'Timer terus jalan, bisa timeout kalau habis'],
-                ['❓ Challenge', 'Soal kuis kemerdekaan (pilihan ganda) ~30 detik', 'Game dijeda; benar +1, salah/timeout -1'],
-              ],
-            },
-          },
-          {
-            title: '🏅 Kemenangan & "Pengkhianat Perjuangan"',
-            items: [
-              'Challenge benar ≥3 kali → event **sukses**: reward ×2 Coin & EXP + embed lore penutup.',
-              'Challenge salah ≥2 kali → event **gagal** (hard-fail): Penjajah menang, tanpa Coin & EXP.',
-              'Survival tunggal (dari ≥2 pemain manusia, tersisa 1) → gelar "Pengkhianat Perjuangan" dengan lore dramatis. Reward pemenang tetap ×2.',
-            ],
-          },
-          {
-            title: '📊 Perbandingan Cepat 4 Event',
-            table: {
-              headers: ['Event', 'Peluang', 'Kesulitan', 'Reward Sukses', 'Reward Gagal'],
-              rows: [
-                ['🤖 AI Challenger', 'Sering', 'Sedang', '×2 coin/exp', 'Tidak ada'],
-                ['📡 Lost Signal', 'Cukup', 'Mudah–Sedang', '×2 coin/exp', 'Tidak ada'],
-                ['🧳 Merchant', 'Sering', 'Mudah', 'Item / multiplier', 'Zonk / loss'],
-                ['🗡️ Penjajah', 'Jarang–Cukup', 'Sulit', '×2 coin/exp', '×0 (hard-fail)'],
-              ],
-            },
-          },
-        ],
-        note:
-          'Saat intro event, timer dibekukan, manfaatkan untuk baca lore & susun strategi tim. Untuk AI & Lost Signal, kata panjang/langka mempercepat progres. Untuk Penjajah, tetap tenang: fokus jawab Challenge dengan benar karena Steal & Block hanya membuang waktu, bukan hard-fail.',
-      },
-      {
-        id: 'commands',
-        title: 'Daftar Command',
-        subsections: [
-          {
-            title: '🎮 Bermain',
-            items: [
-              '`/sambungkata mode:pvp`: buka lobby PvP.',
-              '`/sambungkata mode:pvb kesulitan:...`: lawan bot AI.',
-              '`/sambungkata mode:dungeon`: masuk Dungeon (butuh 🗝️).',
-            ],
-          },
-          {
-            title: '📊 Progress & Info',
-            items: [
-              '`/stats`: statistik lengkap & Player ID.',
-              '`/leaderboard`: papan peringkat global.',
-              '`/class`: pilih class & beli talent.',
-              '`/quest`: dashboard quest harian/mingguan.',
-              '`/kamus [kata]`: cek apakah kata ada di kamus.',
-            ],
-          },
-          {
-            title: '💰 Ekonomi',
-            items: [
-              '`/claim`: claim boost harian, server reward, & promo.',
-              '`/shop`: beli boost & Golden Key.',
-              '`/inventory`: lihat boost yang dimiliki.',
-            ],
-          },
-          {
-            title: '🛠️ Lainnya',
-            items: [
-              '`/help`: panduan lengkap di dalam Discord.',
-              '`/masukan`: kirim saran atau laporan bug.',
-            ],
-          },
-        ],
-      },
+    commands: [
+      { name: '/sambungkata', description: 'Mulai permainan: mode PvP, PvB, atau Dungeon' },
+      { name: '/stats', description: 'Statistik lengkap & Player ID' },
+      { name: '/class', description: 'Pilih class & beli talent' },
+      { name: '/quest', description: 'Dashboard quest harian & mingguan' },
+      { name: '/shop', description: 'Beli boost & Golden Key dengan Coin' },
+      { name: '/help', description: 'Panduan lengkap di dalam Discord' },
+    ],
+    docsSlug: 'sambung-kata',
+  },
+  {
+    slug: 'tahu-bulat',
+    thumbnail: '/bots/tahu-bulat.png',
+    name: 'Vanillate Tahu Bulat',
+    shortName: 'Tahu Bulat',
+    tagline: 'Bangun kerajaan tahu bulat, dari gerobak kayu sampai food truck.',
+    description:
+      'Simulasi bisnis idle bertema kuliner paling Indonesia. Jual tahu, upgrade gerobak sampai jadi food truck, dan biarkan tokomu tetap menghasilkan bahkan saat kamu sedang offline. Buat yang sabar, Rebirth menghadiahkan bonus permanen yang menumpuk selamanya.',
+    status: 'live',
+    featured: false,
+    category: 'Idle Simulation',
+    seoTitle: 'Tahu Bulat — Bot Simulasi Bisnis Idle untuk Discord',
+    seoDescription:
+      'Bangun kerajaan tahu bulat di Discord. Pendapatan offline hingga 8 jam, upgrade gerobak sampai food truck, dan Rebirth untuk bonus permanen. Idle, santai, gratis dimainkan.',
+    clientId: '1521948490803187903',
+    permissions: '277025770496',
+    scopes: ['bot', 'applications.commands'],
+    color: '#4FA89D',
+    icon: '◉',
+    features: [
+      'Pendapatan offline hingga 8 jam saat tidak bermain',
+      '5 kendaraan, 10 peralatan, dan 30 bahan untuk di-upgrade',
+      'Rebirth dengan bonus permanen +20% yang menumpuk selamanya',
+      'Misi harian dan 12 achievement permanen',
+      'Fitur Upgrade Semua untuk menaikkan semua sekaligus',
+      'Peringkat 3 kategori antar pemain',
+    ],
+    commands: [
+      { name: '/tahu', description: 'Buka dashboard usaha: semua fitur ada di sini' },
+      { name: '/help', description: 'Panduan lengkap di dalam Discord' },
+    ],
+    docsSlug: 'tahu-bulat',
+  },
+  {
+    slug: 'anonymous-chat',
+    thumbnail: '/bots/anonymous-chat.png',
+    name: 'Anonymous Chat Vanillate',
+    shortName: 'Anonymous Chat',
+    tagline: 'Ketemu orang baru dan ngobrol tanpa mengungkap identitasmu.',
+    description:
+      'Discord Bot untuk bertemu dan mengobrol dengan orang baru secara anonim. Identitas Discord kamu disembunyikan, obrolan berlangsung di channel privat berdua, dan semuanya dirancang mengutamakan privasi, keamanan, serta kenyamanan.',
+    status: 'preorder',
+    featured: false,
+    category: 'Social',
+    seoTitle: 'Anonymous Chat — Ngobrol Anonim dengan Orang Baru di Discord',
+    seoDescription:
+      'Bertemu dan mengobrol anonim di Discord. Identitas disembunyikan, channel privat berdua, dan otomatis terhapus setelah sesi. Preorder beta dibuka dengan hadiah Founding Members.',
+    clientId: '1528619351844982965',
+    permissions: '268561488',
+    scopes: ['bot', 'applications.commands'],
+    color: '#14B8A6',
+    icon: '◐',
+    ctaNote: 'Preorder dibuka · masih tahap beta',
+    longIntro: [
+      'Anonymous Chat mempertemukanmu dengan pengguna lain di Discord tanpa perlu berteman lebih dulu. Sistem matchmaking-nya bisa memasangkanmu secara acak dalam hitungan detik, atau mencarikan partner dengan minat yang sama lewat Interest Match.',
+      'Setiap pasangan mendapat channel privat yang hanya bisa diakses berdua. Kirim teks, gambar, GIF, sticker, dan emoji dengan bebas. Bosan atau ingin suasana baru? Pakai Next Partner untuk lompat ke obrolan berikutnya kapan saja.',
+      'Privasi jadi inti dari semuanya. Identitas Discord disembunyikan sepanjang percakapan, dan channel otomatis terhapus setelah sesi berakhir sehingga tidak ada jejak yang tertinggal. Sistem report, block, dan filter otomatis menjaga obrolan tetap aman dan nyaman.',
+      'Mau cari teman ngobrol, berbagi cerita, berdiskusi, atau sekadar mengisi waktu luang, Anonymous Chat siap mempertemukanmu dengan orang-orang baru dari berbagai komunitas.',
+    ],
+    features: [
+      'Identitas Discord disembunyikan selama percakapan',
+      'Random matchmaking, temukan partner secara acak dalam detik',
+      'Interest Match, cari partner dengan minat atau topik yang sama',
+      'Gender Preference untuk memilih partner (fitur Premium)',
+      'Next Partner, lewati dan cari partner baru kapan saja',
+      'Channel privat yang hanya bisa diakses kalian berdua',
+      'Dukungan media: gambar, GIF, sticker, dan emoji',
+      'Report dan block untuk pengguna yang mengganggu',
+      'Moderasi dan filter otomatis demi kenyamanan',
+      'Channel terhapus otomatis setelah sesi berakhir',
+      'Matchmaking cepat dengan antrean real-time',
+      'Terhubung dengan seluruh pengguna tanpa perlu berteman dulu',
+    ],
+    founding: {
+      title: 'Founding Members Program',
+      intro:
+        'Jadi bagian dari pengguna pertama Anonymous Chat. Semua pemain yang bergabung selama masa beta mendapat hadiah eksklusif sebagai apresiasi atas dukungannya. Hadiah otomatis aktif begitu Anonymous Chat memasuki rilis resmi.',
+      perks: [
+        'Premium GRATIS selama 3 bulan setelah rilis resmi',
+        'Akses fitur Gender Preference untuk memilih partner',
+        'Badge Beta Tester eksklusif di profil',
+        'Akses lebih awal ke fitur terbaru sebelum pengguna lain',
+      ],
+      requirements: [
+        'Bergabung selama periode beta',
+        'Menggunakan bot dan ikut menguji selama masa beta',
+      ],
+      footnote:
+        'Terima kasih telah menjadi bagian dari perjalanan awal Anonymous Chat. Dukungan dan masukanmu membantu kami membangun pengalaman anonymous chat terbaik di Discord.',
+    },
+  },
+  {
+    slug: 'story',
+    name: 'Vanillate Story',
+    shortName: 'Story',
+    tagline: 'Mulai dari nol di Kota Vanillate dan tulis kisah hidupmu sendiri.',
+    description:
+      'Life Simulation RPG berbasis Discord. Kamu datang ke Kota Vanillate sebagai pendatang baru tanpa pekerjaan, tanpa harta, dan tanpa pengalaman. Dari titik nol itu, jalan hidupmu sepenuhnya milikmu.',
+    status: 'coming-soon',
+    featured: false,
+    category: 'Life Simulation RPG',
+    seoTitle: 'Vanillate Story — Life Simulation RPG di Discord (Segera)',
+    seoDescription:
+      'Mulai dari nol di Kota Vanillate: bangun karier, kumpulkan harta, berteman hingga menikah dengan NPC. Life Simulation RPG berbasis Discord, segera hadir.',
+    permissions: '277025770496',
+    scopes: ['bot', 'applications.commands'],
+    color: '#6C3BEB',
+    icon: '✧',
+    longIntro: [
+      'Kota Vanillate adalah kota yang penuh peluang, tantangan, dan cerita. Bangun karier dengan melamar berbagai pekerjaan, tingkatkan kemampuan lewat belajar dan berlatih, kumpulkan uang, beli rumah, koleksi kendaraan, pelihara hewan, dirikan bisnis, sampai menjadi salah satu warga paling sukses di kota.',
+      'Tapi hidup di Vanillate bukan cuma soal bekerja. Kota ini dihuni banyak NPC dengan kepribadian, rutinitas, kesukaan, impian, dan cerita hidupnya masing-masing. Kenali mereka, bantu selesaikan masalahnya, beri hadiah favoritnya, dan bangun pertemanan. Siapa tahu, salah satunya menjadi pasangan hidupmu.',
+      'Di luar rutinitas, ada banyak area untuk dijelajahi, quest untuk diselesaikan, event musiman untuk diikuti, dan achievement untuk dibuka. Setiap keputusan memengaruhi perkembangan karaktermu: skill yang kamu latih membuka profesi baru, pekerjaan bergaji lebih tinggi, peluang bisnis lebih besar, dan akses ke aktivitas eksklusif.',
+      'Ekonominya pun hidup. Toko memperbarui stoknya, event tertentu bisa mengguncang pasar, dan setiap pemain punya cara berbeda untuk membangun kekayaannya.',
+      'Tidak ada jalan yang benar atau salah. Kamu bisa jadi pekerja teladan yang meniti karier sampai puncak, pengusaha dengan banyak bisnis, petani yang hidup tenang, pemancing legendaris, kolektor barang langka, koki terkenal, atau sekadar menikmati hidup sederhana bersama orang yang kamu sayangi. Di Vanillate Story, setiap pemain punya cerita yang berbeda.',
+    ],
+    features: [
+      'Ciptakan dan kembangkan karaktermu sendiri',
+      'Puluhan profesi dengan jalur karier yang unik',
+      'Tingkatkan berbagai skill untuk membuka peluang baru',
+      'Beli, tingkatkan, dan hias rumah impianmu',
+      'Koleksi kendaraan untuk mendukung aktivitasmu',
+      'Bangun bisnis dan ciptakan penghasilan pasif',
+      'Berteman, berkencan, hingga menikah dengan NPC',
+      'Memancing, bertani, memasak, menambang, berburu, dan crafting',
+      'Quest, event musiman, achievement, dan item langka',
+      'Jelajahi area Kota Vanillate yang terus berkembang',
     ],
   },
+];
 
-  // ═══════════════════════════════════════════════════════════════════
-  // VANILLATE TAHU BULAT
-  // ═══════════════════════════════════════════════════════════════════
-  'tahu-bulat': {
-    intro:
-      'Tahu Bulat adalah game simulasi bisnis idle. Kembangkan usahamu dari gerobak kecil hingga jadi sultan tahu, bahkan saat kamu sedang tidak bermain, tokomu tetap menghasilkan.',
-    quickStart: [
-      'Ketik `/tahu` untuk membuka dashboard.',
-      'Tekan 🥟 Jual Tahu untuk berjualan.',
-      'Tunggu 5 detik, coin masuk otomatis.',
-      'Pakai coin untuk 🔧 Upgrade biar makin cuan.',
-    ],
-    sections: [
-      {
-        id: 'cara-bermain',
-        title: 'Cara Bermain',
-        subsections: [
-          {
-            title: '📱 Buka Dashboard',
-            text: 'Ketik `/tahu` kapan saja untuk membuka usahamu. Modal awal: 1.000 coin.',
-          },
-          {
-            title: '🥟 Jual Tahu',
-            text: 'Tekan tombol Jual Tahu. Kendaraan mulai berjualan selama beberapa detik (cooldown awal 5 detik). Selama menggoreng, semua tombol terkunci, tidak perlu pencet apa pun.',
-          },
-          {
-            title: '✨ Otomatis Masuk',
-            text: 'Saat selesai, dashboard update sendiri dan coin langsung bertambah. Tidak perlu refresh manual.',
-          },
-          {
-            title: '🌙 Pendapatan Offline',
-            text: 'Saat kamu pergi, tokomu tetap menghasilkan, hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/tahu` lagi untuk mengklaimnya.',
-          },
-        ],
-        note: 'Rumus pendapatan: Base × Kendaraan × Peralatan × Bahan × Promosi × Rebirth.',
-      },
-      {
-        id: 'kendaraan',
-        title: 'Kendaraan',
-        intro:
-          'Kendaraan menentukan pendapatan dasar dan bonus. Semakin tinggi tingkatnya, semakin besar cuan. Upgrade lewat `/tahu` → 🔧 Upgrade → Kendaraan.',
-        subsections: [
-          {
-            table: {
-              headers: ['Kendaraan', 'Base', 'Bonus', 'Harga'],
-              rows: [
-                ['Gerobak Kayu', '100', '+0%', 'Kendaraan awal'],
-                ['Motor Tahu', '350', '+25%', '5.000 coin'],
-                ['Pick Up Tahu', '1.000', '+75%', '50.000 coin'],
-                ['Van Tahu', '4.000', '+150%', '500.000 coin'],
-                ['Food Truck', '15.000', '+300%', '5.000.000 coin'],
-              ],
-            },
-          },
-        ],
-        note: 'Food Truck adalah kendaraan tertinggi dan menjadi syarat Rebirth.',
-      },
-      {
-        id: 'peralatan',
-        title: 'Peralatan',
-        intro:
-          'Ada 10 jenis peralatan, masing-masing maksimal Level 5. Setiap upgrade menambah bonus pendapatan. Harga upgrade naik 1.35× tiap level. Upgrade lewat 🔧 Upgrade → Peralatan.',
-        subsections: [
-          {
-            title: '⚙️ Peralatan Spesial',
-            items: [
-              '🔥 Kompor: memangkas cooldown jualan (Lv1: 5 detik → Lv5: 2 detik). Cooldown lebih cepat = lebih sering jual.',
-              '📢 Banner Promosi: memperkuat efek promosi.',
-            ],
-          },
-          {
-            title: '📋 Daftar Lengkap',
-            text: 'Penggorengan, Kompor, Speaker, Etalase, Mesin Adonan, Mesin Pemotong, Rak Bumbu, Mesin Pengemas, Dekorasi, Banner Promosi.',
-          },
-        ],
-      },
-      {
-        id: 'bahan',
-        title: 'Bahan',
-        intro:
-          'Bahan adalah progres jangka panjang: 30 jenis, masing-masing maksimal Level 50. Tiap level menambah bonus kecil, tapi kalau banyak bahan bertingkat tinggi, pendapatan berlipat ganda.',
-        subsections: [
-          {
-            items: [
-              'Harga upgrade naik 1.18× per level.',
-              'Semua bahan harus Lv50 untuk bisa Rebirth.',
-              'Dipilih lewat menu bertingkat (🔧 Upgrade → Bahan), ada beberapa halaman.',
-            ],
-          },
-        ],
-        note: 'Fokus bahan saat sudah kuat. Ini kunci pendapatan besar di late game.',
-      },
-      {
-        id: 'promosi',
-        title: 'Promosi',
-        intro:
-          'Promosi memberi bonus pendapatan sementara. Hanya satu promosi aktif dalam satu waktu. Beli lewat `/tahu` → 📢 Promosi.',
-        subsections: [
-          {
-            table: {
-              headers: ['Promosi', 'Bonus', 'Durasi', 'Harga'],
-              rows: [
-                ['📰 Poster', '+15%', '30 menit', '5.000 coin'],
-                ['📻 Radio', '+25%', '45 menit', '12.000 coin'],
-                ['📺 Televisi', '+40%', '1 jam', '20.000 coin'],
-                ['📱 Media Sosial', '+50%', '1 jam', '25.000 coin'],
-              ],
-            },
-          },
-        ],
-        note: 'Efek promosi bisa diperkuat dengan menaikkan level Banner Promosi.',
-      },
-      {
-        id: 'rebirth',
-        title: 'Rebirth',
-        intro:
-          'Rebirth mengulang usaha dari awal demi bonus permanen +20% setiap kali melakukannya, dan bonusnya menumpuk selamanya.',
-        subsections: [
-          {
-            title: '✅ Syarat Rebirth',
-            items: [
-              'Kendaraan sudah Food Truck.',
-              'Semua peralatan Level 5.',
-              'Semua bahan Level 50.',
-            ],
-          },
-          {
-            title: '🔄 Apa yang Terjadi',
-            items: [
-              'Direset: coin, kendaraan, peralatan, bahan, promosi.',
-              'Tetap aman: jumlah rebirth, statistik, achievement.',
-            ],
-          },
-        ],
-        note: 'Tidak bisa Rebirth saat sedang berjualan.',
-      },
-      {
-        id: 'misi-harian',
-        title: 'Misi Harian',
-        intro:
-          'Selesaikan misi setiap hari untuk hadiah coin. Reset otomatis tiap tengah malam WIB. Buka lewat `/tahu` → 🎯 Misi.',
-        subsections: [
-          {
-            table: {
-              headers: ['Misi', 'Target', 'Hadiah'],
-              rows: [
-                ['🥟 Tukang Jualan', 'Jual tahu 10 kali hari ini', '2.000 coin'],
-                ['💰 Pemburu Cuan', 'Kumpulkan 5.000 coin dari penjualan hari ini', '3.000 coin'],
-                ['🔧 Rajin Upgrade', 'Lakukan 3 upgrade hari ini', '2.500 coin'],
-              ],
-            },
-          },
-        ],
-        note: 'Progres tercatat otomatis dari aktivitasmu (jualan & upgrade). Klaim hadiah di menu misi saat sudah selesai.',
-      },
-      {
-        id: 'peringkat-achievement',
-        title: 'Peringkat & Achievement',
-        subsections: [
-          {
-            title: '🏆 Peringkat',
-            items: [
-              'Bandingkan dirimu dengan pemain lain.',
-              'Kategori: 💰 Total Coin Dihasilkan, 🧧 Kekayaan, ♻️ Total Rebirth.',
-              'Buka: `/tahu` → 🏆 Peringkat (bisa ganti kategori di dalamnya).',
-            ],
-          },
-          {
-            title: '🎖️ Achievement',
-            items: [
-              '12 pencapaian yang terbuka otomatis saat mencapai target tertentu (misal: jualan pertama, jutawan, armada lengkap, rebirth).',
-              'Notifikasi muncul di dashboard.',
-              'Permanen, tidak hilang saat Rebirth.',
-              'Buka: `/tahu` → 🎖️ Achievement.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'tips-faq',
-        title: 'Tips & FAQ',
-        subsections: [
-          {
-            title: '💡 Tips',
-            items: [
-              'Tidak perlu pencet Refresh. Dashboard update sendiri saat jualan selesai.',
-              'Malas klik satu-satu? Buka 🔧 Upgrade → ⬆️ Upgrade Semua untuk menaikkan semua peralatan & bahan sekaligus (beli yang termurah dulu).',
-              'Pergi lama? Tokomu tetap jualan (pendapatan offline). Rajin buka `/tahu`.',
-              'Prioritaskan Kompor dulu → cooldown cepat → lebih sering jual.',
-              'Bahan adalah kunci penghasilan besar; sabar naikkan sedikit demi sedikit.',
-              'Kumpulkan untuk Rebirth demi bonus permanen.',
-            ],
-          },
-          {
-            title: '❓ FAQ',
-            items: [
-              'Progresku hilang? Tidak. Semua tersimpan otomatis di server.',
-              'Bisa main bareng teman? Bisa; tiap orang punya usaha sendiri, lalu adu di 🏆 Peringkat.',
-              'Kenapa tombol terkunci? Sedang menggoreng. Tunggu beberapa detik, nanti terbuka sendiri.',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'commands',
-        title: 'Daftar Command',
-        intro: 'Tahu Bulat dirancang simpel, hanya 2 command:',
-        subsections: [
-          {
-            items: [
-              '`/tahu`: buka dashboard usaha (semua fitur ada di sini: jual, upgrade, promosi, misi, peringkat, achievement).',
-              '`/help`: panduan lengkap di dalam Discord.',
-            ],
-          },
-        ],
-      },
-    ],
-  },
-};
+export function getFeaturedBot(): Bot {
+  return bots.find((b) => b.featured) ?? bots[0];
+}
+
+/**
+ * Bot lain selain `slug` yang diberikan, untuk section cross-link
+ * "bot lainnya" di halaman detail & dokumentasi.
+ */
+export function getOtherBots(slug: string, limit = 3): Bot[] {
+  return bots.filter((b) => b.slug !== slug).slice(0, limit);
+}

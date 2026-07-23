@@ -9,10 +9,23 @@ export type DocSubsection = {
   table?: { headers: string[]; rows: string[][] };   // Tabel data
 };
 
+// Kartu event yang di-highlight (dirender sebagai kartu berwarna, bukan list biasa).
+// Dipakai untuk menonjolkan event spesial supaya lebih menarik pemain.
+export type DocEventCard = {
+  icon: string;        // Emoji besar sebagai ikon event
+  name: string;        // Nama event (mis. "AI Challenger")
+  tagline: string;     // Satu kalimat penjelas
+  accent: string;      // Warna aksen kartu (hex), tema per event
+  stats: { label: string; value: string }[];  // Chip meta: peluang, kesulitan, tim
+  reward: string;      // Ringkasan reward jika sukses
+  fail: string;        // Ringkasan konsekuensi jika gagal
+};
+
 export type DocSection = {
   id: string;          // Anchor untuk sidebar TOC
   title: string;       // Judul section
   intro?: string;      // Paragraf pembuka section
+  events?: DocEventCard[];  // Kartu event highlight (opsional, dirender di atas subsections)
   subsections: DocSubsection[];
   note?: string;       // Catatan/tip penutup section
 };
@@ -339,15 +352,192 @@ export const docs: Record<string, BotDoc> = {
             ],
           },
           {
-            title: '🎲 In-Game Events (muncul acak di PvP/PvB)',
+            title: '🎲 In-Game Events (muncul acak di PvP)',
             items: [
-              '🤖 AI Challenger: AI menantang seisi room; kalahkan untuk reward x2.',
+              '🤖 AI Challenger: AI menantang seisi room; kalahkan bersama untuk reward x2.',
               '🧳 Traveling Merchant: toko dadakan berisi item diskon & langka.',
-              '📡 Lost Signal: kumpulkan fragmen untuk hadiah misterius.',
-              'Event muncul di tengah match dan hanya menjeda game sebentar.',
+              '📡 Lost Signal: kumpulkan 5 fragmen untuk hadiah x2.',
+              '🗡️ Penjajah (Invader): boss musiman 17 Agustus dengan Steal, Block, & Challenge.',
+              'Event muncul di ronde 20–30 dan menjeda game saat intro. Detail lengkap tiap event ada di section **Event Spesial PvP**.',
             ],
           },
         ],
+      },
+      {
+        id: 'event-spesial',
+        title: 'Event Spesial PvP',
+        intro:
+          'Di ronde 20–30 mode PvP, ada peluang salah satu dari **4 event spesial** muncul secara acak dan mengubah jalannya pertandingan. Saat intro event, timer dibekukan, jadi kamu punya waktu membaca lore dan menyusun strategi. Tiap event punya mekanik, cara menang, reward sukses, dan konsekuensi gagal yang berbeda.',
+        events: [
+          {
+            icon: '🤖',
+            name: 'AI Challenger',
+            tagline: 'Boss AI menantang seisi room. Kerja sama menumbangkannya sebelum match usai.',
+            accent: '#4FA89D',
+            stats: [
+              { label: 'Peluang', value: 'Sering' },
+              { label: 'Kesulitan', value: 'Sedang' },
+              { label: 'Tim', value: 'Co-op' },
+            ],
+            reward: '×2 Coin & EXP untuk semua pemain',
+            fail: 'Tidak ada reward, game lanjut normal',
+          },
+          {
+            icon: '📡',
+            name: 'Lost Signal',
+            tagline: 'Sistem bahasa pecah jadi 5 fragmen. Kumpulkan semua sebelum match berakhir.',
+            accent: '#5B8DEF',
+            stats: [
+              { label: 'Peluang', value: 'Cukup' },
+              { label: 'Kesulitan', value: 'Mudah–Sedang' },
+              { label: 'Tim', value: 'Co-op' },
+            ],
+            reward: '×2 Coin & EXP untuk semua pemain',
+            fail: 'Tidak ada reward (progress akhir ditampilkan)',
+          },
+          {
+            icon: '🧳',
+            name: 'Traveling Merchant',
+            tagline: 'Toko dadakan berisi item langka & diskon. Aktif hanya 5 menit lalu pergi.',
+            accent: '#E8B84A',
+            stats: [
+              { label: 'Peluang', value: 'Sering' },
+              { label: 'Durasi', value: '5 menit' },
+              { label: 'Tim', value: 'Individu' },
+            ],
+            reward: 'Item boost / Contract multiplier',
+            fail: 'Zonk (Package) atau Contract gagal',
+          },
+          {
+            icon: '🗡️',
+            name: 'Penjajah (Invader)',
+            tagline: 'Event spesial Hari Kemerdekaan RI (17 Agustus). Tahan Steal, Block, & Challenge sampai boss terusir.',
+            accent: '#E5484D',
+            stats: [
+              { label: 'Peluang', value: 'Jarang–Cukup' },
+              { label: 'Kesulitan', value: 'Sulit' },
+              { label: 'Tim', value: 'vs Boss' },
+            ],
+            reward: '×2 Coin & EXP + lore spesial',
+            fail: 'Hard-fail: ×0 reward (match berakhir)',
+          },
+        ],
+        subsections: [
+          {
+            title: '🤖 AI Challenger — Boss Bersama',
+            text:
+              'Boss AI muncul di tengah match untuk menantang semua pemain sekaligus. Tidak ada kompetisi antarpemain, semua bekerja sama menghajar boss sebelum match berakhir.',
+            items: [
+              'Intro 15 detik: game dijeda, embed dramatis mengumumkan kedatangan boss.',
+              'HP Boss: `200 + (jumlah pemain × 20)`. Contoh 3 pemain → boss punya 260 HP.',
+              'Setiap kata valid melukai boss. Menang jika HP boss ≤ 0 sebelum match habis.',
+              'Match berakhir tanpa boss tumbang → tidak ada reward, tapi juga tanpa penalti (bukan hard-fail).',
+              'Embed penutup menampilkan leaderboard kontribusi damage tiap pemain.',
+            ],
+          },
+          {
+            title: '💥 Sistem Damage AI Challenger',
+            text:
+              'Semakin panjang dan langka katamu, semakin sakit untuk boss. Gilir memberi kata berat bersama tim biar boss cepat tumbang. Contoh: `KOMPLEKS` (panjang, akhiran S) = 2 damage.',
+            table: {
+              headers: ['Jenis Kata', 'Damage'],
+              rows: [
+                ['Kata biasa (3–7 huruf)', '1'],
+                ['Kata panjang (≥8 huruf)', '2'],
+                ['Berakhir huruf langka (X / Z / Q / V)', '+1 tambahan'],
+              ],
+            },
+          },
+          {
+            title: '📡 Lost Signal — Kumpulkan 5 Fragmen',
+            text:
+              'Language Core tidak stabil dan sinyalnya pecah jadi 5 fragmen (A–E). Kumpulkan kelimanya sebelum match berakhir untuk restore sistem dan dapat reward.',
+            items: [
+              'Intro 15 detik: embed sistematis, "Language Core tidak stabil, fragmen terpecah".',
+              'Setiap kata valid punya peluang menjatuhkan fragmen (tidak dijamin tiap kata).',
+              'Kata panjang (≥6 huruf) menaikkan peluang drop.',
+              'Sistem memprioritaskan fragmen yang belum terkumpul, jadi tidak ada yang mubazir.',
+              'Menang jika semua 5 fragmen terkumpul. Kurang dari 5 saat match usai → gagal (tanpa penalti).',
+              'Embed mencatat progress tiap fragmen drop: siapa dapat apa dari kata apa.',
+            ],
+          },
+          {
+            title: '🧳 Traveling Merchant — Toko Dadakan',
+            text:
+              'Merchant musafir membuka toko pop-up berisi item langka dengan harga spesial. Toko hanya aktif 5 menit lalu merchant pergi. Beli pakai Coin milikmu sendiri, bukan pool match. Ini bukan musuh, jadi tidak ada menang/kalah.',
+            items: [
+              'Klik tombol item di embed toko; Coin langsung dipotong dari akunmu.',
+              'Item "unknown" baru di-roll saat dibeli.',
+              'Toko tutup otomatis setelah 5 menit atau saat match berakhir (mana lebih dulu).',
+            ],
+          },
+          {
+            title: '🛒 Barang Merchant (4–5 item acak per kunjungan)',
+            table: {
+              headers: ['Item', 'Harga', 'Efek', 'Rarity'],
+              rows: [
+                ['📦 Unknown Package', '100🪙', 'Drop acak: Hint, Reroll, Extra Time, atau ZONK', 'Common'],
+                ['🧳 Merchant Box', '300🪙', 'Drop pasti: Shield, Extra Life, Reroll, atau Hint', 'Rare'],
+                ['📜 Contract', '500🪙', 'HIGH RISK 50/50: reward akhir ×2 atau ×0', 'Epic'],
+                ['⏪ Rewind Ticket', '400🪙', 'Pulihkan 1 nyawa. Maks 1× per match per pemain', 'Rare'],
+                ['🗝️ Golden Key', '250🪙', 'Buka Dungeon Mode (muncul sesekali, langka)', 'Epic'],
+              ],
+            },
+          },
+          {
+            title: '🧠 Strategi Belanja',
+            items: [
+              '📦 Unknown Package: judi murah, bagus kalau hoki dapat boost, apes kalau zonk.',
+              '🧳 Merchant Box: lebih pasti daripada Package, tapi lebih mahal.',
+              '📜 Contract: taruhan tinggi, beli hanya kalau yakin menang. Cuma pembeli yang terpengaruh, pemain lain tetap normal.',
+              '⏪ Rewind Ticket: asuransi, beli saat nyawa tinggal 1 dan khawatir gugur.',
+              '🗝️ Golden Key: jalur alternatif kalau ingin akses Dungeon Mode sekarang.',
+            ],
+          },
+          {
+            title: '🗡️ Penjajah (Invader) — Boss Hari Kemerdekaan',
+            text:
+              'Event paling kompleks, sekaligus event spesial untuk memperingati Hari Kemerdekaan Indonesia (17 Agustus). Boss "Penjajah" hadir musiman dengan tiga mekanik gangguan yang berjalan paralel dan terus menekan pemain. Tahan sampai boss terusir. Intro ±50 detik dengan monolog Penjajah, game dijeda, timer dibekukan.',
+            items: [
+              'Menang: menangkan cukup banyak Challenge (≥3 jawaban benar) → Penjajah diusir, match lanjut.',
+              'Kalah: terlalu banyak Challenge salah (≥2 salah) → Penjajah menang, match berakhir.',
+              'Steal & Block bukan hard-fail, cuma buang waktu. Skor, giliran, nyawa, huruf target tetap utuh.',
+            ],
+          },
+          {
+            title: '⚔️ 3 Mekanik Gangguan Penjajah',
+            table: {
+              headers: ['Mekanik', 'Efek', 'Catatan'],
+              rows: [
+                ['🔓 Steal', 'Kata valid dirampas, tidak dihitung', 'Skor/giliran/nyawa utuh, timer tetap jalan'],
+                ['⛓️ Block', 'Tidak bisa input ~10 detik', 'Timer terus jalan, bisa timeout kalau habis'],
+                ['❓ Challenge', 'Soal kuis kemerdekaan (pilihan ganda) ~30 detik', 'Game dijeda; benar +1, salah/timeout -1'],
+              ],
+            },
+          },
+          {
+            title: '🏅 Kemenangan & "Pengkhianat Perjuangan"',
+            items: [
+              'Challenge benar ≥3 kali → event **sukses**: reward ×2 Coin & EXP + embed lore penutup.',
+              'Challenge salah ≥2 kali → event **gagal** (hard-fail): Penjajah menang, tanpa Coin & EXP.',
+              'Survival tunggal (dari ≥2 pemain manusia, tersisa 1) → gelar "Pengkhianat Perjuangan" dengan lore dramatis. Reward pemenang tetap ×2.',
+            ],
+          },
+          {
+            title: '📊 Perbandingan Cepat 4 Event',
+            table: {
+              headers: ['Event', 'Peluang', 'Kesulitan', 'Reward Sukses', 'Reward Gagal'],
+              rows: [
+                ['🤖 AI Challenger', 'Sering', 'Sedang', '×2 coin/exp', 'Tidak ada'],
+                ['📡 Lost Signal', 'Cukup', 'Mudah–Sedang', '×2 coin/exp', 'Tidak ada'],
+                ['🧳 Merchant', 'Sering', 'Mudah', 'Item / multiplier', 'Zonk / loss'],
+                ['🗡️ Penjajah', 'Jarang–Cukup', 'Sulit', '×2 coin/exp', '×0 (hard-fail)'],
+              ],
+            },
+          },
+        ],
+        note:
+          'Saat intro event, timer dibekukan, manfaatkan untuk baca lore & susun strategi tim. Untuk AI & Lost Signal, kata panjang/langka mempercepat progres. Untuk Penjajah, tetap tenang: fokus jawab Challenge dengan benar karena Steal & Block hanya membuang waktu, bukan hard-fail.',
       },
       {
         id: 'commands',
