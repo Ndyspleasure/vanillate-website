@@ -43,6 +43,12 @@ export default {
       animation: {
         'aurora-slow': 'aurora 18s ease-in-out infinite',
         'fade-up': 'fadeUp 0.6s ease-out both',
+        // Animasi highlight event di beranda. Semua otomatis dinonaktifkan
+        // saat prefers-reduced-motion (lihat global.css).
+        float: 'float 3.6s ease-in-out infinite',
+        'glow-pulse': 'glowPulse 3.2s ease-in-out infinite',
+        ping: 'ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite',
+        shimmer: 'shimmer 2.8s ease-in-out infinite',
       },
       keyframes: {
         aurora: {
@@ -52,6 +58,25 @@ export default {
         fadeUp: {
           from: { opacity: '0', transform: 'translateY(12px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        // Ikon event mengambang naik-turun halus.
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
+        // Cahaya aksen di kartu event berdenyut pelan.
+        glowPulse: {
+          '0%, 100%': { opacity: '0.25' },
+          '50%': { opacity: '0.55' },
+        },
+        // Titik "LIVE" memancar.
+        ping: {
+          '75%, 100%': { transform: 'scale(2.2)', opacity: '0' },
+        },
+        // Sheen bergerak melintasi badge.
+        shimmer: {
+          '0%': { transform: 'translateX(-120%)' },
+          '60%, 100%': { transform: 'translateX(220%)' },
         },
       },
     },

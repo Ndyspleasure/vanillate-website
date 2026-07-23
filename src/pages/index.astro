@@ -5,10 +5,52 @@ import BotCard from '@components/BotCard.astro';
 import BotComparison from '@components/BotComparison.astro';
 import { bots, getFeaturedBot } from '@data/bots';
 import { site, homeStats } from '@data/site';
+import { sambungKataEvents } from '@data/events';
 import { url } from '@utils/url';
 
 const featured = getFeaturedBot();
 const others = bots.filter((b) => !b.featured);
+
+// Pintasan cepat, dikelompokkan per kategori. Deep-link langsung ke section
+// dokumentasi / halaman terkait supaya pemain lekas menemukan yang dicari.
+const shortcutGroups = [
+  {
+    label: 'Sambung Kata',
+    color: '#E8B84A',
+    links: [
+      { label: 'Cara Bermain', href: '/docs/sambung-kata#cara-bermain' },
+      { label: 'Event Spesial PvP', href: '/docs/sambung-kata#event-spesial' },
+      { label: 'Dungeon & Guardian', href: '/docs/sambung-kata#dungeon-events' },
+      { label: 'Class & Progression', href: '/docs/sambung-kata#progression' },
+      { label: 'Boost & Rarity', href: '/docs/sambung-kata#boost-system' },
+      { label: 'Quest & Shop', href: '/docs/sambung-kata#quest-shop' },
+      { label: 'Daftar Command', href: '/docs/sambung-kata#commands' },
+    ],
+  },
+  {
+    label: 'Tahu Bulat',
+    color: '#4FA89D',
+    links: [
+      { label: 'Cara Bermain', href: '/docs/tahu-bulat#cara-bermain' },
+      { label: 'Kendaraan & Bahan', href: '/docs/tahu-bulat#kendaraan' },
+      { label: 'Promosi', href: '/docs/tahu-bulat#promosi' },
+      { label: 'Rebirth', href: '/docs/tahu-bulat#rebirth' },
+      { label: 'Misi Harian', href: '/docs/tahu-bulat#misi-harian' },
+      { label: 'Tips & FAQ', href: '/docs/tahu-bulat#tips-faq' },
+    ],
+  },
+  {
+    label: 'Studio & Bantuan',
+    color: '#6C3BEB',
+    links: [
+      { label: 'Semua Bot', href: '/bots' },
+      { label: 'Pilih Bot (Kuis)', href: '/pilih' },
+      { label: 'Dokumentasi', href: '/docs' },
+      { label: 'Tentang Kami', href: '/about' },
+      { label: 'Support', href: '/support' },
+    ],
+  },
+];
 
 // Format angka gaya Indonesia (pemisah ribuan titik). Dipakai untuk nilai awal
 // stats; animasi hitung-naik di client memakai formatter yang sama.
@@ -109,6 +151,67 @@ const steps = [
     <div class="grid gap-6 md:grid-cols-2 reveal" style="--reveal-delay: 80ms">
       <BotCard bot={featured} featured />
       {others.map((bot) => <BotCard bot={bot} />)}
+    </div>
+  </section>
+
+  <!-- EVENT HIGHLIGHT (SAMBUNG KATA) -->
+  <section class="relative overflow-hidden py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="aurora bg-amber-500/20 h-[380px] w-[380px] top-[-90px] right-[6%]" aria-hidden="true"></div>
+    <div class="aurora bg-teal-500/15 h-[300px] w-[300px] bottom-[-60px] left-[2%]" style="animation-delay: -8s" aria-hidden="true"></div>
+
+    <div class="container-page relative">
+      <div class="mb-10 flex items-end justify-between gap-6 flex-wrap reveal">
+        <div>
+          <p class="eyebrow mb-3 inline-flex items-center gap-2">
+            <span class="relative flex h-2 w-2" aria-hidden="true">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500/70"></span>
+              <span class="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
+            </span>
+            Event In-Game · Sambung Kata
+          </p>
+          <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-2xl">
+            Empat event spesial yang bikin match tak ketebak.
+          </h2>
+          <p class="mt-4 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
+            Muncul acak di ronde 20–30 mode PvP. Timer dibekukan saat intro, jadi kamu sempat menyusun strategi, lalu kalahkan bersama untuk reward berlipat.
+          </p>
+        </div>
+        <a href={url('/docs/sambung-kata#event-spesial')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
+          Panduan lengkap event
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" id="event-grid">
+        {sambungKataEvents.map((ev, i) => (
+          <a
+            href={url(ev.href)}
+            class="event-card reveal group relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5"
+            style={`--ev: ${ev.accent}; --reveal-delay: ${i * 90}ms`}
+            data-event
+            aria-label={`Event ${ev.name} — lihat detail di dokumentasi`}
+          >
+            <span class="ev-glow animate-glow-pulse" aria-hidden="true"></span>
+            <span class="ev-bar" aria-hidden="true"></span>
+            <div class="relative flex h-full flex-col">
+              <div class="flex items-start justify-between gap-2">
+                <span class="ev-icon flex h-12 w-12 flex-none items-center justify-center rounded-xl text-2xl animate-float" style="background: color-mix(in srgb, var(--ev) 16%, transparent)" aria-hidden="true">{ev.icon}</span>
+                <span class="rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/70 dark:bg-ink-950/50 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-ink-500 dark:text-cream-300/70">{ev.stats[0].value}</span>
+              </div>
+              <h3 class="mt-4 font-display text-lg font-semibold tracking-tightest leading-tight" style="color: var(--ev)">{ev.name}</h3>
+              <p class="mt-1.5 text-sm text-ink-600 dark:text-cream-200/80 leading-snug">{ev.tagline}</p>
+              <div class="mt-4 flex items-start gap-2 text-sm">
+                <span class="flex-none" aria-hidden="true">🏆</span>
+                <span class="text-ink-700 dark:text-cream-200 leading-snug">{ev.reward}</span>
+              </div>
+              <span class="mt-4 inline-flex items-center gap-1.5 text-xs font-medium" style="color: var(--ev)">
+                Lihat detail
+                <svg class="transition-transform group-hover:translate-x-1" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              </span>
+            </div>
+          </a>
+        ))}
+      </div>
     </div>
   </section>
 
@@ -236,34 +339,39 @@ const steps = [
     </div>
   </section>
 
-  <!-- JELAJAHI LEBIH JAUH -->
+  <!-- PINTASAN CEPAT (KATEGORI) -->
   <section class="container-page pb-24">
     <div class="mb-10 max-w-2xl reveal">
-      <p class="eyebrow mb-3">Jelajahi Lebih Jauh</p>
+      <p class="eyebrow mb-3">Pintasan Cepat</p>
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
-        Semua yang perlu kamu tahu, saling terhubung.
+        Loncat langsung ke yang kamu cari.
       </h2>
+      <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Semua topik penting dikelompokkan per kategori, dari aturan main sampai event dan strategi late-game. Tinggal klik.
+      </p>
     </div>
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {[
-        { label: 'Tentang Kami', desc: 'Cerita, filosofi, dan arah studio.', href: '/about', icon: '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 16v-4M12 8h.01"/>' },
-        { label: 'Bot Kami', desc: 'Katalog lengkap dan perbandingan.', href: '/bots', icon: '<rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/>' },
-        { label: 'Dokumentasi', desc: 'Aturan main, command, dan strategi.', href: '/docs', icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' },
-        { label: 'Pilih Bot', desc: 'Kuis singkat cari yang paling cocok.', href: '/pilih', icon: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
-      ].map((item, i) => (
-        <a href={url(item.href)} class="reveal group flex flex-col gap-3 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 transition-colors hover:border-amber-500/40" style={`--reveal-delay: ${i * 80}ms`}>
-          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={item.icon} />
-          </span>
-          <div>
-            <h3 class="font-display text-lg font-semibold group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{item.label}</h3>
-            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed mt-1">{item.desc}</p>
+    <div class="grid gap-4 md:grid-cols-3">
+      {shortcutGroups.map((group, gi) => (
+        <div
+          class="shortcut-group reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6"
+          style={`--reveal-delay: ${gi * 90}ms; --grp: ${group.color}`}
+        >
+          <p class="mb-4 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60">
+            <span class="h-2.5 w-2.5 flex-none rounded-full" style="background: var(--grp)" aria-hidden="true"></span>
+            {group.label}
+          </p>
+          <div class="flex flex-wrap gap-2">
+            {group.links.map((l) => (
+              <a
+                href={url(l.href)}
+                class="shortcut-chip group inline-flex items-center gap-1.5 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/70 dark:bg-ink-950/40 px-3.5 py-2 text-sm text-ink-700 dark:text-cream-200"
+              >
+                {l.label}
+                <svg class="opacity-40 transition-transform group-hover:translate-x-0.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              </a>
+            ))}
           </div>
-          <span class="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
-            Buka
-            <svg class="transition-transform group-hover:translate-x-1" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-          </span>
-        </a>
+        </div>
       ))}
     </div>
   </section>
@@ -345,6 +453,99 @@ const steps = [
         { threshold: 0.4 },
       );
       counters.forEach((el) => io.observe(el));
+    }
+  }
+</script>
+
+<style>
+  /* Kartu event highlight di beranda: cahaya aksen, ikon mengambang, dan
+     spotlight bergilir. Efek gerak otomatis mati saat prefers-reduced-motion. */
+  .event-card {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.5s ease;
+  }
+  .event-card:hover,
+  .event-card.is-spotlight {
+    transform: translateY(-5px);
+    border-color: color-mix(in srgb, var(--ev) 55%, transparent);
+    box-shadow: 0 18px 44px -20px color-mix(in srgb, var(--ev) 65%, transparent);
+  }
+  .ev-glow {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 130%;
+    height: 62%;
+    transform: translateX(-50%);
+    background: radial-gradient(58% 100% at 50% 0%, var(--ev) 0%, transparent 68%);
+    pointer-events: none;
+  }
+  .ev-bar {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--ev), transparent);
+    opacity: 0.85;
+    pointer-events: none;
+  }
+  .ev-icon {
+    transition: transform 0.4s ease;
+  }
+  .event-card:hover .ev-icon,
+  .event-card.is-spotlight .ev-icon {
+    transform: scale(1.09);
+  }
+
+  .shortcut-chip {
+    transition: border-color 0.25s ease, color 0.25s ease, background-color 0.25s ease;
+  }
+  .shortcut-chip:hover {
+    border-color: color-mix(in srgb, var(--grp) 60%, transparent);
+    color: var(--grp);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .event-card,
+    .ev-icon,
+    .shortcut-chip {
+      transition: none;
+    }
+    .event-card.is-spotlight {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+</style>
+
+<script>
+  // Spotlight bergilir untuk kartu event: satu kartu disorot bergantian.
+  // Progressive enhancement — tanpa JS kartu tetap tampil & bisa diklik.
+  const grid = document.getElementById('event-grid');
+  if (grid) {
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('[data-event]'));
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (cards.length && !reduced) {
+      let idx = 0;
+      let paused = false;
+      const step = () => {
+        cards.forEach((c) => c.classList.remove('is-spotlight'));
+        cards[idx].classList.add('is-spotlight');
+        idx = (idx + 1) % cards.length;
+      };
+      // Mulai setelah animasi reveal selesai supaya tidak bentrok dengan entrance.
+      window.setTimeout(() => {
+        step();
+        window.setInterval(() => {
+          if (!paused) step();
+        }, 2600);
+      }, 1600);
+      // Jeda saat kursor di atas grid supaya pemain bisa membaca dengan tenang.
+      grid.addEventListener('pointerenter', () => {
+        paused = true;
+        cards.forEach((c) => c.classList.remove('is-spotlight'));
+      });
+      grid.addEventListener('pointerleave', () => {
+        paused = false;
+      });
     }
   }
 </script>
