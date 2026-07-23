@@ -136,6 +136,53 @@ function fmt(s: string): string {
                   <p class="text-ink-700 dark:text-cream-200 leading-relaxed mb-6" set:html={fmt(section.intro)} />
                 )}
 
+                {/* Kartu event highlight: dirender menonjol dengan aksen warna per event */}
+                {section.events && (
+                  <div class="grid gap-4 sm:grid-cols-2 mb-8">
+                    {section.events.map((ev) => (
+                      <div
+                        class="relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5 pl-6"
+                        style={`--ev: ${ev.accent}`}
+                      >
+                        <span class="absolute inset-y-0 left-0 w-1.5" style="background: var(--ev)" aria-hidden="true"></span>
+                        <div class="flex items-start gap-3">
+                          <span
+                            class="flex h-11 w-11 flex-none items-center justify-center rounded-xl text-2xl"
+                            style="background: color-mix(in srgb, var(--ev) 18%, transparent)"
+                            aria-hidden="true"
+                          >
+                            {ev.icon}
+                          </span>
+                          <div class="min-w-0">
+                            <h3 class="font-display text-lg font-semibold tracking-tightest leading-tight" style="color: var(--ev)">{ev.name}</h3>
+                            <p class="mt-1 text-sm text-ink-600 dark:text-cream-200/80 leading-snug" set:html={fmt(ev.tagline)} />
+                          </div>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-1.5">
+                          {ev.stats.map((s) => (
+                            <span class="inline-flex items-center gap-1 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/60 dark:bg-ink-950/40 px-2.5 py-1 text-xs">
+                              <span class="text-ink-500 dark:text-cream-300/60">{s.label}:</span>
+                              <span class="font-medium text-ink-800 dark:text-cream-100">{s.value}</span>
+                            </span>
+                          ))}
+                        </div>
+
+                        <dl class="mt-4 space-y-1.5 text-sm">
+                          <div class="flex gap-2">
+                            <dt class="flex-none" aria-hidden="true">🏆</dt>
+                            <dd class="text-ink-700 dark:text-cream-200"><span class="font-medium text-ink-900 dark:text-cream-50">Menang:</span> <span set:html={fmt(ev.reward)} /></dd>
+                          </div>
+                          <div class="flex gap-2">
+                            <dt class="flex-none" aria-hidden="true">💥</dt>
+                            <dd class="text-ink-600 dark:text-cream-200/70"><span class="font-medium text-ink-800 dark:text-cream-100">Gagal:</span> <span set:html={fmt(ev.fail)} /></dd>
+                          </div>
+                        </dl>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div class="space-y-6">
                   {section.subsections.map((sub) => (
                     <div>
