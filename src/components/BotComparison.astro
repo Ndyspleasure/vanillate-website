@@ -2,7 +2,8 @@
 import { bots, inviteCtaLabel, buildInviteUrl } from '@data/bots';
 import { url } from '@utils/url';
 
-// Urutan kolom perbandingan (bot yang sudah dirilis / preorder).
+// Urutan kolom perbandingan. Slug yang tidak ada di daftar publik (mis. bot
+// yang sedang disembunyikan) otomatis tersaring lewat `.filter` di bawah.
 const order = ['sambung-kata', 'tahu-bulat', 'anonymous-chat'];
 const cols = order
   .map((slug) => bots.find((b) => b.slug === slug))
@@ -26,11 +27,85 @@ const statusLabel: Record<string, string> = {
 };
 ---
 
-<p class="sm:hidden mb-3 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-ink-500 dark:text-cream-300/60">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>
-  Geser untuk membandingkan
-</p>
-<div class="overflow-x-auto rounded-2xl border border-ink-900/10 dark:border-cream-100/10 -mx-6 px-6 sm:mx-0 sm:px-0">
+{/* ── MOBILE: carousel kartu yang bisa digeser dengan snap, dot, dan panah ── */}
+<div class="sm:hidden" data-bot-carousel>
+  <div
+    class="cmp-track flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth -mx-6 px-6 pb-1"
+    data-cmp-track
+    tabindex="0"
+    role="group"
+    aria-label="Perbandingan bot, geser untuk melihat lainnya"
+  >
+    {cols.map((bot) => {
+      const invite = buildInviteUrl(bot);
+      const href = invite ?? url(`/bots/${bot.slug}`);
+      const external = Boolean(invite);
+      return (
+        <article
+          class="cmp-slide snap-center shrink-0 basis-[86%] rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5"
+          style={`--accent: ${bot.color}`}
+          data-cmp-slide
+        >
+          <div class="mb-4 flex items-center justify-between gap-3 border-b border-ink-900/10 dark:border-cream-100/10 pb-4">
+            <a href={url(`/bots/${bot.slug}`)} class="group flex min-w-0 items-center gap-2.5">
+              {bot.thumbnail ? (
+                <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-9 w-9 flex-none rounded-lg object-cover" loading="lazy" decoding="async" />
+              ) : (
+                <span class="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-base" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+              )}
+              <span class="truncate font-display text-base font-semibold tracking-tightest text-ink-900 dark:text-cream-50 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                {bot.shortName}
+              </span>
+            </a>
+            <span class="inline-flex flex-none items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-ink-500 dark:text-cream-300/60">
+              <span class="h-1.5 w-1.5 rounded-full" style={`background: ${bot.color};`}></span>
+              {statusLabel[bot.status]}
+            </span>
+          </div>
+
+          <dl class="divide-y divide-ink-900/5 dark:divide-cream-100/5">
+            {rows.map((row) => (
+              <div class="flex items-start justify-between gap-4 py-2.5">
+                <dt class="flex-none text-sm text-ink-500 dark:text-cream-300/70">{row.label}</dt>
+                <dd class="text-right text-sm font-medium text-ink-800 dark:text-cream-100">{row.values[bot.slug] ?? '—'}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <a
+            href={href}
+            {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            class="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5"
+          >
+            {inviteCtaLabel(bot)}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+        </article>
+      );
+    })}
+  </div>
+
+  {cols.length > 1 && (
+    <div class="mt-4 flex items-center justify-between">
+      <div class="flex items-center gap-2" data-cmp-dots aria-hidden="true">
+        {cols.map((_, i) => (
+          <button type="button" class="cmp-dot" data-cmp-dot={i} tabindex="-1"></button>
+        ))}
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" class="cmp-arrow" data-cmp-prev aria-label="Bot sebelumnya">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button type="button" class="cmp-arrow" data-cmp-next aria-label="Bot berikutnya">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+
+{/* ── DESKTOP: tabel perbandingan penuh ── */}
+<div class="hidden sm:block overflow-x-auto rounded-2xl border border-ink-900/10 dark:border-cream-100/10">
   <table class="w-full min-w-[640px] border-collapse text-sm">
     <thead>
       <tr class="border-b border-ink-900/10 dark:border-cream-100/10">
@@ -93,3 +168,123 @@ const statusLabel: Record<string, string> = {
     </tbody>
   </table>
 </div>
+
+<style>
+  /* Sembunyikan scrollbar track carousel (tetap bisa digeser). */
+  .cmp-track {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .cmp-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cmp-dot {
+    height: 0.5rem;
+    width: 0.5rem;
+    border-radius: 9999px;
+    background: currentColor;
+    color: rgb(17 16 21 / 0.2);
+    transition: width 0.3s ease, color 0.3s ease;
+  }
+  :global(html.dark) .cmp-dot {
+    color: rgb(245 239 224 / 0.2);
+  }
+  .cmp-dot.is-active {
+    width: 1.25rem;
+    color: #E8B84A;
+  }
+
+  .cmp-arrow {
+    display: inline-flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid rgb(17 16 21 / 0.12);
+    color: rgb(26 24 32);
+    transition: border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  }
+  :global(html.dark) .cmp-arrow {
+    border-color: rgb(245 239 224 / 0.14);
+    color: rgb(245 239 224);
+  }
+  .cmp-arrow:hover:not([disabled]) {
+    border-color: rgb(232 184 74 / 0.6);
+    background: rgb(232 184 74 / 0.1);
+  }
+  .cmp-arrow[disabled] {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+</style>
+
+<script>
+  // Carousel perbandingan bot (mobile). Progressive enhancement: tanpa JS,
+  // track tetap bisa digeser manual; dot & panah hanya menambah kenyamanan.
+  function initBotCarousel(root: HTMLElement) {
+    const track = root.querySelector<HTMLElement>('[data-cmp-track]');
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('[data-cmp-slide]'));
+    const dots = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-cmp-dot]'));
+    const prev = root.querySelector<HTMLButtonElement>('[data-cmp-prev]');
+    const next = root.querySelector<HTMLButtonElement>('[data-cmp-next]');
+    if (!track || slides.length === 0) return;
+
+    let active = 0;
+
+    const setActive = (i: number) => {
+      active = Math.max(0, Math.min(slides.length - 1, i));
+      dots.forEach((d, di) => d.classList.toggle('is-active', di === active));
+      if (prev) prev.disabled = active === 0;
+      if (next) next.disabled = active === slides.length - 1;
+    };
+
+    const scrollToIndex = (i: number) => {
+      const clamped = Math.max(0, Math.min(slides.length - 1, i));
+      const slide = slides[clamped];
+      const left =
+        slide.getBoundingClientRect().left -
+        track.getBoundingClientRect().left +
+        track.scrollLeft -
+        (track.clientWidth - slide.clientWidth) / 2;
+      track.scrollTo({ left, behavior: 'smooth' });
+    };
+
+    // Perbarui dot aktif mengikuti posisi scroll (kartu terdekat ke tengah).
+    let raf = 0;
+    track.addEventListener(
+      'scroll',
+      () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          const trackRect = track.getBoundingClientRect();
+          const center = trackRect.left + trackRect.width / 2;
+          let nearest = 0;
+          let min = Infinity;
+          slides.forEach((s, si) => {
+            const r = s.getBoundingClientRect();
+            const d = Math.abs(r.left + r.width / 2 - center);
+            if (d < min) {
+              min = d;
+              nearest = si;
+            }
+          });
+          setActive(nearest);
+        });
+      },
+      { passive: true },
+    );
+
+    prev?.addEventListener('click', () => scrollToIndex(active - 1));
+    next?.addEventListener('click', () => scrollToIndex(active + 1));
+    dots.forEach((d, di) => d.addEventListener('click', () => scrollToIndex(di)));
+
+    setActive(0);
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('[data-bot-carousel]')
+    .forEach((root) => initBotCarousel(root));
+</script>

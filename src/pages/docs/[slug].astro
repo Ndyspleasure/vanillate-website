@@ -4,6 +4,7 @@ import Button from '@components/Button.astro';
 import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots } from '@data/bots';
 import { docs } from '@data/docs';
 import { url } from '@utils/url';
+import { inlineMarkdown, codeClass } from '@utils/inline';
 
 export function getStaticPaths() {
   return bots
@@ -26,16 +27,9 @@ const tocSections = doc
       { id: 'troubleshooting', title: 'Troubleshooting' },
     ];
 
-// Formatter inline: escape HTML lalu ubah `teks` menjadi <code>.
-// Konten berasal dari data internal (docs.ts), bukan input user.
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-const codeClass =
-  'font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded';
-function fmt(s: string): string {
-  return escapeHtml(s).replace(/`([^`]+)`/g, `<code class="${codeClass}">$1</code>`);
-}
+// Formatter inline (`kode`, **tebal**, *miring*) untuk konten dari data
+// internal (docs.ts), bukan input user. Lihat @utils/inline.
+const fmt = inlineMarkdown;
 ---
 
 <BaseLayout title={`Panduan ${bot.shortName} — Cara Main, Command & FAQ`} description={`Dokumentasi lengkap ${bot.name}: cara bermain, daftar command, tabel harga, strategi, dan pertanyaan yang sering ditanyakan.`}>

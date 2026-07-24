@@ -10,6 +10,7 @@ export type Bot = {
   description: string;          // Paragraf pendek untuk halaman detail
   status: 'live' | 'beta' | 'preorder' | 'coming-soon';
   featured: boolean;            // Highlight utama di beranda
+  hidden?: boolean;             // Sembunyikan dari seluruh tampilan situs (data tetap ada)
   category: string;             // ex: "Word Game", "Idle Simulation"
   clientId?: string;            // Discord Application/Client ID (kosongkan jika belum rilis)
   permissions: string;          // Bitwise permission integer
@@ -65,7 +66,7 @@ export function inviteCtaLabel(bot: Bot): string {
   return CTA.invite;
 }
 
-export const bots: Bot[] = [
+const allBots: Bot[] = [
   {
     slug: 'sambung-kata',
     thumbnail: '/bots/sambung-kata.png',
@@ -138,6 +139,7 @@ export const bots: Bot[] = [
   },
   {
     slug: 'anonymous-chat',
+    hidden: true, // Disembunyikan sementara dari tampilan situs.
     thumbnail: '/bots/anonymous-chat.png',
     name: 'Anonymous Chat Vanillate',
     shortName: 'Anonymous Chat',
@@ -232,6 +234,11 @@ export const bots: Bot[] = [
     ],
   },
 ];
+
+// Daftar publik: bot dengan `hidden: true` disaring dari seluruh tampilan
+// (footer, beranda, /bots, tabel perbandingan, kuis, dan halaman detail).
+// Datanya tetap utuh di atas, jadi cukup ubah flag untuk menampilkannya lagi.
+export const bots: Bot[] = allBots.filter((b) => !b.hidden);
 
 export function getFeaturedBot(): Bot {
   return bots.find((b) => b.featured) ?? bots[0];

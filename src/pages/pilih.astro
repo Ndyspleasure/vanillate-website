@@ -6,8 +6,9 @@ import { bots, buildInviteUrl, inviteCtaLabel } from '@data/bots';
 import { site } from '@data/site';
 import { url } from '@utils/url';
 
-// Bot yang ikut kuis (sudah dirilis / preorder).
-const quizBots = ['sambung-kata', 'tahu-bulat', 'anonymous-chat']
+// Bot yang ikut kuis (sudah dirilis). Slug yang tidak ada di daftar publik
+// (mis. sedang disembunyikan) otomatis tersaring.
+const quizBots = ['sambung-kata', 'tahu-bulat']
   .map((slug) => bots.find((b) => b.slug === slug))
   .filter((b): b is NonNullable<typeof b> => Boolean(b));
 
@@ -23,7 +24,6 @@ const questions: {
     options: [
       { label: 'Kompetitif, seru adu skill', score: { 'sambung-kata': 2 } },
       { label: 'Santai, tidak bikin pusing', score: { 'tahu-bulat': 2 } },
-      { label: 'Sosial, pengen ngobrol', score: { 'anonymous-chat': 2 } },
     ],
   },
   {
@@ -32,7 +32,7 @@ const questions: {
     options: [
       { label: '15–30 menit untuk main serius', score: { 'sambung-kata': 2 } },
       { label: 'Cuma sempat cek sebentar-sebentar', score: { 'tahu-bulat': 2 } },
-      { label: 'Fleksibel, kapan saja bisa', score: { 'anonymous-chat': 1, 'tahu-bulat': 1 } },
+      { label: 'Fleksibel, kapan saja bisa', score: { 'sambung-kata': 1, 'tahu-bulat': 1 } },
     ],
   },
   {
@@ -40,7 +40,7 @@ const questions: {
     title: 'Suka progres dan mengumpulkan sesuatu?',
     options: [
       { label: 'Ya, suka naik level & menabung', score: { 'sambung-kata': 1, 'tahu-bulat': 2 } },
-      { label: 'Tidak, yang penting menyenangkan', score: { 'anonymous-chat': 2 } },
+      { label: 'Tidak terlalu, yang penting seru tiap main', score: { 'sambung-kata': 2 } },
     ],
   },
   {
@@ -184,13 +184,13 @@ const questions: {
     <div class="max-w-3xl mb-12 reveal">
       <p class="eyebrow mb-3">Kenalan Singkat</p>
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
-        Tiga bot, tiga rasa berbeda.
+        Dua bot, dua rasa berbeda.
       </h2>
       <p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
         Lebih suka memutuskan sendiri? Ini gambaran singkat masing-masing bot dalam satu kalimat.
       </p>
     </div>
-    <div class="grid gap-4 md:grid-cols-3">
+    <div class="grid gap-4 sm:grid-cols-2">
       {quizBots.map((bot, i) => (
         <a href={url(`/bots/${bot.slug}`)} class="reveal group relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 transition-colors hover:border-amber-500/40" style={`--reveal-delay: ${i * 90}ms`}>
           <div class="absolute inset-x-0 top-0 h-0.5 opacity-70" style={`background: linear-gradient(90deg, ${bot.color}00, ${bot.color}, ${bot.color}00);`} aria-hidden="true"></div>

@@ -14,7 +14,7 @@ const timeline = [
   { year: '2026', title: 'Vanillate lahir', desc: 'Berawal dari satu pengamatan sederhana: komunitas Discord Indonesia butuh bot game yang benar-benar dirawat, bukan ditinggal setelah rilis.' },
   { year: '2026', title: 'Sambung Kata rilis', desc: 'Game kata klasik dibawa ke Discord dengan sistem progresi mendalam: class, quest, dungeon, dan ekonomi yang seimbang.' },
   { year: '2026', title: 'Tahu Bulat menyusul', desc: 'Simulasi bisnis idle bertema kuliner paling Indonesia. Produk kedua yang menegaskan satu prinsip: rilis adalah garis start.' },
-  { year: 'Kini', title: 'Ekosistem tumbuh', desc: 'Anonymous Chat memasuki beta dan Vanillate Story sedang dimasak. Studio terus berkembang tanpa mengorbankan kualitas.' },
+  { year: 'Kini', title: 'Ekosistem tumbuh', desc: 'Vanillate Story sedang dimasak dan lini produk terus bertambah. Studio berkembang tanpa mengorbankan kualitas.' },
 ];
 
 const values = [
@@ -136,7 +136,7 @@ const roadmap = [
 
   <!-- 01 CERITA -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="grid gap-12 md:grid-cols-3">
+    <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
         <p class="eyebrow">01 / Cerita</p>
       </div>
@@ -182,7 +182,7 @@ const roadmap = [
 
   <!-- 02 FILOSOFI BRAND -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="grid gap-12 md:grid-cols-3">
+    <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
         <p class="eyebrow">02 / Filosofi</p>
       </div>
@@ -224,7 +224,7 @@ const roadmap = [
 
   <!-- 03 VISI -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="grid gap-12 md:grid-cols-3">
+    <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
         <p class="eyebrow">03 / Visi</p>
       </div>
@@ -247,7 +247,7 @@ const roadmap = [
 
   <!-- 04 MISI -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="grid gap-12 md:grid-cols-3">
+    <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
         <p class="eyebrow">04 / Misi</p>
       </div>
@@ -296,15 +296,15 @@ const roadmap = [
 
   <!-- 05 NILAI -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="max-w-3xl mb-12">
+    <div class="max-w-3xl mb-12 reveal">
       <p class="eyebrow mb-3">05 / Nilai Kami</p>
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
         Enam hal yang menjadi pegangan
       </h2>
     </div>
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {values.map((v) => (
-        <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6">
+      {values.map((v, i) => (
+        <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6" style={`--reveal-delay: ${i * 70}ms`}>
           <h3 class="font-display text-lg font-semibold mb-2">{v.title}</h3>
           <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{v.desc}</p>
         </div>
@@ -314,7 +314,7 @@ const roadmap = [
 
   <!-- 06 MENGAPA VANILLATE -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="grid gap-12 md:grid-cols-3">
+    <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
         <p class="eyebrow">06 / Mengapa Vanillate</p>
       </div>
@@ -337,7 +337,7 @@ const roadmap = [
 
   <!-- 07 MASA DEPAN -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="max-w-3xl mb-4">
+    <div class="max-w-3xl mb-4 reveal">
       <p class="eyebrow mb-3">07 / Masa Depan</p>
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
         Arah yang sedang kami bangun
@@ -348,7 +348,7 @@ const roadmap = [
     </div>
     <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {roadmap.map((r, i) => (
-        <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6">
+        <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6" style={`--reveal-delay: ${i * 70}ms`}>
           <p class="font-mono text-xs text-amber-600 dark:text-amber-500 mb-3">{String(i + 1).padStart(2, '0')}</p>
           <h3 class="font-display text-lg font-semibold mb-2">{r.title}</h3>
           <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{r.desc}</p>
@@ -359,7 +359,7 @@ const roadmap = [
 
   <!-- CTA -->
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="max-w-2xl">
+    <div class="max-w-2xl reveal">
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">
         Ikut jadi bagian ceritanya
       </h2>
