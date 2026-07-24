@@ -3,51 +3,101 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import { url } from '@utils/url';
 
 const lastUpdated = '6 July 2026';
+
+// Daftar isi ringkas — sekaligus penanda nomor & judul tiap section.
+const toc = [
+  { n: '01', id: 'acceptance', label: 'Acceptance of Terms' },
+  { n: '02', id: 'scope', label: 'Scope of These Terms' },
+  { n: '03', id: 'description', label: 'Description of Services' },
+  { n: '04', id: 'user-responsibilities', label: 'User Responsibilities' },
+  { n: '05', id: 'server-owner', label: 'Server Owner Responsibilities' },
+  { n: '06', id: 'virtual-items', label: 'Virtual Items & In-Game Economy' },
+  { n: '07', id: 'data-privacy', label: 'Data Usage and Privacy' },
+  { n: '08', id: 'availability', label: 'Availability' },
+  { n: '09', id: 'suspension', label: 'Suspension and Termination' },
+  { n: '10', id: 'liability', label: 'Limitation of Liability' },
+  { n: '11', id: 'changes', label: 'Changes to Terms' },
+  { n: '12', id: 'contact', label: 'Contact' },
+];
 ---
 
 <BaseLayout
   title="Terms of Service"
   description="Ketentuan penggunaan seluruh produk dan layanan Vanillate Studio."
 >
-  <section class="container-page pt-20 md:pt-28 pb-12 max-w-3xl">
-    <p class="eyebrow mb-6">Legal</p>
-    <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-tight mb-6">
-      Terms of Service
-    </h1>
-    <p class="text-sm text-ink-500 dark:text-cream-300/60 font-mono">
-      Last Updated: {lastUpdated}
-    </p>
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 md:pt-28 pb-10">
+    <div class="aurora bg-teal-500/15 h-[360px] w-[360px] top-[-120px] right-[6%]" aria-hidden="true"></div>
+    <div class="container-page max-w-3xl relative">
+      <p class="eyebrow mb-6 animate-fade-up">Legal</p>
+      <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-tight mb-5 animate-fade-up">
+        Terms of Service
+      </h1>
+      <p class="max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Ketentuan yang mengatur akses dan penggunaan seluruh produk dan layanan yang dikembangkan Vanillate Studio.
+      </p>
+      <div class="mt-6 inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-3.5 py-1.5 font-mono text-xs text-ink-500 dark:text-cream-300/70 animate-fade-up" style="animation-delay: 0.15s">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Last Updated: {lastUpdated}
+      </div>
+    </div>
   </section>
 
-  <section class="container-page pb-24 max-w-3xl">
-    <div class="space-y-12 text-ink-700 dark:text-cream-200 leading-relaxed">
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">1. Acceptance of Terms</h2>
+  <!-- TABLE OF CONTENTS -->
+  <section class="container-page max-w-3xl pb-4">
+    <nav class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5 md:p-6 reveal" aria-label="Daftar isi">
+      <p class="eyebrow mb-4">Daftar Isi</p>
+      <ol class="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+        {toc.map((s) => (
+          <li>
+            <a href={`#${s.id}`} class="group flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+              <span class="font-mono text-xs text-amber-600 dark:text-amber-500 flex-none">{s.n}</span>
+              <span class="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{s.label}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </section>
+
+  <!-- BODY -->
+  <section class="container-page max-w-3xl pb-24">
+    <div class="text-ink-700 dark:text-cream-200 leading-relaxed">
+      <section id="acceptance" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">01</span>
+          <h2 class="legal-title">Acceptance of Terms</h2>
+        </div>
         <p class="mb-4">
           These Terms of Service ("Terms") govern your access to and use of the products and services developed and operated by Vanillate Studio ("Vanillate Studio", "we", "our", or "us").
         </p>
         <p>
           By inviting, accessing, or using any of our Services, you agree to be bound by these Terms. If you do not agree with these Terms, you must stop using the Services immediately.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">2. Scope of These Terms</h2>
+      <section id="scope" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">02</span>
+          <h2 class="legal-title">Scope of These Terms</h2>
+        </div>
         <p class="mb-4">
           These Terms apply to all products and services operated by Vanillate Studio (collectively, the "Services"), including but not limited to:
         </p>
         <ul class="space-y-2 pl-0 list-none mb-4">
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span><strong class="text-ink-900 dark:text-cream-50">Vanillate Sambung Kata</strong>: an interactive word-chain game bot for Discord</span></li>
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span><strong class="text-ink-900 dark:text-cream-50">Vanillate Tahu Bulat</strong>: an idle business simulation game bot for Discord</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Every Discord bot and application developed by Vanillate Studio</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>The official Vanillate Studio website and any related features</span></li>
         </ul>
         <p>
           These Terms also apply to any new bots, applications, or services released by Vanillate Studio in the future, unless that product is expressly provided with its own separate terms.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">3. Description of Services</h2>
+      <section id="description" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">03</span>
+          <h2 class="legal-title">Description of Services</h2>
+        </div>
         <p class="mb-4">
           Our Services primarily consist of Discord bots that provide interactive gameplay and community features. Depending on the Service, these may include, but are not limited to:
         </p>
@@ -61,10 +111,13 @@ const lastUpdated = '6 July 2026';
         <p>
           Feature availability varies between Services. We may modify, update, add, or remove features of any Service at any time without prior notice to improve service quality or ensure stability.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">4. User Responsibilities</h2>
+      <section id="user-responsibilities" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">04</span>
+          <h2 class="legal-title">User Responsibilities</h2>
+        </div>
         <p class="mb-4">Users agree to use the Services responsibly and must:</p>
         <ul class="space-y-2 pl-0 list-none">
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Follow Discord Terms of Service and Community Guidelines</span></li>
@@ -74,20 +127,26 @@ const lastUpdated = '6 July 2026';
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not interfere with or disrupt the normal operation of any Service</span></li>
         </ul>
         <p class="mt-4">Violation of these rules may result in restricted access to some or all of the Services.</p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">5. Server Owner Responsibilities</h2>
+      <section id="server-owner" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">05</span>
+          <h2 class="legal-title">Server Owner Responsibilities</h2>
+        </div>
         <p class="mb-4">Server owners and administrators are responsible for:</p>
         <ul class="space-y-2 pl-0 list-none">
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Managing the permissions granted to any Vanillate Studio bot in their server</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Ensuring the Services are used appropriately within their server</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Removing a bot if they no longer wish to use it</span></li>
         </ul>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">6. Virtual Items and In-Game Economy</h2>
+      <section id="virtual-items" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">06</span>
+          <h2 class="legal-title">Virtual Items and In-Game Economy</h2>
+        </div>
         <p class="mb-4">
           Some Services include virtual currencies, items, boosts, or other in-game content ("Virtual Items"). Virtual Items:
         </p>
@@ -99,10 +158,13 @@ const lastUpdated = '6 July 2026';
         <p>
           Buying, selling, or trading Virtual Items or accounts outside the Services is prohibited.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">7. Data Usage and Privacy</h2>
+      <section id="data-privacy" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">07</span>
+          <h2 class="legal-title">Data Usage and Privacy</h2>
+        </div>
         <p class="mb-4">
           The Services may process and store limited Discord-related data necessary for functionality, including user IDs, server IDs, and gameplay-related data such as statistics, progression, and configuration settings.
         </p>
@@ -113,25 +175,34 @@ const lastUpdated = '6 July 2026';
             class="text-amber-600 dark:text-amber-500 underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-400"
           >Privacy Policy</a>.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">8. Availability</h2>
+      <section id="availability" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">08</span>
+          <h2 class="legal-title">Availability</h2>
+        </div>
         <p class="mb-4">
           We aim to provide stable Services, but we do not guarantee uninterrupted or error-free availability. The Services may experience downtime due to maintenance, updates, or unexpected issues.
         </p>
         <p>In some cases, data resets or adjustments may occur when required for system stability or feature updates.</p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">9. Suspension and Termination</h2>
+      <section id="suspension" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">09</span>
+          <h2 class="legal-title">Suspension and Termination</h2>
+        </div>
         <p>
           We reserve the right to restrict, suspend, or terminate access to any Service for users or servers that violate these Terms or engage in abusive behavior. We may also remove data associated with such violations where necessary.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">10. Limitation of Liability</h2>
+      <section id="liability" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">10</span>
+          <h2 class="legal-title">Limitation of Liability</h2>
+        </div>
         <p class="mb-4">
           The Services are provided on an "as is" and "as available" basis without warranties of any kind.
         </p>
@@ -142,29 +213,40 @@ const lastUpdated = '6 July 2026';
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Damages resulting from use of the Services</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Indirect, incidental, or consequential losses</span></li>
         </ul>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">11. Changes to Terms</h2>
+      <section id="changes" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">11</span>
+          <h2 class="legal-title">Changes to Terms</h2>
+        </div>
         <p>
           We may update these Terms of Service at any time. Continued use of the Services after updates become effective constitutes acceptance of the revised Terms.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">12. Contact</h2>
-        <p>
-          For questions, support, privacy requests, or data-related inquiries, please contact us through our
+      <section id="contact" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">12</span>
+          <h2 class="legal-title">Contact</h2>
+        </div>
+        <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 md:p-8">
+          <p class="mb-6">
+            For questions, support, privacy requests, or data-related inquiries, please contact us through our official Discord Support Server:
+          </p>
           <a
             href="https://discord.gg/A7n88d6uRW"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-amber-600 dark:text-amber-500 underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-400"
-          >official Discord Support Server</a>.
-        </p>
-      </div>
+            class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-5 py-2.5 text-sm font-medium hover:-translate-y-0.5 transition-transform"
+          >
+            Discord Support Server
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+          </a>
+        </div>
+      </section>
 
-      <div class="pt-8 border-t border-ink-900/10 dark:border-cream-100/10">
+      <div class="mt-12 pt-8 border-t border-ink-900/10 dark:border-cream-100/10">
         <p class="text-sm text-ink-500 dark:text-cream-300/60">
           &copy; 2026 Vanillate Studio. All rights reserved.
         </p>
@@ -172,3 +254,51 @@ const lastUpdated = '6 July 2026';
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  /* Pola section legal: divider halus + jarak konsisten antar bab. */
+  .legal-sec {
+    margin-top: 2.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid rgb(17 16 21 / 0.1);
+  }
+  .legal-sec:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  :global(html.dark) .legal-sec {
+    border-color: rgb(245 239 224 / 0.1);
+  }
+
+  .legal-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .legal-badge {
+    display: inline-flex;
+    height: 2rem;
+    width: 2rem;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: rgb(232 184 74 / 0.12);
+    font-family: '"JetBrains Mono"', ui-monospace, monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #C99A2E;
+  }
+  :global(html.dark) .legal-badge {
+    color: #F3C158;
+  }
+  .legal-title {
+    font-family: '"Bricolage Grotesque"', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+</style>

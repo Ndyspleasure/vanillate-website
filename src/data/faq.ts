@@ -12,7 +12,7 @@ export type FaqItem = { q: string; a: string };
 export const generalFaqs: FaqItem[] = [
   {
     q: 'Apakah semua bot Vanillate gratis?',
-    a: 'Ya. Semua game kami, Sambung Kata dan Tahu Bulat, gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional (seperti di Anonymous Chat) hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
+    a: 'Ya. Semua game kami, Sambung Kata dan Tahu Bulat, gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
   },
   {
     q: 'Bagaimana cara mengundang bot ke server saya?',

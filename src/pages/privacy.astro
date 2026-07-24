@@ -2,39 +2,87 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 const lastUpdated = '6 July 2026';
+
+// Daftar isi ringkas — sekaligus penanda nomor & judul tiap section.
+const toc = [
+  { n: '01', id: 'introduction', label: 'Introduction' },
+  { n: '02', id: 'information-we-collect', label: 'Information We Collect' },
+  { n: '03', id: 'how-we-use-information', label: 'How We Use Information' },
+  { n: '04', id: 'message-content', label: 'Message Content & Privileged Intents' },
+  { n: '05', id: 'data-sharing', label: 'Data Sharing' },
+  { n: '06', id: 'data-retention', label: 'Data Retention' },
+  { n: '07', id: 'data-security', label: 'Data Security' },
+  { n: '08', id: 'third-party-services', label: 'Third-Party Services' },
+  { n: '09', id: 'childrens-privacy', label: "Children's Privacy" },
+  { n: '10', id: 'user-rights', label: 'User Rights' },
+  { n: '11', id: 'changes', label: 'Changes to this Policy' },
+  { n: '12', id: 'contact', label: 'Contact' },
+];
 ---
 
 <BaseLayout
   title="Privacy Policy"
   description="Kebijakan privasi seluruh produk dan layanan Vanillate Studio."
 >
-  <section class="container-page pt-20 md:pt-28 pb-12 max-w-3xl">
-    <p class="eyebrow mb-6">Legal</p>
-    <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-tight mb-6">
-      Privacy Policy
-    </h1>
-    <p class="text-sm text-ink-500 dark:text-cream-300/60 font-mono">
-      Last Updated: {lastUpdated}
-    </p>
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 md:pt-28 pb-10">
+    <div class="aurora bg-amber-500/15 h-[360px] w-[360px] top-[-120px] right-[6%]" aria-hidden="true"></div>
+    <div class="container-page max-w-3xl relative">
+      <p class="eyebrow mb-6 animate-fade-up">Legal</p>
+      <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-tight mb-5 animate-fade-up">
+        Privacy Policy
+      </h1>
+      <p class="max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Bagaimana Vanillate Studio mengumpulkan, menggunakan, dan melindungi data yang diperlukan untuk menjalankan seluruh produk dan layanannya.
+      </p>
+      <div class="mt-6 inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-3.5 py-1.5 font-mono text-xs text-ink-500 dark:text-cream-300/70 animate-fade-up" style="animation-delay: 0.15s">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Last Updated: {lastUpdated}
+      </div>
+    </div>
   </section>
 
-  <section class="container-page pb-24 max-w-3xl">
-    <div class="space-y-12 text-ink-700 dark:text-cream-200 leading-relaxed">
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">1. Introduction</h2>
+  <!-- TABLE OF CONTENTS -->
+  <section class="container-page max-w-3xl pb-4">
+    <nav class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5 md:p-6 reveal" aria-label="Daftar isi">
+      <p class="eyebrow mb-4">Daftar Isi</p>
+      <ol class="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+        {toc.map((s) => (
+          <li>
+            <a href={`#${s.id}`} class="group flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+              <span class="font-mono text-xs text-amber-600 dark:text-amber-500 flex-none">{s.n}</span>
+              <span class="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{s.label}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </section>
+
+  <!-- BODY -->
+  <section class="container-page max-w-3xl pb-24">
+    <div class="text-ink-700 dark:text-cream-200 leading-relaxed">
+      <section id="introduction" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">01</span>
+          <h2 class="legal-title">Introduction</h2>
+        </div>
         <p class="mb-4">
           This Privacy Policy explains how Vanillate Studio ("we", "our", or "us") collects, uses, stores, and protects information necessary to provide our products and services on Discord and the web.
         </p>
         <p class="mb-4">
-          This policy applies to all products and services operated by Vanillate Studio (collectively, the "Services"), including but not limited to <strong class="text-ink-900 dark:text-cream-50">Vanillate Sambung Kata</strong> and <strong class="text-ink-900 dark:text-cream-50">Vanillate Tahu Bulat</strong>, as well as any bots, applications, or services we release in the future, unless a separate privacy policy is expressly provided for a specific product.
+          This policy applies to all products and services operated by Vanillate Studio (collectively, the "Services") — including every Vanillate Studio bot, application, and website, as well as any products or services we may release in the future — unless a separate privacy policy is expressly provided for a specific product.
         </p>
         <p>
           By using any of the Services, you agree to the collection and use of information as described in this Privacy Policy.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">2. Information We Collect</h2>
+      <section id="information-we-collect" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">02</span>
+          <h2 class="legal-title">Information We Collect</h2>
+        </div>
         <p class="mb-6">
           To provide gameplay features and maintain the operation of the Services, we may collect and store the following information:
         </p>
@@ -67,10 +115,13 @@ const lastUpdated = '6 July 2026';
         <p>
           We do not collect passwords, payment information, email addresses, direct messages unrelated to Service functionality, or other sensitive personal information.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">3. How We Use Information</h2>
+      <section id="how-we-use-information" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">03</span>
+          <h2 class="legal-title">How We Use Information</h2>
+        </div>
         <p class="mb-4">We use collected information solely to operate and improve the Services, including:</p>
         <ul class="space-y-2 pl-0 list-none mb-4">
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Providing gameplay functionality</span></li>
@@ -82,10 +133,13 @@ const lastUpdated = '6 July 2026';
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Developing and testing new features</span></li>
         </ul>
         <p>We do not use collected data for advertising purposes.</p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">4. Message Content and Privileged Intents</h2>
+      <section id="message-content" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">04</span>
+          <h2 class="legal-title">Message Content and Privileged Intents</h2>
+        </div>
         <p class="mb-4">
           Some Services may process message content and other Discord data only when required for their functionality and in accordance with Discord's Developer Terms and Policies. For example, word-chain gameplay requires reading player answers submitted in the game channel.
         </p>
@@ -93,10 +147,13 @@ const lastUpdated = '6 July 2026';
           Message content is processed exclusively to provide requested commands, gameplay interactions, moderation features, or other Service-related functionality.
         </p>
         <p>We do not sell, share, or use message content for advertising or profiling purposes.</p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">5. Data Sharing</h2>
+      <section id="data-sharing" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">05</span>
+          <h2 class="legal-title">Data Sharing</h2>
+        </div>
         <p class="mb-4">We do not sell, rent, trade, or otherwise monetize user data.</p>
         <p class="mb-4">Information may only be disclosed:</p>
         <ul class="space-y-2 pl-0 list-none">
@@ -105,10 +162,13 @@ const lastUpdated = '6 July 2026';
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>To investigate abuse, fraud, or violations of our policies</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>When necessary to comply with Discord's policies and requirements</span></li>
         </ul>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">6. Data Retention</h2>
+      <section id="data-retention" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">06</span>
+          <h2 class="legal-title">Data Retention</h2>
+        </div>
         <p class="mb-4">
           We retain information only for as long as reasonably necessary to provide the Services and maintain gameplay functionality.
         </p>
@@ -122,37 +182,49 @@ const lastUpdated = '6 July 2026';
         <p>
           Certain records may be retained temporarily for security, abuse prevention, or legal compliance purposes.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">7. Data Security</h2>
+      <section id="data-security" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">07</span>
+          <h2 class="legal-title">Data Security</h2>
+        </div>
         <p class="mb-4">
           We implement reasonable technical and organizational measures to protect stored information from unauthorized access, disclosure, alteration, or destruction.
         </p>
         <p>
           However, no method of electronic transmission or storage can be guaranteed to be completely secure.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">8. Third-Party Services</h2>
+      <section id="third-party-services" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">08</span>
+          <h2 class="legal-title">Third-Party Services</h2>
+        </div>
         <p class="mb-4">
           The Services operate through Discord and may utilize third-party hosting, database, analytics, or infrastructure providers to maintain service availability.
         </p>
         <p>
           Use of such services is governed by their respective privacy policies and terms.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">9. Children's Privacy</h2>
+      <section id="childrens-privacy" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">09</span>
+          <h2 class="legal-title">Children's Privacy</h2>
+        </div>
         <p>
           The Services are not intended for individuals who are below the minimum age required to use Discord under applicable laws and Discord's Terms of Service.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">10. User Rights</h2>
+      <section id="user-rights" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">10</span>
+          <h2 class="legal-title">User Rights</h2>
+        </div>
         <p class="mb-4">Users may request:</p>
         <ul class="space-y-2 pl-0 list-none mb-4">
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Information regarding stored data</span></li>
@@ -161,33 +233,41 @@ const lastUpdated = '6 July 2026';
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Clarification regarding how their data is used</span></li>
         </ul>
         <p>Requests may be submitted through our official support server and apply to data across all of our Services.</p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">11. Changes to this Privacy Policy</h2>
+      <section id="changes" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">11</span>
+          <h2 class="legal-title">Changes to this Privacy Policy</h2>
+        </div>
         <p class="mb-4">We may update this Privacy Policy from time to time.</p>
         <p>
           Any changes will become effective upon publication of the updated policy. Continued use of the Services after such changes constitutes acceptance of the revised Privacy Policy.
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h2 class="font-display text-2xl font-semibold tracking-tightest mb-4">12. Contact</h2>
-        <p class="mb-4">
-          For privacy-related inquiries, data requests, or support, contact us through:
-        </p>
-        <a
-          href="https://discord.gg/A7n88d6uRW"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-5 py-2.5 text-sm font-medium hover:-translate-y-0.5 transition-transform"
-        >
-          Discord Support Server
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
-        </a>
-      </div>
+      <section id="contact" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">12</span>
+          <h2 class="legal-title">Contact</h2>
+        </div>
+        <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 md:p-8">
+          <p class="mb-6">
+            For privacy-related inquiries, data requests, or support, contact us through our official Discord Support Server:
+          </p>
+          <a
+            href="https://discord.gg/A7n88d6uRW"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-5 py-2.5 text-sm font-medium hover:-translate-y-0.5 transition-transform"
+          >
+            Discord Support Server
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+          </a>
+        </div>
+      </section>
 
-      <div class="pt-8 border-t border-ink-900/10 dark:border-cream-100/10">
+      <div class="mt-12 pt-8 border-t border-ink-900/10 dark:border-cream-100/10">
         <p class="text-sm text-ink-500 dark:text-cream-300/60">
           &copy; 2026 Vanillate Studio. All rights reserved.
         </p>
@@ -195,3 +275,51 @@ const lastUpdated = '6 July 2026';
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  /* Pola section legal: divider halus + jarak konsisten antar bab. */
+  .legal-sec {
+    margin-top: 2.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid rgb(17 16 21 / 0.1);
+  }
+  .legal-sec:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  :global(html.dark) .legal-sec {
+    border-color: rgb(245 239 224 / 0.1);
+  }
+
+  .legal-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .legal-badge {
+    display: inline-flex;
+    height: 2rem;
+    width: 2rem;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: rgb(232 184 74 / 0.12);
+    font-family: '"JetBrains Mono"', ui-monospace, monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #C99A2E;
+  }
+  :global(html.dark) .legal-badge {
+    color: #F3C158;
+  }
+  .legal-title {
+    font-family: '"Bricolage Grotesque"', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+</style>

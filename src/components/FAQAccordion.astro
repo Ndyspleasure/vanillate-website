@@ -1,5 +1,6 @@
 ---
 import type { FaqItem } from '@data/faq';
+import { inlineMarkdown } from '@utils/inline';
 
 export interface Props {
   items: FaqItem[];
@@ -7,15 +8,8 @@ export interface Props {
 
 const { items } = Astro.props;
 
-// Escape HTML lalu ubah `teks` jadi <code>. Konten dari data internal (faq.ts).
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-const codeClass =
-  'font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded';
-function fmt(s: string): string {
-  return escapeHtml(s).replace(/`([^`]+)`/g, `<code class="${codeClass}">$1</code>`);
-}
+// Render inline-markdown (`kode`, **tebal**, *miring*) dari data internal (faq.ts).
+const fmt = inlineMarkdown;
 ---
 
 <div class="divide-y divide-ink-900/10 dark:divide-cream-100/10 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
