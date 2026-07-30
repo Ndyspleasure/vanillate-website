@@ -12,7 +12,7 @@ export type FaqItem = { q: string; a: string };
 export const generalFaqs: FaqItem[] = [
   {
     q: 'Apakah semua bot Vanillate gratis?',
-    a: 'Ya. Semua game kami, Sambung Kata dan Tahu Bulat, gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
+    a: 'Ya. Semua bot kami, Sambung Kata dan Vanillate Games (Werewolf + Tahu Bulat), gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
   },
   {
     q: 'Bagaimana cara mengundang bot ke server saya?',
@@ -104,56 +104,79 @@ export const faqs: Record<string, FaqItem[]> = {
   ],
 
   // ═══════════════════════════════════════════════════════════════════
-  // TAHU BULAT
+  // VANILLATE GAMES (hub: Werewolf & Tahu Bulat)
   // ═══════════════════════════════════════════════════════════════════
-  'tahu-bulat': [
+  'vanillate-games': [
     {
-      q: 'Bagaimana cara mulai bermain?',
-      a: 'Ketik `/tahu` untuk membuka dashboard usaha (modal awal 1.000 coin). Tekan 🥟 Jual Tahu, tunggu beberapa detik sampai selesai menggoreng, dan coin masuk otomatis. Pakai coin itu untuk 🔧 Upgrade agar makin cuan.',
+      q: 'Apa itu Vanillate Games?',
+      a: 'Vanillate Games adalah hub game Discord dari Vanillate Studio. Satu bot yang berisi beberapa game sekaligus. Saat ini tersedia 🐺 Werewolf (deduksi sosial) dan 🥟 Tahu Bulat (simulasi bisnis idle), dengan game baru akan menyusul di bot yang sama, tanpa perlu invite ulang.',
     },
     {
-      q: 'Bagaimana pendapatan offline bekerja?',
-      a: 'Saat kamu tidak bermain, toko tetap menghasilkan hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/tahu` lagi untuk mengklaim pendapatan yang terkumpul selama kamu pergi.',
+      q: 'Command apa saja yang tersedia?',
+      a: 'Ada tiga: `/gamewerewolf` untuk membuka lobi Werewolf, `/gametahu` untuk membuka dashboard Tahu Bulat, dan `/help` untuk panduan singkat di dalam Discord.',
+    },
+    // ── Werewolf ────────────────────────────────────────────
+    {
+      q: 'Bagaimana cara mulai main Werewolf?',
+      a: 'Ketik `/gamewerewolf` di channel untuk membuka lobi. Pemain lain menekan ✅ Gabung, lalu setelah minimal 4 pemain masuk, host menekan ▶️ Mulai. Setiap pemain lalu menekan 🎭 Lihat Peran untuk melihat perannya secara rahasia.',
+    },
+    {
+      q: 'Berapa jumlah pemain Werewolf?',
+      a: 'Mode Klasik butuh 4–12 pemain. Bot mengatur komposisi peran otomatis: sekitar 1 serigala per 5 pemain, Peramal aktif sejak 4 pemain, Tabib aktif sejak 6 pemain. Mode Lanjutan mendukung lebih banyak pemain dengan hingga 54 role modern.',
+    },
+    {
+      q: 'Apa bedanya mode Klasik dan Lanjutan?',
+      a: 'Mode Klasik pakai 4 role dasar (Serigala, Peramal, Tabib, Warga), sederhana dan cepat dipahami. Mode Lanjutan dipandu narator dengan sistem giliran dan menyediakan hingga 54 role modern (Vigilante, Bodyguard, Cupid, Witch, dll). Durasi timernya sama untuk keduanya.',
+    },
+    {
+      q: 'Berapa lama durasi tiap fase?',
+      a: 'Fase Aksi Malam 50 detik, Diskusi Siang 3 menit, dan Voting 1 menit. Semua maju otomatis saat timer habis. Host bisa mempercepat fase kalau semua pemain sudah selesai beraksi.',
+    },
+    {
+      q: 'Apa yang terjadi di fase Malam?',
+      a: '🐺 Serigala memilih satu mangsa (suara terbanyak yang dimangsa), 🔮 Peramal menyelidiki satu pemain untuk tahu apakah ia serigala, dan 🩺 Tabib melindungi satu pemain dari terkaman malam itu. Host menekan 🌅 Lanjut ke Siang untuk menyelesaikan malam.',
+    },
+    {
+      q: 'Bagaimana voting di siang hari bekerja?',
+      a: 'Semua pemain hidup berdiskusi di channel Discord, lalu 🗳️ voting satu tersangka. Suara terbanyak dieksekusi; seri berarti tidak ada eksekusi hari itu. Host menekan ⚖️ Hitung Suara untuk menutup siang.',
+    },
+    {
+      q: 'Kapan Warga menang, kapan Serigala menang?',
+      a: 'Warga menang bila semua serigala tereksekusi. Serigala menang bila jumlah serigala menyamai jumlah warga. Setiap kubu berjuang untuk kubunya sendiri.',
+    },
+    {
+      q: 'Apakah diskusi terjadi di bot?',
+      a: 'Tidak. Diskusi terjadi langsung di channel Discord kamu, bot hanya mengatur aksi rahasia, timer, dan voting. Pastikan semua pemain hidup ada di channel yang sama saat fase Siang berjalan.',
+    },
+    // ── Tahu Bulat ─────────────────────────────────────────
+    {
+      q: 'Bagaimana cara mulai main Tahu Bulat?',
+      a: 'Ketik `/gametahu` untuk membuka dashboard usaha (modal awal 1.000 coin). Tekan 🥟 Jual Tahu, tunggu beberapa detik sampai selesai menggoreng, dan coin masuk otomatis. Pakai coin itu untuk 🔧 Upgrade agar makin cuan.',
+    },
+    {
+      q: 'Bagaimana pendapatan offline Tahu Bulat bekerja?',
+      a: 'Saat kamu tidak bermain, toko tetap menghasilkan hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/gametahu` lagi untuk mengklaim pendapatan yang terkumpul selama kamu pergi.',
     },
     {
       q: 'Kalau pergi lama, apakah rugi?',
-      a: 'Tidak. Pendapatan offline dibatasi maksimal 8 jam, jadi kamu tidak kena penalti apa pun, hanya saja penghasilan tidak menumpuk melebihi batas itu. Aman ditinggal kerja atau tidur.',
+      a: 'Tidak. Pendapatan offline Tahu Bulat dibatasi maksimal 8 jam, jadi kamu tidak kena penalti apa pun, hanya saja penghasilan tidak menumpuk melebihi batas itu. Aman ditinggal kerja atau tidur.',
     },
     {
-      q: 'Apa saja tingkatan kendaraan dan harganya?',
-      a: 'Ada 5 tingkat: Gerobak Kayu (kendaraan awal) → Motor Tahu (5.000) → Pick Up Tahu (50.000) → Van Tahu (500.000) → Food Truck (5.000.000 coin). Food Truck adalah kendaraan tertinggi sekaligus syarat untuk Rebirth.',
+      q: 'Apa itu Rebirth di Tahu Bulat?',
+      a: 'Rebirth mengulang usaha dari awal demi bonus permanen +20% setiap kali, dan bonusnya menumpuk selamanya. Syaratnya: kendaraan sudah Food Truck, semua peralatan Level 5, dan semua bahan Level 50. Yang direset: coin, kendaraan, peralatan, bahan, promosi. Yang aman: jumlah rebirth, statistik, achievement.',
     },
     {
-      q: 'Apa itu Rebirth?',
-      a: 'Rebirth mengulang usaha dari awal demi bonus permanen +20% setiap kali, dan bonusnya menumpuk selamanya. Syaratnya: kendaraan sudah Food Truck, semua peralatan Level 5, dan semua bahan Level 50.',
-    },
-    {
-      q: 'Apa yang hilang dan apa yang aman saat Rebirth?',
-      a: 'Yang direset: coin, kendaraan, peralatan, bahan, dan promosi. Yang tetap aman: jumlah rebirth, statistik, dan achievement. Jadi kamu memulai lagi lebih kuat, bukan dari nol yang sebenarnya.',
-    },
-    {
-      q: 'Bagaimana sistem upgrade bekerja?',
-      a: 'Ada 3 lapis: Kendaraan menentukan pendapatan dasar; 10 Peralatan (maks Level 5, harga naik 1.35× per level) memberi bonus; dan 30 Bahan (maks Level 50, harga naik 1.18× per level) adalah kunci penghasilan besar di late game. Ada tombol ⬆️ Upgrade Semua untuk menaikkan sekaligus.',
-    },
-    {
-      q: 'Peralatan mana yang sebaiknya diprioritaskan?',
+      q: 'Peralatan Tahu Bulat mana yang sebaiknya diprioritaskan?',
       a: 'Kompor. Kompor memangkas cooldown jualan (Lv1: 5 detik → Lv5: 2 detik). Cooldown lebih cepat berarti kamu bisa jualan lebih sering, sehingga pendapatan naik lebih cepat.',
     },
-    {
-      q: 'Apa itu Promosi?',
-      a: 'Promosi memberi bonus pendapatan sementara, dari 📰 Poster (+15%) sampai 📱 Media Sosial (+50%). Hanya satu promosi bisa aktif dalam satu waktu, dan efeknya bisa diperkuat dengan menaikkan level Banner Promosi.',
-    },
-    {
-      q: 'Bisa main bareng teman?',
-      a: 'Bisa. Setiap orang punya usaha sendiri, lalu kalian bisa saling adu di 🏆 Peringkat dengan kategori Total Coin Dihasilkan, Kekayaan, dan Total Rebirth.',
-    },
-    {
-      q: 'Kenapa tombol saya terkunci?',
-      a: 'Kendaraan sedang menggoreng/berjualan. Selama proses itu semua tombol terkunci sebentar, kamu tidak perlu menekan apa pun. Tunggu beberapa detik dan tombol terbuka sendiri, tanpa perlu refresh manual.',
-    },
+    // ── Umum ───────────────────────────────────────────────
     {
       q: 'Apakah progresku bisa hilang?',
-      a: 'Tidak. Semua progres tersimpan otomatis di server, jadi usahamu tetap ada meski kamu tutup Discord.',
+      a: 'Tidak. Semua progres — statistik Tahu Bulat, riwayat match Werewolf, dan data akun lainnya — tersimpan otomatis di server, jadi tetap ada meski kamu tutup Discord.',
+    },
+    {
+      q: 'Apakah akan ada game baru?',
+      a: 'Ya. Vanillate Games dirancang sebagai hub: game baru akan ditambahkan sebagai command `/game...` berikutnya di bot yang sama, dan otomatis muncul untuk semua server yang sudah mengundang bot. Tidak perlu invite ulang.',
     },
   ],
 

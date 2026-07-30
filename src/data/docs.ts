@@ -524,25 +524,215 @@ export const docs: Record<string, BotDoc> = {
   },
 
   // ═══════════════════════════════════════════════════════════════════
-  // VANILLATE TAHU BULAT
+  // VANILLATE GAMES (hub: Werewolf & Tahu Bulat)
   // ═══════════════════════════════════════════════════════════════════
-  'tahu-bulat': {
+  'vanillate-games': {
     intro:
-      'Tahu Bulat adalah game simulasi bisnis idle. Kembangkan usahamu dari gerobak kecil hingga jadi sultan tahu, bahkan saat kamu sedang tidak bermain, tokomu tetap menghasilkan.',
+      'Vanillate Games adalah hub game Discord berbahasa Indonesia. Satu bot untuk beberapa game: saat ini tersedia 🐺 Werewolf (deduksi sosial) dan 🥟 Tahu Bulat (simulasi bisnis idle). Undang sekali, mainkan semuanya.',
     quickStart: [
-      'Ketik `/tahu` untuk membuka dashboard.',
-      'Tekan 🥟 Jual Tahu untuk berjualan.',
-      'Tunggu 5 detik, coin masuk otomatis.',
-      'Pakai coin untuk 🔧 Upgrade biar makin cuan.',
+      'Undang Vanillate Games ke server Discord kamu.',
+      'Ketik `/gamewerewolf` untuk membuka lobi Werewolf.',
+      'Atau ketik `/gametahu` untuk membuka dashboard Tahu Bulat.',
+      'Butuh panduan singkat? Ketik `/help` di dalam Discord.',
     ],
     sections: [
       {
-        id: 'cara-bermain',
-        title: 'Cara Bermain',
+        id: 'game-tersedia',
+        title: 'Game yang Tersedia',
+        intro:
+          'Dua game berbeda dalam satu bot. Pilih sesuai suasana dan jumlah orang yang siap main. Roadmap kami: game baru akan menyusul.',
+        subsections: [
+          {
+            title: '🐺 Werewolf — Deduksi Sosial',
+            items: [
+              'Command: `/gamewerewolf` → buka lobi.',
+              'Pemain: 4–12 (Klasik) atau lebih via mode Lanjutan.',
+              'Alur: fase Malam (peran khusus beraksi) → fase Siang (diskusi & voting).',
+              'Menang: Warga menang bila semua serigala tereksekusi; Serigala menang bila jumlahnya menyamai warga.',
+            ],
+          },
+          {
+            title: '🥟 Tahu Bulat — Simulasi Bisnis Idle',
+            items: [
+              'Command: `/gametahu` → buka dashboard usaha.',
+              'Pemain: solo, dengan peringkat global antar pemain.',
+              'Alur: jual tahu → upgrade → biarkan menghasilkan bahkan saat offline.',
+              'Menang: bangun usahamu setinggi mungkin dan kumpulkan Rebirth untuk bonus permanen.',
+            ],
+          },
+        ],
+        note: 'Semua command dijalankan lewat slash command Discord. Ketik `/` di channel mana pun untuk melihat daftarnya.',
+      },
+
+      // ── WEREWOLF ─────────────────────────────────────────────
+      {
+        id: 'werewolf-cara-bermain',
+        title: '🐺 Werewolf · Cara Bermain',
+        intro:
+          'Werewolf adalah game deduksi sosial klasik. Sekawanan serigala bersembunyi di antara warga. Tiap malam ada yang jadi korban; tiap siang desa mengeksekusi satu tersangka. Bertahanlah dan menangkan kubumu.',
+        subsections: [
+          {
+            title: '1️⃣ Buka Lobi',
+            text: 'Ketik `/gamewerewolf` di channel. Bot menampilkan lobi dengan tombol ✅ Gabung.',
+          },
+          {
+            title: '2️⃣ Kumpulkan Pemain',
+            text: 'Butuh 4–12 pemain untuk mode Klasik. Setiap pemain menekan ✅ Gabung. Host adalah pemain yang membuka lobi.',
+          },
+          {
+            title: '3️⃣ Host Mulai',
+            text: 'Setelah minimal 4 pemain masuk, host menekan ▶️ Mulai. Peran dibagikan secara acak.',
+          },
+          {
+            title: '4️⃣ Terima Peran',
+            text: 'Setiap pemain menekan 🎭 Lihat Peran untuk melihat perannya secara rahasia. Jangan bocorkan ke pemain lain.',
+          },
+          {
+            title: '5️⃣ Mainkan Malam & Siang',
+            text: 'Fase Malam: peran khusus (Serigala, Peramal, Tabib) beraksi diam-diam. Fase Siang: semua pemain hidup berdiskusi lalu 🗳️ voting satu tersangka untuk dieksekusi.',
+          },
+          {
+            title: '🏆 Cara Menang',
+            items: [
+              'Warga menang bila semua serigala tereksekusi.',
+              'Serigala menang bila jumlahnya menyamai jumlah warga.',
+              'Setiap kubu berjuang untuk kubunya sendiri; siapa yang terakhir bertahan menentukan hasil.',
+            ],
+          },
+        ],
+        note: 'Diskusi terjadi langsung di channel Discord kamu, bot hanya mengatur aksi rahasia, timer, dan voting.',
+      },
+      {
+        id: 'werewolf-mode',
+        title: '🐺 Werewolf · Mode Klasik & Lanjutan',
+        intro:
+          'Host memilih mode di lobi sebelum mulai. Durasi timer sama untuk keduanya: aksi 50 detik, diskusi 3 menit, voting 1 menit, semuanya maju otomatis.',
+        subsections: [
+          {
+            title: '🐺 Mode Klasik',
+            items: [
+              '4 role dasar: Serigala, Peramal, Tabib, Warga.',
+              'Sederhana dan cepat dipahami, cocok untuk pemain baru.',
+              'Host bisa mempercepat fase kalau semua sudah beraksi.',
+              'Komposisi menyesuaikan jumlah pemain: ~1 serigala tiap 5 pemain, Peramal sejak 4 pemain, Tabib sejak 6 pemain.',
+            ],
+          },
+          {
+            title: '🎲 Mode Lanjutan',
+            items: [
+              'Hingga 54 role modern (Vigilante, Bodyguard, Cupid, Witch, dan banyak lagi).',
+              'Dipandu narator dengan sistem giliran — bot memanggil satu per satu peran malam.',
+              'Saat giliranmu tiba, tekan 🎭 Dashboard untuk beraksi.',
+              'Cocok untuk sesi panjang dengan pemain berpengalaman.',
+            ],
+          },
+          {
+            title: '⏱️ Timer Fase (sama untuk kedua mode)',
+            table: {
+              headers: ['Fase', 'Durasi', 'Aktivitas'],
+              rows: [
+                ['🌙 Aksi Malam', '50 detik', 'Peran khusus beraksi diam-diam'],
+                ['☀️ Diskusi Siang', '3 menit', 'Semua pemain hidup berdiskusi di channel'],
+                ['🗳️ Voting', '1 menit', 'Vote tersangka untuk dieksekusi'],
+              ],
+            },
+          },
+        ],
+        note: 'Host punya tombol untuk mempercepat fase kalau semua pemain sudah selesai beraksi, tidak perlu menunggu timer habis.',
+      },
+      {
+        id: 'werewolf-fase',
+        title: '🐺 Werewolf · Fase Malam & Siang',
+        intro:
+          'Setiap ronde terdiri dari malam dan siang. Yang terjadi di masing-masing fase menentukan siapa yang bertahan dan siapa yang gugur.',
+        subsections: [
+          {
+            title: '🌙 Fase Malam',
+            items: [
+              '🐺 Serigala memilih satu mangsa (suara terbanyak yang dimangsa).',
+              '🔮 Peramal menyelidiki satu pemain → tahu apakah ia serigala.',
+              '🩺 Tabib melindungi satu pemain dari terkaman malam itu.',
+              'Host menekan 🌅 Lanjut ke Siang untuk menyelesaikan malam.',
+            ],
+          },
+          {
+            title: '☀️ Fase Siang',
+            items: [
+              'Semua pemain hidup berdiskusi di channel Discord.',
+              '🗳️ Voting: setiap pemain memilih satu tersangka.',
+              'Suara terbanyak dieksekusi; seri = tidak ada eksekusi hari itu.',
+              'Host menekan ⚖️ Hitung Suara untuk menutup siang.',
+            ],
+          },
+        ],
+        note: 'Malam dan siang bergantian sampai salah satu kubu memenuhi syarat kemenangan.',
+      },
+      {
+        id: 'werewolf-peran',
+        title: '🐺 Werewolf · Peran',
+        intro:
+          'Ada dua kubu utama: Warga dan Serigala. Berikut peran dasar yang muncul di mode Klasik. Mode Lanjutan menambahkan puluhan peran spesial lainnya.',
+        subsections: [
+          {
+            title: '🐺 Serigala',
+            text: 'Setiap malam, kawanan serigala memangsa satu warga. Menang bila jumlah serigala menyamai jumlah warga.',
+          },
+          {
+            title: '🔮 Peramal',
+            text: 'Setiap malam boleh menyelidiki satu pemain untuk mengetahui apakah ia serigala. Peran vital untuk kubu Warga, tapi juga target utama serigala.',
+          },
+          {
+            title: '🩺 Tabib',
+            text: 'Setiap malam boleh melindungi satu pemain dari terkaman serigala. Bisa melindungi diri sendiri saat genting.',
+          },
+          {
+            title: '🧑‍🌾 Warga',
+            text: 'Tidak punya kemampuan malam. Andalkan diskusi dan voting siang untuk mengungkap serigala.',
+          },
+          {
+            title: '📋 Komposisi Otomatis',
+            items: [
+              'Sekitar 1 serigala per 5 pemain (misal 5 pemain = 1 serigala, 10 pemain = 2 serigala).',
+              'Peramal aktif sejak 4 pemain.',
+              'Tabib aktif sejak 6 pemain.',
+              'Sisanya jadi Warga biasa. Bot mengatur komposisi ini secara otomatis.',
+            ],
+          },
+        ],
+        note: 'Di mode Lanjutan tersedia hingga 54 role modern (Vigilante, Bodyguard, Cupid, Witch, dll). Tekan 🎭 Dashboard saat giliranmu untuk melihat aksi yang tersedia.',
+      },
+      {
+        id: 'werewolf-tips',
+        title: '🐺 Werewolf · Tips',
+        subsections: [
+          {
+            title: '💡 Strategi per Peran',
+            items: [
+              '🐺 Serigala: berpura-puralah jadi warga, arahkan curiga ke orang lain, dan koordinasi diam-diam sesama serigala.',
+              '🔮 Peramal: jangan buru-buru buka jati diri, kamu target utama serigala. Bocorkan hasil selidik hanya saat momen kritis.',
+              '🩺 Tabib: lindungi pemain yang tampak penting (Peramal aktif, atau diri sendiri di saat genting).',
+              '🧑‍🌾 Warga: perhatikan pola voting siang, serigala sering saling melindungi dan menghindari saling menuduh.',
+            ],
+          },
+          {
+            title: '🗣️ Etika Diskusi',
+            items: [
+              'Diskusi terjadi di channel Discord kamu, bukan di bot. Semua pemain hidup boleh bicara.',
+              'Pemain yang sudah tereliminasi sebaiknya tidak ikut mengarahkan diskusi.',
+              'Jangan bocorkan peranmu di channel publik kecuali strategimu memang membutuhkan.',
+            ],
+          },
+        ],
+      },
+
+      // ── TAHU BULAT ───────────────────────────────────────────
+      {
+        id: 'tahu-cara-bermain',
+        title: '🥟 Tahu Bulat · Cara Bermain',
         subsections: [
           {
             title: '📱 Buka Dashboard',
-            text: 'Ketik `/tahu` kapan saja untuk membuka usahamu. Modal awal: 1.000 coin.',
+            text: 'Ketik `/gametahu` kapan saja untuk membuka usahamu. Modal awal: 1.000 coin.',
           },
           {
             title: '🥟 Jual Tahu',
@@ -554,16 +744,16 @@ export const docs: Record<string, BotDoc> = {
           },
           {
             title: '🌙 Pendapatan Offline',
-            text: 'Saat kamu pergi, tokomu tetap menghasilkan, hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/tahu` lagi untuk mengklaimnya.',
+            text: 'Saat kamu pergi, tokomu tetap menghasilkan, hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/gametahu` lagi untuk mengklaimnya.',
           },
         ],
         note: 'Rumus pendapatan: Base × Kendaraan × Peralatan × Bahan × Promosi × Rebirth.',
       },
       {
-        id: 'kendaraan',
-        title: 'Kendaraan',
+        id: 'tahu-kendaraan',
+        title: '🥟 Tahu Bulat · Kendaraan',
         intro:
-          'Kendaraan menentukan pendapatan dasar dan bonus. Semakin tinggi tingkatnya, semakin besar cuan. Upgrade lewat `/tahu` → 🔧 Upgrade → Kendaraan.',
+          'Kendaraan menentukan pendapatan dasar dan bonus. Semakin tinggi tingkatnya, semakin besar cuan. Upgrade lewat `/gametahu` → 🔧 Upgrade → Kendaraan.',
         subsections: [
           {
             table: {
@@ -581,8 +771,8 @@ export const docs: Record<string, BotDoc> = {
         note: 'Food Truck adalah kendaraan tertinggi dan menjadi syarat Rebirth.',
       },
       {
-        id: 'peralatan',
-        title: 'Peralatan',
+        id: 'tahu-peralatan',
+        title: '🥟 Tahu Bulat · Peralatan',
         intro:
           'Ada 10 jenis peralatan, masing-masing maksimal Level 5. Setiap upgrade menambah bonus pendapatan. Harga upgrade naik 1.35× tiap level. Upgrade lewat 🔧 Upgrade → Peralatan.',
         subsections: [
@@ -600,8 +790,8 @@ export const docs: Record<string, BotDoc> = {
         ],
       },
       {
-        id: 'bahan',
-        title: 'Bahan',
+        id: 'tahu-bahan',
+        title: '🥟 Tahu Bulat · Bahan',
         intro:
           'Bahan adalah progres jangka panjang: 30 jenis, masing-masing maksimal Level 50. Tiap level menambah bonus kecil, tapi kalau banyak bahan bertingkat tinggi, pendapatan berlipat ganda.',
         subsections: [
@@ -616,10 +806,10 @@ export const docs: Record<string, BotDoc> = {
         note: 'Fokus bahan saat sudah kuat. Ini kunci pendapatan besar di late game.',
       },
       {
-        id: 'promosi',
-        title: 'Promosi',
+        id: 'tahu-promosi',
+        title: '🥟 Tahu Bulat · Promosi',
         intro:
-          'Promosi memberi bonus pendapatan sementara. Hanya satu promosi aktif dalam satu waktu. Beli lewat `/tahu` → 📢 Promosi.',
+          'Promosi memberi bonus pendapatan sementara. Hanya satu promosi aktif dalam satu waktu. Beli lewat `/gametahu` → 📢 Promosi.',
         subsections: [
           {
             table: {
@@ -636,8 +826,8 @@ export const docs: Record<string, BotDoc> = {
         note: 'Efek promosi bisa diperkuat dengan menaikkan level Banner Promosi.',
       },
       {
-        id: 'rebirth',
-        title: 'Rebirth',
+        id: 'tahu-rebirth',
+        title: '🥟 Tahu Bulat · Rebirth',
         intro:
           'Rebirth mengulang usaha dari awal demi bonus permanen +20% setiap kali melakukannya, dan bonusnya menumpuk selamanya.',
         subsections: [
@@ -660,10 +850,10 @@ export const docs: Record<string, BotDoc> = {
         note: 'Tidak bisa Rebirth saat sedang berjualan.',
       },
       {
-        id: 'misi-harian',
-        title: 'Misi Harian',
+        id: 'tahu-misi',
+        title: '🥟 Tahu Bulat · Misi Harian',
         intro:
-          'Selesaikan misi setiap hari untuk hadiah coin. Reset otomatis tiap tengah malam WIB. Buka lewat `/tahu` → 🎯 Misi.',
+          'Selesaikan misi setiap hari untuk hadiah coin. Reset otomatis tiap tengah malam WIB. Buka lewat `/gametahu` → 🎯 Misi.',
         subsections: [
           {
             table: {
@@ -679,15 +869,15 @@ export const docs: Record<string, BotDoc> = {
         note: 'Progres tercatat otomatis dari aktivitasmu (jualan & upgrade). Klaim hadiah di menu misi saat sudah selesai.',
       },
       {
-        id: 'peringkat-achievement',
-        title: 'Peringkat & Achievement',
+        id: 'tahu-peringkat',
+        title: '🥟 Tahu Bulat · Peringkat & Achievement',
         subsections: [
           {
             title: '🏆 Peringkat',
             items: [
               'Bandingkan dirimu dengan pemain lain.',
               'Kategori: 💰 Total Coin Dihasilkan, 🧧 Kekayaan, ♻️ Total Rebirth.',
-              'Buka: `/tahu` → 🏆 Peringkat (bisa ganti kategori di dalamnya).',
+              'Buka: `/gametahu` → 🏆 Peringkat (bisa ganti kategori di dalamnya).',
             ],
           },
           {
@@ -696,21 +886,21 @@ export const docs: Record<string, BotDoc> = {
               '12 pencapaian yang terbuka otomatis saat mencapai target tertentu (misal: jualan pertama, jutawan, armada lengkap, rebirth).',
               'Notifikasi muncul di dashboard.',
               'Permanen, tidak hilang saat Rebirth.',
-              'Buka: `/tahu` → 🎖️ Achievement.',
+              'Buka: `/gametahu` → 🎖️ Achievement.',
             ],
           },
         ],
       },
       {
-        id: 'tips-faq',
-        title: 'Tips & FAQ',
+        id: 'tahu-tips',
+        title: '🥟 Tahu Bulat · Tips & FAQ',
         subsections: [
           {
             title: '💡 Tips',
             items: [
               'Tidak perlu pencet Refresh. Dashboard update sendiri saat jualan selesai.',
               'Malas klik satu-satu? Buka 🔧 Upgrade → ⬆️ Upgrade Semua untuk menaikkan semua peralatan & bahan sekaligus (beli yang termurah dulu).',
-              'Pergi lama? Tokomu tetap jualan (pendapatan offline). Rajin buka `/tahu`.',
+              'Pergi lama? Tokomu tetap jualan (pendapatan offline). Rajin buka `/gametahu`.',
               'Prioritaskan Kompor dulu → cooldown cepat → lebih sering jual.',
               'Bahan adalah kunci penghasilan besar; sabar naikkan sedikit demi sedikit.',
               'Kumpulkan untuk Rebirth demi bonus permanen.',
@@ -729,15 +919,23 @@ export const docs: Record<string, BotDoc> = {
       {
         id: 'commands',
         title: 'Daftar Command',
-        intro: 'Tahu Bulat dirancang simpel, hanya 2 command:',
+        intro: 'Vanillate Games dirancang simpel, satu command per game plus /help.',
         subsections: [
           {
+            title: '🎮 Bermain',
             items: [
-              '`/tahu`: buka dashboard usaha (semua fitur ada di sini: jual, upgrade, promosi, misi, peringkat, achievement).',
+              '`/gamewerewolf`: buka lobi Werewolf (mode Klasik atau Lanjutan, 4–12 pemain untuk Klasik).',
+              '`/gametahu`: buka dashboard Tahu Bulat (semua fitur ada di sini: jual, upgrade, promosi, misi, peringkat, achievement).',
+            ],
+          },
+          {
+            title: '📘 Bantuan',
+            items: [
               '`/help`: panduan lengkap di dalam Discord.',
             ],
           },
         ],
+        note: 'Roadmap: game baru akan ditambahkan sebagai command `/game...` berikutnya di bot yang sama, tidak perlu invite ulang.',
       },
     ],
   },
