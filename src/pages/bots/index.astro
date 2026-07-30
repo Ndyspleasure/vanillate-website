@@ -14,7 +14,7 @@ const totalCount = bots.length;
 const categories = [...new Set(bots.map((b) => b.category))];
 ---
 
-<BaseLayout title="Bot Kami" description="Daftar lengkap Discord Bot buatan Vanillate Studio: Sambung Kata, Vanillate Games (Werewolf & Tahu Bulat), dan Vanillate Story. Gratis, berbahasa Indonesia, dan dirawat setiap hari.">
+<BaseLayout title="Bot Kami" description="Dua Discord Bot buatan Vanillate Studio: Sambung Kata dan Vanillate Games (Werewolf, Tahu Bulat, plus Story yang segera hadir). Gratis, berbahasa Indonesia, dan dirawat setiap hari.">
   <!-- HERO -->
   <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
     <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
@@ -50,8 +50,8 @@ const categories = [...new Set(bots.map((b) => b.category))];
 
   <!-- KATALOG BOT -->
   <section class="container-page pb-8">
-    <div class="grid gap-6 md:grid-cols-2 reveal">
-      {bots.map((bot) => <BotCard bot={bot} featured={bot.featured} />)}
+    <div class="grid gap-6 reveal">
+      {bots.map((bot) => <BotCard bot={bot} featured />)}
     </div>
   </section>
 

@@ -37,6 +37,7 @@ const shortcutGroups = [
       { label: '🐺 Peran Werewolf', href: '/docs/vanillate-games#werewolf-peran' },
       { label: '🥟 Cara Bermain Tahu Bulat', href: '/docs/vanillate-games#tahu-cara-bermain' },
       { label: '🥟 Rebirth Tahu Bulat', href: '/docs/vanillate-games#tahu-rebirth' },
+      { label: '✧ Story (segera hadir)', href: '/docs/vanillate-games#story-overview' },
       { label: 'Daftar Command', href: '/docs/vanillate-games#commands' },
     ],
   },
@@ -149,9 +150,9 @@ const steps = [
       </a>
     </div>
 
-    <div class="grid gap-6 md:grid-cols-2 reveal" style="--reveal-delay: 80ms">
+    <div class="grid gap-6 reveal" style="--reveal-delay: 80ms">
       <BotCard bot={featured} featured />
-      {others.map((bot) => <BotCard bot={bot} />)}
+      {others.map((bot) => <BotCard bot={bot} featured />)}
     </div>
   </section>
 
