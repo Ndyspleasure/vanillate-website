@@ -8,7 +8,7 @@ import { url } from '@utils/url';
 
 // Bot yang ikut kuis (sudah dirilis). Slug yang tidak ada di daftar publik
 // (mis. sedang disembunyikan) otomatis tersaring.
-const quizBots = ['sambung-kata', 'tahu-bulat']
+const quizBots = ['sambung-kata', 'vanillate-games']
   .map((slug) => bots.find((b) => b.slug === slug))
   .filter((b): b is NonNullable<typeof b> => Boolean(b));
 
@@ -23,32 +23,32 @@ const questions: {
     title: 'Lagi pengen suasana seperti apa?',
     options: [
       { label: 'Kompetitif, seru adu skill', score: { 'sambung-kata': 2 } },
-      { label: 'Santai, tidak bikin pusing', score: { 'tahu-bulat': 2 } },
+      { label: 'Ramai bareng teman atau santai idle', score: { 'vanillate-games': 2 } },
     ],
   },
   {
     id: 'time',
     title: 'Berapa banyak waktu yang kamu punya?',
     options: [
-      { label: '15–30 menit untuk main serius', score: { 'sambung-kata': 2 } },
-      { label: 'Cuma sempat cek sebentar-sebentar', score: { 'tahu-bulat': 2 } },
-      { label: 'Fleksibel, kapan saja bisa', score: { 'sambung-kata': 1, 'tahu-bulat': 1 } },
+      { label: '15–30 menit untuk main serius', score: { 'sambung-kata': 2, 'vanillate-games': 1 } },
+      { label: 'Cuma sempat cek sebentar-sebentar', score: { 'vanillate-games': 2 } },
+      { label: 'Fleksibel, kapan saja bisa', score: { 'sambung-kata': 1, 'vanillate-games': 1 } },
     ],
   },
   {
     id: 'progress',
     title: 'Suka progres dan mengumpulkan sesuatu?',
     options: [
-      { label: 'Ya, suka naik level & menabung', score: { 'sambung-kata': 1, 'tahu-bulat': 2 } },
-      { label: 'Tidak terlalu, yang penting seru tiap main', score: { 'sambung-kata': 2 } },
+      { label: 'Ya, suka naik level & menabung', score: { 'sambung-kata': 1, 'vanillate-games': 2 } },
+      { label: 'Tidak terlalu, yang penting seru tiap main', score: { 'sambung-kata': 2, 'vanillate-games': 1 } },
     ],
   },
   {
     id: 'style',
     title: 'Kamu lebih condong ke mana?',
     options: [
-      { label: 'Strategi & berpikir', score: { 'sambung-kata': 2 } },
-      { label: 'Santai, biarkan berjalan sendiri', score: { 'tahu-bulat': 2 } },
+      { label: 'Strategi & berpikir', score: { 'sambung-kata': 2, 'vanillate-games': 1 } },
+      { label: 'Deduksi sosial atau idle santai', score: { 'vanillate-games': 2 } },
       { label: 'Bebas, dua-duanya oke', score: {} },
     ],
   },

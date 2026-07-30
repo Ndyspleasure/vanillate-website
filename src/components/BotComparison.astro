@@ -4,19 +4,19 @@ import { url } from '@utils/url';
 
 // Urutan kolom perbandingan. Slug yang tidak ada di daftar publik (mis. bot
 // yang sedang disembunyikan) otomatis tersaring lewat `.filter` di bawah.
-const order = ['sambung-kata', 'tahu-bulat', 'anonymous-chat'];
+const order = ['sambung-kata', 'vanillate-games', 'anonymous-chat'];
 const cols = order
   .map((slug) => bots.find((b) => b.slug === slug))
   .filter((b): b is NonNullable<typeof b> => Boolean(b));
 
 type Row = { label: string; values: Record<string, string> };
 const rows: Row[] = [
-  { label: 'Tipe', values: { 'sambung-kata': 'Word Game', 'tahu-bulat': 'Idle Simulation', 'anonymous-chat': 'Social' } },
-  { label: 'Cocok untuk', values: { 'sambung-kata': 'Kompetisi & strategi', 'tahu-bulat': 'Santai & AFK', 'anonymous-chat': 'Ngobrol & kenalan' } },
-  { label: 'Waktu per sesi', values: { 'sambung-kata': '15–30 menit', 'tahu-bulat': 'Idle, cek sesekali', 'anonymous-chat': 'Fleksibel' } },
-  { label: 'Ekonomi in-game', values: { 'sambung-kata': 'EXP & Coin', 'tahu-bulat': 'Coin', 'anonymous-chat': '—' } },
-  { label: 'Multiplayer', values: { 'sambung-kata': 'PvP s/d 10 pemain', 'tahu-bulat': 'Peringkat global', 'anonymous-chat': '1-lawan-1' } },
-  { label: 'Skill utama', values: { 'sambung-kata': 'Kosakata', 'tahu-bulat': 'Kesabaran', 'anonymous-chat': 'Empati' } },
+  { label: 'Tipe', values: { 'sambung-kata': 'Word Game', 'vanillate-games': 'Multi-Game Hub', 'anonymous-chat': 'Social' } },
+  { label: 'Cocok untuk', values: { 'sambung-kata': 'Kompetisi & strategi', 'vanillate-games': 'Party & santai', 'anonymous-chat': 'Ngobrol & kenalan' } },
+  { label: 'Waktu per sesi', values: { 'sambung-kata': '15–30 menit', 'vanillate-games': 'Werewolf 15–30 mnt · Tahu Bulat idle', 'anonymous-chat': 'Fleksibel' } },
+  { label: 'Ekonomi in-game', values: { 'sambung-kata': 'EXP & Coin', 'vanillate-games': 'Coin (Tahu Bulat)', 'anonymous-chat': '—' } },
+  { label: 'Multiplayer', values: { 'sambung-kata': 'PvP s/d 10 pemain', 'vanillate-games': 'Werewolf 4–12 · Tahu Bulat solo', 'anonymous-chat': '1-lawan-1' } },
+  { label: 'Skill utama', values: { 'sambung-kata': 'Kosakata', 'vanillate-games': 'Deduksi & kesabaran', 'anonymous-chat': 'Empati' } },
 ];
 
 const statusLabel: Record<string, string> = {
