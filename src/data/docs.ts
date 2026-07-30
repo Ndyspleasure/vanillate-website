@@ -524,11 +524,11 @@ export const docs: Record<string, BotDoc> = {
   },
 
   // ═══════════════════════════════════════════════════════════════════
-  // VANILLATE GAMES (hub: Werewolf & Tahu Bulat)
+  // VANILLATE GAMES (hub: Werewolf, Tahu Bulat, Story — Story coming soon)
   // ═══════════════════════════════════════════════════════════════════
   'vanillate-games': {
     intro:
-      'Vanillate Games adalah hub game Discord berbahasa Indonesia. Satu bot untuk beberapa game: saat ini tersedia 🐺 Werewolf (deduksi sosial) dan 🥟 Tahu Bulat (simulasi bisnis idle). Undang sekali, mainkan semuanya.',
+      'Vanillate Games adalah hub game Discord berbahasa Indonesia. Satu bot untuk banyak game: saat ini tersedia 🐺 Werewolf (deduksi sosial) dan 🥟 Tahu Bulat (simulasi bisnis idle). Menyusul segera ✧ Vanillate Story (Life Sim RPG). Undang sekali, mainkan semuanya.',
     quickStart: [
       'Undang Vanillate Games ke server Discord kamu.',
       'Ketik `/gamewerewolf` untuk membuka lobi Werewolf.',
@@ -540,10 +540,10 @@ export const docs: Record<string, BotDoc> = {
         id: 'game-tersedia',
         title: 'Game yang Tersedia',
         intro:
-          'Dua game berbeda dalam satu bot. Pilih sesuai suasana dan jumlah orang yang siap main. Roadmap kami: game baru akan menyusul.',
+          'Tiga game dalam satu bot. Dua sudah bisa dimainkan sekarang, satu sedang dimasak. Saat game baru rilis, kamu tidak perlu invite ulang — command baru muncul otomatis.',
         subsections: [
           {
-            title: '🐺 Werewolf — Deduksi Sosial',
+            title: '🐺 Werewolf — Deduksi Sosial (Live)',
             items: [
               'Command: `/gamewerewolf` → buka lobi.',
               'Pemain: 4–12 (Klasik) atau lebih via mode Lanjutan.',
@@ -552,12 +552,21 @@ export const docs: Record<string, BotDoc> = {
             ],
           },
           {
-            title: '🥟 Tahu Bulat — Simulasi Bisnis Idle',
+            title: '🥟 Tahu Bulat — Simulasi Bisnis Idle (Live)',
             items: [
               'Command: `/gametahu` → buka dashboard usaha.',
               'Pemain: solo, dengan peringkat global antar pemain.',
               'Alur: jual tahu → upgrade → biarkan menghasilkan bahkan saat offline.',
               'Menang: bangun usahamu setinggi mungkin dan kumpulkan Rebirth untuk bonus permanen.',
+            ],
+          },
+          {
+            title: '✧ Vanillate Story — Life Simulation RPG (Segera Hadir)',
+            items: [
+              'Command: `/gamestory` (belum aktif, sedang dalam pengembangan).',
+              'Pemain: solo dengan dunia bersama — semua pemain hidup di Kota Vanillate yang sama.',
+              'Alur: mulai sebagai pendatang tanpa apa-apa, bangun karier, harta, dan hubungan dari nol.',
+              'Menang: tidak ada garis finis — setiap pemain menulis ceritanya sendiri.',
             ],
           },
         ],
@@ -916,6 +925,70 @@ export const docs: Record<string, BotDoc> = {
           },
         ],
       },
+      // ── VANILLATE STORY (coming soon) ────────────────────────
+      {
+        id: 'story-overview',
+        title: '✧ Vanillate Story · Sekilas',
+        intro:
+          'Vanillate Story adalah Life Simulation RPG berbasis Discord yang sedang dikembangkan. Kamu datang ke Kota Vanillate sebagai pendatang baru tanpa pekerjaan, tanpa harta, dan tanpa pengalaman. Dari titik nol itu, jalan hidupmu sepenuhnya milikmu.',
+        subsections: [
+          {
+            title: '🏙️ Kota Vanillate',
+            text: 'Kota yang penuh peluang, tantangan, dan cerita. Bangun karier dengan melamar berbagai pekerjaan, tingkatkan kemampuan lewat belajar dan berlatih, kumpulkan uang, beli rumah, koleksi kendaraan, pelihara hewan, dirikan bisnis, sampai menjadi salah satu warga paling sukses di kota.',
+          },
+          {
+            title: '👥 NPC dengan Cerita',
+            text: 'Kota ini dihuni banyak NPC dengan kepribadian, rutinitas, kesukaan, impian, dan cerita hidupnya masing-masing. Kenali mereka, bantu selesaikan masalahnya, beri hadiah favoritnya, dan bangun pertemanan. Siapa tahu, salah satunya menjadi pasangan hidupmu.',
+          },
+          {
+            title: '🎯 Skill & Keputusan',
+            text: 'Setiap keputusan memengaruhi perkembangan karaktermu: skill yang kamu latih membuka profesi baru, pekerjaan bergaji lebih tinggi, peluang bisnis lebih besar, dan akses ke aktivitas eksklusif.',
+          },
+          {
+            title: '💹 Ekonomi Hidup',
+            text: 'Toko memperbarui stoknya, event tertentu bisa mengguncang pasar, dan setiap pemain punya cara berbeda untuk membangun kekayaannya.',
+          },
+        ],
+        note: 'Tidak ada jalan yang benar atau salah. Kamu bisa jadi pekerja teladan, pengusaha, petani yang hidup tenang, pemancing legendaris, koki terkenal, atau sekadar menikmati hidup sederhana bersama orang yang kamu sayangi.',
+      },
+      {
+        id: 'story-fitur',
+        title: '✧ Vanillate Story · Fitur Rencana',
+        intro:
+          'Berikut fitur yang direncanakan untuk versi rilis. Cakupan bisa berubah selama pengembangan; ikuti kabarnya di server Discord Support.',
+        subsections: [
+          {
+            items: [
+              'Ciptakan dan kembangkan karaktermu sendiri.',
+              'Puluhan profesi dengan jalur karier yang unik.',
+              'Tingkatkan berbagai skill untuk membuka peluang baru.',
+              'Beli, tingkatkan, dan hias rumah impianmu.',
+              'Koleksi kendaraan untuk mendukung aktivitasmu.',
+              'Bangun bisnis dan ciptakan penghasilan pasif.',
+              'Berteman, berkencan, hingga menikah dengan NPC.',
+              'Memancing, bertani, memasak, menambang, berburu, dan crafting.',
+              'Quest, event musiman, achievement, dan item langka.',
+              'Jelajahi area Kota Vanillate yang terus berkembang.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'story-status',
+        title: '✧ Vanillate Story · Status & Kabar Rilis',
+        subsections: [
+          {
+            items: [
+              'Status: **coming soon**, sedang dalam pengembangan aktif.',
+              'Command `/gamestory` belum aktif — bot masih menolak pemanggilan sampai rilis.',
+              'Tidak perlu invite ulang: begitu rilis, command otomatis muncul di setiap server yang sudah pakai Vanillate Games.',
+              'Ikuti progres & jadi yang pertama tahu saat rilis lewat server Discord Support.',
+            ],
+          },
+        ],
+        note: 'Belum ada tanggal rilis pasti. Kami memilih menunda daripada merilis fitur yang belum siap.',
+      },
+
       {
         id: 'commands',
         title: 'Daftar Command',
@@ -926,6 +999,7 @@ export const docs: Record<string, BotDoc> = {
             items: [
               '`/gamewerewolf`: buka lobi Werewolf (mode Klasik atau Lanjutan, 4–12 pemain untuk Klasik).',
               '`/gametahu`: buka dashboard Tahu Bulat (semua fitur ada di sini: jual, upgrade, promosi, misi, peringkat, achievement).',
+              '`/gamestory`: buka Vanillate Story — **segera hadir, belum aktif**.',
             ],
           },
           {

@@ -178,6 +178,10 @@ export const faqs: Record<string, FaqItem[]> = {
       q: 'Apakah akan ada game baru?',
       a: 'Ya. Vanillate Games dirancang sebagai hub: game baru akan ditambahkan sebagai command `/game...` berikutnya di bot yang sama, dan otomatis muncul untuk semua server yang sudah mengundang bot. Tidak perlu invite ulang.',
     },
+    {
+      q: 'Apa itu Vanillate Story? Kapan rilis?',
+      a: 'Vanillate Story adalah Life Simulation RPG di Kota Vanillate: mulai dari nol sebagai pendatang, bangun karier, kumpulkan harta, kenali NPC, sampai membangun rumah tangga. Statusnya masih **coming soon**, command `/gamestory` belum aktif. Begitu rilis, command otomatis muncul di setiap server yang sudah pakai Vanillate Games — tanpa invite ulang. Ikuti kabar rilisnya di server Discord Support.',
+    },
   ],
 
   // ═══════════════════════════════════════════════════════════════════
