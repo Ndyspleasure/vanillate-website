@@ -104,21 +104,21 @@ export const faqs: Record<string, FaqItem[]> = {
   ],
 
   // ═══════════════════════════════════════════════════════════════════
-  // VANILLATE GAMES (hub: Werewolf & Tahu Bulat)
+  // VANILLATE GAMES (platform: Werewolf, Tahu Bulat, Story)
   // ═══════════════════════════════════════════════════════════════════
   'vanillate-games': [
     {
       q: 'Apa itu Vanillate Games?',
-      a: 'Vanillate Games adalah hub game Discord dari Vanillate Studio. Satu bot yang berisi beberapa game sekaligus. Saat ini tersedia 🐺 Werewolf (deduksi sosial) dan 🥟 Tahu Bulat (simulasi bisnis idle), dengan game baru akan menyusul di bot yang sama, tanpa perlu invite ulang.',
+      a: 'Vanillate Games adalah platform Discord multi-game dari Vanillate Studio. Satu bot berisi tiga game aktif: Werewolf (deduksi sosial), Tahu Bulat (simulasi bisnis idle), dan Vanillate Story (Life Simulation RPG). Arsitekturnya modular — setiap game jadi modul mandiri, dan game baru akan menyusul di bot yang sama tanpa perlu invite ulang.',
     },
     {
       q: 'Command apa saja yang tersedia?',
-      a: 'Ada tiga: `/gamewerewolf` untuk membuka lobi Werewolf, `/gametahu` untuk membuka dashboard Tahu Bulat, dan `/help` untuk panduan singkat di dalam Discord.',
+      a: 'Ada empat: `/gamewerewolf` (lobi Werewolf), `/gametahu` (dashboard Tahu Bulat), `/gamestory` (mulai/lanjutkan perjalanan Vanillate Story), dan `/help` (panduan seluruh game di dalam Discord).',
     },
     // ── Werewolf ────────────────────────────────────────────
     {
       q: 'Bagaimana cara mulai main Werewolf?',
-      a: 'Ketik `/gamewerewolf` di channel untuk membuka lobi. Pemain lain menekan ✅ Gabung, lalu setelah minimal 4 pemain masuk, host menekan ▶️ Mulai. Setiap pemain lalu menekan 🎭 Lihat Peran untuk melihat perannya secara rahasia.',
+      a: 'Ketik `/gamewerewolf` di channel untuk membuka lobi. Pemain lain menekan Gabung, lalu setelah minimal 4 pemain masuk, host menekan Mulai. Setiap pemain kemudian menekan Lihat Peran untuk melihat perannya secara rahasia.',
     },
     {
       q: 'Berapa jumlah pemain Werewolf?',
@@ -126,23 +126,27 @@ export const faqs: Record<string, FaqItem[]> = {
     },
     {
       q: 'Apa bedanya mode Klasik dan Lanjutan?',
-      a: 'Mode Klasik pakai 4 role dasar (Serigala, Peramal, Tabib, Warga), sederhana dan cepat dipahami. Mode Lanjutan dipandu narator dengan sistem giliran dan menyediakan hingga 54 role modern (Vigilante, Bodyguard, Cupid, Witch, dll). Durasi timernya sama untuk keduanya.',
+      a: 'Mode Klasik pakai 4 role dasar (Serigala, Peramal, Tabib, Warga), sederhana dan cepat dipahami. Mode Lanjutan dipandu narator dengan sistem giliran dan menyediakan katalog hingga 54 role modern (21 Village, 13 Werewolf, 20 Neutral). Durasi timernya sama untuk keduanya.',
+    },
+    {
+      q: 'Berapa banyak role di mode Lanjutan?',
+      a: 'Total 54 role: 21 Village (Seer, Detective, Investigator, Jailer, Bodyguard, Priest, Vigilante, Mayor, Mason, Cupid, dll), 13 Werewolf (Alpha, Wolf Seer, Wolf Shaman, Nightmare Wolf, Berserk Wolf, Kitten Wolf, Shadow Wolf, dll), dan 20 Neutral (Serial Killer, Arsonist, Jester, Executioner, Vampire, Cult Leader, Plaguebearer/Pestilence, Witch, Amnesiac, Doppelganger, dll).',
+    },
+    {
+      q: 'Bagaimana sistem attack & defense di Werewolf bekerja?',
+      a: 'Berjenjang 0–3. Attack: None (0), Basic (1), Powerful (2), Unstoppable (3). Defense: None (0), Basic (1), Powerful (2), Invincible (3). Serangan berhasil bila **Attack > Defense**. Contoh: Werewolf (Basic) ditahan Doctor (Basic), Alpha Wolf (Powerful) menembus Doctor tapi ditahan Priest (Powerful), Pestilence (Invincible) hanya bisa dikalahkan lewat voting.',
+    },
+    {
+      q: 'Bagaimana urutan aksi malam diproses?',
+      a: 'Engine memproses aksi sesuai prioritas resolusi: Control/Redirect (10) → Roleblock (20) → Investigasi (30) → Proteksi (40) → Serangan (50) → Konversi (60) → Efek lain (70). Ini membuat konflik antar-kemampuan selalu diselesaikan deterministik — misal Witch bisa membelokkan Doctor sebelum serangan dihitung.',
     },
     {
       q: 'Berapa lama durasi tiap fase?',
       a: 'Fase Aksi Malam 50 detik, Diskusi Siang 3 menit, dan Voting 1 menit. Semua maju otomatis saat timer habis. Host bisa mempercepat fase kalau semua pemain sudah selesai beraksi.',
     },
     {
-      q: 'Apa yang terjadi di fase Malam?',
-      a: '🐺 Serigala memilih satu mangsa (suara terbanyak yang dimangsa), 🔮 Peramal menyelidiki satu pemain untuk tahu apakah ia serigala, dan 🩺 Tabib melindungi satu pemain dari terkaman malam itu. Host menekan 🌅 Lanjut ke Siang untuk menyelesaikan malam.',
-    },
-    {
-      q: 'Bagaimana voting di siang hari bekerja?',
-      a: 'Semua pemain hidup berdiskusi di channel Discord, lalu 🗳️ voting satu tersangka. Suara terbanyak dieksekusi; seri berarti tidak ada eksekusi hari itu. Host menekan ⚖️ Hitung Suara untuk menutup siang.',
-    },
-    {
       q: 'Kapan Warga menang, kapan Serigala menang?',
-      a: 'Warga menang bila semua serigala tereksekusi. Serigala menang bila jumlah serigala menyamai jumlah warga. Setiap kubu berjuang untuk kubunya sendiri.',
+      a: 'Warga menang bila semua serigala tereksekusi. Serigala menang bila jumlah serigala menyamai jumlah non-serigala. Role Neutral punya kondisi menang sendiri (lihat matriks kemenangan di dokumentasi Werewolf).',
     },
     {
       q: 'Apakah diskusi terjadi di bot?',
@@ -151,15 +155,11 @@ export const faqs: Record<string, FaqItem[]> = {
     // ── Tahu Bulat ─────────────────────────────────────────
     {
       q: 'Bagaimana cara mulai main Tahu Bulat?',
-      a: 'Ketik `/gametahu` untuk membuka dashboard usaha (modal awal 1.000 coin). Tekan 🥟 Jual Tahu, tunggu beberapa detik sampai selesai menggoreng, dan coin masuk otomatis. Pakai coin itu untuk 🔧 Upgrade agar makin cuan.',
+      a: 'Ketik `/gametahu` untuk membuka dashboard usaha (modal awal 1.000 coin). Tekan Jual Tahu, tunggu beberapa detik sampai selesai menggoreng, dan coin masuk otomatis. Pakai coin itu untuk Upgrade agar makin cuan.',
     },
     {
       q: 'Bagaimana pendapatan offline Tahu Bulat bekerja?',
       a: 'Saat kamu tidak bermain, toko tetap menghasilkan hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/gametahu` lagi untuk mengklaim pendapatan yang terkumpul selama kamu pergi.',
-    },
-    {
-      q: 'Kalau pergi lama, apakah rugi?',
-      a: 'Tidak. Pendapatan offline Tahu Bulat dibatasi maksimal 8 jam, jadi kamu tidak kena penalti apa pun, hanya saja penghasilan tidak menumpuk melebihi batas itu. Aman ditinggal kerja atau tidur.',
     },
     {
       q: 'Apa itu Rebirth di Tahu Bulat?',
@@ -169,18 +169,39 @@ export const faqs: Record<string, FaqItem[]> = {
       q: 'Peralatan Tahu Bulat mana yang sebaiknya diprioritaskan?',
       a: 'Kompor. Kompor memangkas cooldown jualan (Lv1: 5 detik → Lv5: 2 detik). Cooldown lebih cepat berarti kamu bisa jualan lebih sering, sehingga pendapatan naik lebih cepat.',
     },
+    // ── Vanillate Story ────────────────────────────────────
+    {
+      q: 'Apa itu Vanillate Story?',
+      a: 'Vanillate Story adalah Life Simulation RPG single player. Kamu perantau yang datang ke Kota Vanillate dengan beban utang keluarga kepada Bang Jul: 3.500.000 coin yang harus dilunasi dalam 7 minggu. Bekerja, latih skill, jalin hubungan dengan warga, dan lunasi utang tepat waktu — atau Game Over dan data direset.',
+    },
+    {
+      q: 'Bagaimana cara mulai main Story?',
+      a: 'Ketik `/gamestory` untuk memulai. Karaktermu bangun pukul 06.00 dengan energi penuh. Pilih aktivitas: kerja, latihan, mancing, ngobrol dengan NPC, memberi hadiah, atau berpindah lokasi. Akhiri hari dengan tidur di rumah — energi & waktu reset keesokan harinya.',
+    },
+    {
+      q: 'Berapa besar utang & tenggat pembayarannya?',
+      a: 'Total utang 3.500.000 coin, dilunasi mingguan selama 7 minggu. Bila gagal membayar satu kali saja → Game Over dan data pemain direset. Prioritaskan pekerjaan dan kelola pengeluaran (makanan, hadiah, item) dengan bijak.',
+    },
+    {
+      q: 'Apa saja skill di Vanillate Story?',
+      a: 'Empat skill utama, masing-masing maksimal Level 5: Strength (pekerjaan fisik), Intelligence (pekerjaan intelektual), Communication (pekerjaan sosial & hubungan), Luck (peluang mancing & event acak). Latihan skill menghabiskan waktu & energi — makin tinggi level, makin lambat naiknya.',
+    },
+    {
+      q: 'Seberapa besar dunianya?',
+      a: 'Kota Vanillate berisi 4 area, 39 lokasi, 63 pekerjaan (setiap pekerjaan punya syarat skill), dan 36 NPC dengan jadwal harian sendiri. NPC bekerja siang dan berpindah tempat malam hari; akhir pekan pun jadwalnya berbeda.',
+    },
+    {
+      q: 'Bisa punya pacar & menikah di Story?',
+      a: 'Bisa. Hubungan berkembang bertahap: Teman → Hubungan Dekat → Momen Spesial → Pacaran → Menikah → Punya Anak. Total ada 10 NPC yang bisa dijadikan pasangan. Meningkatkan hubungan dilakukan dengan ngobrol rutin dan memberi hadiah favoritnya.',
+    },
     // ── Umum ───────────────────────────────────────────────
     {
       q: 'Apakah progresku bisa hilang?',
-      a: 'Tidak. Semua progres — statistik Tahu Bulat, riwayat match Werewolf, dan data akun lainnya — tersimpan otomatis di server, jadi tetap ada meski kamu tutup Discord.',
+      a: 'Untuk Werewolf dan Tahu Bulat: tidak — semua progres tersimpan otomatis di server. Untuk Story: hanya hilang bila kamu gagal membayar cicilan mingguan (Game Over → data karakter direset), sesuai desain premis game.',
     },
     {
       q: 'Apakah akan ada game baru?',
-      a: 'Ya. Vanillate Games dirancang sebagai hub: game baru akan ditambahkan sebagai command `/game...` berikutnya di bot yang sama, dan otomatis muncul untuk semua server yang sudah mengundang bot. Tidak perlu invite ulang.',
-    },
-    {
-      q: 'Apa itu Vanillate Story? Kapan rilis?',
-      a: 'Vanillate Story adalah Life Simulation RPG di Kota Vanillate: mulai dari nol sebagai pendatang, bangun karier, kumpulkan harta, kenali NPC, sampai membangun rumah tangga. Statusnya masih **coming soon**, command `/gamestory` belum aktif. Begitu rilis, command otomatis muncul di setiap server yang sudah pakai Vanillate Games — tanpa invite ulang. Ikuti kabar rilisnya di server Discord Support.',
+      a: 'Ya. Vanillate Games dirancang sebagai platform: setiap game jadi modul mandiri, jadi penambahan game baru tidak mengganggu game yang sudah ada. Command baru akan muncul otomatis sebagai `/game...` berikutnya di bot yang sama, tanpa perlu invite ulang.',
     },
   ],
 
