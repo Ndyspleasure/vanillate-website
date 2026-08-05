@@ -15,6 +15,7 @@ export type Bot = {
   clientId?: string;            // Discord Application/Client ID (kosongkan jika belum rilis)
   permissions: string;          // Bitwise permission integer
   scopes: string[];             // OAuth2 scopes
+  integrationType?: string;     // Discord integration_type ('0' = guild install, '1' = user install). Kosongkan untuk memakai default Discord.
   color: string;                // Aksen warna bot (hex)
   icon: string;
   thumbnail?: string;           // Path thumbnail PNG persegi di /public
@@ -42,8 +43,9 @@ export function buildInviteUrl(bot: Bot): string | null {
   const params = new URLSearchParams({
     client_id: bot.clientId,
     permissions: bot.permissions,
-    scope: bot.scopes.join(' '),
   });
+  if (bot.integrationType) params.set('integration_type', bot.integrationType);
+  params.set('scope', bot.scopes.join(' '));
   return `https://discord.com/oauth2/authorize?${params.toString()}`;
 }
 
@@ -82,8 +84,9 @@ const allBots: Bot[] = [
     seoDescription:
       'Main Sambung Kata di Discord: mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis, tanpa langganan.',
     clientId: '1513806760622817320',
-    permissions: '277025770496',
+    permissions: '876173413440',
     scopes: ['bot', 'applications.commands'],
+    integrationType: '0',
     color: '#E8B84A',
     icon: '✦',
     features: [
