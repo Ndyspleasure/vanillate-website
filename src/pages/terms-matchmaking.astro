@@ -1,0 +1,286 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { url } from '@utils/url';
+
+const lastUpdated = '6 August 2026';
+
+const toc = [
+  { n: '01', id: 'introduction', label: 'Introduction' },
+  { n: '02', id: 'about', label: 'About Cross-Server Matchmaking' },
+  { n: '03', id: 'how-works', label: 'How the Service Works' },
+  { n: '04', id: 'rules', label: 'Rules of Use' },
+  { n: '05', id: 'privacy', label: 'Privacy' },
+  { n: '06', id: 'availability', label: 'Service Availability' },
+  { n: '07', id: 'enforcement', label: 'Enforcement' },
+  { n: '08', id: 'changes', label: 'Changes to These Terms' },
+  { n: '09', id: 'acceptance', label: 'Acceptance' },
+];
+---
+
+<BaseLayout
+  title="Cross-Server Matchmaking Terms of Use"
+  description="Ketentuan penggunaan fitur Cross-Server Matchmaking di Vanillate Word Chain."
+>
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 md:pt-28 pb-10">
+    <div class="aurora bg-blue-500/15 h-[360px] w-[360px] top-[-120px] right-[6%]" aria-hidden="true"></div>
+    <div class="container-page max-w-3xl relative">
+      <p class="eyebrow mb-6 animate-fade-up">Legal</p>
+      <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-tight mb-5 animate-fade-up">
+        Cross-Server Matchmaking Terms
+      </h1>
+      <p class="max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Ketentuan khusus yang mengatur penggunaan fitur Cross-Server Matchmaking di Vanillate Word Chain.
+      </p>
+      <div class="mt-6 inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-3.5 py-1.5 font-mono text-xs text-ink-500 dark:text-cream-300/70 animate-fade-up" style="animation-delay: 0.15s">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Last Updated: {lastUpdated}
+      </div>
+    </div>
+  </section>
+
+  <!-- TABLE OF CONTENTS -->
+  <section class="container-page max-w-3xl pb-4">
+    <nav class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5 md:p-6 reveal" aria-label="Daftar isi">
+      <p class="eyebrow mb-4">Daftar Isi</p>
+      <ol class="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+        {toc.map((s) => (
+          <li>
+            <a href={`#${s.id}`} class="group flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+              <span class="font-mono text-xs text-blue-600 dark:text-blue-400 flex-none">{s.n}</span>
+              <span class="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{s.label}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </section>
+
+  <!-- BODY -->
+  <section class="container-page max-w-3xl pb-24">
+    <div class="text-ink-700 dark:text-cream-200 leading-relaxed">
+      <section id="introduction" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">01</span>
+          <h2 class="legal-title">Introduction</h2>
+        </div>
+        <p class="mb-4">
+          These Cross-Server Matchmaking Terms of Use ("Terms") govern your access to and use of the Cross-Server Matchmaking feature provided by Vanillate Studio as part of Vanillate Word Chain (the "Service").
+        </p>
+        <p>
+          By selecting the "I Agree" button, you acknowledge that you have read, understood, and agree to be legally bound by these Terms. If you do not agree to these Terms, you must not access or use the Cross-Server Matchmaking feature.
+        </p>
+      </section>
+
+      <section id="about" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">02</span>
+          <h2 class="legal-title">About Cross-Server Matchmaking</h2>
+        </div>
+        <p class="mb-4">
+          Cross-Server Matchmaking is a feature that allows players of Vanillate Word Chain to be matched with other players from different Discord servers that use the Service.
+        </p>
+        <p>
+          Players may be matched regardless of whether they are members of the same Discord server or are connected as Discord friends.
+        </p>
+      </section>
+
+      <section id="how-works" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">03</span>
+          <h2 class="legal-title">How the Service Works</h2>
+        </div>
+        <p class="mb-4">
+          When you join Cross-Server Matchmaking, your account is placed into a global matchmaking queue.
+        </p>
+        <p class="mb-4">
+          The Service automatically searches for available opponents using matchmaking criteria determined by Vanillate Studio.
+        </p>
+        <p class="mb-4">
+          Vanillate Studio does not guarantee:
+        </p>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>the availability of opponents;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>the time required to find a match;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>the quality or outcome of any match; or</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>uninterrupted access to the Service.</span></li>
+        </ul>
+        <p>
+          Your matchmaking request may be cancelled automatically if no suitable opponent is found within a reasonable period, if technical issues occur, or if required for operational or security purposes.
+        </p>
+      </section>
+
+      <section id="rules" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">04</span>
+          <h2 class="legal-title">Rules of Use</h2>
+        </div>
+        <p class="mb-4">
+          By using Cross-Server Matchmaking, you agree to:
+        </p>
+        <ul class="space-y-2 pl-0 list-none mb-6">
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>comply with the Discord Terms of Service and Discord Community Guidelines;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>comply with all applicable Vanillate Word Chain rules and policies;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>treat other players respectfully;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>use the Service fairly and only for its intended purpose.</span></li>
+        </ul>
+        <p class="mb-4">
+          You must not:
+        </p>
+        <ul class="space-y-2 pl-0 list-none">
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>use bots, cheats, macros, scripts, exploits, or unauthorized third-party software;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>manipulate matchmaking or gameplay mechanics;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>intentionally exploit bugs or vulnerabilities;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>disrupt, interfere with, or negatively affect the experience of other players;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>engage in fraudulent, abusive, or unlawful activities while using the Service.</span></li>
+        </ul>
+      </section>
+
+      <section id="privacy" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">05</span>
+          <h2 class="legal-title">Privacy</h2>
+        </div>
+        <p class="mb-4">
+          To operate Cross-Server Matchmaking, certain information may be visible to other players during matchmaking or gameplay, including:
+        </p>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>your Discord display name;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>your Discord avatar;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>gameplay statistics; and</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>other information necessary for the match.</span></li>
+        </ul>
+        <p>
+          The collection, use, and processing of personal information are governed by the <a
+            href={url('/privacy')}
+            class="text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-700 dark:hover:text-blue-300"
+          >Vanillate Studio Privacy Policy</a>.
+        </p>
+      </section>
+
+      <section id="availability" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">06</span>
+          <h2 class="legal-title">Service Availability</h2>
+        </div>
+        <p class="mb-4">
+          Cross-Server Matchmaking is provided on an "as available" basis.
+        </p>
+        <p class="mb-4">
+          Vanillate Studio reserves the right to update, modify, suspend, restrict, or discontinue any part of the Service at any time when reasonably necessary, including for:
+        </p>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>maintenance;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>technical improvements;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>security;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>compliance with applicable policies; or</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>operational requirements.</span></li>
+        </ul>
+        <p>
+          Vanillate Studio may also modify matchmaking algorithms, gameplay mechanics, balancing, or supporting systems without prior notice to improve the overall quality, fairness, and stability of the Service.
+        </p>
+      </section>
+
+      <section id="enforcement" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">07</span>
+          <h2 class="legal-title">Enforcement</h2>
+        </div>
+        <p class="mb-4">
+          If you violate these Terms or any applicable Vanillate Word Chain policies, Vanillate Studio may take appropriate enforcement action, including but not limited to:
+        </p>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>cancelling a match;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>restricting access to Cross-Server Matchmaking;</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>temporarily suspending access; or</span></li>
+          <li class="flex gap-3"><span class="text-blue-600 dark:text-blue-400 font-mono text-sm mt-1.5 flex-none">→</span><span>permanently revoking access to the feature.</span></li>
+        </ul>
+        <p>
+          The enforcement action taken will be determined based on the nature and severity of the violation.
+        </p>
+      </section>
+
+      <section id="changes" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">08</span>
+          <h2 class="legal-title">Changes to These Terms</h2>
+        </div>
+        <p class="mb-4">
+          Vanillate Studio may update these Terms from time to time to reflect changes to the Service, operational requirements, applicable laws, or new features.
+        </p>
+        <p class="mb-4">
+          The latest version will be published through the official Vanillate Studio website or other official communication channels.
+        </p>
+        <p>
+          Your continued use of Cross-Server Matchmaking after any changes become effective constitutes your acceptance of the updated Terms.
+        </p>
+      </section>
+
+      <section id="acceptance" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">09</span>
+          <h2 class="legal-title">Acceptance</h2>
+        </div>
+        <p class="mb-4">
+          By selecting the "I Agree" button, you acknowledge that you have read, understood, and accepted these Cross-Server Matchmaking Terms of Use.
+        </p>
+        <p>
+          If you do not agree to these Terms, you must not use the Cross-Server Matchmaking feature.
+        </p>
+      </section>
+
+      <div class="mt-12 pt-8 border-t border-ink-900/10 dark:border-cream-100/10">
+        <p class="text-sm text-ink-500 dark:text-cream-300/60">
+          &copy; 2026 Vanillate Studio. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .legal-sec {
+    margin-top: 2.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid rgb(17 16 21 / 0.1);
+  }
+  .legal-sec:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  :global(html.dark) .legal-sec {
+    border-color: rgb(245 239 224 / 0.1);
+  }
+
+  .legal-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .legal-badge {
+    display: inline-flex;
+    height: 2rem;
+    width: 2rem;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: rgb(59 130 246 / 0.12);
+    font-family: '"JetBrains Mono"', ui-monospace, monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #2563EB;
+  }
+  :global(html.dark) .legal-badge {
+    color: #60A5FA;
+  }
+  .legal-title {
+    font-family: '"Bricolage Grotesque"', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+</style>
