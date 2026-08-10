@@ -12,10 +12,10 @@ function formatNum(n: number): string {
 // Perjalanan singkat studio, ditampilkan sebagai timeline.
 const timeline = [
   { year: '2026', title: 'Vanillate lahir', desc: 'Berawal dari satu pengamatan sederhana: komunitas Discord Indonesia butuh bot game yang benar-benar dirawat, bukan ditinggal setelah rilis.' },
-  { year: '2026', title: 'Sambung Kata rilis', desc: 'Game kata klasik dibawa ke Discord dengan sistem progresi mendalam: class, quest, dungeon, dan ekonomi yang seimbang.' },
-  { year: '2026', title: 'Tahu Bulat menyusul', desc: 'Simulasi bisnis idle bertema kuliner paling Indonesia. Produk kedua yang menegaskan satu prinsip: rilis adalah garis start.' },
-  { year: '2026', title: 'Vanillate Games lahir', desc: 'Bot Tahu Bulat berevolusi menjadi Vanillate Games — satu bot, banyak game. Werewolf jadi game kedua di hub yang sama, dan roadmap game berikutnya sedang berjalan.' },
-  { year: '2026', title: 'Vanillate Story rilis', desc: 'Vanillate Story rilis sebagai game ketiga di dalam Vanillate Games — Life Sim RPG dengan 4 area, 39 lokasi, 63 pekerjaan, dan 36 NPC berjadwal di Kota Vanillate.' },
+  { year: '2026', title: 'Vanillate Sambung Kata rilis', desc: 'Game kata klasik dibawa ke Discord dengan sistem progresi mendalam, dari class, quest, dungeon, sampai ekonomi yang seimbang.' },
+  { year: '2026', title: 'Tahu Bulat menyusul', desc: 'Simulasi bisnis idle bertema kuliner paling Indonesia. Produk kedua yang menegaskan satu prinsip, yaitu rilis adalah garis start.' },
+  { year: '2026', title: 'Vanillate Games lahir', desc: 'Bot Tahu Bulat berevolusi menjadi Vanillate Games, satu bot dengan banyak game. Werewolf jadi game kedua di hub yang sama, dan roadmap game berikutnya sedang berjalan.' },
+  { year: '2026', title: 'Vanillate Story rilis', desc: 'Vanillate Story hadir sebagai game ketiga di dalam Vanillate Games, sebuah Life Sim RPG dengan 4 area, 39 lokasi, 63 pekerjaan, dan 36 NPC berjadwal di Kota Vanillate.' },
   { year: 'Kini', title: 'Ekosistem tumbuh', desc: 'Platform multi-game terus dipoles. Setiap game diperlakukan sebagai modul mandiri, siap menampung game berikutnya tanpa mengganggu yang sudah ada.' },
 ];
 
@@ -42,7 +42,7 @@ const values = [
   },
   {
     title: 'Continuous Improvement',
-    desc: 'Tidak ada versi final. Selalu ada yang bisa dibuat lebih cepat, lebih adil, lebih menyenangkan. Changelog kami adalah bukti bahwa kami terus mengerjakannya.',
+    desc: 'Tidak ada versi final. Selalu ada yang bisa dibuat lebih cepat, lebih adil, lebih menyenangkan. Setiap catatan pembaruan jadi bukti bahwa kami terus mengerjakannya.',
   },
 ];
 
@@ -76,11 +76,11 @@ const reasons = [
 const roadmap = [
   {
     title: 'Discord Bot',
-    desc: 'Memperluas portofolio bot: game baru di Vanillate Games (setelah Werewolf & Tahu Bulat), utilitas komunitas, dan pendalaman fitur untuk Sambung Kata.',
+    desc: 'Memperluas portofolio bot lewat game baru di Vanillate Games (setelah Werewolf, Tahu Bulat, dan Story), utilitas komunitas, dan pendalaman fitur untuk Vanillate Sambung Kata.',
   },
   {
     title: 'AI Tools',
-    desc: 'Menghadirkan kecerdasan buatan yang benar-benar berguna: lawan main yang lebih natural, moderasi yang lebih cerdas, dan alat bantu kreator.',
+    desc: 'Menghadirkan kecerdasan buatan yang benar-benar berguna, dari lawan main yang lebih natural, moderasi yang lebih cerdas, sampai alat bantu kreator.',
   },
   {
     title: 'Automation Platform',
@@ -96,14 +96,14 @@ const roadmap = [
   },
   {
     title: 'Cloud Services',
-    desc: 'Fondasi infrastruktur yang menopang semua layanan Vanillate: skalabel, aman, dan siap tumbuh bersama pengguna.',
+    desc: 'Fondasi infrastruktur yang menopang semua layanan Vanillate, yang skalabel, aman, dan siap tumbuh bersama pengguna.',
   },
 ];
 ---
 
 <BaseLayout
   title="Tentang"
-  description="Cerita, filosofi, dan arah Vanillate Studio, tim teknologi Indonesia di balik Sambung Kata dan Vanillate Games (Werewolf & Tahu Bulat)."
+  description="Cerita, filosofi, dan arah Vanillate Studio, tim teknologi Indonesia di balik Vanillate Sambung Kata dan Vanillate Games (Werewolf, Tahu Bulat, dan Story)."
 >
   <!-- HERO -->
   <section class="container-page pt-20 pb-16 md:pt-28 grid gap-12 md:grid-cols-[1fr_auto] items-center">
@@ -146,13 +146,13 @@ const roadmap = [
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Berawal dari satu game sederhana</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
           <p>
-            Vanillate Studio lahir pada 2026 dari sebuah pengamatan yang sederhana: komunitas Discord Indonesia penuh dengan orang-orang yang senang bermain bersama, tapi pilihan bot game berbahasa Indonesia yang benar-benar digarap serius bisa dihitung dengan jari. Banyak bot menjanjikan segalanya, lalu perlahan mati: tidak diupdate, penuh bug, dan akhirnya ditinggalkan pembuatnya.
+            Vanillate Studio lahir pada 2026 dari sebuah pengamatan yang sederhana. Komunitas Discord Indonesia penuh dengan orang-orang yang senang bermain bersama, tapi pilihan bot game berbahasa Indonesia yang benar-benar digarap serius bisa dihitung dengan jari. Banyak bot menjanjikan segalanya, lalu perlahan mati, tidak diupdate, penuh bug, dan akhirnya ditinggalkan pembuatnya.
           </p>
           <p>
-            Kami memulai dari satu game: Sambung Kata. Permainan kata yang semua orang kenal sejak kecil, dibawa ke Discord dengan sistem progresi yang dalam: class, quest, dungeon, dan ekonomi yang seimbang. Responsnya membuat kami sadar bahwa pemain Indonesia tidak butuh bot yang banyak; mereka butuh bot yang digarap dengan sungguh-sungguh.
+            Kami memulai dari satu game, yaitu Vanillate Sambung Kata. Permainan kata yang semua orang kenal sejak kecil, dibawa ke Discord dengan sistem progresi yang dalam, mulai dari class, quest, dungeon, sampai ekonomi yang seimbang. Responsnya membuat kami sadar bahwa pemain Indonesia tidak butuh bot yang banyak, mereka butuh bot yang digarap dengan sungguh-sungguh.
           </p>
           <p>
-            Dari sana Vanillate tumbuh menjadi studio. Tahu Bulat menyusul sebagai produk kedua: simulasi bisnis idle bertema kuliner yang sangat Indonesia. Belakangan, bot Tahu Bulat berevolusi menjadi Vanillate Games — platform multi-game yang saat ini menampung tiga game aktif: Werewolf (deduksi sosial dengan katalog 54 role modern), Tahu Bulat (fondasi ekonomi platform), dan Vanillate Story (Life Sim RPG di Kota Vanillate). Satu prinsip tetap sama: rilis adalah garis start, bukan garis finis.
+            Dari sana Vanillate tumbuh menjadi studio. Tahu Bulat menyusul sebagai produk kedua, sebuah simulasi bisnis idle bertema kuliner yang sangat Indonesia. Belakangan, bot Tahu Bulat berevolusi menjadi Vanillate Games, platform multi-game yang saat ini menampung tiga game aktif, yaitu Werewolf (deduksi sosial dengan katalog 54 role modern), Tahu Bulat (fondasi ekonomi platform), dan Vanillate Story (Life Sim RPG di Kota Vanillate). Satu prinsip tetap sama, yaitu rilis adalah garis start, bukan garis finis.
           </p>
           <p>
             Hari ini kami masih tim kecil, dan itu disengaja. Skala kecil memberi kami kendali penuh atas kode, infrastruktur, dan kualitas, serta kecepatan untuk merespons komunitas tanpa birokrasi.
@@ -192,10 +192,10 @@ const roadmap = [
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Di balik nama dan logo</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed max-w-prose">
           <p>
-            Nama <strong class="text-ink-900 dark:text-cream-50">Vanillate</strong> berangkat dari kata <em>vanilla</em>. Di dunia perangkat lunak, "vanilla" berarti versi paling murni, tanpa tambahan yang tidak perlu. Akhiran "-ate" mengubahnya menjadi kata kerja: sebuah proses. Vanillate berarti mengolah sesuatu yang sederhana menjadi pengalaman yang matang. Itulah cara kami bekerja: mulai dari fondasi yang bersih, lalu menyempurnakannya lapis demi lapis.
+            Nama <strong class="text-ink-900 dark:text-cream-50">Vanillate</strong> berangkat dari kata <em>vanilla</em>. Di dunia perangkat lunak, "vanilla" berarti versi paling murni, tanpa tambahan yang tidak perlu. Akhiran "-ate" mengubahnya menjadi kata kerja, sebuah proses. Vanillate berarti mengolah sesuatu yang sederhana menjadi pengalaman yang matang. Itulah cara kami bekerja, mulai dari fondasi yang bersih, lalu menyempurnakannya lapis demi lapis.
           </p>
           <p>
-            Logo kami adalah huruf <strong class="text-ink-900 dark:text-cream-50">V</strong> yang terbentuk dari tiga pita geometris yang saling mengunci. Tiga pita itu mewakili tiga pilar yang menopang setiap produk Vanillate: <em>komunitas</em> yang memainkannya, <em>teknologi</em> yang menjalankannya, dan <em>pengalaman bermain</em> yang menyatukan keduanya. Bentuknya melingkar tanpa putus, pengingat bahwa pekerjaan kami tidak pernah benar-benar selesai; selalu ada iterasi berikutnya.
+            Logo kami adalah huruf <strong class="text-ink-900 dark:text-cream-50">V</strong> yang terbentuk dari tiga pita geometris yang saling mengunci. Tiga pita itu mewakili tiga pilar yang menopang setiap produk Vanillate, yaitu <em>komunitas</em> yang memainkannya, <em>teknologi</em> yang menjalankannya, dan <em>pengalaman bermain</em> yang menyatukan keduanya. Bentuknya melingkar tanpa putus, sebuah pengingat bahwa pekerjaan kami tidak pernah benar-benar selesai karena selalu ada iterasi berikutnya.
           </p>
         </div>
 
@@ -234,13 +234,13 @@ const roadmap = [
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Ke mana Vanillate menuju</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
           <p>
-            Visi kami sederhana untuk diucapkan dan panjang untuk dikerjakan: menjadi studio teknologi Indonesia yang produknya dipakai, dipercaya, dan dinantikan. Dimulai dari Discord, tapi tidak berhenti di sana.
+            Visi kami sederhana untuk diucapkan dan panjang untuk dikerjakan, yaitu menjadi studio teknologi Indonesia yang produknya dipakai, dipercaya, dan dinantikan. Dimulai dari Discord, tapi tidak berhenti di sana.
           </p>
           <p>
             Kami percaya game development di platform chat baru menyentuh permukaannya. Interaksi real-time, komunitas yang sudah terbentuk, dan teknologi AI yang semakin matang membuka ruang untuk pengalaman bermain yang belum pernah ada. Kami ingin berada di garis depan eksplorasi itu, bukan sekadar mengikuti tren, tapi ikut menentukan bentuknya.
           </p>
           <p>
-            Dalam jangka panjang, produk-produk Vanillate akan saling terhubung menjadi satu ekosistem digital: game yang bisa dipantau dari web, otomasi yang meringankan pengelola komunitas, layanan cloud yang menopang semuanya, dan AI yang bekerja diam-diam membuat setiap interaksi terasa lebih hidup. Teknologi dan automation bagi kami adalah alat untuk satu tujuan, yaitu pengalaman pengguna yang lebih baik, bukan pajangan.
+            Dalam jangka panjang, produk-produk Vanillate akan saling terhubung menjadi satu ekosistem digital, mulai dari game yang bisa dipantau dari web, otomasi yang meringankan pengelola komunitas, layanan cloud yang menopang semuanya, sampai AI yang bekerja diam-diam membuat setiap interaksi terasa lebih hidup. Teknologi dan automation bagi kami adalah alat untuk satu tujuan, yaitu pengalaman pengguna yang lebih baik, bukan pajangan.
           </p>
         </div>
       </div>
@@ -260,7 +260,7 @@ const roadmap = [
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">01</span>
             <div>
               <h3 class="font-display text-lg font-semibold mb-1">Membangun produk yang dirawat jangka panjang</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap bot yang kami rilis mendapat komitmen perawatan: update rutin, perbaikan cepat, dan pengembangan fitur yang tidak berhenti setelah minggu pertama.</p>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap bot yang kami rilis mendapat komitmen perawatan berupa update rutin, perbaikan cepat, dan pengembangan fitur yang tidak berhenti setelah minggu pertama.</p>
             </div>
           </li>
           <li class="flex gap-4">
@@ -288,7 +288,7 @@ const roadmap = [
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">05</span>
             <div>
               <h3 class="font-display text-lg font-semibold mb-1">Bekerja secara transparan</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kebijakan yang jelas, changelog yang jujur, dan komunikasi terbuka saat ada masalah. Kepercayaan dibangun dari keterbukaan, bukan kesempurnaan.</p>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kebijakan yang jelas, catatan pembaruan yang jujur, dan komunikasi terbuka saat ada masalah. Kepercayaan dibangun dari keterbukaan, bukan kesempurnaan.</p>
             </div>
           </li>
         </ol>

@@ -3,9 +3,9 @@
 export const site = {
   name: 'Vanillate Studio',
   shortName: 'Vanillate',
-  tagline: 'Studio teknologi Indonesia di balik Discord Bot yang dimainkan setiap hari.',
+  tagline: 'Studio teknologi Indonesia di balik Discord Bot yang dimainkan komunitas setiap hari.',
   description:
-    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius: cepat, stabil, dan terus diperbarui. Bot kami, Sambung Kata dan Vanillate Games (Werewolf & Tahu Bulat), dimainkan komunitas setiap hari.',
+    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius, cepat, stabil, dan terus diperbarui. Bot kami, Vanillate Sambung Kata dan Vanillate Games (berisi Werewolf, Tahu Bulat, dan Story), dimainkan ribuan orang tiap hari. Semuanya dirancang untuk menghidupkan obrolan server sekaligus mendukung sistem leveling komunitas Discord kamu.',
   url: 'https://vanillate.id',
   locale: 'id-ID',
 
@@ -37,10 +37,10 @@ export const nav = [
 // Ini data nyata dari studio, update manual di sini saat berubah.
 // `hint` menjelaskan maksud tiap angka supaya pengunjung tidak bingung.
 export const homeStats = [
-  { num: 1500, prefix: '', suffix: '+', label: 'Pemain aktif', hint: 'Bermain lintas server setiap hari' },
-  { num: 1000, prefix: '', suffix: '+', label: 'Server memakai bot', hint: 'Komunitas Discord di berbagai daerah' },
-  { num: 25000, prefix: '', suffix: '+', label: 'Kata di kamus', hint: 'Kamus Sambung Kata, tervalidasi otomatis' },
-  { num: 300, prefix: '+', suffix: '%', label: 'Keaktifan chat', hint: 'Kenaikan sejak fitur terbaru rilis' },
+  { num: 1500, prefix: '', suffix: '+', label: 'Pemain aktif', hint: 'Ikut bermain lintas server tiap hari' },
+  { num: 1000, prefix: '', suffix: '+', label: 'Server memakai bot', hint: 'Komunitas Discord dari berbagai daerah' },
+  { num: 300, prefix: '+', suffix: '%', label: 'Keaktifan chat', hint: 'Obrolan server jadi jauh lebih ramai' },
+  { num: 500, prefix: '+', suffix: '', label: 'Chat per game', hint: 'Rata-rata pesan baru tiap sesi permainan' },
 ] as const;
 
 // Langkah mengundang bot. Dipakai di /bots dan /docs.
@@ -69,22 +69,27 @@ export const inviteSteps = [
 // Keunggulan yang membedakan bot Vanillate. Dipakai di /bots.
 export const whyVanillate = [
   {
+    title: 'Menghidupkan komunitas',
+    desc: 'Server yang mulai sepi bisa ramai lagi. Permainan kami memancing anggota untuk aktif mengetik, jadi sangat cocok buat server yang mengandalkan sistem leveling dari keaktifan chat.',
+    icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  },
+  {
     title: 'Dirawat, bukan ditinggal',
-    desc: 'Update rutin, perbaikan cepat, dan gameplay yang terus diseimbangkan. Changelog kami adalah bukti bot tidak berhenti berkembang setelah rilis.',
+    desc: 'Update rutin, perbaikan cepat, dan gameplay yang terus diseimbangkan. Setiap pembaruan jadi bukti bot tidak berhenti berkembang setelah rilis.',
     icon: '<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>',
   },
   {
     title: 'Bahasa Indonesia, konteks lokal',
-    desc: 'Dari kamus 25.000+ kata sampai tema kuliner tahu bulat, produk kami dibuat untuk pemain Indonesia, bukan sekadar terjemahan.',
+    desc: 'Dari kamus 25.000+ kata sampai tema kuliner tahu bulat, produk kami dibuat untuk pemain Indonesia, bukan sekadar hasil terjemahan.',
     icon: '<path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>',
   },
   {
-    title: 'Cepat & stabil',
+    title: 'Cepat dan stabil',
     desc: 'Respons terasa instan, uptime dijaga, dan data pemain aman. Interaksi yang mulus adalah bagian dari desain, bukan kebetulan.',
     icon: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
   },
   {
-    title: 'Gratis & tanpa paywall',
+    title: 'Gratis tanpa paywall',
     desc: 'Semua inti permainan bisa dinikmati tanpa bayar. Tidak ada fitur penting yang dikunci di balik langganan wajib.',
     icon: '<circle cx="12" cy="12" r="10"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5M12 17h.01"/>',
   },

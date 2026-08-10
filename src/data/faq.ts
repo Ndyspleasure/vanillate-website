@@ -11,8 +11,12 @@ export type FaqItem = { q: string; a: string };
 // ═══════════════════════════════════════════════════════════════════
 export const generalFaqs: FaqItem[] = [
   {
+    q: 'Apakah bot ini bisa membantu menghidupkan server yang sepi?',
+    a: 'Bisa, dan itu memang salah satu kekuatannya. Karena setiap permainan mengajak banyak anggota ikut mengetik di channel yang sama, obrolan yang tadinya sepi cepat kembali ramai. Buat server yang memakai bot leveling berbasis keaktifan chat, satu sesi Vanillate Sambung Kata atau Werewolf bisa mendongkrak jumlah pesan sampai ratusan sekaligus membantu anggota naik level lebih cepat.',
+  },
+  {
     q: 'Apakah semua bot Vanillate gratis?',
-    a: 'Ya. Semua bot kami, Sambung Kata dan Vanillate Games (Werewolf + Tahu Bulat), gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
+    a: 'Ya. Semua bot kami, Vanillate Sambung Kata dan Vanillate Games (Werewolf, Tahu Bulat, dan Story), gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
   },
   {
     q: 'Bagaimana cara mengundang bot ke server saya?',
@@ -32,7 +36,7 @@ export const generalFaqs: FaqItem[] = [
   },
   {
     q: 'Bot tidak merespons command, kenapa?',
-    a: 'Coba beberapa hal ini: pastikan bot punya izin mengirim pesan di channel tersebut, ketik ulang slash command dari awal (mulai dengan `/`), dan tunggu beberapa detik jika Discord sedang lambat memuat command. Kalau masih bermasalah, laporkan di server Discord Support kami, orang yang menulis kodenya akan langsung membantu.',
+    a: 'Coba beberapa hal ini dulu. Pastikan bot punya izin mengirim pesan di channel tersebut, ketik ulang slash command dari awal (mulai dengan `/`), dan tunggu beberapa detik jika Discord sedang lambat memuat command. Kalau masih bermasalah, laporkan di server Discord Support kami, dan orang yang menulis kodenya akan langsung membantu.',
   },
   {
     q: 'Bagaimana cara memberi masukan atau melaporkan bug?',
@@ -79,7 +83,7 @@ export const faqs: Record<string, FaqItem[]> = {
     },
     {
       q: 'Event spesial apa saja yang bisa muncul saat main PvP?',
-      a: 'Ada 4 event yang muncul acak di ronde 20–30 mode PvP: 🤖 AI Challenger (boss bersama, kalahkan untuk reward ×2), 📡 Lost Signal (kumpulkan 5 fragmen), 🧳 Traveling Merchant (toko dadakan item langka, aktif 5 menit), dan 🗡️ Penjajah/Invader (boss event Hari Kemerdekaan 17 Agustus). Saat intro event timer dibekukan, jadi kamu sempat menyusun strategi. Detail tiap event ada di dokumentasi Sambung Kata bagian Event Spesial PvP.',
+      a: 'Ada 4 event yang muncul acak di ronde 20 sampai 30 pada mode PvP, yaitu 🤖 AI Challenger (boss bersama, kalahkan untuk reward ×2), 📡 Lost Signal (kumpulkan 5 fragmen), 🧳 Traveling Merchant (toko dadakan item langka, aktif 5 menit), dan 🗡️ Penjajah atau Invader (boss event Hari Kemerdekaan 17 Agustus). Saat intro event timer dibekukan, jadi kamu sempat menyusun strategi. Detail tiap event ada di dokumentasi Vanillate Sambung Kata bagian Event Spesial PvP.',
     },
     {
       q: 'Apa itu event Penjajah (Invader)?',
@@ -109,7 +113,7 @@ export const faqs: Record<string, FaqItem[]> = {
   'vanillate-games': [
     {
       q: 'Apa itu Vanillate Games?',
-      a: 'Vanillate Games adalah platform Discord multi-game dari Vanillate Studio. Satu bot berisi tiga game aktif: Werewolf (deduksi sosial), Tahu Bulat (simulasi bisnis idle), dan Vanillate Story (Life Simulation RPG). Arsitekturnya modular — setiap game jadi modul mandiri, dan game baru akan menyusul di bot yang sama tanpa perlu invite ulang.',
+      a: 'Vanillate Games adalah platform Discord multi-game dari Vanillate Studio. Satu bot berisi tiga game aktif, yaitu Werewolf (deduksi sosial), Tahu Bulat (simulasi bisnis idle), dan Vanillate Story (Life Simulation RPG). Arsitekturnya modular, jadi setiap game berdiri sebagai modul mandiri dan game baru akan menyusul di bot yang sama tanpa perlu invite ulang.',
     },
     {
       q: 'Command apa saja yang tersedia?',
@@ -138,7 +142,7 @@ export const faqs: Record<string, FaqItem[]> = {
     },
     {
       q: 'Bagaimana urutan aksi malam diproses?',
-      a: 'Engine memproses aksi sesuai prioritas resolusi: Control/Redirect (10) → Roleblock (20) → Investigasi (30) → Proteksi (40) → Serangan (50) → Konversi (60) → Efek lain (70). Ini membuat konflik antar-kemampuan selalu diselesaikan deterministik — misal Witch bisa membelokkan Doctor sebelum serangan dihitung.',
+      a: 'Engine memproses aksi mengikuti urutan prioritas resolusi, dari Control/Redirect (10), Roleblock (20), Investigasi (30), Proteksi (40), Serangan (50), Konversi (60), sampai Efek lain (70). Urutan ini membuat konflik antar-kemampuan selalu diselesaikan secara deterministik. Sebagai contoh, Witch bisa membelokkan Doctor sebelum serangan dihitung.',
     },
     {
       q: 'Berapa lama durasi tiap fase?',
@@ -172,11 +176,11 @@ export const faqs: Record<string, FaqItem[]> = {
     // ── Vanillate Story ────────────────────────────────────
     {
       q: 'Apa itu Vanillate Story?',
-      a: 'Vanillate Story adalah Life Simulation RPG single player. Kamu perantau yang datang ke Kota Vanillate dengan beban utang keluarga kepada Bang Jul: 3.500.000 coin yang harus dilunasi dalam 7 minggu. Bekerja, latih skill, jalin hubungan dengan warga, dan lunasi utang tepat waktu — atau Game Over dan data direset.',
+      a: 'Vanillate Story adalah Life Simulation RPG single player. Kamu berperan sebagai perantau yang datang ke Kota Vanillate dengan beban utang keluarga kepada Bang Jul senilai 3.500.000 coin yang harus dilunasi dalam 7 minggu. Bekerja, latih skill, jalin hubungan dengan warga, dan lunasi utang tepat waktu sebelum kena Game Over dan data direset.',
     },
     {
       q: 'Bagaimana cara mulai main Story?',
-      a: 'Ketik `/gamestory` untuk memulai. Karaktermu bangun pukul 06.00 dengan energi penuh. Pilih aktivitas: kerja, latihan, mancing, ngobrol dengan NPC, memberi hadiah, atau berpindah lokasi. Akhiri hari dengan tidur di rumah — energi & waktu reset keesokan harinya.',
+      a: 'Ketik `/gamestory` untuk memulai. Karaktermu bangun pukul 06.00 dengan energi penuh. Pilih aktivitas seperti kerja, latihan, mancing, ngobrol dengan NPC, memberi hadiah, atau berpindah lokasi. Akhiri hari dengan tidur di rumah supaya energi dan waktu reset keesokan harinya.',
     },
     {
       q: 'Berapa besar utang & tenggat pembayarannya?',
@@ -184,7 +188,7 @@ export const faqs: Record<string, FaqItem[]> = {
     },
     {
       q: 'Apa saja skill di Vanillate Story?',
-      a: 'Empat skill utama, masing-masing maksimal Level 5: Strength (pekerjaan fisik), Intelligence (pekerjaan intelektual), Communication (pekerjaan sosial & hubungan), Luck (peluang mancing & event acak). Latihan skill menghabiskan waktu & energi — makin tinggi level, makin lambat naiknya.',
+      a: 'Ada empat skill utama yang masing-masing bisa dinaikkan sampai Level 5, yaitu Strength (pekerjaan fisik), Intelligence (pekerjaan intelektual), Communication (pekerjaan sosial dan hubungan), serta Luck (peluang mancing dan event acak). Latihan skill menghabiskan waktu dan energi, dan makin tinggi levelnya makin lambat naiknya.',
     },
     {
       q: 'Seberapa besar dunianya?',
@@ -197,7 +201,7 @@ export const faqs: Record<string, FaqItem[]> = {
     // ── Umum ───────────────────────────────────────────────
     {
       q: 'Apakah progresku bisa hilang?',
-      a: 'Untuk Werewolf dan Tahu Bulat: tidak — semua progres tersimpan otomatis di server. Untuk Story: hanya hilang bila kamu gagal membayar cicilan mingguan (Game Over → data karakter direset), sesuai desain premis game.',
+      a: 'Untuk Werewolf dan Tahu Bulat, tidak. Semua progres tersimpan otomatis di server. Untuk Story, progres hanya hilang bila kamu gagal membayar cicilan mingguan sehingga kena Game Over dan data karakter direset, sesuai desain premis game.',
     },
     {
       q: 'Apakah akan ada game baru?',

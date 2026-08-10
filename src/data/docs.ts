@@ -37,7 +37,7 @@ export const docs: Record<string, BotDoc> = {
   // ═══════════════════════════════════════════════════════════════════
   'sambung-kata': {
     intro:
-      'Vanillate Sambung Kata adalah bot game kata berantai dalam Bahasa Indonesia. Setiap pemain menyambung kata dari huruf yang ditentukan, dengan sistem progresi mendalam: Class, Quest, Boost, hingga Dungeon Mode.',
+      'Vanillate Sambung Kata adalah bot game kata berantai dalam Bahasa Indonesia. Setiap pemain menyambung kata dari huruf yang ditentukan, dengan sistem progresi mendalam mulai dari Class, Quest, Boost, sampai Dungeon Mode.',
     quickStart: [
       'Undang bot ke server Discord kamu.',
       'Jalankan `/sambungkata mode:pvp` untuk buka lobby, atau `mode:pvb` untuk lawan bot.',
@@ -49,7 +49,7 @@ export const docs: Record<string, BotDoc> = {
         id: 'cara-bermain',
         title: 'Cara Bermain',
         intro:
-          'Sambung Kata adalah permainan kata berantai. Setiap pemain harus menyebut kata yang diawali huruf yang ditentukan dari kata sebelumnya. Contoh: kata `MAKAN` → huruf berikut `N` → jawaban valid: `NASI`, `NAMA`, `NILAI`, dan seterusnya.',
+          'Vanillate Sambung Kata adalah permainan kata berantai. Setiap pemain harus menyebut kata yang diawali huruf yang ditentukan dari kata sebelumnya. Sebagai contoh, dari kata `MAKAN` huruf berikutnya adalah `N`, jadi jawaban yang valid antara lain `NASI`, `NAMA`, `NILAI`, dan seterusnya.',
         subsections: [
           {
             title: '📌 Aturan Dasar',
@@ -528,7 +528,7 @@ export const docs: Record<string, BotDoc> = {
   // ═══════════════════════════════════════════════════════════════════
   'vanillate-games': {
     intro:
-      'Vanillate Games adalah platform Discord multi-game berbahasa Indonesia. Tiga game aktif: Werewolf (deduksi sosial dengan katalog hingga 54 role modern), Tahu Bulat (simulasi bisnis idle), dan Vanillate Story (Life Simulation RPG di Kota Vanillate). Undang sekali, mainkan semuanya.',
+      'Vanillate Games adalah platform Discord multi-game berbahasa Indonesia. Di dalamnya ada tiga game aktif, yaitu Werewolf (deduksi sosial dengan katalog hingga 54 role modern), Tahu Bulat (simulasi bisnis idle), dan Vanillate Story (Life Simulation RPG di Kota Vanillate). Undang sekali, mainkan semuanya.',
     quickStart: [
       'Undang Vanillate Games ke server Discord kamu.',
       'Ketik `/gamewerewolf` untuk membuka lobi Werewolf.',
@@ -1095,7 +1095,7 @@ export const docs: Record<string, BotDoc> = {
       // ── TAHU BULAT ───────────────────────────────────────────
       {
         id: 'tahu-cara-bermain',
-        title: 'Tahu Bulat ·Cara Bermain',
+        title: 'Tahu Bulat · Cara Bermain',
         subsections: [
           {
             title: '📱 Buka Dashboard',
@@ -1118,7 +1118,7 @@ export const docs: Record<string, BotDoc> = {
       },
       {
         id: 'tahu-kendaraan',
-        title: 'Tahu Bulat ·Kendaraan',
+        title: 'Tahu Bulat · Kendaraan',
         intro:
           'Kendaraan menentukan pendapatan dasar dan bonus. Semakin tinggi tingkatnya, semakin besar cuan. Upgrade lewat `/gametahu` → 🔧 Upgrade → Kendaraan.',
         subsections: [
@@ -1139,7 +1139,7 @@ export const docs: Record<string, BotDoc> = {
       },
       {
         id: 'tahu-peralatan',
-        title: 'Tahu Bulat ·Peralatan',
+        title: 'Tahu Bulat · Peralatan',
         intro:
           'Ada 10 jenis peralatan, masing-masing maksimal Level 5. Setiap upgrade menambah bonus pendapatan. Harga upgrade naik 1.35× tiap level. Upgrade lewat 🔧 Upgrade → Peralatan.',
         subsections: [
@@ -1158,7 +1158,7 @@ export const docs: Record<string, BotDoc> = {
       },
       {
         id: 'tahu-bahan',
-        title: 'Tahu Bulat ·Bahan',
+        title: 'Tahu Bulat · Bahan',
         intro:
           'Bahan adalah progres jangka panjang: 30 jenis, masing-masing maksimal Level 50. Tiap level menambah bonus kecil, tapi kalau banyak bahan bertingkat tinggi, pendapatan berlipat ganda.',
         subsections: [
@@ -1174,7 +1174,7 @@ export const docs: Record<string, BotDoc> = {
       },
       {
         id: 'tahu-promosi',
-        title: 'Tahu Bulat ·Promosi',
+        title: 'Tahu Bulat · Promosi',
         intro:
           'Promosi memberi bonus pendapatan sementara. Hanya satu promosi aktif dalam satu waktu. Beli lewat `/gametahu` → 📢 Promosi.',
         subsections: [
@@ -1194,7 +1194,7 @@ export const docs: Record<string, BotDoc> = {
       },
       {
         id: 'tahu-rebirth',
-        title: 'Tahu Bulat ·Rebirth',
+        title: 'Tahu Bulat · Rebirth',
         intro:
           'Rebirth mengulang usaha dari awal demi bonus permanen +20% setiap kali melakukannya, dan bonusnya menumpuk selamanya.',
         subsections: [
@@ -1218,7 +1218,7 @@ export const docs: Record<string, BotDoc> = {
       },
       {
         id: 'tahu-misi',
-        title: 'Tahu Bulat ·Misi Harian',
+        title: 'Tahu Bulat · Misi Harian',
         intro:
           'Selesaikan misi setiap hari untuk hadiah coin. Reset otomatis tiap tengah malam WIB. Buka lewat `/gametahu` → 🎯 Misi.',
         subsections: [
@@ -1237,7 +1237,7 @@ export const docs: Record<string, BotDoc> = {
       },
       {
         id: 'tahu-peringkat',
-        title: 'Tahu Bulat ·Peringkat & Achievement',
+        title: 'Tahu Bulat · Peringkat & Achievement',
         subsections: [
           {
             title: '🏆 Peringkat',
@@ -1260,7 +1260,7 @@ export const docs: Record<string, BotDoc> = {
       },
       {
         id: 'tahu-tips',
-        title: 'Tahu Bulat ·Tips & FAQ',
+        title: 'Tahu Bulat · Tips & FAQ',
         subsections: [
           {
             title: '💡 Tips',
@@ -1359,7 +1359,7 @@ export const docs: Record<string, BotDoc> = {
             items: [
               'Cicilan wajib dibayar tiap minggu; besaran mingguan disesuaikan sisa utang dan sisa minggu.',
               'Bayar lebih awal atau lebih besar diperbolehkan — mengurangi total utang lebih cepat.',
-              'Sisa utang, tenggat minggu berjalan, dan estimasi pembayaran berikutnya ditampilkan di dashboard `/gametahu`… eh, `/gamestory`.',
+              'Sisa utang, tenggat minggu berjalan, dan estimasi pembayaran berikutnya ditampilkan di dashboard `/gamestory`.',
             ],
           },
           {
