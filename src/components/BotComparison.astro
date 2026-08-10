@@ -12,11 +12,12 @@ const cols = order
 type Row = { label: string; values: Record<string, string> };
 const rows: Row[] = [
   { label: 'Tipe', values: { 'sambung-kata': 'Word Game', 'vanillate-games': 'Multi-Game Hub', 'anonymous-chat': 'Social' } },
-  { label: 'Cocok untuk', values: { 'sambung-kata': 'Kompetisi & strategi', 'vanillate-games': 'Party & santai', 'anonymous-chat': 'Ngobrol & kenalan' } },
-  { label: 'Waktu per sesi', values: { 'sambung-kata': '15–30 menit', 'vanillate-games': 'Werewolf 15–30 mnt · Tahu Bulat idle', 'anonymous-chat': 'Fleksibel' } },
-  { label: 'Ekonomi in-game', values: { 'sambung-kata': 'EXP & Coin', 'vanillate-games': 'Coin (Tahu Bulat)', 'anonymous-chat': '—' } },
-  { label: 'Multiplayer', values: { 'sambung-kata': 'PvP s/d 10 pemain', 'vanillate-games': 'Werewolf 4–12 · Tahu Bulat solo', 'anonymous-chat': '1-lawan-1' } },
-  { label: 'Skill utama', values: { 'sambung-kata': 'Kosakata', 'vanillate-games': 'Deduksi & kesabaran', 'anonymous-chat': 'Empati' } },
+  { label: 'Cocok untuk', values: { 'sambung-kata': 'Kompetisi dan strategi', 'vanillate-games': 'Party dan santai', 'anonymous-chat': 'Ngobrol dan kenalan' } },
+  { label: 'Waktu per sesi', values: { 'sambung-kata': '15 sampai 30 menit', 'vanillate-games': 'Werewolf 15 sampai 30 mnt, Tahu Bulat idle', 'anonymous-chat': 'Fleksibel' } },
+  { label: 'Ekonomi in-game', values: { 'sambung-kata': 'EXP dan Coin', 'vanillate-games': 'Coin (Tahu Bulat)', 'anonymous-chat': 'Tidak ada' } },
+  { label: 'Multiplayer', values: { 'sambung-kata': 'PvP sampai 10 pemain', 'vanillate-games': 'Werewolf 4 sampai 12, Tahu Bulat solo', 'anonymous-chat': '1 lawan 1' } },
+  { label: 'Ramaikan server', values: { 'sambung-kata': 'Sangat cocok', 'vanillate-games': 'Sangat cocok (Werewolf)', 'anonymous-chat': 'Cukup' } },
+  { label: 'Skill utama', values: { 'sambung-kata': 'Kosakata', 'vanillate-games': 'Deduksi dan kesabaran', 'anonymous-chat': 'Empati' } },
 ];
 
 const statusLabel: Record<string, string> = {
@@ -67,7 +68,7 @@ const statusLabel: Record<string, string> = {
             {rows.map((row) => (
               <div class="flex items-start justify-between gap-4 py-2.5">
                 <dt class="flex-none text-sm text-ink-500 dark:text-cream-300/70">{row.label}</dt>
-                <dd class="text-right text-sm font-medium text-ink-800 dark:text-cream-100">{row.values[bot.slug] ?? '—'}</dd>
+                <dd class="text-right text-sm font-medium text-ink-800 dark:text-cream-100">{row.values[bot.slug] ?? 'Tidak ada'}</dd>
               </div>
             ))}
           </dl>
@@ -141,7 +142,7 @@ const statusLabel: Record<string, string> = {
             {row.label}
           </th>
           {cols.map((bot) => (
-            <td class="px-4 py-3.5 text-ink-700 dark:text-cream-200">{row.values[bot.slug] ?? '—'}</td>
+            <td class="px-4 py-3.5 text-ink-700 dark:text-cream-200">{row.values[bot.slug] ?? 'Tidak ada'}</td>
           ))}
         </tr>
       ))}

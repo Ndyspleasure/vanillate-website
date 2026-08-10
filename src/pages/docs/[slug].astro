@@ -18,21 +18,49 @@ const doc = docs[bot.docsSlug];
 // Bot lain yang punya dokumentasi, untuk cross-link di akhir halaman.
 const otherDocs = getOtherBots(bot.slug, 4).filter((b) => b.docsSlug);
 
+// Kelompokkan section per game untuk dokumentasi multi-game (mis. Vanillate
+// Games). Grup diturunkan dari prefix id section, jadi bot dengan satu topik
+// (mis. Sambung Kata) otomatis tampil datar tanpa header grup.
+function groupFor(id: string): string | null {
+  if (id.startsWith('werewolf')) return 'Werewolf';
+  if (id.startsWith('tahu')) return 'Tahu Bulat';
+  if (id.startsWith('story')) return 'Vanillate Story';
+  if (id === 'game-tersedia' || id === 'platform-arsitektur') return 'Platform';
+  return null;
+}
+// Judul di TOC dibuat ringkas dengan membuang awalan nama game yang sudah
+// tampil sebagai header grup (mis. "Werewolf · Cara Bermain" jadi "Cara Bermain").
+function tocLabel(title: string, group: string | null): string {
+  return group && title.startsWith(group + ' · ') ? title.slice(group.length + 3) : title;
+}
+
 // Sidebar TOC: dari data docs, atau fallback default untuk bot tanpa docs
 const tocSections = doc
-  ? doc.sections.map((s) => ({ id: s.id, title: s.title }))
+  ? doc.sections.map((s) => ({ id: s.id, title: s.title, group: groupFor(s.id) }))
   : [
-      { id: 'pendahuluan', title: 'Pendahuluan' },
-      { id: 'cara-memulai', title: 'Cara Memulai' },
-      { id: 'troubleshooting', title: 'Troubleshooting' },
+      { id: 'pendahuluan', title: 'Pendahuluan', group: null },
+      { id: 'cara-memulai', title: 'Cara Memulai', group: null },
+      { id: 'troubleshooting', title: 'Troubleshooting', group: null },
     ];
+
+// Susun section jadi grup berurutan untuk render TOC yang berkategori.
+type TocGroup = { group: string | null; items: { id: string; title: string }[] };
+const tocGroups: TocGroup[] = [];
+for (const s of tocSections) {
+  const last = tocGroups[tocGroups.length - 1];
+  if (!last || last.group !== s.group) {
+    tocGroups.push({ group: s.group, items: [{ id: s.id, title: tocLabel(s.title, s.group) }] });
+  } else {
+    last.items.push({ id: s.id, title: tocLabel(s.title, s.group) });
+  }
+}
 
 // Formatter inline (`kode`, **tebal**, *miring*) untuk konten dari data
 // internal (docs.ts), bukan input user. Lihat @utils/inline.
 const fmt = inlineMarkdown;
 ---
 
-<BaseLayout title={`Panduan ${bot.shortName} — Cara Main, Command & FAQ`} description={`Dokumentasi lengkap ${bot.name}: cara bermain, daftar command, tabel harga, strategi, dan pertanyaan yang sering ditanyakan.`}>
+<BaseLayout title={`Panduan ${bot.shortName}, Cara Main, Command & FAQ`} description={`Dokumentasi lengkap ${bot.name} yang memuat cara bermain, daftar command, tabel harga, strategi, dan pertanyaan yang sering ditanyakan.`}>
   <div class="container-page pt-16 md:pt-24 pb-24">
     <div class="grid gap-10 lg:grid-cols-[230px_1fr]">
       <!-- Sidebar TOC -->
@@ -49,15 +77,22 @@ const fmt = inlineMarkdown;
             <svg class="flex-none transition-transform group-open:rotate-180" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </summary>
           <nav class="border-t border-ink-900/10 dark:border-cream-100/10 px-2 py-2" aria-label="Daftar isi (mobile)">
-            <ul>
-              {tocSections.map((s) => (
-                <li>
-                  <a href={`#${s.id}`} class="toc-link block rounded-lg px-3 py-2.5 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
-                    {s.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            {tocGroups.map((grp) => (
+              <div class="mt-2 first:mt-0">
+                {grp.group && (
+                  <p class="px-3 pt-2 pb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500 dark:text-cream-300/60">{grp.group}</p>
+                )}
+                <ul>
+                  {grp.items.map((s) => (
+                    <li>
+                      <a href={`#${s.id}`} class="toc-link block rounded-lg px-3 py-2.5 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+                        {s.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </nav>
         </details>
 
@@ -65,15 +100,22 @@ const fmt = inlineMarkdown;
         <div class="hidden lg:block">
           <p class="eyebrow mb-3">Di halaman ini</p>
           <nav aria-label="Table of contents">
-            <ul class="space-y-1">
-              {tocSections.map((s) => (
-                <li>
-                  <a href={`#${s.id}`} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
-                    {s.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            {tocGroups.map((grp) => (
+              <div class="mb-4 last:mb-0">
+                {grp.group && (
+                  <p class="mb-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500 dark:text-cream-300/60">{grp.group}</p>
+                )}
+                <ul class="space-y-1">
+                  {grp.items.map((s) => (
+                    <li>
+                      <a href={`#${s.id}`} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                        {s.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </nav>
         </div>
       </aside>
@@ -122,7 +164,18 @@ const fmt = inlineMarkdown;
             )}
 
             {/* Sections */}
-            {doc.sections.map((section) => (
+            {doc.sections.map((section, i) => {
+              const group = groupFor(section.id);
+              const prevGroup = i > 0 ? groupFor(doc.sections[i - 1].id) : null;
+              const showGroupHeader = group && group !== prevGroup;
+              return (
+              <Fragment>
+              {showGroupHeader && (
+                <div class="mb-8 mt-4 flex items-center gap-3 scroll-mt-24">
+                  <span class="font-mono text-xs uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">{group}</span>
+                  <span class="h-px flex-1 bg-ink-900/10 dark:bg-cream-100/10"></span>
+                </div>
+              )}
               <section id={section.id} class="mb-16 scroll-mt-24">
                 <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">{section.title}</h2>
 
@@ -234,7 +287,9 @@ const fmt = inlineMarkdown;
                   </div>
                 )}
               </section>
-            ))}
+              </Fragment>
+              );
+            })}
 
             {/* Bantuan lanjutan */}
             <section class="scroll-mt-24">

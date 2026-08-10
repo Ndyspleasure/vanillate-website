@@ -15,7 +15,7 @@ const others = bots.filter((b) => !b.featured);
 // dokumentasi / halaman terkait supaya pemain lekas menemukan yang dicari.
 const shortcutGroups = [
   {
-    label: 'Sambung Kata',
+    label: 'Vanillate Sambung Kata',
     color: '#E8B84A',
     links: [
       { label: 'Cara Bermain', href: '/docs/sambung-kata#cara-bermain' },
@@ -173,13 +173,13 @@ const steps = [
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500/70"></span>
               <span class="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
             </span>
-            Event In-Game · Sambung Kata
+            Event In-Game · Vanillate Sambung Kata
           </p>
           <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-2xl">
             Empat event spesial yang bikin match tak ketebak.
           </h2>
           <p class="mt-4 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-            Muncul acak di ronde 20–30 mode PvP. Timer dibekukan saat intro, jadi kamu sempat menyusun strategi, lalu kalahkan bersama untuk reward berlipat.
+            Muncul acak di ronde 20 sampai 30 pada mode PvP. Timer dibekukan saat intro, jadi kamu sempat menyusun strategi, lalu kalahkan bersama untuk reward berlipat.
           </p>
         </div>
         <a href={url('/docs/sambung-kata#event-spesial')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
@@ -195,7 +195,7 @@ const steps = [
             class="event-card reveal group relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5"
             style={`--ev: ${ev.accent}; --reveal-delay: ${i * 90}ms`}
             data-event
-            aria-label={`Event ${ev.name} — lihat detail di dokumentasi`}
+            aria-label={`Event ${ev.name}, lihat detail di dokumentasi`}
           >
             <span class="ev-glow animate-glow-pulse" aria-hidden="true"></span>
             <span class="ev-bar" aria-hidden="true"></span>
@@ -217,6 +217,44 @@ const steps = [
             </div>
           </a>
         ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- UNTUK KOMUNITAS & SERVER -->
+  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3 items-start">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">Untuk Server &amp; Komunitas</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+          Bikin server ramai lagi.
+        </h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Bot kami bukan cuma buat main. Setiap sesi mengajak banyak anggota ikut mengetik di channel yang sama, jadi obrolan yang tadinya sepi cepat kembali hidup.
+        </p>
+      </div>
+      <div class="md:col-span-2 grid gap-4 sm:grid-cols-3">
+        <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6" style="--reveal-delay: 0ms">
+          <span class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
+          </span>
+          <h3 class="font-display text-lg font-semibold mb-2">Chat naik drastis</h3>
+          <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Satu sesi permainan bisa memicu ratusan pesan baru, sampai +300% keaktifan chat di server yang rutin memakainya.</p>
+        </div>
+        <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6" style="--reveal-delay: 110ms">
+          <span class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 15 9l7 .5-5.5 4.5L20 21l-8-4.5L4 21l1.5-7L0 9.5 7 9z"/></svg>
+          </span>
+          <h3 class="font-display text-lg font-semibold mb-2">Dukung leveling</h3>
+          <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Banyak server memakai bot leveling yang menghitung keaktifan chat. Permainan kami jadi bahan bakar alami supaya anggota naik level lebih cepat.</p>
+        </div>
+        <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6" style="--reveal-delay: 220ms">
+          <span class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <h3 class="font-display text-lg font-semibold mb-2">Anggota betah</h3>
+          <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Quest harian, leaderboard, sampai event memberi alasan untuk kembali tiap hari, sehingga komunitas cenderung lebih awet.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -272,7 +310,7 @@ const steps = [
           Bingung mulai dari mana?
         </h2>
         <p class="mt-4 max-w-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Dua bot, dua rasa berbeda. Sandingkan sebentar untuk menemukan yang paling cocok dengan gayamu.
+          Tiap bot punya rasa yang berbeda. Sandingkan sebentar untuk menemukan yang paling cocok dengan gayamu.
         </p>
       </div>
       <a href={url('/pilih')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">

@@ -19,8 +19,8 @@ vanillate-website/
 ├── .github/workflows/deploy.yml    Auto-deploy ke GitHub Pages saat push ke main
 ├── public/
 │   ├── CNAME                       Custom domain (vanillate.id)
-│   ├── favicon.svg
-│   ├── robots.txt                  SEO: allow sitemap, disallow crawl abuse paths
+│   ├── favicon-32.png / favicon-64.png / apple-touch-icon.png
+│   ├── robots.txt                  SEO: allow all + tautan sitemap
 │   └── ...
 ├── src/
 │   ├── components/
@@ -215,7 +215,7 @@ Domain sudah aktif dan live. Setup yang dilakukan:
 **Terms of Service** (`src/pages/terms.astro`) — **Aktif ✓**
 - Berlaku untuk **semua produk & layanan** Vanillate Studio (bukan hanya 1 bot)
 - Otomatis mencakup bot/layanan baru di masa depan (kecuali ada terms terpisah)
-- Mencakup: Sambung Kata, Vanillate Games (Werewolf & Tahu Bulat), dan future products
+- Mencakup Vanillate Sambung Kata, Vanillate Games (Werewolf, Tahu Bulat, dan Story), dan produk lain di masa depan
 - **Section 6:** Virtual Items & In-Game Economy — item tidak punya nilai uang nyata, dapat di-rebalance
 
 **Privacy Policy** (`src/pages/privacy.astro`) — **Aktif ✓**
