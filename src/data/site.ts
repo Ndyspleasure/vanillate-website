@@ -5,7 +5,7 @@ export const site = {
   shortName: 'Vanillate',
   tagline: 'Studio teknologi Indonesia di balik Discord Bot yang dimainkan komunitas setiap hari.',
   description:
-    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius, cepat, stabil, dan terus diperbarui. Bot kami, Vanillate Sambung Kata dan Vanillate Games (berisi Werewolf, Tahu Bulat, dan Story), dimainkan ribuan orang tiap hari. Semuanya dirancang untuk menghidupkan obrolan server sekaligus mendukung sistem leveling komunitas Discord kamu.',
+    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius, cepat, stabil, dan terus diperbarui. Bot kami, Vanillate Sambung Kata, dimainkan ribuan orang tiap hari. Dirancang untuk menghidupkan obrolan server sekaligus mendukung sistem leveling komunitas Discord kamu.',
   url: 'https://vanillate.id',
   locale: 'id-ID',
 
@@ -80,7 +80,7 @@ export const whyVanillate = [
   },
   {
     title: 'Bahasa Indonesia, konteks lokal',
-    desc: 'Dari kamus 25.000+ kata sampai tema kuliner tahu bulat, produk kami dibuat untuk pemain Indonesia, bukan sekadar hasil terjemahan.',
+    desc: 'Dari kamus 25.000+ kata sampai konteks budaya lokal, produk kami dibuat untuk pemain Indonesia, bukan sekadar hasil terjemahan.',
     icon: '<path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>',
   },
   {
