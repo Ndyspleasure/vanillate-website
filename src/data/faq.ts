@@ -12,11 +12,11 @@ export type FaqItem = { q: string; a: string };
 export const generalFaqs: FaqItem[] = [
   {
     q: 'Apakah bot ini bisa membantu menghidupkan server yang sepi?',
-    a: 'Bisa, dan itu memang salah satu kekuatannya. Karena setiap permainan mengajak banyak anggota ikut mengetik di channel yang sama, obrolan yang tadinya sepi cepat kembali ramai. Buat server yang memakai bot leveling berbasis keaktifan chat, satu sesi Vanillate Sambung Kata atau Werewolf bisa mendongkrak jumlah pesan sampai ratusan sekaligus membantu anggota naik level lebih cepat.',
+    a: 'Bisa, dan itu memang salah satu kekuatannya. Karena setiap permainan mengajak banyak anggota ikut mengetik di channel yang sama, obrolan yang tadinya sepi cepat kembali ramai. Buat server yang memakai bot leveling berbasis keaktifan chat, satu sesi Vanillate Sambung Kata bisa mendongkrak jumlah pesan sampai ratusan sekaligus membantu anggota naik level lebih cepat.',
   },
   {
-    q: 'Apakah semua bot Vanillate gratis?',
-    a: 'Ya. Semua bot kami, Vanillate Sambung Kata dan Vanillate Games (Werewolf, Tahu Bulat, dan Story), gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
+    q: 'Apakah bot Vanillate gratis?',
+    a: 'Ya. Vanillate Sambung Kata gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
   },
   {
     q: 'Bagaimana cara mengundang bot ke server saya?',
@@ -104,158 +104,6 @@ export const faqs: Record<string, FaqItem[]> = {
     {
       q: 'Apakah progresku bisa hilang?',
       a: 'Tidak. Semua progres tersimpan otomatis di server dan tidak ada wipe berkala. Statistikmu, Class, dan inventory tetap aman.',
-    },
-  ],
-
-  // ═══════════════════════════════════════════════════════════════════
-  // VANILLATE GAMES (platform: Werewolf, Tahu Bulat, Story)
-  // ═══════════════════════════════════════════════════════════════════
-  'vanillate-games': [
-    {
-      q: 'Apa itu Vanillate Games?',
-      a: 'Vanillate Games adalah platform Discord multi-game dari Vanillate Studio. Satu bot berisi tiga game aktif, yaitu Werewolf (deduksi sosial), Tahu Bulat (simulasi bisnis idle), dan Vanillate Story (Life Simulation RPG). Arsitekturnya modular, jadi setiap game berdiri sebagai modul mandiri dan game baru akan menyusul di bot yang sama tanpa perlu invite ulang.',
-    },
-    {
-      q: 'Command apa saja yang tersedia?',
-      a: 'Ada empat: `/gamewerewolf` (lobi Werewolf), `/gametahu` (dashboard Tahu Bulat), `/gamestory` (mulai/lanjutkan perjalanan Vanillate Story), dan `/help` (panduan seluruh game di dalam Discord).',
-    },
-    // ── Werewolf ────────────────────────────────────────────
-    {
-      q: 'Bagaimana cara mulai main Werewolf?',
-      a: 'Ketik `/gamewerewolf` di channel untuk membuka lobi. Pemain lain menekan Gabung, lalu setelah minimal 4 pemain masuk, host menekan Mulai. Setiap pemain kemudian menekan Lihat Peran untuk melihat perannya secara rahasia.',
-    },
-    {
-      q: 'Berapa jumlah pemain Werewolf?',
-      a: 'Mode Klasik butuh 4–12 pemain. Bot mengatur komposisi peran otomatis: sekitar 1 serigala per 5 pemain, Peramal aktif sejak 4 pemain, Tabib aktif sejak 6 pemain. Mode Lanjutan mendukung lebih banyak pemain dengan hingga 54 role modern.',
-    },
-    {
-      q: 'Apa bedanya mode Klasik dan Lanjutan?',
-      a: 'Mode Klasik pakai 4 role dasar (Serigala, Peramal, Tabib, Warga), sederhana dan cepat dipahami. Mode Lanjutan dipandu narator dengan sistem giliran dan menyediakan katalog hingga 54 role modern (21 Village, 13 Werewolf, 20 Neutral). Durasi timernya sama untuk keduanya.',
-    },
-    {
-      q: 'Berapa banyak role di mode Lanjutan?',
-      a: 'Total 54 role: 21 Village (Seer, Detective, Investigator, Jailer, Bodyguard, Priest, Vigilante, Mayor, Mason, Cupid, dll), 13 Werewolf (Alpha, Wolf Seer, Wolf Shaman, Nightmare Wolf, Berserk Wolf, Kitten Wolf, Shadow Wolf, dll), dan 20 Neutral (Serial Killer, Arsonist, Jester, Executioner, Vampire, Cult Leader, Plaguebearer/Pestilence, Witch, Amnesiac, Doppelganger, dll).',
-    },
-    {
-      q: 'Bagaimana sistem attack & defense di Werewolf bekerja?',
-      a: 'Berjenjang 0–3. Attack: None (0), Basic (1), Powerful (2), Unstoppable (3). Defense: None (0), Basic (1), Powerful (2), Invincible (3). Serangan berhasil bila **Attack > Defense**. Contoh: Werewolf (Basic) ditahan Doctor (Basic), Alpha Wolf (Powerful) menembus Doctor tapi ditahan Priest (Powerful), Pestilence (Invincible) hanya bisa dikalahkan lewat voting.',
-    },
-    {
-      q: 'Bagaimana urutan aksi malam diproses?',
-      a: 'Engine memproses aksi mengikuti urutan prioritas resolusi, dari Control/Redirect (10), Roleblock (20), Investigasi (30), Proteksi (40), Serangan (50), Konversi (60), sampai Efek lain (70). Urutan ini membuat konflik antar-kemampuan selalu diselesaikan secara deterministik. Sebagai contoh, Witch bisa membelokkan Doctor sebelum serangan dihitung.',
-    },
-    {
-      q: 'Berapa lama durasi tiap fase?',
-      a: 'Fase Aksi Malam 50 detik, Diskusi Siang 3 menit, dan Voting 1 menit. Semua maju otomatis saat timer habis. Host bisa mempercepat fase kalau semua pemain sudah selesai beraksi.',
-    },
-    {
-      q: 'Kapan Warga menang, kapan Serigala menang?',
-      a: 'Warga menang bila semua serigala tereksekusi. Serigala menang bila jumlah serigala menyamai jumlah non-serigala. Role Neutral punya kondisi menang sendiri (lihat matriks kemenangan di dokumentasi Werewolf).',
-    },
-    {
-      q: 'Apakah diskusi terjadi di bot?',
-      a: 'Tidak. Diskusi terjadi langsung di channel Discord kamu, bot hanya mengatur aksi rahasia, timer, dan voting. Pastikan semua pemain hidup ada di channel yang sama saat fase Siang berjalan.',
-    },
-    // ── Tahu Bulat ─────────────────────────────────────────
-    {
-      q: 'Bagaimana cara mulai main Tahu Bulat?',
-      a: 'Ketik `/gametahu` untuk membuka dashboard usaha (modal awal 1.000 coin). Tekan Jual Tahu, tunggu beberapa detik sampai selesai menggoreng, dan coin masuk otomatis. Pakai coin itu untuk Upgrade agar makin cuan.',
-    },
-    {
-      q: 'Bagaimana pendapatan offline Tahu Bulat bekerja?',
-      a: 'Saat kamu tidak bermain, toko tetap menghasilkan hingga 8 jam, sekitar 50% dari kecepatan aktif. Buka `/gametahu` lagi untuk mengklaim pendapatan yang terkumpul selama kamu pergi.',
-    },
-    {
-      q: 'Apa itu Rebirth di Tahu Bulat?',
-      a: 'Rebirth mengulang usaha dari awal demi bonus permanen +20% setiap kali, dan bonusnya menumpuk selamanya. Syaratnya: kendaraan sudah Food Truck, semua peralatan Level 5, dan semua bahan Level 50. Yang direset: coin, kendaraan, peralatan, bahan, promosi. Yang aman: jumlah rebirth, statistik, achievement.',
-    },
-    {
-      q: 'Peralatan Tahu Bulat mana yang sebaiknya diprioritaskan?',
-      a: 'Kompor. Kompor memangkas cooldown jualan (Lv1: 5 detik → Lv5: 2 detik). Cooldown lebih cepat berarti kamu bisa jualan lebih sering, sehingga pendapatan naik lebih cepat.',
-    },
-    // ── Vanillate Story ────────────────────────────────────
-    {
-      q: 'Apa itu Vanillate Story?',
-      a: 'Vanillate Story adalah Life Simulation RPG single player. Kamu berperan sebagai perantau yang datang ke Kota Vanillate dengan beban utang keluarga kepada Bang Jul senilai 3.500.000 coin yang harus dilunasi dalam 7 minggu. Bekerja, latih skill, jalin hubungan dengan warga, dan lunasi utang tepat waktu sebelum kena Game Over dan data direset.',
-    },
-    {
-      q: 'Bagaimana cara mulai main Story?',
-      a: 'Ketik `/gamestory` untuk memulai. Karaktermu bangun pukul 06.00 dengan energi penuh. Pilih aktivitas seperti kerja, latihan, mancing, ngobrol dengan NPC, memberi hadiah, atau berpindah lokasi. Akhiri hari dengan tidur di rumah supaya energi dan waktu reset keesokan harinya.',
-    },
-    {
-      q: 'Berapa besar utang & tenggat pembayarannya?',
-      a: 'Total utang 3.500.000 coin, dilunasi mingguan selama 7 minggu. Bila gagal membayar satu kali saja → Game Over dan data pemain direset. Prioritaskan pekerjaan dan kelola pengeluaran (makanan, hadiah, item) dengan bijak.',
-    },
-    {
-      q: 'Apa saja skill di Vanillate Story?',
-      a: 'Ada empat skill utama yang masing-masing bisa dinaikkan sampai Level 5, yaitu Strength (pekerjaan fisik), Intelligence (pekerjaan intelektual), Communication (pekerjaan sosial dan hubungan), serta Luck (peluang mancing dan event acak). Latihan skill menghabiskan waktu dan energi, dan makin tinggi levelnya makin lambat naiknya.',
-    },
-    {
-      q: 'Seberapa besar dunianya?',
-      a: 'Kota Vanillate berisi 4 area, 39 lokasi, 63 pekerjaan (setiap pekerjaan punya syarat skill), dan 36 NPC dengan jadwal harian sendiri. NPC bekerja siang dan berpindah tempat malam hari; akhir pekan pun jadwalnya berbeda.',
-    },
-    {
-      q: 'Bisa punya pacar & menikah di Story?',
-      a: 'Bisa. Hubungan berkembang bertahap: Teman → Hubungan Dekat → Momen Spesial → Pacaran → Menikah → Punya Anak. Total ada 10 NPC yang bisa dijadikan pasangan. Meningkatkan hubungan dilakukan dengan ngobrol rutin dan memberi hadiah favoritnya.',
-    },
-    // ── Umum ───────────────────────────────────────────────
-    {
-      q: 'Apakah progresku bisa hilang?',
-      a: 'Untuk Werewolf dan Tahu Bulat, tidak. Semua progres tersimpan otomatis di server. Untuk Story, progres hanya hilang bila kamu gagal membayar cicilan mingguan sehingga kena Game Over dan data karakter direset, sesuai desain premis game.',
-    },
-    {
-      q: 'Apakah akan ada game baru?',
-      a: 'Ya. Vanillate Games dirancang sebagai platform: setiap game jadi modul mandiri, jadi penambahan game baru tidak mengganggu game yang sudah ada. Command baru akan muncul otomatis sebagai `/game...` berikutnya di bot yang sama, tanpa perlu invite ulang.',
-    },
-  ],
-
-  // ═══════════════════════════════════════════════════════════════════
-  // ANONYMOUS CHAT
-  // ═══════════════════════════════════════════════════════════════════
-  'anonymous-chat': [
-    {
-      q: 'Bagaimana privasi saya dijaga?',
-      a: 'Identitas Discord kamu disembunyikan sepanjang percakapan. Obrolan terjadi di channel privat yang hanya bisa diakses kalian berdua, dan channel itu otomatis terhapus setelah sesi berakhir sehingga tidak ada jejak yang tertinggal.',
-    },
-    {
-      q: 'Apakah obrolan tersimpan?',
-      a: 'Tidak. Channel privat setiap pasangan otomatis terhapus begitu sesi selesai, jadi percakapan tidak diarsipkan.',
-    },
-    {
-      q: 'Bagaimana cara ketemu partner ngobrol?',
-      a: 'Random matchmaking memasangkanmu dengan pengguna lain secara acak dalam hitungan detik. Kalau mau lebih terarah, pakai Interest Match untuk dipasangkan dengan orang yang punya minat atau topik serupa.',
-    },
-    {
-      q: 'Apa itu Interest Match?',
-      a: 'Interest Match adalah matchmaking berbasis minat: kamu dipasangkan dengan partner yang memiliki ketertarikan atau topik yang sama denganmu, supaya obrolan lebih nyambung.',
-    },
-    {
-      q: 'Apa itu Gender Preference?',
-      a: 'Gender Preference adalah fitur Premium yang memungkinkanmu memilih preferensi gender partner. Founding Members yang bergabung selama beta mendapat akses fitur ini sebagai bagian dari hadiah.',
-    },
-    {
-      q: 'Bisa kirim gambar, GIF, atau sticker?',
-      a: 'Bisa. Anonymous Chat mendukung teks, gambar, GIF, sticker, dan emoji selama percakapan.',
-    },
-    {
-      q: 'Bagaimana kalau ketemu orang yang mengganggu?',
-      a: 'Tersedia tombol Report dan Block untuk pengguna yang mengganggu. Selain itu ada moderasi dan filter otomatis yang bekerja menjaga obrolan tetap aman dan nyaman.',
-    },
-    {
-      q: 'Apa itu Next Partner?',
-      a: 'Next Partner adalah fitur untuk melewati obrolan yang sedang berjalan dan langsung mencari partner baru kapan saja, tanpa perlu keluar-masuk lagi.',
-    },
-    {
-      q: 'Perlu berteman dulu di Discord?',
-      a: 'Tidak perlu. Kamu bisa terhubung dan mengobrol dengan pengguna lain tanpa harus add friend lebih dulu.',
-    },
-    {
-      q: 'Apa itu program Founding Members?',
-      a: 'Semua pemain yang bergabung selama masa beta mendapat hadiah eksklusif yang aktif otomatis saat rilis resmi: Premium gratis 3 bulan, akses fitur Gender Preference, badge Beta Tester di profil, dan akses lebih awal ke fitur terbaru.',
-    },
-    {
-      q: 'Kapan rilis resminya?',
-      a: 'Saat ini Anonymous Chat berada di tahap beta dengan preorder yang sudah dibuka. Undang sekarang untuk mengamankan status Founding Members, dan ikuti kabar rilisnya di server Discord kami.',
     },
   ],
 };

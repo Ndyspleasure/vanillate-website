@@ -2,7 +2,6 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import BotCard from '@components/BotCard.astro';
-import BotComparison from '@components/BotComparison.astro';
 import { bots, getFeaturedBot } from '@data/bots';
 import { site, homeStats } from '@data/site';
 import { sambungKataEvents } from '@data/events';
@@ -28,29 +27,10 @@ const shortcutGroups = [
     ],
   },
   {
-    label: 'Vanillate Games',
-    color: '#4FA89D',
-    links: [
-      { label: 'Game Tersedia', href: '/docs/vanillate-games#game-tersedia' },
-      { label: 'Werewolf · Cara Bermain', href: '/docs/vanillate-games#werewolf-cara-bermain' },
-      { label: 'Werewolf · Mode Klasik & Lanjutan', href: '/docs/vanillate-games#werewolf-mode' },
-      { label: 'Werewolf · Attack & Defense', href: '/docs/vanillate-games#werewolf-mekanik' },
-      { label: 'Werewolf · Katalog 54 Role', href: '/docs/vanillate-games#werewolf-katalog-village' },
-      { label: 'Werewolf · Kondisi Kemenangan', href: '/docs/vanillate-games#werewolf-menang' },
-      { label: 'Tahu Bulat · Cara Bermain', href: '/docs/vanillate-games#tahu-cara-bermain' },
-      { label: 'Tahu Bulat · Rebirth', href: '/docs/vanillate-games#tahu-rebirth' },
-      { label: 'Story · Premis & Target Utang', href: '/docs/vanillate-games#story-target' },
-      { label: 'Story · Aktivitas & Skill', href: '/docs/vanillate-games#story-aktivitas' },
-      { label: 'Story · Romance & Pernikahan', href: '/docs/vanillate-games#story-romance' },
-      { label: 'Daftar Command', href: '/docs/vanillate-games#commands' },
-    ],
-  },
-  {
     label: 'Studio & Bantuan',
     color: '#6C3BEB',
     links: [
       { label: 'Semua Bot', href: '/bots' },
-      { label: 'Pilih Bot (Kuis)', href: '/pilih' },
       { label: 'Dokumentasi', href: '/docs' },
       { label: 'Tentang Kami', href: '/about' },
       { label: 'Support', href: '/support' },
@@ -68,10 +48,10 @@ function formatNum(n: number): string {
 const steps = [
   {
     n: '01',
-    title: 'Pilih bot',
-    desc: 'Tentukan bot yang paling cocok dengan seleramu, pakai kuis singkat atau tabel perbandingan.',
-    href: '/pilih',
-    cta: 'Ikuti kuis singkat',
+    title: 'Kenali botnya',
+    desc: 'Lihat fitur, cara main, dan dokumentasi Vanillate Sambung Kata sebelum mulai.',
+    href: '/bots',
+    cta: 'Buka halaman bot',
     icon: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   },
   {
@@ -111,7 +91,7 @@ const steps = [
       </p>
       <div class="mt-10 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
         <Button href="/bots" variant="primary" size="lg">Jelajahi Bot Kami</Button>
-        <Button href="/pilih" variant="secondary" size="lg">Bantu Aku Memilih</Button>
+        <Button href="/docs" variant="secondary" size="lg">Lihat Dokumentasi</Button>
       </div>
 
       <!-- Social proof: angka nyata komunitas, tiap angka diberi penjelasan singkat -->
@@ -301,29 +281,6 @@ const steps = [
     </div>
   </section>
 
-  <!-- COMPARISON -->
-  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap reveal">
-      <div>
-        <p class="eyebrow mb-3">Bandingkan</p>
-        <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-xl">
-          Bingung mulai dari mana?
-        </h2>
-        <p class="mt-4 max-w-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Tiap bot punya rasa yang berbeda. Sandingkan sebentar untuk menemukan yang paling cocok dengan gayamu.
-        </p>
-      </div>
-      <a href={url('/pilih')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
-        Masih ragu? Ikuti kuis singkat
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-      </a>
-    </div>
-
-    <div class="reveal" style="--reveal-delay: 80ms">
-      <BotComparison />
-    </div>
-  </section>
-
   <!-- VALUES -->
   <section class="container-page py-24">
     <div class="max-w-3xl mb-16 reveal">
@@ -394,7 +351,7 @@ const steps = [
         Semua topik penting dikelompokkan per kategori, dari aturan main sampai event dan strategi late-game. Tinggal klik.
       </p>
     </div>
-    <div class="grid gap-4 md:grid-cols-3">
+    <div class="grid gap-4 md:grid-cols-2">
       {shortcutGroups.map((group, gi) => (
         <div
           class="shortcut-group reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6"

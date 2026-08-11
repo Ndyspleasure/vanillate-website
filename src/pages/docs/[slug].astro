@@ -18,18 +18,13 @@ const doc = docs[bot.docsSlug];
 // Bot lain yang punya dokumentasi, untuk cross-link di akhir halaman.
 const otherDocs = getOtherBots(bot.slug, 4).filter((b) => b.docsSlug);
 
-// Kelompokkan section per game untuk dokumentasi multi-game (mis. Vanillate
-// Games). Grup diturunkan dari prefix id section, jadi bot dengan satu topik
-// (mis. Sambung Kata) otomatis tampil datar tanpa header grup.
-function groupFor(id: string): string | null {
-  if (id.startsWith('werewolf')) return 'Werewolf';
-  if (id.startsWith('tahu')) return 'Tahu Bulat';
-  if (id.startsWith('story')) return 'Vanillate Story';
-  if (id === 'game-tersedia' || id === 'platform-arsitektur') return 'Platform';
+// Hook opsional untuk mengelompokkan section per topik pada dokumentasi
+// multi-topik. Saat ini seluruh bot memakai dokumentasi satu topik, jadi
+// TOC tampil datar tanpa header grup (groupFor selalu null).
+function groupFor(_id: string): string | null {
   return null;
 }
-// Judul di TOC dibuat ringkas dengan membuang awalan nama game yang sudah
-// tampil sebagai header grup (mis. "Werewolf · Cara Bermain" jadi "Cara Bermain").
+// Judul di TOC dibuat ringkas dengan membuang awalan nama grup bila ada.
 function tocLabel(title: string, group: string | null): string {
   return group && title.startsWith(group + ' · ') ? title.slice(group.length + 3) : title;
 }

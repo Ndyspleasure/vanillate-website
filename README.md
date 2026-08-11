@@ -33,7 +33,7 @@ vanillate-website/
 │   ├── data/
 │   │   ├── site.ts                 Global config: domain, titles, social links
 │   │   ├── bots.ts                 Registry semua bot + buildInviteUrl() helper
-│   │   └── docs.ts                 Konten dokumentasi (Sambung Kata & Vanillate Games)
+│   │   └── docs.ts                 Konten dokumentasi (Sambung Kata)
 │   ├── i18n/id.ts                  Copy text ID (siap + EN nanti)
 │   ├── layouts/BaseLayout.astro    Base layout semua page (Header, Footer, SEO)
 │   ├── pages/                      File-based routing
@@ -215,7 +215,7 @@ Domain sudah aktif dan live. Setup yang dilakukan:
 **Terms of Service** (`src/pages/terms.astro`) — **Aktif ✓**
 - Berlaku untuk **semua produk & layanan** Vanillate Studio (bukan hanya 1 bot)
 - Otomatis mencakup bot/layanan baru di masa depan (kecuali ada terms terpisah)
-- Mencakup Vanillate Sambung Kata, Vanillate Games (Werewolf, Tahu Bulat, dan Story), dan produk lain di masa depan
+- Mencakup Vanillate Sambung Kata dan produk lain di masa depan
 - **Section 6:** Virtual Items & In-Game Economy — item tidak punya nilai uang nyata, dapat di-rebalance
 
 **Privacy Policy** (`src/pages/privacy.astro`) — **Aktif ✓**

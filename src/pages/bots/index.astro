@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import BotCard from '@components/BotCard.astro';
-import BotComparison from '@components/BotComparison.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
 import { bots } from '@data/bots';
 import { site, inviteSteps, whyVanillate } from '@data/site';
@@ -14,7 +13,7 @@ const totalCount = bots.length;
 const categories = [...new Set(bots.map((b) => b.category))];
 ---
 
-<BaseLayout title="Bot Kami" description="Discord Bot buatan Vanillate Studio, yaitu Vanillate Sambung Kata dan Vanillate Games (platform multi-game berisi Werewolf 54 role, Tahu Bulat bisnis idle, dan Vanillate Story Life Sim RPG). Gratis, berbahasa Indonesia, dirawat tiap hari, dan cocok untuk menghidupkan komunitas.">
+<BaseLayout title="Bot Kami" description="Discord Bot buatan Vanillate Studio, yaitu Vanillate Sambung Kata, bot game kata berantai berbahasa Indonesia. Gratis, dirawat tiap hari, dan cocok untuk menghidupkan komunitas.">
   <!-- HERO -->
   <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
     <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
@@ -109,28 +108,6 @@ const categories = [...new Set(bots.map((b) => b.category))];
     </div>
   </section>
 
-  <!-- PERBANDINGAN -->
-  <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
-    <div class="mb-10 flex items-end justify-between gap-6 flex-wrap reveal">
-      <div>
-        <p class="eyebrow mb-3">Bandingkan</p>
-        <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-xl">
-          Mana yang paling cocok untukmu?
-        </h2>
-        <p class="mt-4 max-w-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Sandingkan keduanya sekilas. Tiap bot punya rasa, ritme, dan skill utama yang berbeda.
-        </p>
-      </div>
-      <a href={url('/pilih')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
-        Masih ragu? Ikuti kuis singkat
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-      </a>
-    </div>
-    <div class="reveal" style="--reveal-delay: 80ms">
-      <BotComparison />
-    </div>
-  </section>
-
   <!-- FAQ UMUM -->
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
@@ -155,14 +132,14 @@ const categories = [...new Set(bots.map((b) => b.category))];
       <div class="aurora bg-amber-500/20 h-[300px] w-[300px] top-[-50px] right-[-50px]" aria-hidden="true"></div>
       <div class="relative max-w-2xl">
         <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest text-cream-50">
-          Belum yakin mulai dari mana?
+          Masih ada pertanyaan?
         </h2>
         <p class="mt-4 text-cream-100/80 text-lg leading-relaxed">
-          Jawab empat pertanyaan singkat dan biar kami rekomendasikan satu bot untuk mulai. Atau langsung tanya-tanya di server Discord kami.
+          Cek dokumentasi lengkapnya, atau langsung tanya-tanya di server Discord kami.
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
-          <a href={url('/pilih')} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
-            Bantu Aku Memilih
+          <a href={url('/docs')} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
+            Lihat Dokumentasi
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </a>
           <a href={site.links.discordSupport} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
