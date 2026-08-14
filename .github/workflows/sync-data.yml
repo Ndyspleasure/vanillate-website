@@ -1,0 +1,96 @@
+name: Sync data dari bot repo
+
+# Menarik data source-of-truth dari repo bot (Ndyspleasure/sambung-kata-bot),
+# menuliskannya ke src/data/synced/*.json, dan — HANYA bila ada perubahan —
+# commit lalu build & deploy ke GitHub Pages. Lihat docs/AUTO-SYNC-DATA.md.
+#
+# Repo bot PRIVAT → butuh secret BOT_REPO_TOKEN (fine-grained PAT, izin
+# Contents: Read pada sambung-kata-bot). Tanpa secret ini, sync akan gagal
+# dengan aman (tidak ada data yang berubah).
+#
+# Satu job: build & deploy memakai working tree yang SUDAH berisi data hasil
+# fetch (bukan checkout ulang), jadi selalu memakai data terbaru.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # tiap 30 menit (ubah sesuai kebutuhan)
+  workflow_dispatch:          # tombol "Run workflow" untuk sync manual
+
+permissions:
+  contents: write   # commit data hasil sync ke main
+  pages: write      # deploy Pages
+  id-token: write   # OIDC untuk deploy-pages
+
+concurrency:
+  group: pages       # serialisasi dengan workflow deploy utama
+  cancel-in-progress: false
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tarik data dari repo bot
+        run: node scripts/sync-data.mjs
+        env:
+          BOT_REPO: Ndyspleasure/sambung-kata-bot
+          BOT_BRANCH: main
+          BOT_REPO_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
+
+      - name: Commit bila ada perubahan data
+        id: commit
+        run: |
+          git config user.name "vanillate-sync-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Deteksi perubahan HANYA pada file data (bukan _status.json yang
+          # selalu berubah karena timestamp) → tidak ada deploy sia-sia.
+          git add src/data/synced/shop.json \
+                  src/data/synced/bot-info.json \
+                  src/data/synced/version.json \
+                  src/data/synced/changelog.json
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "✓ Tidak ada perubahan data — lewati deploy."
+          else
+            git add src/data/synced/_status.json
+            git commit -m "chore(data): sync dari sambung-kata-bot"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "✓ Data berubah — commit & deploy."
+          fi
+
+      # Langkah build & deploy hanya jalan bila data berubah. Semuanya memakai
+      # working tree yang sudah berisi data terbaru dari langkah fetch di atas.
+      - name: Install dependencies
+        if: steps.commit.outputs.changed == 'true'
+        run: npm ci
+
+      - name: Build
+        if: steps.commit.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Setup Pages
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/deploy-pages@v4

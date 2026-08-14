@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "note": "SOURCE OF TRUTH info Sambung Kata untuk website vanillate.id (auto-sync GitHub Actions). Edit di sini -> daftar fitur & command di website ikut berubah otomatis.",
+  "slug": "sambung-kata",
+  "shortName": "Vanillate Sambung Kata",
+  "tagline": "Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.",
+  "features": [
+    "Kamus Bahasa Indonesia 25.000+ kata dengan validasi otomatis",
+    "Tiga mode main, yaitu PvP hingga 10 pemain, PvB 4 tingkat kesulitan, dan Dungeon",
+    "9 Class dengan passive unik plus Talent Tree",
+    "Boost system 5 jenis dengan rarity Common hingga Legendary",
+    "Quest harian dan mingguan, promo code, serta event in-game acak",
+    "Leaderboard global, win streak, dan Dungeon Trophy",
+    "Cross-Server Matchmaking untuk melawan pemain dari server lain"
+  ],
+  "commands": [
+    {
+      "name": "/sambungkata",
+      "description": "Mulai permainan mode PvP, PvB, atau Dungeon"
+    },
+    {
+      "name": "/stats",
+      "description": "Statistik lengkap dan Player ID"
+    },
+    {
+      "name": "/class",
+      "description": "Pilih class dan beli talent"
+    },
+    {
+      "name": "/quest",
+      "description": "Dashboard quest harian dan mingguan"
+    },
+    {
+      "name": "/shop",
+      "description": "Beli boost dan Golden Key dengan Coin"
+    },
+    {
+      "name": "/help",
+      "description": "Panduan lengkap di dalam Discord"
+    }
+  ]
+}

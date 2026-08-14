@@ -1,0 +1,195 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import status from '@data/synced/_status.json';
+import version from '@data/synced/version.json';
+import changelog from '@data/synced/changelog.json';
+import shop from '@data/synced/shop.json';
+import botInfo from '@data/synced/bot-info.json';
+
+// Halaman ini menampilkan status sinkronisasi data website ↔ repo bot.
+// Semua nilai di-bake saat build; nilainya diperbarui otomatis setiap kali
+// GitHub Actions menyinkron data baru & re-deploy.
+
+const s = status as any;
+
+function fmtDateTime(iso: string | null): string | null {
+  if (!iso) return null;
+  try {
+    return new Intl.DateTimeFormat('id-ID', {
+      dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Jakarta',
+    }).format(new Date(iso)) + ' WIB';
+  } catch {
+    return iso;
+  }
+}
+
+function fmtDate(d: string | null): string {
+  if (!d) return '';
+  try {
+    return new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeZone: 'Asia/Jakarta' }).format(new Date(d));
+  } catch {
+    return d;
+  }
+}
+
+const lastSynced = fmtDateTime(s.lastSyncedAt);
+const files = Array.isArray(s.files) ? s.files : [];
+const recentChangelog = (changelog as any[]).slice(0, 6);
+
+// Ringkasan "apa saja yang disinkron".
+const syncedItems = [
+  { label: 'Item shop', value: `${shop.items.length} item` },
+  { label: 'Fitur bot', value: `${botInfo.features.length} fitur` },
+  { label: 'Command', value: `${botInfo.commands.length} command` },
+  { label: 'Versi bot', value: `v${version.version}` },
+];
+
+const overallOk = s.ok === true || s.seeded === true;
+---
+
+<BaseLayout
+  title="Status Sinkronisasi Data"
+  description="Status sinkronisasi otomatis data Sambung Kata dari repository GitHub ke website vanillate.id — versi bot terkini, waktu sinkronisasi terakhir, dan changelog."
+  noindex={true}
+>
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 pb-10 md:pt-28">
+    <div class="aurora bg-teal-500/20 h-[380px] w-[380px] top-[-100px] right-[6%]" aria-hidden="true"></div>
+    <div class="container-page relative">
+      <p class="eyebrow mb-6 animate-fade-up">Status Data</p>
+      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2rem,5.5vw,4rem)] leading-[1.03] max-w-4xl animate-fade-up">
+        Data website<br />selalu <span class="italic text-amber-600 dark:text-amber-500">sinkron</span> dengan repo.
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Data game (harga shop, fitur, command, versi, changelog) memakai
+        <strong>repository GitHub sebagai sumber kebenaran</strong>. Setiap perubahan
+        di repo bot ditarik otomatis lalu website re-deploy — tanpa update manual.
+      </p>
+    </div>
+  </section>
+
+  <!-- KARTU STATUS -->
+  <section class="container-page pb-14">
+    <div class="rounded-3xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-8 md:p-10 reveal">
+      <div class="flex flex-wrap items-center gap-3 mb-8">
+        <span class={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium ${overallOk ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
+          <span class={`h-2 w-2 rounded-full ${overallOk ? 'bg-teal-500' : 'bg-red-500'}`}></span>
+          {overallOk ? 'Sinkron' : 'Perlu perhatian'}
+        </span>
+        {s.seeded && (
+          <span class="inline-flex items-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 px-4 py-1.5 text-sm">
+            Data awal (menunggu sinkronisasi otomatis pertama)
+          </span>
+        )}
+      </div>
+
+      <dl class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Terakhir diperbarui</dt>
+          <dd class="font-display text-lg font-semibold">{lastSynced ?? '—'}</dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Sumber</dt>
+          <dd class="font-mono text-sm break-all">{s.sourceRepo ?? '—'}<span class="text-ink-400 dark:text-cream-300/40"> @ {s.sourceBranch ?? 'main'}</span></dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Commit sumber</dt>
+          <dd class="font-mono text-sm">{s.sourceCommitShort ?? '—'}</dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Berhasil</dt>
+          <dd class="font-display text-lg font-semibold">{s.okCount ?? 0} / {s.total ?? syncedItems.length}</dd>
+        </div>
+      </dl>
+
+      {files.length > 0 && (
+        <div class="mt-8 pt-6 border-t border-ink-900/10 dark:border-cream-100/10">
+          <p class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-3">Rincian file</p>
+          <ul class="grid gap-2 sm:grid-cols-2">
+            {files.map((f: any) => (
+              <li class="flex items-center gap-2 text-sm">
+                <span class={`h-1.5 w-1.5 rounded-full flex-none ${f.ok ? 'bg-teal-500' : 'bg-red-500'}`}></span>
+                <span class="font-mono">{f.name}</span>
+                <span class="text-ink-400 dark:text-cream-300/40 text-xs truncate">{f.ok ? f.src : (f.error || 'gagal') + (f.keptLastGood ? ' (pakai data lama)' : '')}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- APA YANG DISINKRON -->
+  <section class="container-page pb-14">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {syncedItems.map((it, i) => (
+        <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5" style={`--reveal-delay: ${i * 70}ms`}>
+          <p class="font-display text-2xl font-semibold">{it.value}</p>
+          <p class="text-xs text-ink-500 dark:text-cream-300/60 mt-1">{it.label}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- VERSI & CHANGELOG -->
+  <section class="container-page py-14 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">Changelog</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Yang baru di bot.</h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Versi terkini <strong>v{version.version}</strong>. Daftar ini otomatis
+          mengikuti <code class="font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">CHANGELOG.json</code> di repo bot.
+        </p>
+      </div>
+      <div class="md:col-span-2">
+        <ol class="space-y-4">
+          {recentChangelog.map((c: any, i: number) => (
+            <li class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5" style={`--reveal-delay: ${i * 60}ms`}>
+              <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-2">
+                <span class="font-mono text-sm font-semibold text-amber-600 dark:text-amber-400">v{c.version}</span>
+                {c.date && <span class="text-xs text-ink-500 dark:text-cream-300/60">{fmtDate(c.date)}</span>}
+              </div>
+              {c.title && <h3 class="font-display font-semibold mb-2">{c.title}</h3>}
+              {Array.isArray(c.highlights) && c.highlights.length > 0 && (
+                <ul class="space-y-1.5">
+                  {c.highlights.map((h: string) => (
+                    <li class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{h}</li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEKANISME -->
+  <section class="container-page py-14 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">Mekanisme</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Cara sinkronisasinya.</h2>
+      </div>
+      <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
+        <ol class="space-y-4">
+          {[
+            ['Sumber kebenaran di GitHub', 'Data game tinggal di repo bot (config-data/shop.json, bot-info.json, version.json, CHANGELOG.json).'],
+            ['Ditarik otomatis', 'GitHub Actions website berjalan terjadwal (tiap ~30 menit) + bisa dipicu manual, menarik data lewat GitHub API.'],
+            ['Divalidasi sebelum dipakai', 'Tiap file diperiksa bentuknya. File yang rusak diabaikan — website tetap memakai data terakhir yang baik, jadi tidak pernah corrupt.'],
+            ['Deploy hanya bila berubah', 'Kalau ada perubahan, website commit data baru lalu re-deploy ke vanillate.id. Kalau tidak, tidak ada deploy sia-sia.'],
+          ].map((step, i) => (
+            <li class="flex gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+              <span class="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-amber-500/10 font-mono text-sm font-bold text-amber-600 dark:text-amber-400">{i + 1}</span>
+              <div>
+                <h3 class="font-display font-semibold mb-1">{step[0]}</h3>
+                <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{step[1]}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

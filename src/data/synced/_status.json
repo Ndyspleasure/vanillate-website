@@ -1,0 +1,13 @@
+{
+  "lastSyncedAt": null,
+  "sourceRepo": "Ndyspleasure/sambung-kata-bot",
+  "sourceBranch": "main",
+  "sourceCommit": null,
+  "sourceCommitShort": null,
+  "ok": null,
+  "okCount": 0,
+  "total": 4,
+  "seeded": true,
+  "note": "Data awal di-seed dari repo bot. Status ini akan diperbarui otomatis oleh GitHub Actions (sync-data.yml) pada sinkronisasi pertama.",
+  "files": []
+}
