@@ -13,7 +13,7 @@ name: Sync data dari bot repo
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # tiap 30 menit (ubah sesuai kebutuhan)
+    - cron: '0 */6 * * *'    # tiap 6 jam (00:00, 06:00, 12:00, 18:00 UTC)
   workflow_dispatch:          # tombol "Run workflow" untuk sync manual
 
 permissions:
