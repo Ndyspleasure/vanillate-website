@@ -2,6 +2,8 @@
 // Tambah bot baru? Cukup tambahkan objek di array `bots` dan buat halaman docs jika perlu.
 // Halaman /bots dan /bots/[slug] akan otomatis menampilkannya.
 
+import botInfo from './synced/bot-info.json';
+
 export type Bot = {
   slug: string;                 // URL segment: /bots/<slug>
   name: string;                 // Nama lengkap
@@ -89,23 +91,11 @@ const allBots: Bot[] = [
     integrationType: '0',
     color: '#E8B84A',
     icon: '✦',
-    features: [
-      'Kamus Bahasa Indonesia 25.000+ kata dengan validasi otomatis',
-      'Tiga mode main, yaitu PvP hingga 10 pemain, PvB 4 tingkat kesulitan, dan Dungeon',
-      '9 Class dengan passive unik plus Talent Tree',
-      'Boost system 5 jenis dengan rarity Common hingga Legendary',
-      'Quest harian dan mingguan, promo code, serta event in-game acak',
-      'Leaderboard global, win streak, dan Dungeon Trophy',
-      'Cross-Server Matchmaking untuk melawan pemain dari server lain',
-    ],
-    commands: [
-      { name: '/sambungkata', description: 'Mulai permainan mode PvP, PvB, atau Dungeon' },
-      { name: '/stats', description: 'Statistik lengkap dan Player ID' },
-      { name: '/class', description: 'Pilih class dan beli talent' },
-      { name: '/quest', description: 'Dashboard quest harian dan mingguan' },
-      { name: '/shop', description: 'Beli boost dan Golden Key dengan Coin' },
-      { name: '/help', description: 'Panduan lengkap di dalam Discord' },
-    ],
+    // Fitur & command ditarik dari data tersinkron (src/data/synced/bot-info.json)
+    // yang diambil otomatis dari repo bot. Satu sumber kebenaran — ubah di repo
+    // bot, website ikut berubah pada sinkronisasi berikutnya.
+    features: botInfo.features,
+    commands: botInfo.commands,
     docsSlug: 'sambung-kata',
   },
 ];

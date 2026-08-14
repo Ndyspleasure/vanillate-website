@@ -3,6 +3,14 @@
 // Bot baru tanpa entry di sini akan menampilkan placeholder default.
 
 import { sambungKataEvents, type GameEvent } from './events';
+import shopData from './synced/shop.json';
+
+// Tabel harga shop di-generate dari data tersinkron (src/data/synced/shop.json)
+// yang ditarik otomatis dari repo bot. Ubah harga di repo bot → tabel ini ikut
+// berubah setelah sinkronisasi berikutnya. Diurutkan berdasarkan harga naik.
+const shopTableRows: string[][] = [...shopData.items]
+  .sort((a, b) => a.harga - b.harga)
+  .map((i) => [i.nama, `${i.harga}🪙`]);
 
 export type DocSubsection = {
   title?: string;                                    // Judul kecil, boleh dengan emoji
@@ -281,17 +289,7 @@ export const docs: Record<string, BotDoc> = {
             title: '🏪 Shop',
             table: {
               headers: ['Item', 'Harga'],
-              rows: [
-                ['💡 Hint', '150🪙'],
-                ['🔄 Reroll', '200🪙'],
-                ['⏳ Extra Time', '250🪙'],
-                ['🛡️ Shield', '300🪙'],
-                ['🗝️ Golden Key', '350🪙'],
-                ['❤️ Extra Life', '400🪙'],
-                ['📦 Mystery Box', '500🪙'],
-                ['💡 Hint x5 Bundle', '600🪙'],
-                ['🛡️ Shield x3 Bundle', '750🪙'],
-              ],
+              rows: shopTableRows,
             },
           },
           {

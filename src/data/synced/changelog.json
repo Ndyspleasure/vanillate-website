@@ -1,0 +1,219 @@
+[
+  {
+    "version": "2.36.0",
+    "date": "2026-08-14",
+    "title": "Standar Lobby & UI, Dungeon Confirmation Flow",
+    "highlights": [
+      "🎨 Tampilan lobby sekarang konsisten di semua mode — warna, format pemain, tombol mengikuti standar bersama",
+      "📚 Dokumentasi baru `lobbysambungkata.md` menjelaskan struktur lobby & cara menambah mode baru",
+      "🏰 Dungeon sekarang punya layar konfirmasi eksplisit sebelum memotong Golden Key — kunci utuh jika dibatalkan atau timeout"
+    ]
+  },
+  {
+    "version": "2.35.0",
+    "date": "2026-08-14",
+    "title": "Dashboard Interaktif /sambungkata — Pemilihan Mode Lebih Intuitif",
+    "highlights": [
+      "🎮 `/sambungkata` kini membuka Dashboard Interaktif (ephemeral) dengan navigasi tombol bertingkat",
+      "📊 Submenu terpisah untuk Bot Mode (Lanjutan vs Normal) dan Tingkat Kesulitan",
+      "⏱️ Dashboard tetap aktif 2 menit, mereset timer setiap interaksi tombol",
+      "✅ Seluruh logika lobby & game gameplay tetap identik dengan versi sebelumnya"
+    ]
+  },
+  {
+    "version": "2.34.0",
+    "date": "2026-08-14",
+    "title": "Penyederhanaan Command — Semua Mode Sambung Kata di `/sambungkata`",
+    "highlights": [
+      "🎮 **Satu command `/sambungkata` untuk semua mode** — ganti dari 8 pilihan mode tersebar jadi struktur subcommand yang rapi",
+      "📋 **Menu bertingkat (cascade)** — opsi tingkat kesulitan hanya muncul untuk Mode Normal (Klasik), Mode Lanjutan tidak perlu memilihnya",
+      "💡 **Lebih mudah diingat** — semua permainan dimulai dari `/sambungkata`, struktur yang konsisten & mudah dipahami pemain baru",
+      "✨ **Navigasi lebih intuitif** — bot menampilkan opsi secara bertingkat sehingga kombinasi tidak relevan tidak bisa dipilih"
+    ]
+  },
+  {
+    "version": "2.33.0",
+    "date": "2026-08-13",
+    "title": "Kembalikan Mode Player vs Bot Klasik",
+    "highlights": [
+      "🤖 Mode Player vs Bot Klasik kembali (Easy/Normal/Hard/Impossible) — sambung kata biasa lawan Bot",
+      "⚔️ Tersedia 2 varian lawan Bot: Battle Skill (baru) & Klasik (lama yang dikembalikan)",
+      "🎮 Duel solo 1v1 lawan Bot dengan boost — mudah untuk latihan santai atau uji nyali Impossible"
+    ]
+  },
+  {
+    "version": "2.32.0",
+    "date": "2026-08-13",
+    "title": "Game Sampingan Pengacara (Persidangan) — V1",
+    "highlights": [
+      "⚖️ Game baru: Pengacara — persidangan roleplay dengan hakim manusia memimpin sidang",
+      "🔍 Sistem bukti dinamis dengan status tersembunyi (valid/menyesatkan/tidak sah)",
+      "🎭 24 skenario kasus berbeda dengan puluhan bukti, kesaksian, dan alibi unik",
+      "👨‍⚖️ Dukung 8–25 pemain dengan peran: Hakim, Jaksa, Pengacara, Tersangka, Saksi",
+      "🏛️ Sidang di thread terpisah dengan panel kontrol khusus Hakim fase demi fase"
+    ]
+  },
+  {
+    "version": "2.31.0",
+    "date": "2026-08-12",
+    "title": "Dashboard Class Terpadu — Pilih & Atur Talent di Satu Tempat",
+    "highlights": [
+      "🎭 Satu command `/class` menampilkan dashboard lengkap — lihat semua class, status kepemilikan, dan level dari layar yang sama",
+      "🔄 Ganti class & beli talent langsung dari dashboard tanpa subcommand lagi — lebih sederhana & cepat",
+      "✨ Tampilan yang lebih rapi dengan menu pilih class + tombol aksi terintegrasi"
+    ]
+  },
+  {
+    "version": "2.30.0",
+    "date": "2026-08-12",
+    "title": "Battle PvB tanpa batas ronde & Skill Attack lebih menggigit",
+    "highlights": [
+      "♾️ Pertarungan Player vs Bot kini tanpa batas ronde — game hanya berakhir saat HP habis atau lewat 🛑 voting perhentian",
+      "⚔️ Skill Attack jauh lebih kuat: damage naik menjadi 100",
+      "⚡ Overtime (damage 2×) tetap berjalan, tapi tidak ada lagi ronde penutup otomatis"
+    ]
+  },
+  {
+    "version": "2.29.0",
+    "date": "2026-08-11",
+    "title": "Game sampingan baru: Werewolf! 🐺🌕",
+    "highlights": [
+      "🎮 Command baru /game — dashboard permainan sampingan untuk main santai bareng teman di channel",
+      "🐺 Werewolf Klasik — deduksi sosial cepat 4 peran (Serigala, Peramal, Tabib, Warga), hingga 30 pemain",
+      "🌕 Werewolf Lanjutan — mode lengkap 54 peran (Warga, Serigala, Netral) dengan investigasi, proteksi, konversi, pembunuh solo & kekacauan — bisa main ramai hingga 100 pemain!",
+      "🎭 Aksi malam rahasia lewat dashboard pribadi, diskusi & voting siang, plus panduan Cara Main di dalam game",
+      "📢 Game sampingan bersifat santai — tidak memengaruhi coin, EXP, quest, atau inventory Sambung Kata kamu"
+    ]
+  },
+  {
+    "version": "2.28.4",
+    "date": "2026-08-11",
+    "title": "Info Skill di menu Mana Penuh & perbaikan transcript",
+    "highlights": [
+      "📋 Menu Mana Penuh kini menampilkan daftar skill beserta deskripsi efeknya",
+      "🛠️ Battle Skill kini tercatat di game transcript (sebelumnya tidak terekam)"
+    ]
+  },
+  {
+    "version": "2.28.3",
+    "date": "2026-08-11",
+    "title": "Respon jawaban lebih cepat & tag giliran terpisah",
+    "highlights": [
+      "⚡ Jawaban pemain kini langsung direspon tanpa jeda",
+      "🤖 Jeda 3 detik hanya berlaku untuk jawaban Bot",
+      "💬 Tag giliran pemain kini muncul sebagai pesan terpisah di bawah info"
+    ]
+  },
+  {
+    "version": "2.28.2",
+    "date": "2026-08-11",
+    "title": "Tampilan giliran Battle Skill lebih ringkas & jeda jawaban",
+    "highlights": [
+      "📊 Info giliran kini hanya menampilkan statistik pemain aktif (HP, Mana, efek) — lebih mudah dibaca",
+      "⏳ Embed jawaban (pemain & Bot) kini muncul dengan jeda 3 detik agar terasa lebih natural",
+      "🎮 Tombol Skor tetap menampilkan overview lengkap semua pemain & Bot"
+    ]
+  },
+  {
+    "version": "2.28.1",
+    "date": "2026-08-11",
+    "title": "Tampilan Battle Skill lebih rapi & modern",
+    "highlights": [
+      "🟢 Jawaban benar pemain & Bot kini tampil sebagai kartu hijau yang lebih rapi",
+      "🔽 Ajakan giliran (jawab kata berawalan …) dipindah ke bawah kartu info agar lebih enak dibaca"
+    ]
+  },
+  {
+    "version": "2.28.0",
+    "date": "2026-08-11",
+    "title": "Battle Skill kini bisa dimainkan beramai-ramai!",
+    "highlights": [
+      "👥 Mode Player vs Bot punya lobby — ajak teman bergabung untuk melawan Bot dalam satu tim (tetap bisa solo)",
+      "🤖 HP Bot menyesuaikan jumlah pemain, dan serangan/Skill Bot menghantam seluruh tim sekaligus",
+      "📊 Dashboard giliran menampilkan HP, Mana, kata, dan waktu tiap giliran — plus tombol 🛑 Ajukan Perhentian",
+      "⏳ Bot kini menampilkan jeda 'sedang berpikir' sebelum menyerang, giliran terasa lebih adil",
+      "🧹 Perbaikan: pertandingan Battle kini tercatat rapi di monitor internal"
+    ]
+  },
+  {
+    "version": "2.27.0",
+    "date": "2026-08-11",
+    "title": "Mode Player vs Bot kini jadi Battle Skill!",
+    "highlights": [
+      "⚔️ Mode Player vs Bot dirombak total menjadi duel strategis berbasis HP, Mana, dan Skill",
+      "🔷 Kumpulkan Mana dari jawaban benar, lalu lepaskan Skill: Attack, Recovery, Defense, Buff, Debuff, Mana, dan Cleanse",
+      "🤖 Bot kini punya AI cerdas yang memilih Skill sesuai kondisi pertarungan, bukan asal-asalan",
+      "⚡ Overtime otomatis saat pertarungan berlangsung lama — damage jadi 2× lipat!",
+      "🏷️ Tingkat kesulitan lama (Easy/Normal/Hard/Impossible) diganti sepenuhnya oleh sistem Skill baru"
+    ]
+  },
+  {
+    "version": "2.26.2",
+    "date": "2026-08-11",
+    "title": "Perbaikan pengiriman pengumuman update",
+    "highlights": [
+      "📢 Pengumuman update versi kini terkirim dengan benar ke channel yang tepat (sebelumnya gagal karena salah channel)"
+    ]
+  },
+  {
+    "version": "2.26.1",
+    "date": "2026-08-11",
+    "title": "Tampilan layar persiapan pertandingan lebih rapi",
+    "highlights": [
+      "🖼️ Info persiapan pertandingan kini tampil di kartu tersendiri, terpisah dari hitung mundur — lebih rapi dan enak dibaca",
+      "⏳ Hitung mundur dan status pemeriksaan sistem tidak lagi menyatu jadi satu pesan"
+    ]
+  },
+  {
+    "version": "2.26.0",
+    "date": "2026-08-11",
+    "title": "Sistem perlindungan game anti-macet & layar persiapan pertandingan",
+    "highlights": [
+      "🔄 Layar persiapan sebelum match kini menampilkan status sistem — Pemeriksaan Keamanan, Anti-Bugs, dan Sinkronisasi Data — jadi countdown tidak lagi terasa kosong",
+      "🛡️ Perlindungan otomatis menghentikan permainan yang macet/tidak merespons, sehingga game tidak lagi menggantung tanpa batas",
+      "♻️ Bila bot sempat restart saat kamu bermain, permainan yang terganggu dihentikan dengan rapi dan kamu diberi tahu — tinggal mulai lagi dengan /sambungkata",
+      "📢 Kamu akan menerima pesan pemberitahuan yang jelas setiap kali sistem perlindungan ini menghentikan permainan"
+    ]
+  },
+  {
+    "version": "2.25.3",
+    "date": "2026-08-11",
+    "title": "Cerita event kini mengalir lebih natural dan enak dibaca",
+    "highlights": [
+      "✨ Narasi setiap event terasa lebih hidup dan mengalir, tidak lagi kaku seperti pengumuman mesin",
+      "📖 Saat event muncul, potongan cerita, cara bermain, dan hadiah menyatu jadi satu alur yang enak diikuti",
+      "🎯 Info cara mengalahkan dan hadiah tetap tampil jelas serta mudah dibaca di tiap event",
+      "⏸️ Jeda baca sebelum permainan lanjut kini terasa sebagai bagian cerita, bukan pemberitahuan yang menyela"
+    ]
+  },
+  {
+    "version": "2.25.2",
+    "date": "2026-08-10",
+    "title": "Pengumuman update kini pasti terkirim otomatis",
+    "highlights": [
+      "📢 Pengumuman update sekarang benar-benar dikirim otomatis ke channel update setiap ada versi baru",
+      "🔔 Tetap dapat pengumuman meski bot belum punya izin ping @everyone (dikirim tanpa ping, bukan gagal diam-diam)",
+      "🛠️ Peningkatan keandalan pengiriman broadcast update di balik layar"
+    ]
+  },
+  {
+    "version": "2.25.1",
+    "date": "2026-08-10",
+    "title": "DM bot kini selalu merespons & mengarahkan ke Agent",
+    "highlights": [
+      "💬 DM bot tidak lagi diam — apa pun yang kamu kirim langsung diarahkan ke tim support lewat tombol Hubungi Agent",
+      "⌨️ Pakai slash command di DM? Bot kini tetap membalas dan menuntunmu menghubungi Agent, bukan diam",
+      "🎫 Sudah terhubung dengan Agent? Sesi chat support tetap berjalan seperti biasa"
+    ]
+  },
+  {
+    "version": "2.25.0",
+    "date": "2026-08-09",
+    "title": "Versi & changelog otomatis + broadcast update",
+    "highlights": [
+      "📢 Pengumuman update kini dikirim otomatis ke channel update setiap ada versi baru",
+      "🏷️ Info versi & changelog terbaru selalu tampil otomatis di Lobby",
+      "🔄 Versi bot kini konsisten di semua instance (satu sumber data)"
+    ]
+  }
+]

@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "note": "SOURCE OF TRUTH data Shop Sambung Kata. Dikonsumsi oleh website vanillate.id (auto-sync GitHub Actions). Edit di sini -> website menampilkan data terbaru otomatis. Field item: id, nama, deskripsi, harga (Coin), kategori (boost|bundle|special), boostId (null utk special), jumlah.",
+  "items": [
+    {
+      "id": "hint",
+      "nama": "💡 Hint",
+      "deskripsi": "Tampilkan 1 kata yang valid sebagai jawaban",
+      "harga": 150,
+      "kategori": "boost",
+      "boostId": "hint",
+      "jumlah": 1
+    },
+    {
+      "id": "reroll",
+      "nama": "🔄 Reroll",
+      "deskripsi": "Ganti huruf awalan dengan huruf lain",
+      "harga": 200,
+      "kategori": "boost",
+      "boostId": "reroll",
+      "jumlah": 1
+    },
+    {
+      "id": "extra_time",
+      "nama": "⏳ Extra Time",
+      "deskripsi": "Tambah +5 detik per giliran selama 1 game",
+      "harga": 250,
+      "kategori": "boost",
+      "boostId": "extra_time",
+      "jumlah": 1
+    },
+    {
+      "id": "shield",
+      "nama": "🛡️ Shield",
+      "deskripsi": "Lindungi dari 1 kesalahan",
+      "harga": 300,
+      "kategori": "boost",
+      "boostId": "shield",
+      "jumlah": 1
+    },
+    {
+      "id": "golden_key",
+      "nama": "🗝️ Golden Key",
+      "deskripsi": "Kunci masuk Dungeon Mode (sekali pakai) — tamat 5 wave = untung besar!",
+      "harga": 350,
+      "kategori": "special",
+      "boostId": null,
+      "jumlah": 1
+    },
+    {
+      "id": "extra_life",
+      "nama": "❤️ Extra Life",
+      "deskripsi": "Tambah 1 nyawa sebelum game dimulai",
+      "harga": 400,
+      "kategori": "boost",
+      "boostId": "extra_life",
+      "jumlah": 1
+    },
+    {
+      "id": "mystery_box",
+      "nama": "📦 Mystery Box",
+      "deskripsi": "Dapatkan boost acak dengan peluang rarity berbeda",
+      "harga": 500,
+      "kategori": "special",
+      "boostId": null,
+      "jumlah": 1
+    },
+    {
+      "id": "hint_bundle",
+      "nama": "💡 Hint x5",
+      "deskripsi": "Beli 5 Hint sekaligus dengan harga lebih hemat",
+      "harga": 600,
+      "kategori": "bundle",
+      "boostId": "hint",
+      "jumlah": 5
+    },
+    {
+      "id": "shield_bundle",
+      "nama": "🛡️ Shield x3",
+      "deskripsi": "Beli 3 Shield sekaligus",
+      "harga": 750,
+      "kategori": "bundle",
+      "boostId": "shield",
+      "jumlah": 3
+    }
+  ]
+}
