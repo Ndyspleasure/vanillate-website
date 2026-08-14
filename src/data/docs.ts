@@ -45,12 +45,13 @@ export const docs: Record<string, BotDoc> = {
   // ═══════════════════════════════════════════════════════════════════
   'sambung-kata': {
     intro:
-      'Vanillate Sambung Kata adalah bot game kata berantai dalam Bahasa Indonesia. Setiap pemain menyambung kata dari huruf yang ditentukan, dengan sistem progresi mendalam mulai dari Class, Quest, Boost, sampai Dungeon Mode.',
+      'Vanillate Sambung Kata adalah bot game kata berantai dalam Bahasa Indonesia. Setiap pemain menyambung kata dari huruf yang ditentukan, dengan sistem progresi mendalam mulai dari Class, Quest, Boost, sampai Dungeon Mode. Tersedia juga game sampingan seperti Werewolf & Pengacara lewat `/game`.',
     quickStart: [
       'Undang bot ke server Discord kamu.',
-      'Jalankan `/sambungkata mode:pvp` untuk buka lobby, atau `mode:pvb` untuk lawan bot.',
+      'Ketik `/sambungkata` untuk membuka dashboard, lalu pilih mode: PvP, PvB, Player vs Server, atau Dungeon.',
       'Jawab dengan kata yang diawali huruf yang ditentukan. Kata harus ada di kamus.',
       'Kumpulkan EXP & Coin, buka Class di Level 3, dan taklukkan Dungeon!',
+      'Ingin variasi? Ketik `/game` untuk game sampingan Werewolf & Pengacara.',
     ],
     sections: [
       {
@@ -118,30 +119,55 @@ export const docs: Record<string, BotDoc> = {
         title: 'Mode Permainan',
         subsections: [
           {
+            title: '🎮 Command: `/sambungkata`',
+            text:
+              'Semua mode dimulai dari satu command `/sambungkata` yang membuka Dashboard interaktif. Pilih mode lewat tombol — tidak perlu menghafal opsi. Dashboard aktif 2 menit dan me-reset timer setiap interaksi.',
+          },
+          {
             title: '👥 Player vs Player (PvP)',
             items: [
               'Minimal 2 pemain manusia, maksimal 10 pemain per room.',
-              'Command: `/sambungkata mode:pvp`.',
+              '`/sambungkata` → 👥 Player vs Player.',
               'Host buka lobby → pemain join → host mulai.',
               'Lobby otomatis tutup dalam 2 menit jika tidak dimulai.',
             ],
           },
           {
-            title: '🤖 Player vs Bot (PvB)',
+            title: '⚔️ Player vs Bot — Mode Lanjutan (Battle Skill)',
             items: [
-              'Bermain sendirian melawan bot AI.',
-              'Command: `/sambungkata mode:pvb kesulitan:[easy|normal|hard|impossible]`.',
-              '🟢 Easy: bot lambat, sering salah.',
-              '🟡 Normal: bot seimbang.',
-              '🔴 Hard: bot cepat, jarang salah.',
-              '☠️ Impossible: bot hampir tidak pernah kalah.',
+              'Duel strategis satu tim melawan Bot dengan HP, Mana & Skill (bisa solo).',
+              '`/sambungkata` → 🤖 Player vs Bot → ⚔️ Mode Lanjutan → lobby (pemain lain bisa bergabung).',
+              'HP Bot menyesuaikan jumlah pemain; serangan Bot mengenai semua anggota tim.',
+              'Mana penuh (100) → lepaskan Skill: ⚔️ Attack, ❤️ Recovery, 🛡️ Defense, 🔷 Mana, 💫 Buff, ☠️ Debuff, 🧹 Cleanse.',
+              'Belum ada pemenang di ronde 100 → Overtime (damage 2×). Catatan: boost tidak berlaku, hanya Skill.',
+            ],
+          },
+          {
+            title: '🤖 Player vs Bot — Mode Normal (Klasik)',
+            items: [
+              'Sambung kata biasa melawan Bot dengan tingkat kesulitan — duel solo 1v1, boost tetap berlaku.',
+              '`/sambungkata` → 🤖 Player vs Bot → 📖 Mode Normal, lalu pilih kesulitan.',
+              '🟢 Mudah: bot memilih kata acak.',
+              '🟡 Normal: bot menghindari huruf sulit.',
+              '🔴 Sulit: bot menjebak dengan huruf sulit.',
+              '⚫ Impossible: bot memilih kata terburuk untukmu.',
+            ],
+          },
+          {
+            title: '🌐 Player vs Server (Global)',
+            items: [
+              'Bertanding melawan pemain dari server lain!',
+              '`/sambungkata` → 🌐 Player vs Server.',
+              'Buka lobby → pemain server yang sama join → bot mempertemukan dengan lobby server lain otomatis.',
+              '2–10 pemain gabungan • rating global terpisah (lihat `/stats`).',
+              'Lobby otomatis bubar jika tak dapat lawan dalam 6 jam.',
             ],
           },
           {
             title: '🏰 Dungeon Mode',
             items: [
               'Mode solo menantang: kamu vs Dungeon Guardian, 5 wave.',
-              'Command: `/sambungkata mode:dungeon` (butuh 🗝️ Golden Key).',
+              '`/sambungkata` → 🏰 Dungeon Mode (butuh 🗝️ Golden Key).',
               'Guardian membalas beberapa kata per giliran, makin cepat tiap wave.',
               'Reward x2 + bonus besar & drop pasti jika tamat.',
               'Detail lengkap ada di section Dungeon & Events.',
@@ -224,7 +250,7 @@ export const docs: Record<string, BotDoc> = {
             title: '👤 Account Level',
             items: [
               'Semua pemain dapat Account EXP dari setiap match & quest.',
-              'Butuh 500 EXP per level.',
+              'Butuh 300 EXP per level.',
               'Level 3 → membuka Class System.',
               'Cek progress di `/stats`.',
             ],
@@ -242,9 +268,9 @@ export const docs: Record<string, BotDoc> = {
           {
             title: '⭐ EXP per Match',
             items: [
-              '+1 EXP per kata valid.',
-              '+10 EXP menyelesaikan pertandingan.',
-              '+15 EXP menang, +5 EXP MVP.',
+              '+2 EXP per kata valid.',
+              '+15 EXP menyelesaikan pertandingan.',
+              '+25 EXP menang, +10 EXP MVP.',
               'EXP masuk ke Account (semua pemain) dan Class aktif (jika ada).',
             ],
           },
@@ -252,7 +278,7 @@ export const docs: Record<string, BotDoc> = {
             title: '🪙 Coin Economy',
             items: [
               '+5 Coin selesai pertandingan.',
-              '+10 Coin menang pertandingan.',
+              '+10 Coin menang pertandingan, +5 Coin MVP.',
               '+1 Coin per 10 kata valid.',
               '+1 Coin kata ≥8 huruf.',
               '+2 Coin huruf langka (X/Q/Z/V).',
@@ -480,15 +506,55 @@ export const docs: Record<string, BotDoc> = {
           'Saat intro event, timer dibekukan, manfaatkan untuk baca lore & susun strategi tim. Untuk AI & Lost Signal, kata panjang/langka mempercepat progres. Untuk Penjajah, tetap tenang: fokus jawab Challenge dengan benar karena Steal & Block hanya membuang waktu, bukan hard-fail.',
       },
       {
+        id: 'game-sampingan',
+        title: 'Game Sampingan',
+        intro:
+          'Selain Sambung Kata, Vanillate punya game sampingan yang bisa dimainkan bareng teman se-channel lewat `/game`. Game sampingan bersifat santai — tidak menyimpan progres, Coin, EXP, atau inventory.',
+        subsections: [
+          {
+            title: '🐺 Werewolf Klasik',
+            items: [
+              'Deduksi sosial: warga vs serigala — mode ringkas & cepat.',
+              '4 peran: 🐺 Serigala, 🔮 Peramal, 💉 Tabib, 👳 Warga.',
+              '4–30 pemain per sesi.',
+            ],
+          },
+          {
+            title: '🌕 Werewolf Lanjutan',
+            items: [
+              'Mode lengkap dengan 54 peran (Warga · Serigala · Netral).',
+              'Investigasi, proteksi, konversi, pembunuh solo, hingga kekacauan.',
+              'Hingga 100 pemain — deduksi sosial paling seru.',
+            ],
+          },
+          {
+            title: '⚖️ Pengacara (Persidangan)',
+            items: [
+              'Persidangan roleplay: ungkap siapa yang bersalah.',
+              'Hakim manusia memimpin sidang — bukti, saksi, keberatan, & vonis.',
+              'Sistem bukti dinamis dengan puluhan skenario kasus unik.',
+              '8–25 pemain dengan peran Hakim, Jaksa, Pengacara, Tersangka, Saksi.',
+            ],
+          },
+          {
+            title: '🃏 UNO',
+            items: [
+              'Kartu klasik adu warna & angka — sedang dikembangkan, segera hadir!',
+            ],
+          },
+        ],
+        note:
+          'Buka dashboard game sampingan dengan `/game`, pilih game, lalu lobby dibuka di channel untuk diajak bermain bersama.',
+      },
+      {
         id: 'commands',
         title: 'Daftar Command',
         subsections: [
           {
             title: '🎮 Bermain',
             items: [
-              '`/sambungkata mode:pvp`: buka lobby PvP.',
-              '`/sambungkata mode:pvb kesulitan:...`: lawan bot AI.',
-              '`/sambungkata mode:dungeon`: masuk Dungeon (butuh 🗝️).',
+              '`/sambungkata`: buka Dashboard untuk semua mode — PvP, PvB (Battle Skill/Klasik), Player vs Server, & Dungeon.',
+              '`/game`: buka Dashboard game sampingan — 🐺 Werewolf & ⚖️ Pengacara.',
             ],
           },
           {

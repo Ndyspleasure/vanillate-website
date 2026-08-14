@@ -6,17 +6,21 @@
   "tagline": "Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.",
   "features": [
     "Kamus Bahasa Indonesia 25.000+ kata dengan validasi otomatis",
-    "Tiga mode main, yaitu PvP hingga 10 pemain, PvB 4 tingkat kesulitan, dan Dungeon",
+    "Empat mode Sambung Kata: PvP hingga 10 pemain, PvB (Battle Skill & Klasik), Player vs Server lintas server, dan Dungeon",
+    "Game sampingan lewat /game: Werewolf (Klasik & Lanjutan 54 peran) dan Pengacara persidangan roleplay",
     "9 Class dengan passive unik plus Talent Tree",
     "Boost system 5 jenis dengan rarity Common hingga Legendary",
     "Quest harian dan mingguan, promo code, serta event in-game acak",
-    "Leaderboard global, win streak, dan Dungeon Trophy",
-    "Cross-Server Matchmaking untuk melawan pemain dari server lain"
+    "Leaderboard global, win streak, dan Dungeon Trophy"
   ],
   "commands": [
     {
       "name": "/sambungkata",
-      "description": "Mulai permainan mode PvP, PvB, atau Dungeon"
+      "description": "Mulai Sambung Kata: PvP, PvB, Player vs Server, atau Dungeon"
+    },
+    {
+      "name": "/game",
+      "description": "Game sampingan: Werewolf dan Pengacara"
     },
     {
       "name": "/stats",
