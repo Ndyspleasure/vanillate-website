@@ -1,13 +1,36 @@
 {
-  "lastSyncedAt": null,
+  "lastSyncedAt": "2026-08-14T11:37:45.237Z",
   "sourceRepo": "Ndyspleasure/sambung-kata-bot",
   "sourceBranch": "main",
-  "sourceCommit": null,
-  "sourceCommitShort": null,
-  "ok": null,
-  "okCount": 0,
+  "sourceCommit": "fcd87b516beba473b0c6959bde6b0b555c8225a9",
+  "sourceCommitShort": "fcd87b5",
+  "ok": true,
+  "okCount": 4,
   "total": 4,
-  "seeded": true,
-  "note": "Data awal di-seed dari repo bot. Status ini akan diperbarui otomatis oleh GitHub Actions (sync-data.yml) pada sinkronisasi pertama.",
-  "files": []
+  "files": [
+    {
+      "name": "shop",
+      "src": "config-data/shop.json",
+      "out": "shop.json",
+      "ok": true
+    },
+    {
+      "name": "botInfo",
+      "src": "config-data/bot-info.json",
+      "out": "bot-info.json",
+      "ok": true
+    },
+    {
+      "name": "version",
+      "src": "version.json",
+      "out": "version.json",
+      "ok": true
+    },
+    {
+      "name": "changelog",
+      "src": "CHANGELOG.json",
+      "out": "changelog.json",
+      "ok": true
+    }
+  ]
 }

@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.37.0",
+    "date": "2026-08-14",
+    "title": "Peningkatan Stabilitas & Pemantauan Semua Mode Permainan",
+    "highlights": [
+      "🎲 Pemantauan internal kini mencakup semua mode — termasuk Werewolf & Pengacara — agar kendala cepat terdeteksi tim",
+      "🛠️ Tim dapat menelusuri jalannya permainan yang sudah selesai untuk menangani laporan & masalah lebih cepat",
+      "✅ Peningkatan keandalan agar setiap mode permainan berjalan lebih mulus"
+    ]
+  },
+  {
     "version": "2.36.0",
     "date": "2026-08-14",
     "title": "Standar Lobby & UI, Dungeon Confirmation Flow",
