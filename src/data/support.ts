@@ -64,8 +64,6 @@ export const supportConfig = {
   maxMessage: 700,
   maxName: 60,
   maxDiscordUsername: 40,
-  /** Batas ukuran screenshot yang masih nyaman dikirim lewat WhatsApp. */
-  maxAttachmentBytes: 16 * 1024 * 1024,
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,8 +217,6 @@ export type SupportDraft = {
   name?: string;
   discordUsername?: string;
   discordUserId?: string;
-  /** Keterangan lampiran, mis. "1 gambar (dikirim menyusul di chat)". */
-  attachment?: string;
   tech?: SupportTechInfo;
 };
 
@@ -301,7 +297,6 @@ export function buildSupportMessage(draft: SupportDraft): string {
   if (filled(draft.name)) details.push(row('Nama', draft.name.trim()));
   if (filled(draft.discordUsername)) details.push(row('Discord', normalizeDiscord(draft.discordUsername)));
   if (filled(draft.discordUserId)) details.push(row('Discord ID', draft.discordUserId.trim()));
-  if (filled(draft.attachment)) details.push(row('Lampiran', draft.attachment.trim()));
   if (details.length) lines.push('', ...details);
 
   const tech = techRows(draft.tech);

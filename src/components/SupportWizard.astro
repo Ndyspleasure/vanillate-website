@@ -246,47 +246,6 @@ const cardIcon =
           </div>
 
           <div class="sm:col-span-2">
-            <p class={fieldLabel}>
-              <Icon name="paperclip" class="h-4 w-4 text-ink-400 dark:text-cream-300/50" />
-              Screenshot / Lampiran <span class={optionalTag}>Opsional</span>
-            </p>
-            <label class="block cursor-pointer">
-              <input type="file" accept="image/*" data-attachment class="peer sr-only" />
-              <span class="flex items-center gap-3 rounded-xl border border-dashed border-ink-900/20 dark:border-cream-100/20 bg-cream-50 dark:bg-ink-900 px-4 py-3.5 transition-colors hover:border-amber-500/60 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-500 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-cream-50 dark:peer-focus-visible:ring-offset-ink-950">
-                <Icon name="image" class="h-5 w-5 flex-none text-amber-600 dark:text-amber-400" />
-                <span class="min-w-0">
-                  <span class="block text-sm font-medium">Pilih gambar</span>
-                  <span class="block text-xs text-ink-500 dark:text-cream-300/60">PNG atau JPG, maksimal 16 MB</span>
-                </span>
-              </span>
-            </label>
-
-            <div
-              data-attachment-preview
-              class="mt-3 hidden items-center gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 p-3"
-              hidden
-            >
-              <img data-attachment-thumb src="" alt="" class="h-12 w-12 flex-none rounded-lg object-cover" />
-              <div class="min-w-0 flex-1">
-                <p data-attachment-name class="truncate text-sm font-medium"></p>
-                <p data-attachment-size class="font-mono text-xs text-ink-500 dark:text-cream-300/60"></p>
-              </div>
-              <button
-                type="button"
-                data-attachment-clear
-                aria-label="Hapus lampiran"
-                class="flex h-8 w-8 flex-none items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-ink-900/5 hover:text-ink-900 dark:text-cream-300/60 dark:hover:bg-cream-100/5 dark:hover:text-cream-50"
-              >
-                <Icon name="x" class="h-4 w-4" />
-              </button>
-            </div>
-
-            <p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">
-              Gambar tidak diunggah ke mana pun. Lampirkan langsung di WhatsApp atau email setelah aplikasinya terbuka.
-            </p>
-          </div>
-
-          <div class="sm:col-span-2">
             <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 p-4">
               <input
                 type="checkbox"
@@ -355,6 +314,16 @@ const cardIcon =
           </div>
         </details>
 
+        <div class="mt-4 flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <Icon name="paperclip" class="mt-0.5 h-4 w-4 flex-none text-amber-600 dark:text-amber-400" />
+          <div class="min-w-0">
+            <p class="text-sm font-medium">Punya screenshot atau video terkait kendala?</p>
+            <p class="mt-1 text-xs leading-relaxed text-ink-600 dark:text-cream-200/80">
+              Silakan lampirkan langsung di WhatsApp atau email setelah aplikasinya terbuka, supaya tim support bisa melihat detail kendalanya.
+            </p>
+          </div>
+        </div>
+
         <p class="mt-4 flex items-start gap-2 text-xs leading-relaxed text-ink-500 dark:text-cream-300/60">
           <Icon name="info" class="mt-0.5 h-3.5 w-3.5 flex-none" />
           <span>Website tidak mengirim pesan otomatis. WhatsApp atau aplikasi email akan terbuka dengan pesan yang sudah terisi, dan kamu sendiri yang menekan Kirim.</span>
@@ -381,13 +350,9 @@ const cardIcon =
             <span data-done-id></span>
           </p>
 
-          <p
-            data-done-attachment
-            class="mx-auto mt-5 hidden max-w-md items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left text-xs leading-relaxed text-ink-700 dark:text-cream-100/90"
-            hidden
-          >
+          <p class="mx-auto mt-5 flex max-w-md items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left text-xs leading-relaxed text-ink-700 dark:text-cream-100/90">
             <Icon name="paperclip" class="mt-0.5 h-3.5 w-3.5 flex-none text-amber-600 dark:text-amber-400" />
-            <span data-done-attachment-text></span>
+            <span>Punya screenshot atau video? Lampirkan langsung di sana sebelum menekan Kirim.</span>
           </p>
 
           <p class="mx-auto mt-4 max-w-md text-xs leading-relaxed text-ink-500 dark:text-cream-300/60">
@@ -503,7 +468,6 @@ const cardIcon =
     const categoryHint = root.querySelector<HTMLElement>('[data-category-hint]');
     const techToggle = root.querySelector<HTMLInputElement>('[data-tech-toggle]');
     const techPreview = root.querySelector<HTMLElement>('[data-tech-preview]');
-    const fileInput = root.querySelector<HTMLInputElement>('[data-attachment]');
     const editIconTpl = root.querySelector<HTMLTemplateElement>('[data-edit-icon]');
 
     const panels = new Map<number, HTMLElement>();
@@ -513,8 +477,6 @@ const cardIcon =
 
     const defaultHint = categoryHint?.textContent ?? '';
     let current = 1;
-    let attachmentUrl: string | null = null;
-    let attachmentLabel = '';
     let lastMessage = '';
     let lastSupportId = '';
 
@@ -699,66 +661,6 @@ const cardIcon =
       techPreview.textContent = info ? [info.browser, info.os, info.page].filter(Boolean).join(' · ') : '';
     }
 
-    // ─── Lampiran ────────────────────────────────────────────────────────────
-
-    function formatBytes(bytes: number): string {
-      if (bytes < 1024) return `${bytes} B`;
-      if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    }
-
-    function clearAttachment() {
-      if (attachmentUrl) {
-        URL.revokeObjectURL(attachmentUrl);
-        attachmentUrl = null;
-      }
-      attachmentLabel = '';
-      if (fileInput) fileInput.value = '';
-      const preview = root.querySelector<HTMLElement>('[data-attachment-preview]');
-      preview?.classList.remove('flex');
-      toggle(preview, false);
-    }
-
-    fileInput?.addEventListener('change', () => {
-      const file = fileInput.files?.[0];
-      clearError(4);
-      if (!file) {
-        clearAttachment();
-        return;
-      }
-      if (!file.type.startsWith('image/')) {
-        clearAttachment();
-        showError(4, 'Lampiran harus berupa gambar (PNG atau JPG).');
-        return;
-      }
-      if (file.size > supportConfig.maxAttachmentBytes) {
-        clearAttachment();
-        showError(4, 'Ukuran gambar melebihi 16 MB. Kompres dulu atau pilih gambar lain.');
-        return;
-      }
-
-      if (attachmentUrl) URL.revokeObjectURL(attachmentUrl);
-      attachmentUrl = URL.createObjectURL(file);
-      // Kalimatnya netral kanal: pesan disusun sebelum user memilih
-      // WhatsApp atau email.
-      attachmentLabel = '1 gambar (dilampirkan menyusul)';
-
-      const preview = root.querySelector<HTMLElement>('[data-attachment-preview]');
-      const thumb = root.querySelector<HTMLImageElement>('[data-attachment-thumb]');
-      const name = root.querySelector<HTMLElement>('[data-attachment-name]');
-      const size = root.querySelector<HTMLElement>('[data-attachment-size]');
-      if (thumb) thumb.src = attachmentUrl;
-      if (name) name.textContent = file.name;
-      if (size) size.textContent = formatBytes(file.size);
-      preview?.classList.add('flex');
-      toggle(preview, true);
-    });
-
-    root.querySelector('[data-attachment-clear]')?.addEventListener('click', () => {
-      clearAttachment();
-      clearError(4);
-    });
-
     // ─── Review ──────────────────────────────────────────────────────────────
 
     function buildDraft(): SupportDraft {
@@ -770,7 +672,6 @@ const cardIcon =
         name: value('name'),
         discordUsername: value('discordUsername'),
         discordUserId: value('discordUserId'),
-        attachment: attachmentLabel,
         tech: techInfo(),
       };
     }
@@ -819,7 +720,6 @@ const cardIcon =
           addReviewRow(list, 'Discord', `@${draft.discordUsername.replace(/^@+/, '')}`, 4);
         }
         if (draft.discordUserId) addReviewRow(list, 'Discord ID', draft.discordUserId, 4);
-        if (draft.attachment) addReviewRow(list, 'Lampiran', draft.attachment, 4);
         if (draft.tech) {
           const tech = [draft.tech.browser, draft.tech.os, draft.tech.page, draft.tech.version]
             .filter(Boolean)
@@ -939,16 +839,14 @@ const cardIcon =
 
     type Channel = 'whatsapp' | 'email';
 
-    const channelCopy: Record<Channel, { title: string; desc: string; attachment: string }> = {
+    const channelCopy: Record<Channel, { title: string; desc: string }> = {
       whatsapp: {
         title: 'WhatsApp sedang dibuka',
         desc: 'Pesanmu sudah tersusun rapi di sana. Tinggal tekan Kirim untuk mengirimkannya ke tim support.',
-        attachment: 'Jangan lupa lampirkan screenshot-nya langsung di chat WhatsApp sebelum menekan Kirim.',
       },
       email: {
         title: 'Aplikasi email sedang dibuka',
         desc: 'Penerima, subjek, dan isi email sudah terisi otomatis. Tinggal tekan Kirim untuk mengirimkannya ke tim support.',
-        attachment: 'Jangan lupa lampirkan screenshot-nya sebagai attachment sebelum menekan Kirim.',
       },
     };
 
@@ -967,12 +865,6 @@ const cardIcon =
       if (desc) desc.textContent = copy.desc;
       const doneId = root.querySelector<HTMLElement>('[data-done-id]');
       if (doneId) doneId.textContent = lastSupportId;
-
-      const doneAttachment = root.querySelector<HTMLElement>('[data-done-attachment]');
-      const doneAttachmentText = root.querySelector<HTMLElement>('[data-done-attachment-text]');
-      if (doneAttachmentText) doneAttachmentText.textContent = copy.attachment;
-      doneAttachment?.classList.toggle('flex', Boolean(attachmentLabel));
-      toggle(doneAttachment, Boolean(attachmentLabel));
 
       // Tombol "buka lagi" mengikuti kanal yang tadi dipakai.
       toggle(waReopen, channel === 'whatsapp');
@@ -1015,7 +907,6 @@ const cardIcon =
 
     root.querySelector<HTMLButtonElement>('[data-reset]')?.addEventListener('click', () => {
       form?.reset();
-      clearAttachment();
       [1, 2, 3, 4].forEach(clearError);
       if (categoryHint) categoryHint.textContent = defaultHint;
       lastMessage = '';
