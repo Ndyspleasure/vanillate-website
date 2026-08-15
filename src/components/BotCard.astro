@@ -1,6 +1,7 @@
 ---
 import type { Bot } from '@data/bots';
 import { buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import Icon from '@components/Icon.astro';
 import { url } from '@utils/url';
 
 export interface Props {
@@ -59,11 +60,11 @@ const dotClass = {
         />
       ) : (
         <span
-          class="flex h-11 w-11 items-center justify-center rounded-xl text-xl"
+          class="flex h-11 w-11 items-center justify-center rounded-xl"
           style={`background: ${bot.color}20; color: ${bot.color};`}
           aria-hidden="true"
         >
-          {bot.icon}
+          <Icon name={bot.icon} class="h-6 w-6" />
         </span>
       )}
       <div>

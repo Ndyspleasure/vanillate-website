@@ -3,8 +3,15 @@ import { site } from '@data/site';
 import { bots } from '@data/bots';
 import { t } from '../i18n/id';
 import LogoPNG from './LogoPNG.astro';
+import Icon from './Icon.astro';
 import { url } from '@utils/url';
 const year = new Date().getFullYear();
+
+// Tautan sosial studio. Ikon SVG (satu icon pack) + aria-label agar aksesibel.
+const socials = [
+  { label: 'Discord Support', href: site.links.discordSupport, icon: 'discord' as const },
+  { label: 'GitHub', href: site.links.github, icon: 'github' as const },
+];
 ---
 
 <footer class="mt-32 border-t border-ink-900/5 dark:border-cream-100/5">
@@ -14,6 +21,20 @@ const year = new Date().getFullYear();
         <LogoPNG variant="footer" alt={site.name} class="h-10" />
       </div>
       <p class="text-sm text-ink-600 dark:text-cream-300 leading-relaxed">{site.description}</p>
+      <div class="mt-6 flex items-center gap-2">
+        {socials.map((s) => (
+          <a
+            href={s.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={s.label}
+            title={s.label}
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink-900/10 dark:border-cream-100/10 text-ink-600 dark:text-cream-300 hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+          >
+            <Icon name={s.icon} class="h-5 w-5" />
+          </a>
+        ))}
+      </div>
     </div>
 
     <div>
@@ -34,6 +55,7 @@ const year = new Date().getFullYear();
       <ul class="space-y-2">
         <li><a href={url('/about')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Tentang</a></li>
         <li><a href={url('/docs')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Dokumentasi</a></li>
+        <li><a href={url('/changelog')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Changelog</a></li>
         <li><a href={url('/support')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Support</a></li>
         <li><a href={url('/terms')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{t.nav.terms}</a></li>
         <li><a href={url('/privacy')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{t.nav.privacy}</a></li>

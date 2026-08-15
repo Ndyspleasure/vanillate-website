@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
+import Icon from '@components/Icon.astro';
 import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA } from '@data/bots';
 import { faqs } from '@data/faq';
 import { site } from '@data/site';
@@ -43,11 +44,11 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
           />
         ) : (
           <span
-            class="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
+            class="flex h-16 w-16 items-center justify-center rounded-2xl"
             style={`background: ${bot.color}20; color: ${bot.color};`}
             aria-hidden="true"
           >
-            {bot.icon}
+            <Icon name={bot.icon} class="h-8 w-8" />
           </span>
         )}
         <div>
@@ -242,7 +243,7 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
               {other.thumbnail ? (
                 <img src={url(other.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
               ) : (
-                <span class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true">{other.icon}</span>
+                <span class="flex h-10 w-10 items-center justify-center rounded-lg flex-none" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true"><Icon name={other.icon} class="h-5 w-5" /></span>
               )}
               <div>
                 <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">{other.category}</p>

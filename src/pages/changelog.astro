@@ -1,0 +1,172 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Icon from '@components/Icon.astro';
+import Button from '@components/Button.astro';
+import { getFeaturedBot, buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import changelog from '@data/synced/changelog.json';
+import version from '@data/synced/version.json';
+import { inlineMarkdown } from '@utils/inline';
+import { url } from '@utils/url';
+
+// Halaman Changelog publik. Datanya di-bake dari data tersinkron
+// (src/data/synced/changelog.json) yang ditarik otomatis dari repo bot,
+// jadi riwayat pembaruan selalu mengikuti versi bot yang sedang berjalan.
+
+type Entry = { version: string; date: string; title: string; highlights: string[] };
+const entries = changelog as Entry[];
+
+const bot = getFeaturedBot();
+const inviteUrl = buildInviteUrl(bot);
+
+const fmt = inlineMarkdown;
+
+// Buang emoji di awal/akhir teks supaya tampilan konsisten memakai ikon SVG,
+// bukan campuran emoji. Rentang panah (→ U+2190–21FF) & simbol matematika
+// (≤ ≥ × U+00D7/2200–22FF) sengaja TIDAK ikut dibuang karena bermakna.
+const EMOJI_RE =
+  /[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2B00}-\u{2BFF}\u{2300}-\u{23FF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu;
+function clean(s: string): string {
+  return s.replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim();
+}
+
+function fmtDate(d: string): string {
+  try {
+    return new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeZone: 'Asia/Jakarta' }).format(new Date(d));
+  } catch {
+    return d;
+  }
+}
+
+// Kelompokkan rilis per bulan-tahun untuk penanda ringkas di timeline.
+function monthKey(d: string): string {
+  try {
+    return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(new Date(d));
+  } catch {
+    return '';
+  }
+}
+
+const latest = entries[0];
+const totalReleases = entries.length;
+---
+
+<BaseLayout
+  title="Changelog"
+  description={`Catatan pembaruan Vanillate Sambung Kata — fitur baru, penyempurnaan, dan perbaikan di setiap versi. Versi terkini v${version.version}.`}
+>
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
+    <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[6%]" aria-hidden="true"></div>
+    <div class="aurora bg-teal-500/15 h-[320px] w-[320px] top-[40px] right-[4%]" style="animation-delay: -7s" aria-hidden="true"></div>
+
+    <div class="container-page relative">
+      <p class="eyebrow mb-6 animate-fade-up inline-flex items-center gap-2">
+        <Icon name="history" class="h-4 w-4" /> Changelog
+      </p>
+      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl animate-fade-up">
+        Setiap versi, <span class="italic text-amber-600 dark:text-amber-500">tercatat rapi</span>.
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Riwayat pembaruan Vanillate Sambung Kata, mulai dari fitur baru, penyempurnaan, sampai perbaikan bug. Daftar ini ikut berubah otomatis setiap kali versi bot diperbarui.
+      </p>
+
+      <div class="mt-8 flex flex-wrap items-center gap-3 animate-fade-up" style="animation-delay: 0.2s">
+        <span class="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-700 dark:text-amber-400">
+          <Icon name="tag" class="h-4 w-4" /> Versi terkini v{version.version}
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          <Icon name="rocket" class="h-4 w-4 text-ink-500 dark:text-cream-300/70" /> {totalReleases} rilis tercatat
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          <Icon name="calendar" class="h-4 w-4 text-ink-500 dark:text-cream-300/70" /> Terakhir {fmtDate(latest.date)}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="container-page pb-24">
+    <ol class="relative border-l border-ink-900/10 dark:border-cream-100/10 ml-3 sm:ml-4">
+      {entries.map((entry, i) => {
+        const showMonth = i === 0 || monthKey(entry.date) !== monthKey(entries[i - 1].date);
+        const isLatest = i === 0;
+        return (
+          <li class="relative pl-6 sm:pl-8 pb-10 last:pb-0 reveal" style={`--reveal-delay: ${Math.min(i, 8) * 50}ms`}>
+            {/* Titik penanda di garis timeline */}
+            <span
+              class:list={[
+                'absolute -left-[7px] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full ring-4 ring-cream-50 dark:ring-ink-950',
+                isLatest ? 'bg-amber-500' : 'bg-ink-900/25 dark:bg-cream-100/25',
+              ]}
+              aria-hidden="true"
+            >
+              {isLatest && <span class="absolute inline-flex h-full w-full rounded-full bg-amber-500/60 animate-ping"></span>}
+            </span>
+
+            {showMonth && (
+              <p class="mb-4 -ml-6 sm:-ml-8 pl-6 sm:pl-8 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">
+                {monthKey(entry.date)}
+              </p>
+            )}
+
+            <article class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 md:p-7 transition-colors hover:border-amber-500/40">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-ink-900 dark:bg-amber-500 px-3 py-1 font-mono text-xs font-semibold text-cream-50 dark:text-ink-950">
+                  <Icon name="tag" class="h-3.5 w-3.5" /> v{entry.version}
+                </span>
+                {isLatest && (
+                  <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                    <Icon name="sparkles" class="h-3 w-3" /> Terbaru
+                  </span>
+                )}
+                <span class="inline-flex items-center gap-1.5 font-mono text-xs text-ink-500 dark:text-cream-300/60">
+                  <Icon name="calendar" class="h-3.5 w-3.5" /> {fmtDate(entry.date)}
+                </span>
+              </div>
+
+              <h2 class="font-display text-lg md:text-xl font-semibold tracking-tightest leading-tight mb-4">
+                {clean(entry.title)}
+              </h2>
+
+              <ul class="space-y-2.5">
+                {entry.highlights.map((h) => (
+                  <li class="flex gap-2.5 text-sm text-ink-700 dark:text-cream-200 leading-relaxed">
+                    <Icon name="circle-check" class="h-4 w-4 flex-none mt-0.5 text-amber-600 dark:text-amber-500" />
+                    <span set:html={fmt(clean(h))} />
+                  </li>
+                ))}
+              </ul>
+            </article>
+          </li>
+        );
+      })}
+    </ol>
+  </section>
+
+  <!-- CTA -->
+  <section class="container-page pb-24">
+    <div class="rounded-3xl bg-ink-900 p-10 md:p-14 relative overflow-hidden reveal">
+      <div class="aurora bg-amber-500/20 h-[300px] w-[300px] top-[-50px] right-[-50px]" aria-hidden="true"></div>
+      <div class="relative max-w-2xl">
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest text-cream-50">
+          Ingin mencoba versi terbarunya?
+        </h2>
+        <p class="mt-4 text-cream-100/80 text-lg leading-relaxed">
+          Undang Vanillate Sambung Kata ke server Discord kamu dan rasakan langsung setiap pembaruan di daftar ini.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          {inviteUrl && (
+            <a href={inviteUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
+              {inviteCtaLabel(bot)}
+              <Icon name="arrow-up-right" class="h-4 w-4" strokeWidth={2.5} />
+            </a>
+          )}
+          <a href={url('/docs/sambung-kata')} class="inline-flex items-center gap-2 rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
+            Baca dokumentasi
+            <Icon name="arrow-right" class="h-4 w-4" strokeWidth={2.5} />
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

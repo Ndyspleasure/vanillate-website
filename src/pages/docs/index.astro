@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
+import Icon from '@components/Icon.astro';
 import { bots } from '@data/bots';
 import { docs } from '@data/docs';
 import { generalFaqs } from '@data/faq';
@@ -72,7 +73,7 @@ const covers = [
           {bot.thumbnail ? (
             <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-12 w-12 rounded-xl object-cover flex-none" loading="lazy" decoding="async" />
           ) : (
-            <span class="flex h-12 w-12 items-center justify-center rounded-xl text-xl flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+            <span class="flex h-12 w-12 items-center justify-center rounded-xl flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true"><Icon name={bot.icon} class="h-6 w-6" /></span>
           )}
           <div class="flex-1">
             <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">{bot.category}</p>
@@ -150,7 +151,7 @@ const covers = [
             Intinya cuma tiga baris.
           </h2>
           <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
-            Kamu tidak harus menghafal dokumentasi untuk mulai. Tiap bot punya bagian <strong class="text-ink-900 dark:text-cream-50">⚡ Mulai Cepat</strong> di awal halamannya.
+            Kamu tidak harus menghafal dokumentasi untuk mulai. Tiap bot punya bagian <strong class="text-ink-900 dark:text-cream-50 inline-flex items-center gap-1 align-baseline"><Icon name="zap" class="h-4 w-4 text-amber-600 dark:text-amber-500" />Mulai Cepat</strong> di awal halamannya.
           </p>
         </div>
         <ol class="space-y-3">

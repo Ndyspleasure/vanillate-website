@@ -30,6 +30,7 @@ export const nav = [
   { label: 'Tentang', href: '/about' },
   { label: 'Bot Kami', href: '/bots' },
   { label: 'Dokumentasi', href: '/docs' },
+  { label: 'Changelog', href: '/changelog' },
   { label: 'Support', href: '/support' },
 ];
 

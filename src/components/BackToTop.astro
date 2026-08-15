@@ -1,0 +1,63 @@
+---
+// Tombol "Kembali ke atas" global.
+// Progressive enhancement: tersembunyi secara default; JS memunculkannya
+// setelah pengguna menggulir jauh, lalu menggulir mulus ke atas saat diklik.
+// Menghormati prefers-reduced-motion (lompat instan, bukan animasi).
+import Icon from '@components/Icon.astro';
+import { t } from '../i18n/id';
+---
+
+<button
+  id="back-to-top"
+  type="button"
+  aria-label={t.common.backToTop}
+  title={t.common.backToTop}
+  class="group fixed bottom-5 right-5 z-40 hidden h-11 w-11 items-center justify-center rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/90 dark:bg-ink-900/90 text-ink-800 dark:text-cream-100 shadow-lg shadow-ink-900/10 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
+>
+  <Icon name="arrow-up" class="h-5 w-5 transition-transform group-hover:-translate-y-0.5" strokeWidth={2.25} />
+</button>
+
+<script>
+  const btn = document.getElementById('back-to-top');
+  if (btn) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const SHOW_AT = 600; // px tergulir sebelum tombol muncul
+
+    // Toggle visibilitas dengan sedikit fade/scale supaya kemunculannya halus.
+    let visible = false;
+    function update() {
+      const shouldShow = window.scrollY > SHOW_AT;
+      if (shouldShow === visible) return;
+      visible = shouldShow;
+      btn.classList.toggle('hidden', !shouldShow);
+      btn.classList.toggle('flex', shouldShow);
+      btn.classList.toggle('back-to-top--in', shouldShow);
+    }
+
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    });
+  }
+</script>
+
+<style>
+  /* Micro-animasi kemunculan tombol (nonaktif saat reduced motion). */
+  @media (prefers-reduced-motion: no-preference) {
+    #back-to-top.back-to-top--in {
+      animation: backToTopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes backToTopIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+  }
+</style>

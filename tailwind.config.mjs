@@ -12,6 +12,8 @@ export default {
           800: '#1A1820',
           700: '#26232E',
           600: '#3A3644',
+          500: '#565162', // Muted text (label/hint) di light mode
+          400: '#746E82', // Muted-halus / ikon sekunder
         },
         cream: {
           50: '#FBF8F1',  // Body text on dark / bg on light
@@ -20,13 +22,18 @@ export default {
           300: '#C9BE9E',
         },
         amber: {
+          300: '#F7D488',
           400: '#F3C158',
           500: '#E8B84A', // Signature accent
           600: '#C99A2E',
+          700: '#9E7418', // Aksen gelap untuk teks di light mode (kontras lebih baik)
         },
         teal: {
+          300: '#93D5CC',
           400: '#6BC3B8',
           500: '#4FA89D', // Secondary accent
+          600: '#3E8A80',
+          700: '#316E66',
         },
       },
       fontFamily: {

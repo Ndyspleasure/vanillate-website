@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
+import Icon from '@components/Icon.astro';
 import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots } from '@data/bots';
 import { docs } from '@data/docs';
 import { url } from '@utils/url';
@@ -119,11 +120,11 @@ const fmt = inlineMarkdown;
       <article class="max-w-3xl min-w-0">
         <div class="flex items-center gap-3 mb-4">
           <span
-            class="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
+            class="flex h-10 w-10 items-center justify-center rounded-xl"
             style={`background: ${bot.color}20; color: ${bot.color};`}
             aria-hidden="true"
           >
-            {bot.icon}
+            <Icon name={bot.icon} class="h-5 w-5" />
           </span>
           <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">Dokumentasi</p>
         </div>
@@ -144,7 +145,7 @@ const fmt = inlineMarkdown;
               <section class="mb-16">
                 <div class="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 md:p-8">
                   <h2 class="font-display text-xl font-semibold tracking-tightest mb-4 flex items-center gap-2">
-                    <span class="text-amber-600 dark:text-amber-500">⚡</span> Mulai Cepat
+                    <Icon name="zap" class="h-5 w-5 text-amber-600 dark:text-amber-500" /> Mulai Cepat
                   </h2>
                   <ol class="space-y-3">
                     {doc.quickStart.map((step, i) => (
@@ -189,11 +190,11 @@ const fmt = inlineMarkdown;
                         <span class="absolute inset-y-0 left-0 w-1.5" style="background: var(--ev)" aria-hidden="true"></span>
                         <div class="flex items-start gap-3">
                           <span
-                            class="flex h-11 w-11 flex-none items-center justify-center rounded-xl text-2xl"
-                            style="background: color-mix(in srgb, var(--ev) 18%, transparent)"
+                            class="flex h-11 w-11 flex-none items-center justify-center rounded-xl"
+                            style="background: color-mix(in srgb, var(--ev) 18%, transparent); color: var(--ev)"
                             aria-hidden="true"
                           >
-                            {ev.icon}
+                            <Icon name={ev.icon} class="h-6 w-6" />
                           </span>
                           <div class="min-w-0">
                             <h3 class="font-display text-lg font-semibold tracking-tightest leading-tight" style="color: var(--ev)">{ev.name}</h3>
@@ -212,11 +213,11 @@ const fmt = inlineMarkdown;
 
                         <dl class="mt-4 space-y-1.5 text-sm">
                           <div class="flex gap-2">
-                            <dt class="flex-none" aria-hidden="true">🏆</dt>
+                            <dt class="flex-none mt-0.5"><Icon name="trophy" class="h-4 w-4 text-amber-500" /></dt>
                             <dd class="text-ink-700 dark:text-cream-200"><span class="font-medium text-ink-900 dark:text-cream-50">Menang:</span> <span set:html={fmt(ev.reward)} /></dd>
                           </div>
                           <div class="flex gap-2">
-                            <dt class="flex-none" aria-hidden="true">💥</dt>
+                            <dt class="flex-none mt-0.5"><Icon name="skull" class="h-4 w-4 text-ink-400 dark:text-cream-300/50" /></dt>
                             <dd class="text-ink-600 dark:text-cream-200/70"><span class="font-medium text-ink-800 dark:text-cream-100">Gagal:</span> <span set:html={fmt(ev.fail)} /></dd>
                           </div>
                         </dl>
@@ -277,7 +278,7 @@ const fmt = inlineMarkdown;
 
                 {section.note && (
                   <div class="mt-6 flex gap-3 rounded-xl border-l-2 border-amber-500 bg-amber-500/5 px-5 py-4">
-                    <span class="text-amber-600 dark:text-amber-500 flex-none" aria-hidden="true">💡</span>
+                    <Icon name="lightbulb" class="h-5 w-5 text-amber-600 dark:text-amber-500 flex-none mt-0.5" />
                     <p class="text-sm text-ink-700 dark:text-cream-200 leading-relaxed" set:html={fmt(section.note)} />
                   </div>
                 )}
@@ -334,7 +335,7 @@ const fmt = inlineMarkdown;
                   {other.thumbnail ? (
                     <img src={url(other.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
                   ) : (
-                    <span class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true">{other.icon}</span>
+                    <span class="flex h-10 w-10 items-center justify-center rounded-lg flex-none" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true"><Icon name={other.icon} class="h-5 w-5" /></span>
                   )}
                   <div class="flex-1">
                     <p class="font-medium text-sm group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Panduan {other.shortName}</p>
