@@ -14,7 +14,11 @@ export default defineConfig({
   // base: '/vanillate-website',
   integrations: [
     tailwind({ applyBaseStyles: false }),
-    sitemap(),
+    // Halaman /admin dikeluarkan dari sitemap: itu area internal,
+    // bukan halaman yang ingin ditemukan lewat pencarian.
+    sitemap({
+      filter: (page) => !page.includes('/admin'),
+    }),
   ],
   build: {
     inlineStylesheets: 'auto',

@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { site } from '@data/site';
 import SEO from '@components/SEO.astro';
 import Header from '@components/Header.astro';
+import AnnouncementBanner from '@components/AnnouncementBanner.astro';
 import Footer from '@components/Footer.astro';
 import BackToTop from '@components/BackToTop.astro';
 import { url } from '@utils/url';
@@ -57,6 +58,7 @@ const { title, description, image, noindex } = Astro.props;
   </head>
   <body class="min-h-screen flex flex-col">
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:bg-amber-500 focus:px-4 focus:py-2 focus:text-ink-950">Lewati ke konten</a>
+    <AnnouncementBanner />
     <Header />
     <main id="main" class="flex-1">
       <slot />

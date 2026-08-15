@@ -1,0 +1,175 @@
+---
+// Daftar pemain.
+//
+// PRIVASI: halaman ini menampilkan data orang lain. Yang disimpan sengaja
+// dibatasi pada Discord ID, nama tampilan, dan progres permainan — cukup untuk
+// moderasi, tanpa menyentuh isi percakapan, email, atau IP. Lihat /privacy.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+
+const urutan = [
+  { value: 'last_seen_at', label: 'Terakhir bermain' },
+  { value: 'games_played', label: 'Paling banyak main' },
+  { value: 'wins',         label: 'Paling banyak menang' },
+  { value: 'level',        label: 'Level tertinggi' },
+];
+---
+
+<AdminLayout title="Pemain" active="pemain">
+  <AdminPageHeader
+    eyebrow="Komunitas"
+    title="Pemain"
+    description="Pemain yang tercatat di sistem bot, untuk keperluan dukungan dan moderasi."
+  />
+
+  <div class="px-6 lg:px-10 py-8">
+    <div class="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-5 py-4 mb-8">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        <strong>Data pribadi.</strong> Gunakan halaman ini hanya untuk dukungan dan moderasi.
+        Jangan membagikan Discord ID atau nama pemain ke luar tim.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-end gap-3 mb-6">
+      <div class="flex-1 min-w-[200px]">
+        <label for="cari-pemain" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Cari pemain</label>
+        <input
+          id="cari-pemain"
+          type="search"
+          placeholder="Nama tampilan atau Discord ID…"
+          class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500"
+        />
+      </div>
+      <div>
+        <label for="urut-pemain" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Urutkan</label>
+        <select id="urut-pemain" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
+          {urutan.map((u) => <option value={u.value}>{u.label}</option>)}
+        </select>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
+            <tr class="text-left">
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Pemain</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Level</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Main</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Menang</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Terakhir main</th>
+            </tr>
+          </thead>
+          <tbody id="pemain-body"></tbody>
+        </table>
+      </div>
+      <div id="pemain-state"></div>
+    </div>
+
+    <div class="mt-5 flex items-center justify-between">
+      <p id="pemain-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
+      <button type="button" id="pemain-lagi" class="hidden rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+        Muat lebih banyak
+      </button>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+
+  const PER_HALAMAN = 50;
+  let offset = 0;
+  let total = 0;
+  let generasi = 0;
+
+  const tbody = document.getElementById('pemain-body') as HTMLElement;
+  const stateEl = document.getElementById('pemain-state') as HTMLElement;
+  const infoEl = document.getElementById('pemain-info') as HTMLElement;
+  const btnLagi = document.getElementById('pemain-lagi') as HTMLButtonElement;
+
+  document.addEventListener('admin:ready', () => {
+    void muat(true);
+
+    document.getElementById('urut-pemain')?.addEventListener('change', () => void muat(true));
+    btnLagi.addEventListener('click', () => void muat(false));
+
+    let timer: ReturnType<typeof setTimeout>;
+    document.getElementById('cari-pemain')?.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void muat(true), 350);
+    });
+  });
+
+  async function muat(reset: boolean) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    if (reset) {
+      offset = 0;
+      tbody.innerHTML = '';
+      stateEl.innerHTML = stateBlock('loading', '');
+      btnLagi.classList.add('hidden');
+    }
+
+    const generasiSaatIni = ++generasi;
+
+    const cari = (document.getElementById('cari-pemain') as HTMLInputElement).value.trim();
+    const urut = (document.getElementById('urut-pemain') as HTMLSelectElement).value;
+
+    let query = supabase
+      .from('bot_players')
+      .select('id, player_id, display_name, level, games_played, wins, last_seen_at, is_banned', { count: 'exact' })
+      .order(urut, { ascending: false, nullsFirst: false })
+      .range(offset, offset + PER_HALAMAN - 1);
+
+    if (cari) {
+      const aman = cari.replace(/[%,()\\]/g, '\\$&');
+      query = query.or(`display_name.ilike.%${aman}%,player_id.ilike.%${aman}%`);
+    }
+
+    const { data, error, count } = await query;
+    if (generasiSaatIni !== generasi) return;
+
+    if (error) {
+      stateEl.innerHTML = stateBlock('error', pesanError(error));
+      infoEl.textContent = '';
+      return;
+    }
+
+    total = count ?? 0;
+
+    if (reset && (!data || data.length === 0)) {
+      stateEl.innerHTML = stateBlock(
+        'empty',
+        cari ? 'Tidak ada pemain yang cocok.' : 'Belum ada data pemain. Bot perlu mengirimnya ke Supabase.',
+      );
+      infoEl.textContent = '';
+      return;
+    }
+
+    stateEl.innerHTML = '';
+    tbody.insertAdjacentHTML('beforeend', (data ?? []).map(baris).join(''));
+
+    offset += data?.length ?? 0;
+    infoEl.textContent = `Menampilkan ${fmtAngka(offset)} dari ${fmtAngka(total)} pemain`;
+    btnLagi.classList.toggle('hidden', offset >= total);
+  }
+
+  function baris(row: any): string {
+    return `
+      <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+        <td class="px-5 py-3">
+          <span class="font-medium">${esc(row.display_name ?? 'Tanpa nama')}</span>
+          ${row.is_banned ? '<span class="ml-2 inline-block rounded-full bg-red-500/15 px-2 py-0.5 text-[0.65rem] text-red-600 dark:text-red-400">Diblokir</span>' : ''}
+          <span class="block font-mono text-[0.7rem] text-ink-400 dark:text-cream-300/40">${esc(row.player_id)}</span>
+        </td>
+        <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(row.level))}</td>
+        <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(row.games_played))}</td>
+        <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(row.wins))}</td>
+        <td class="px-5 py-3 whitespace-nowrap text-ink-500 dark:text-cream-300/60 text-xs">${esc(row.last_seen_at ? fmtWaktu(row.last_seen_at) : '—')}</td>
+      </tr>`;
+  }
+</script>

@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# Area admin: tidak ada gunanya diindeks mesin pencari.
+# Ini hanya soal kebersihan hasil pencarian, bukan lapisan keamanan —
+# penjagaan data ada di Row Level Security Supabase.
+Disallow: /admin
+
 Sitemap: https://vanillate.id/sitemap-index.xml

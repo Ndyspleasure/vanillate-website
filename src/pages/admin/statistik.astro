@@ -1,0 +1,208 @@
+---
+// Statistik bot dari tabel `bot_stats` — satu baris per pengambilan snapshot.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+
+const metrik = [
+  { key: 'guild_count',    label: 'Jumlah server' },
+  { key: 'active_players', label: 'Pemain aktif' },
+  { key: 'games_played',   label: 'Game dimainkan' },
+  { key: 'commands_run',   label: 'Command dijalankan' },
+];
+
+const rentang = [
+  { value: '1',  label: '24 jam' },
+  { value: '7',  label: '7 hari' },
+  { value: '30', label: '30 hari' },
+];
+---
+
+<AdminLayout title="Statistik" active="statistik">
+  <AdminPageHeader
+    eyebrow="Pemantauan"
+    title="Statistik"
+    description="Angka terkini dan tren dari waktu ke waktu. Bot mengirim satu snapshot secara berkala; grafik di bawah membaca riwayatnya."
+  />
+
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <!-- ANGKA TERKINI -->
+    <section>
+      <div class="flex items-baseline justify-between mb-4">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Snapshot terakhir</h2>
+        <span id="stat-waktu" class="text-xs text-ink-500 dark:text-cream-300/60 font-mono"></span>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {metrik.map((m) => (
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+            <p class="font-display text-3xl font-semibold" data-stat={m.key}>—</p>
+            <p class="text-sm mt-1">{m.label}</p>
+          </div>
+        ))}
+      </div>
+      <p id="stat-note" class="hidden mt-3 text-xs text-ink-500 dark:text-cream-300/60"></p>
+    </section>
+
+    <!-- TREN -->
+    <section>
+      <div class="flex flex-wrap items-end justify-between gap-3 mb-5">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Tren</h2>
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <label for="pilih-metrik" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Metrik</label>
+            <select id="pilih-metrik" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
+              {metrik.map((m) => <option value={m.key}>{m.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label for="pilih-rentang" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Rentang</label>
+            <select id="pilih-rentang" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
+              {rentang.map((r) => <option value={r.value} selected={r.value === '7'}>{r.label}</option>)}
+            </select>
+          </div>
+          <button
+            type="button"
+            id="toggle-tabel"
+            class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
+            aria-expanded="false"
+          >
+            Lihat tabel
+          </button>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+        <div id="grafik"></div>
+      </div>
+
+      <!-- Tampilan tabel: grafik saja tidak cukup untuk pembaca layar
+           dan untuk saat angka persisnya yang dibutuhkan. -->
+      <div id="tabel-data" class="hidden mt-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
+        <div class="overflow-x-auto max-h-80">
+          <table class="w-full text-sm">
+            <thead class="bg-ink-900/5 dark:bg-cream-100/5 sticky top-0">
+              <tr class="text-left">
+                <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Waktu</th>
+                <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60" id="th-nilai">Nilai</th>
+              </tr>
+            </thead>
+            <tbody id="tabel-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { gambarGrafik, type TitikData } from '@/lib/admin-chart';
+
+  let riwayat: any[] = [];
+
+  document.addEventListener('admin:ready', () => {
+    void muatSnapshot();
+    void muatRiwayat();
+
+    document.getElementById('pilih-metrik')?.addEventListener('change', gambarUlang);
+    document.getElementById('pilih-rentang')?.addEventListener('change', () => void muatRiwayat());
+
+    document.getElementById('toggle-tabel')?.addEventListener('click', (e) => {
+      const tombol = e.currentTarget as HTMLButtonElement;
+      const tabel = document.getElementById('tabel-data')!;
+      const tampil = tabel.classList.toggle('hidden');
+      tombol.textContent = tampil ? 'Lihat tabel' : 'Sembunyikan tabel';
+      tombol.setAttribute('aria-expanded', String(!tampil));
+    });
+  });
+
+  async function muatSnapshot() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('bot_stats')
+      .select('*')
+      .order('captured_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const note = document.getElementById('stat-note');
+    if (error) {
+      if (note) { note.textContent = pesanError(error); note.classList.remove('hidden'); }
+      return;
+    }
+    if (!data) {
+      if (note) {
+        note.textContent = 'Belum ada snapshot. Angka akan muncul setelah bot mulai mengirim statistik.';
+        note.classList.remove('hidden');
+      }
+      return;
+    }
+
+    for (const key of ['guild_count', 'active_players', 'games_played', 'commands_run']) {
+      const el = document.querySelector(`[data-stat="${key}"]`);
+      if (el) el.textContent = fmtAngka(data[key]);
+    }
+    const waktu = document.getElementById('stat-waktu');
+    if (waktu) waktu.textContent = fmtWaktu(data.captured_at);
+  }
+
+  async function muatRiwayat() {
+    const wadah = document.getElementById('grafik')!;
+    wadah.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const hari = Number((document.getElementById('pilih-rentang') as HTMLSelectElement).value);
+    const sejak = new Date(Date.now() - hari * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data, error } = await supabase
+      .from('bot_stats')
+      .select('captured_at, guild_count, active_players, games_played, commands_run')
+      .gte('captured_at', sejak)
+      .order('captured_at', { ascending: true })
+      .limit(500);
+
+    if (error) {
+      wadah.innerHTML = stateBlock('error', pesanError(error));
+      return;
+    }
+
+    riwayat = data ?? [];
+    gambarUlang();
+  }
+
+  function gambarUlang() {
+    const wadah = document.getElementById('grafik')!;
+    const select = document.getElementById('pilih-metrik') as HTMLSelectElement;
+    const key = select.value;
+    const label = select.options[select.selectedIndex].text;
+
+    const titik: TitikData[] = riwayat
+      .filter((r) => r[key] !== null && r[key] !== undefined)
+      .map((r) => ({ t: new Date(r.captured_at).getTime(), v: Number(r[key]) }));
+
+    gambarGrafik(wadah, titik, label.toLowerCase());
+    isiTabel(titik, label);
+  }
+
+  function isiTabel(titik: TitikData[], label: string) {
+    document.getElementById('th-nilai')!.textContent = label;
+    const body = document.getElementById('tabel-body')!;
+
+    if (titik.length === 0) {
+      body.innerHTML = `<tr><td colspan="2" class="px-5 py-8 text-center text-sm text-ink-500 dark:text-cream-300/60">Belum ada data.</td></tr>`;
+      return;
+    }
+
+    // Terbaru di atas — itu yang paling sering dicari.
+    body.innerHTML = [...titik].reverse().map((d) => `
+      <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+        <td class="px-5 py-2.5 font-mono text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(fmtWaktu(new Date(d.t).toISOString()))}</td>
+        <td class="px-5 py-2.5 font-medium">${esc(fmtAngka(d.v))}</td>
+      </tr>`).join('');
+  }
+</script>

@@ -1,0 +1,179 @@
+---
+// Ringkasan admin.
+//
+// Halaman ini menggabungkan dua sumber:
+//   1. Data sinkronisasi repo (src/data/synced/*.json) — sudah ada di repo,
+//      ikut ter-bake saat build, jadi selalu tampil walau Supabase kosong.
+//   2. Data hidup dari Supabase — muncul begitu bot mulai mengirim datanya.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import syncStatus from '@data/synced/_status.json';
+import version from '@data/synced/version.json';
+import { url } from '@utils/url';
+
+const s = syncStatus as any;
+const syncOk = s.ok === true || s.seeded === true;
+
+const kartu = [
+  { key: 'guilds',  label: 'Server aktif',    hint: 'Bot terpasang di server ini' },
+  { key: 'players', label: 'Pemain terdata',  hint: 'Total pemain yang pernah bermain' },
+  { key: 'logs24',  label: 'Log 24 jam',      hint: 'Aktivitas tercatat sehari terakhir' },
+  { key: 'err24',   label: 'Error 24 jam',    hint: 'Perlu perhatian bila tidak nol' },
+];
+---
+
+<AdminLayout title="Ringkasan" active="ringkasan">
+  <AdminPageHeader
+    eyebrow="Dashboard"
+    title="Ringkasan"
+    description="Gambaran singkat kondisi bot dan website. Angka diambil langsung dari Supabase setiap halaman dibuka."
+  />
+
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <!-- KARTU ANGKA -->
+    <section>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kartu.map((k) => (
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+            <p class="font-display text-3xl font-semibold" data-metric={k.key}>—</p>
+            <p class="text-sm font-medium mt-1">{k.label}</p>
+            <p class="text-xs text-ink-500 dark:text-cream-300/60 mt-0.5">{k.hint}</p>
+          </div>
+        ))}
+      </div>
+      <p id="metrics-note" class="hidden mt-3 text-xs text-ink-500 dark:text-cream-300/60"></p>
+    </section>
+
+    <!-- STATUS SINKRONISASI (dari repo, selalu ada) -->
+    <section>
+      <h2 class="font-display text-lg font-semibold tracking-tightest mb-4">Sinkronisasi data repo</h2>
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6">
+        <div class="flex flex-wrap items-center gap-3 mb-6">
+          <span class={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${syncOk ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
+            <span class={`h-1.5 w-1.5 rounded-full ${syncOk ? 'bg-teal-500' : 'bg-red-500'}`}></span>
+            {syncOk ? 'Sinkron' : 'Perlu perhatian'}
+          </span>
+          <span class="text-xs text-ink-500 dark:text-cream-300/60 font-mono">v{version.version}</span>
+        </div>
+
+        <dl class="grid gap-5 sm:grid-cols-3">
+          <div>
+            <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1">Terakhir sinkron</dt>
+            <dd class="text-sm" data-sync-time>{s.lastSyncedAt ?? '—'}</dd>
+          </div>
+          <div>
+            <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1">Sumber</dt>
+            <dd class="font-mono text-xs break-all">{s.sourceRepo ?? '—'}</dd>
+          </div>
+          <div>
+            <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1">File berhasil</dt>
+            <dd class="text-sm">{s.okCount ?? 0} / {s.total ?? 0}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ERROR TERBARU -->
+    <section>
+      <div class="flex items-baseline justify-between mb-4">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Error terbaru</h2>
+        <a href={url('/admin/logs')} class="text-sm text-amber-600 dark:text-amber-400 hover:underline">Lihat semua log →</a>
+      </div>
+      <div id="recent-errors" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+
+  // Tunggu layout memastikan sesi valid sebelum menyentuh data apa pun.
+  document.addEventListener('admin:ready', () => {
+    void muatRingkasan();
+    void muatErrorTerbaru();
+    perbaikiWaktuSync();
+  });
+
+  /** Ubah timestamp ISO hasil build jadi format waktu Jakarta. */
+  function perbaikiWaktuSync() {
+    const el = document.querySelector('[data-sync-time]');
+    if (el?.textContent && el.textContent !== '—') {
+      el.textContent = fmtWaktu(el.textContent.trim());
+    }
+  }
+
+  function setMetric(key: string, value: string) {
+    const el = document.querySelector(`[data-metric="${key}"]`);
+    if (el) el.textContent = value;
+  }
+
+  async function muatRingkasan() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const sejak24Jam = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    // head:true + count:'exact' hanya mengambil jumlah baris, bukan isinya —
+    // jauh lebih ringan daripada menarik seluruh tabel untuk dihitung.
+    const [guilds, players, logs24, err24] = await Promise.all([
+      supabase.from('bot_guilds').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('bot_players').select('*', { count: 'exact', head: true }),
+      supabase.from('bot_logs').select('*', { count: 'exact', head: true }).gte('created_at', sejak24Jam),
+      supabase.from('bot_logs').select('*', { count: 'exact', head: true }).eq('level', 'error').gte('created_at', sejak24Jam),
+    ]);
+
+    setMetric('guilds', fmtAngka(guilds.count ?? 0));
+    setMetric('players', fmtAngka(players.count ?? 0));
+    setMetric('logs24', fmtAngka(logs24.count ?? 0));
+    setMetric('err24', fmtAngka(err24.count ?? 0));
+
+    // Bila tabel belum ada, beri tahu apa yang kurang alih-alih diam menampilkan nol.
+    const gagal = [guilds, players, logs24, err24].find((r) => r.error);
+    if (gagal?.error) {
+      const note = document.getElementById('metrics-note');
+      if (note) {
+        note.textContent = pesanError(gagal.error);
+        note.classList.remove('hidden');
+      }
+    }
+  }
+
+  async function muatErrorTerbaru() {
+    const wadah = document.getElementById('recent-errors');
+    if (!wadah) return;
+    wadah.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('bot_logs')
+      .select('id, level, event, message, guild_name, created_at')
+      .in('level', ['error', 'warn'])
+      .order('created_at', { ascending: false })
+      .limit(8);
+
+    if (error) {
+      wadah.innerHTML = stateBlock('error', pesanError(error));
+      return;
+    }
+    if (!data || data.length === 0) {
+      wadah.innerHTML = stateBlock('empty', 'Tidak ada error atau peringatan. Bagus.');
+      return;
+    }
+
+    wadah.innerHTML = data
+      .map(
+        (row: any) => `
+        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-3.5 border-b border-ink-900/5 dark:border-cream-100/5 last:border-0">
+          <span class="font-mono text-[0.7rem] uppercase ${row.level === 'error' ? 'text-red-600 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'}">${esc(row.level)}</span>
+          <span class="font-medium text-sm">${esc(row.event)}</span>
+          <span class="text-sm text-ink-500 dark:text-cream-300/60 min-w-0 flex-1 truncate">${esc(row.message ?? '')}</span>
+          <span class="text-xs text-ink-400 dark:text-cream-300/40 font-mono">${esc(fmtWaktu(row.created_at))}</span>
+        </div>`,
+      )
+      .join('');
+  }
+</script>

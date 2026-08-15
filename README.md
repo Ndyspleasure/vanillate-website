@@ -53,16 +53,32 @@ vanillate-website/
 │   │   ├── docs/
 │   │   │   └── [slug].astro        /docs/[slug] (dokumentasi per bot, dari docs.ts)
 │   │   ├── changelog.astro         /changelog (riwayat versi, dari synced/changelog.json)
+│   │   ├── admin/                  Panel admin (butuh login, noindex) — lihat docs/ADMIN-CMS.md
+│   │   │   ├── index.astro         /admin (login username + password)
+│   │   │   ├── dashboard.astro     /admin/dashboard (ringkasan)
+│   │   │   ├── logs.astro          /admin/logs (log aktivitas bot)
+│   │   │   ├── statistik.astro     /admin/statistik (angka & tren)
+│   │   │   ├── server.astro        /admin/server (daftar server Discord)
+│   │   │   ├── pemain.astro        /admin/pemain (daftar pemain)
+│   │   │   └── konten.astro        /admin/konten (editor konten)
 │   │   └── 404.astro               /404 (custom error page)
+│   ├── lib/                        Kode khusus panel admin (jalan di browser)
+│   │   ├── supabase.ts             Inisialisasi klien Supabase (anon key)
+│   │   ├── admin-auth.ts           Login, guard sesi, profil admin
+│   │   ├── admin-ui.ts             Escaping & blok status tampilan
+│   │   └── admin-chart.ts          Grafik tren halaman statistik
 │   ├── utils/
 │   │   └── url.ts                  url() helper untuk internal links (base path aware)
 │   └── styles/global.css           Tailwind + global styles
-├── .env.example                    Contoh environment variable (kanal support)
+├── supabase/schema.sql             Skema tabel + Row Level Security panel admin
+├── scripts/sync-content.mjs        Tarik konten Supabase → JSON saat build
+├── .env.example                    Contoh environment variable (support + Supabase)
 ├── astro.config.mjs                SITE_URL: https://vanillate.id (no base)
 ├── tailwind.config.mjs             Brand palette (ink, cream, amber, teal) + typography
 ├── tsconfig.json
 ├── package.json
 ├── PANDUAN-DEPLOY.md               Dokumentasi deploy step-by-step
+├── docs/ADMIN-CMS.md               Panduan panel admin & CMS
 └── README.md                        (file ini)
 ```
 
@@ -373,11 +389,26 @@ Semua custom token di `tailwind.config.mjs` — edit di sana jika perlu rebrand.
 ## Architecture: Frontend Statis
 
 Website ini **hanya frontend** — Astro build → static HTML + CSS + JS.
+Tidak ada server-side rendering; GitHub Pages memang hanya melayani file statis.
 
 Seluruh **backend** (API, game logic, database, auth) tetap terpisah:
 - Bot Discord dijalankan via PM2 (Node.js di Windows)
-- Database: better-sqlite3 (.db file lokal)
+- Database game: better-sqlite3 (.db file lokal)
 - OG images & assets: CDN atau hosted terpisah
-- Tidak ada server-side rendering atau dynamic backend di Astro
 
 Benefit: deployment sederhana (push ke GitHub), cepat (static files), dan murah (free GitHub Pages).
+
+### Panel admin (`/admin`)
+
+Karena tidak ada server sendiri, panel admin memakai **Supabase** sebagai
+backend: autentikasi dan data dijaga di sana, browser hanya memegang `anon key`
+yang memang publik. Yang menahan data bukan halaman `/admin` — melainkan **Row
+Level Security** di Supabase, yang mengembalikan nol baris tanpa JWT admin yang
+sah. Artinya kerangka halaman admin publik, tapi isinya kosong tanpa login.
+
+Data bot (log, statistik, daftar server, daftar pemain) **ditulis oleh bot** ke
+Supabase memakai service role key, dan panel hanya membacanya. Bot token Discord
+tidak pernah menyentuh browser.
+
+Setup lengkap, kontrak data untuk repo bot, dan batasan modelnya ada di
+**[docs/ADMIN-CMS.md](docs/ADMIN-CMS.md)**.
