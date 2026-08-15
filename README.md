@@ -320,9 +320,13 @@ nama yang ada di registry `src/data/icons.ts`.
 
 ### Catatan lampiran
 
-Field screenshot hanya membuat pratinjau lokal — `wa.me` dan `mailto:` tidak bisa
-membawa file. Pesannya menyertakan baris `Lampiran`, dan setelah redirect user
-diingatkan untuk melampirkan gambarnya sendiri di chat/email.
+Wizard **tidak** punya fitur upload file, dan itu disengaja. `wa.me` maupun
+`mailto:` tidak bisa membawa file, jadi gambar yang dipilih di website hanya akan
+jadi pratinjau lokal dan tetap harus di-upload ulang setelah aplikasinya terbuka —
+user membayar kuota dua kali untuk file yang sama.
+
+Sebagai gantinya, wizard menampilkan catatan di langkah Review dan di panel akhir
+yang mengingatkan user melampirkan screenshot atau video langsung di WhatsApp/email.
 
 ## Sistem Ikon (SVG — Satu Icon Pack)
 
