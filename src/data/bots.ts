@@ -3,6 +3,7 @@
 // Halaman /bots dan /bots/[slug] akan otomatis menampilkannya.
 
 import botInfo from './synced/bot-info.json';
+import type { IconName } from './icons';
 
 export type Bot = {
   slug: string;                 // URL segment: /bots/<slug>
@@ -19,7 +20,7 @@ export type Bot = {
   scopes: string[];             // OAuth2 scopes
   integrationType?: string;     // Discord integration_type ('0' = guild install, '1' = user install). Kosongkan untuk memakai default Discord.
   color: string;                // Aksen warna bot (hex)
-  icon: string;
+  icon: IconName;               // Nama ikon SVG (registry @data/icons) — fallback saat tak ada thumbnail
   thumbnail?: string;           // Path thumbnail PNG persegi di /public
   features: string[];           // 3-6 poin fitur utama
   commands?: { name: string; description: string }[]; // sample command untuk halaman detail
@@ -90,7 +91,7 @@ const allBots: Bot[] = [
     scopes: ['bot', 'applications.commands'],
     integrationType: '0',
     color: '#E8B84A',
-    icon: '✦',
+    icon: 'sparkles',
     // Fitur & command ditarik dari data tersinkron (src/data/synced/bot-info.json)
     // yang diambil otomatis dari repo bot. Satu sumber kebenaran — ubah di repo
     // bot, website ikut berubah pada sinkronisasi berikutnya.

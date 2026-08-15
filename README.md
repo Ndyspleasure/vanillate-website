@@ -25,14 +25,17 @@ vanillate-website/
 ├── src/
 │   ├── components/
 │   │   ├── Header.astro            Header dengan nav & dark/light toggle
-│   │   ├── Footer.astro            Footer dengan social & contact links
+│   │   ├── Footer.astro            Footer dengan social (SVG) & contact links
 │   │   ├── Button.astro            Tombol (internal url() helper built-in)
 │   │   ├── BotCard.astro           Card untuk bot di katalog
-│   │   ├── SEO.astro               Meta tags (og:image, twitter:card, dll)
+│   │   ├── Icon.astro              Komponen ikon SVG tunggal (satu icon pack: Lucide)
+│   │   ├── BackToTop.astro         Tombol "kembali ke atas" global
+│   │   ├── SEO.astro               Meta tags + JSON-LD (Schema.org Organization/WebSite)
 │   │   └── ThemeToggle.astro       Dark/light mode toggle
 │   ├── data/
 │   │   ├── site.ts                 Global config: domain, titles, social links
 │   │   ├── bots.ts                 Registry semua bot + buildInviteUrl() helper
+│   │   ├── icons.ts                Registry ikon SVG (Lucide) — satu sumber kebenaran
 │   │   └── docs.ts                 Konten dokumentasi (Sambung Kata)
 │   ├── i18n/id.ts                  Copy text ID (siap + EN nanti)
 │   ├── layouts/BaseLayout.astro    Base layout semua page (Header, Footer, SEO)
@@ -47,6 +50,7 @@ vanillate-website/
 │   │   │   └── [slug].astro        /bots/[slug] (detail bot, dynamic dari bots.ts)
 │   │   ├── docs/
 │   │   │   └── [slug].astro        /docs/[slug] (dokumentasi per bot, dari docs.ts)
+│   │   ├── changelog.astro         /changelog (riwayat versi, dari synced/changelog.json)
 │   │   └── 404.astro               /404 (custom error page)
 │   ├── utils/
 │   │   └── url.ts                  url() helper untuk internal links (base path aware)
@@ -86,7 +90,7 @@ Edit `src/data/bots.ts` dan tambahkan objek `Bot` ke array `bots`. Halaman `/bot
   slug: 'nama-bot',
   name: 'Vanillate Nama Bot',
   shortName: 'Nama Bot',
-  icon: '🎮',
+  icon: 'sparkles',   // nama ikon dari registry SVG (src/data/icons.ts) — dipakai jika belum ada thumbnail
   color: '#5865F2',
   tagline: 'Deskripsi singkat di katalog',
   description: 'Deskripsi panjang di halaman detail',
@@ -225,6 +229,32 @@ Domain sudah aktif dan live. Setup yang dilakukan:
 - Comply dengan Discord ToS & best practice privasi
 
 **Last Updated:** 6 July 2026
+
+## Sistem Ikon (SVG — Satu Icon Pack)
+
+Seluruh ikon UI memakai **satu icon pack: [Lucide](https://lucide.dev)** (gaya stroke,
+`viewBox="0 0 24 24"`), tanpa mencampur pack lain dan tanpa emoji di elemen UI.
+
+- **Registry:** `src/data/icons.ts` — satu sumber kebenaran; setiap key kebab-case
+  memetakan ke isi `<svg>` Lucide. Menambah ikon = salin inner path Lucide baru ke sini.
+- **Komponen:** `src/components/Icon.astro` — render `<svg>` dari registry.
+
+```astro
+---
+import Icon from '@components/Icon.astro';
+---
+<Icon name="trophy" class="h-5 w-5" />               <!-- dekoratif (aria-hidden) -->
+<Icon name="mail" class="h-5 w-5" label="Email" />   <!-- bermakna → role=img + aria-label -->
+```
+
+Warna ikut `currentColor`, ukuran dari class Tailwind (mis. `h-5 w-5`). Ikon default
+bersifat dekoratif (`aria-hidden`); beri prop `label` untuk ikon yang bermakna.
+
+**Pengecualian yang sengaja tetap emoji:** teks konten dokumentasi (`docs.ts`) & data
+tersinkron dari repo bot (`synced/*.json`, mis. nama item shop `🗝️ Golden Key`, skill
+`⚔️ Attack`) mencerminkan label asli di dalam Discord bot, jadi dibiarkan apa adanya
+agar dokumentasi tetap 1:1 dengan tampilan game. Aset gambar (avatar bot, banner,
+thumbnail, screenshot) tetap PNG/WebP sesuai kebutuhan.
 
 ## Design Tokens & Styling
 

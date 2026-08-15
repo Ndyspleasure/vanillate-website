@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
+import Icon from '@components/Icon.astro';
 import { site } from '@data/site';
 import { bots } from '@data/bots';
 import { generalFaqs } from '@data/faq';
@@ -175,7 +176,7 @@ const bugSteps = [
               {bot.thumbnail ? (
                 <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
               ) : (
-                <span class="flex h-10 w-10 items-center justify-center rounded-lg text-base flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true">{bot.icon}</span>
+                <span class="flex h-10 w-10 items-center justify-center rounded-lg flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true"><Icon name={bot.icon} class="h-5 w-5" /></span>
               )}
               <div class="flex-1">
                 <p class="font-medium text-sm">Dokumentasi {bot.shortName}</p>

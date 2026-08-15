@@ -4,6 +4,7 @@ import { site } from '@data/site';
 import SEO from '@components/SEO.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
+import BackToTop from '@components/BackToTop.astro';
 import { url } from '@utils/url';
 
 export interface Props {
@@ -61,6 +62,7 @@ const { title, description, image, noindex } = Astro.props;
       <slot />
     </main>
     <Footer />
+    <BackToTop />
 
     <script>
       // Scroll reveal global: tampilkan elemen .reveal saat masuk viewport.

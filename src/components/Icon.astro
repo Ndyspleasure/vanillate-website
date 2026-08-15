@@ -1,0 +1,45 @@
+---
+// Komponen ikon SVG tunggal untuk seluruh situs (satu icon pack: Lucide).
+// Menggambar <svg> dari registry di @data/icons.
+//
+// Pakai:
+//   <Icon name="trophy" class="h-5 w-5" />                 (dekoratif, default)
+//   <Icon name="mail" class="h-5 w-5" label="Email" />     (punya makna → aria-label)
+//
+// - Default `aria-hidden` (ikon dekoratif). Beri `label` untuk menjadikannya
+//   ikon bermakna dengan role="img" + aria-label.
+// - Warna mengikuti `currentColor`, ukuran dari class Tailwind (mis. h-5 w-5).
+import { icons, type IconName } from '@data/icons';
+
+export interface Props {
+  name: IconName;
+  class?: string;
+  strokeWidth?: number;
+  label?: string; // jika diisi → ikon bermakna (bukan sekadar dekorasi)
+}
+
+const { name, class: className = 'h-5 w-5', strokeWidth = 2, label } = Astro.props;
+
+const path = icons[name];
+if (import.meta.env.DEV && !path) {
+  // Bantu ketahuan lebih awal saat nama ikon salah ketik.
+  console.warn(`[Icon] Ikon "${name}" tidak ada di registry (@data/icons.ts).`);
+}
+
+const a11y = label
+  ? { role: 'img', 'aria-label': label }
+  : { 'aria-hidden': 'true', focusable: 'false' };
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width={strokeWidth}
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  class={className}
+  {...a11y}
+  set:html={path}
+></svg>

@@ -18,6 +18,33 @@ const {
 const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.tagline}`;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).toString();
 const ogImage = new URL(image, Astro.site ?? site.url).toString();
+
+// Structured Data (Schema.org). Organization + WebSite dipasang di semua
+// halaman supaya mesin pencari memahami identitas studio & situs. Ditulis
+// sebagai satu graph agar ringkas dan bisa saling merujuk.
+const orgId = `${site.url}/#organization`;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': orgId,
+      name: site.name,
+      url: site.url,
+      description: site.tagline,
+      logo: new URL('/apple-touch-icon.png', site.url).toString(),
+      sameAs: [site.links.github, site.links.discordSupport],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${site.url}/#website`,
+      name: site.name,
+      url: site.url,
+      inLanguage: 'id-ID',
+      publisher: { '@id': orgId },
+    },
+  ],
+};
 ---
 
 <title>{fullTitle}</title>
@@ -43,3 +70,6 @@ const ogImage = new URL(image, Astro.site ?? site.url).toString();
 <!-- Theme color -->
 <meta name="theme-color" content="#0B0A0E" media="(prefers-color-scheme: dark)" />
 <meta name="theme-color" content="#FBF8F1" media="(prefers-color-scheme: light)" />
+
+<!-- Structured Data (Schema.org) -->
+<script type="application/ld+json" set:html={JSON.stringify(structuredData)} />

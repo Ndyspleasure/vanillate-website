@@ -6,10 +6,12 @@
 // Ubah di sini = otomatis berubah di kedua tempat. Jangan duplikat data event.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { IconName } from './icons';
+
 export type EventStat = { label: string; value: string };
 
 export type GameEvent = {
-  icon: string;        // Emoji ikon event
+  icon: IconName;      // Nama ikon SVG (registry @data/icons), bukan emoji
   name: string;        // Nama event (mis. "AI Challenger")
   tagline: string;     // Satu kalimat penjelas
   accent: string;      // Warna aksen kartu (hex), tema per event
@@ -23,7 +25,7 @@ const DOCS_ANCHOR = '/docs/sambung-kata#event-spesial';
 
 export const sambungKataEvents: GameEvent[] = [
   {
-    icon: '🤖',
+    icon: 'bot',
     name: 'AI Challenger',
     tagline: 'Boss AI menantang seisi room. Kerja sama menumbangkannya sebelum match usai.',
     accent: '#4FA89D',
@@ -37,7 +39,7 @@ export const sambungKataEvents: GameEvent[] = [
     href: DOCS_ANCHOR,
   },
   {
-    icon: '📡',
+    icon: 'radio',
     name: 'Lost Signal',
     tagline: 'Sistem bahasa pecah jadi 5 fragmen. Kumpulkan semua sebelum match berakhir.',
     accent: '#5B8DEF',
@@ -51,7 +53,7 @@ export const sambungKataEvents: GameEvent[] = [
     href: DOCS_ANCHOR,
   },
   {
-    icon: '🧳',
+    icon: 'briefcase',
     name: 'Traveling Merchant',
     tagline: 'Toko dadakan berisi item langka & diskon. Aktif hanya 5 menit lalu pergi.',
     accent: '#E8B84A',
@@ -65,7 +67,7 @@ export const sambungKataEvents: GameEvent[] = [
     href: DOCS_ANCHOR,
   },
   {
-    icon: '🗡️',
+    icon: 'swords',
     name: 'Penjajah (Invader)',
     tagline: 'Event spesial Hari Kemerdekaan RI (17 Agustus). Tahan Steal, Block, & Challenge sampai boss terusir.',
     accent: '#E5484D',
