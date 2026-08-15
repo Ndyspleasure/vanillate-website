@@ -140,6 +140,22 @@ Halaman log, statistik, server, dan pemain **hanya membaca**. Yang mengisinya
 adalah bot, memakai `service_role key`. Selama bot belum mengirim apa pun,
 halaman-halaman itu tampil kosong dengan pesan yang menjelaskan — bukan error.
 
+### Mau lihat panelnya terisi dulu? Jalankan seed demo
+
+Sebelum bot tersambung, isi data contoh supaya bisa memastikan panelnya
+berfungsi — grafik muncul, filter log jalan, tabel server dan pemain terisi:
+
+1. Supabase → **SQL Editor** → tempel seluruh isi `supabase/seed-demo.sql` → **Run**
+2. Buka `/admin/dashboard`, `/admin/logs`, `/admin/statistik`, `/admin/server`,
+   dan `/admin/pemain` — semuanya sudah ada isinya
+
+Seed ini aman dijalankan berulang kali; setiap kali dijalankan ia membersihkan
+data demo sebelumnya lebih dulu. Semua barisnya ditandai `meta->>'demo' = 'true'`,
+jadi saat bot asli sudah mengirim data, hapus yang demo saja lewat blok
+**MEMBERSIHKAN DATA DEMO** di bagian bawah file itu — data asli tidak tersentuh.
+
+### Yang dipasang di repo bot
+
 Pasang di repo bot:
 
 ```bash
@@ -334,6 +350,7 @@ Tunggu workflow sync konten berikutnya, atau jalankan manual lewat tab Actions.
 | File | Isi |
 |---|---|
 | `supabase/schema.sql` | Skema tabel, fungsi, dan seluruh aturan RLS |
+| `supabase/seed-demo.sql` | Data contoh untuk mencoba panel sebelum bot tersambung |
 | `src/lib/supabase.ts` | Inisialisasi klien Supabase |
 | `src/lib/admin-auth.ts` | Login, guard sesi, profil admin |
 | `src/lib/admin-ui.ts` | Escaping & blok status tampilan |
