@@ -60,5 +60,10 @@ export function pesanError(error: { message?: string; code?: string } | null): s
   if (code === '42501' || /permission denied/i.test(error.message ?? '')) {
     return 'Akun ini tidak punya izin membaca data tersebut.';
   }
+  // Policy yang menanyai tabelnya sendiri. Ini masalah konfigurasi database,
+  // bukan soal hak akses user — pesannya harus mengarahkan ke sana.
+  if (code === '42P17' || /infinite recursion/i.test(error.message ?? '')) {
+    return 'Aturan keamanan database saling memanggil (rekursi). Jalankan ulang supabase/schema.sql versi terbaru.';
+  }
   return 'Gagal memuat data. Coba muat ulang halaman.';
 }

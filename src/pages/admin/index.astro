@@ -99,7 +99,7 @@ import { url } from '@utils/url';
 
   // Sudah punya sesi aktif? Langsung masuk, jangan suruh login lagi.
   (async () => {
-    const profile = await getAdminProfile();
+    const { profile } = await getAdminProfile();
     if (profile) window.location.replace(tujuanSetelahLogin());
   })();
 

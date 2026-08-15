@@ -310,6 +310,13 @@ seluruh isinya — file itu aman diulang.
 Akun auth-nya ada, tapi belum terdaftar di `admin_users`. Lihat bagian 4
 langkah 2.
 
+**"Aturan keamanan database saling memanggil (rekursi)"**
+Skema versi lama punya policy `admin_users` yang menanyai `admin_users` lagi di
+dalam dirinya sendiri — PostgreSQL menolaknya (error 42P17), dan login jadi
+gagal walau username, password, serta barisnya sudah benar. Jalankan ulang
+seluruh `supabase/schema.sql` versi terbaru; data yang sudah ada tidak
+terpengaruh.
+
 **Halaman admin menampilkan "Belum dikonfigurasi"**
 Secret `PUBLIC_SUPABASE_URL` / `PUBLIC_SUPABASE_ANON_KEY` belum diisi saat
 build. Isi secret-nya lalu jalankan ulang workflow deploy.
