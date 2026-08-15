@@ -1,0 +1,27 @@
+---
+// Banner pengumuman di atas header.
+//
+// Isinya diedit lewat panel /admin, disimpan di Supabase, lalu ditarik saat
+// build oleh scripts/sync-content.mjs. Jadi pengunjung tidak menjalankan query
+// apa pun — yang sampai ke browser hanya HTML biasa.
+import siteContent from '@data/synced/site-content.json';
+
+const { enabled, text, url: tautan } = siteContent.announcement;
+---
+
+{enabled && text && (
+  <div class="bg-amber-500/15 border-b border-amber-500/25">
+    <div class="container-page py-2.5">
+      {tautan ? (
+        <a
+          href={tautan}
+          class="block text-center text-sm text-ink-800 dark:text-cream-100 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+        >
+          {text} <span aria-hidden="true">→</span>
+        </a>
+      ) : (
+        <p class="text-center text-sm text-ink-800 dark:text-cream-100">{text}</p>
+      )}
+    </div>
+  </div>
+)}

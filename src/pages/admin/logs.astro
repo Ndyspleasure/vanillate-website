@@ -1,0 +1,194 @@
+---
+// Log aktivitas bot. Data ditulis oleh bot ke tabel `bot_logs` di Supabase;
+// halaman ini murni pembaca.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+
+const levels = [
+  { value: '',      label: 'Semua' },
+  { value: 'error', label: 'Error' },
+  { value: 'warn',  label: 'Peringatan' },
+  { value: 'info',  label: 'Info' },
+  { value: 'debug', label: 'Debug' },
+];
+---
+
+<AdminLayout title="Log Aktivitas" active="logs">
+  <AdminPageHeader
+    eyebrow="Pemantauan"
+    title="Log Aktivitas"
+    description="Catatan kejadian dari bot: perintah dijalankan, error, bot masuk atau keluar server."
+  />
+
+  <div class="px-6 lg:px-10 py-8">
+    <!-- FILTER -->
+    <div class="flex flex-wrap items-end gap-3 mb-6">
+      <div>
+        <label for="filter-level" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Level</label>
+        <select
+          id="filter-level"
+          class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500"
+        >
+          {levels.map((l) => <option value={l.value}>{l.label}</option>)}
+        </select>
+      </div>
+
+      <div class="flex-1 min-w-[200px]">
+        <label for="filter-cari" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Cari</label>
+        <input
+          id="filter-cari"
+          type="search"
+          placeholder="Nama kejadian atau isi pesan…"
+          class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500"
+        />
+      </div>
+
+      <button
+        type="button"
+        id="btn-muat-ulang"
+        class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
+      >
+        Muat ulang
+      </button>
+    </div>
+
+    <!-- TABEL -->
+    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
+            <tr class="text-left">
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Waktu</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Level</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Kejadian</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Pesan</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Server</th>
+            </tr>
+          </thead>
+          <tbody id="logs-body"></tbody>
+        </table>
+      </div>
+      <div id="logs-state"></div>
+    </div>
+
+    <div class="mt-5 flex items-center justify-between">
+      <p id="logs-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
+      <button
+        type="button"
+        id="btn-lagi"
+        class="hidden rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
+      >
+        Muat lebih banyak
+      </button>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { fmtWaktu, fmtAngka } from '@/lib/admin-auth';
+  import { esc, levelBadge, stateBlock, pesanError } from '@/lib/admin-ui';
+
+  const PER_HALAMAN = 50;
+
+  let offset = 0;
+  let total = 0;
+  /** Menandai permintaan terbaru. Respons dari filter lama yang datang
+   *  terlambat akan diabaikan, supaya isi tabel tidak tertukar. */
+  let generasi = 0;
+
+  const tbody = document.getElementById('logs-body') as HTMLElement;
+  const stateEl = document.getElementById('logs-state') as HTMLElement;
+  const infoEl = document.getElementById('logs-info') as HTMLElement;
+  const btnLagi = document.getElementById('btn-lagi') as HTMLButtonElement;
+
+  document.addEventListener('admin:ready', () => {
+    void muat(true);
+
+    document.getElementById('filter-level')?.addEventListener('change', () => void muat(true));
+    document.getElementById('btn-muat-ulang')?.addEventListener('click', () => void muat(true));
+    btnLagi.addEventListener('click', () => void muat(false));
+
+    // Tunda pencarian sampai user berhenti mengetik, supaya tidak menembak
+    // query ke Supabase pada tiap ketukan tombol.
+    let timer: ReturnType<typeof setTimeout>;
+    document.getElementById('filter-cari')?.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void muat(true), 350);
+    });
+  });
+
+  async function muat(reset: boolean) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    if (reset) {
+      offset = 0;
+      tbody.innerHTML = '';
+      stateEl.innerHTML = stateBlock('loading', '');
+      btnLagi.classList.add('hidden');
+    }
+
+    const generasiSaatIni = ++generasi;
+
+    const level = (document.getElementById('filter-level') as HTMLSelectElement).value;
+    const cari = (document.getElementById('filter-cari') as HTMLInputElement).value.trim();
+
+    let query = supabase
+      .from('bot_logs')
+      .select('id, level, event, message, guild_name, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PER_HALAMAN - 1);
+
+    if (level) query = query.eq('level', level);
+    if (cari) {
+      // Karakter khusus PostgREST di-escape supaya teks pencarian tidak
+      // sampai mengubah struktur filter.
+      const aman = cari.replace(/[%,()\\]/g, '\\$&');
+      query = query.or(`event.ilike.%${aman}%,message.ilike.%${aman}%`);
+    }
+
+    const { data, error, count } = await query;
+
+    if (generasiSaatIni !== generasi) return; // sudah ada permintaan lebih baru
+
+    if (error) {
+      stateEl.innerHTML = stateBlock('error', pesanError(error));
+      infoEl.textContent = '';
+      return;
+    }
+
+    total = count ?? 0;
+
+    if (reset && (!data || data.length === 0)) {
+      stateEl.innerHTML = stateBlock(
+        'empty',
+        cari || level
+          ? 'Tidak ada log yang cocok dengan filter ini.'
+          : 'Belum ada log. Data akan muncul setelah bot mulai mengirimnya.',
+      );
+      infoEl.textContent = '';
+      return;
+    }
+
+    stateEl.innerHTML = '';
+    tbody.insertAdjacentHTML('beforeend', (data ?? []).map(baris).join(''));
+
+    offset += data?.length ?? 0;
+    infoEl.textContent = `Menampilkan ${fmtAngka(offset)} dari ${fmtAngka(total)} log`;
+    btnLagi.classList.toggle('hidden', offset >= total);
+  }
+
+  function baris(row: any): string {
+    return `
+      <tr class="border-t border-ink-900/5 dark:border-cream-100/5 align-top">
+        <td class="px-5 py-3 whitespace-nowrap font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(fmtWaktu(row.created_at))}</td>
+        <td class="px-5 py-3">
+          <span class="inline-block rounded-full px-2 py-0.5 font-mono text-[0.65rem] uppercase ${levelBadge(row.level)}">${esc(row.level)}</span>
+        </td>
+        <td class="px-5 py-3 font-medium whitespace-nowrap">${esc(row.event)}</td>
+        <td class="px-5 py-3 text-ink-600 dark:text-cream-200/80 max-w-md">${esc(row.message ?? '—')}</td>
+        <td class="px-5 py-3 text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(row.guild_name ?? '—')}</td>
+      </tr>`;
+  }
+</script>

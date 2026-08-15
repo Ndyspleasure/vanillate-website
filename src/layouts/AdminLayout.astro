@@ -1,0 +1,175 @@
+---
+// Layout khusus area admin.
+//
+// Sengaja TIDAK memakai Header/Footer publik: area ini bukan bagian dari
+// perjalanan pengunjung biasa, dan menautkannya dari navigasi umum hanya
+// menambah permukaan yang tidak perlu.
+//
+// Semua halaman yang memakai layout ini di-set noindex.
+import '../styles/global.css';
+import { url } from '@utils/url';
+
+export interface Props {
+  title: string;
+  /** Halaman login memakai false: belum ada sesi yang bisa diperiksa. */
+  requireAuth?: boolean;
+  /** Kunci menu yang sedang aktif. */
+  active?: string;
+}
+
+const { title, requireAuth = true, active } = Astro.props;
+
+const menu = [
+  { key: 'ringkasan', label: 'Ringkasan',     href: '/admin/dashboard', icon: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>' },
+  { key: 'logs',      label: 'Log Aktivitas', href: '/admin/logs',      icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>' },
+  { key: 'statistik', label: 'Statistik',     href: '/admin/statistik', icon: '<path d="M3 3v18h18"/><path d="m7 15 3-4 3 3 5-7"/>' },
+  { key: 'server',    label: 'Server',        href: '/admin/server',    icon: '<rect x="2" y="4" width="20" height="7" rx="2"/><rect x="2" y="13" width="20" height="7" rx="2"/><path d="M6 8h.01M6 17h.01"/>' },
+  { key: 'pemain',    label: 'Pemain',        href: '/admin/pemain',    icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>' },
+  { key: 'konten',    label: 'Konten',        href: '/admin/konten',    icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/>' },
+];
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>{title} · Admin Vanillate</title>
+    <link rel="icon" type="image/png" sizes="32x32" href={url('/favicon-32.png')} />
+
+    <script is:inline>
+      // Area admin dipakai lama dan sering malam hari — default gelap,
+      // tapi tetap hormati pilihan tema yang sudah tersimpan.
+      (function () {
+        document.documentElement.classList.add('js');
+        try {
+          const stored = localStorage.getItem('theme');
+          if (stored ? stored === 'dark' : true) document.documentElement.classList.add('dark');
+        } catch (_) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="min-h-screen bg-cream-50 dark:bg-ink-950 text-ink-900 dark:text-cream-100">
+    {requireAuth ? (
+      <>
+        <!--
+          Gerbang tampilan. Konten admin disembunyikan sampai sesi terverifikasi,
+          supaya kerangka dashboard tidak sempat berkedip untuk orang yang tidak
+          berhak. Ini murni soal tampilan — penjagaan datanya ada di RLS Supabase.
+        -->
+        <div id="admin-gate" class="flex min-h-screen items-center justify-center">
+          <div class="text-center">
+            <div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-amber-500/30 border-t-amber-500"></div>
+            <p class="mt-4 text-sm text-ink-500 dark:text-cream-300/60">Memeriksa sesi…</p>
+          </div>
+        </div>
+
+        <div id="admin-shell" class="hidden lg:grid lg:grid-cols-[260px_1fr] min-h-screen">
+          <!-- SIDEBAR -->
+          <aside class="border-b lg:border-b-0 lg:border-r border-ink-900/10 dark:border-cream-100/10 lg:sticky lg:top-0 lg:h-screen flex flex-col">
+            <div class="p-6 border-b border-ink-900/10 dark:border-cream-100/10">
+              <p class="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">Vanillate</p>
+              <p class="font-display text-lg font-semibold tracking-tightest mt-1">Panel Admin</p>
+            </div>
+
+            <nav class="flex-1 p-4 overflow-x-auto">
+              <ul class="flex lg:flex-col gap-1">
+                {menu.map((m) => (
+                  <li>
+                    <a
+                      href={url(m.href)}
+                      class={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors ${
+                        active === m.key
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                          : 'text-ink-600 dark:text-cream-200/70 hover:bg-ink-900/5 dark:hover:bg-cream-100/5'
+                      }`}
+                    >
+                      <svg class="h-4 w-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={m.icon} />
+                      {m.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <div class="p-4 border-t border-ink-900/10 dark:border-cream-100/10">
+              <div class="px-3 py-2 mb-2">
+                <p class="text-sm font-medium" id="admin-name">—</p>
+                <p class="text-xs text-ink-500 dark:text-cream-300/60" id="admin-role">—</p>
+              </div>
+              <button
+                type="button"
+                id="admin-logout"
+                class="w-full rounded-xl border border-ink-900/10 dark:border-cream-100/10 px-3 py-2 text-sm font-medium text-ink-600 dark:text-cream-200/70 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
+              >
+                Keluar
+              </button>
+            </div>
+          </aside>
+
+          <!-- KONTEN -->
+          <div class="min-w-0">
+            <slot />
+          </div>
+        </div>
+      </>
+    ) : (
+      <slot />
+    )}
+
+    <!--
+      Skrip penjaga sesi.
+
+      Ditaruh di level atas template dan BUKAN di dalam `{requireAuth && (...)}`.
+      Astro hanya mem-bundle <script> yang bisa dianalisis secara statis; skrip
+      di dalam ekspresi kondisional dikirim mentah ke browser, sehingga baris
+      `import` di dalamnya langsung gagal ("Cannot use import statement outside
+      a module") dan penjagaan tidak pernah berjalan.
+
+      Halaman login memakai requireAuth={false} dan tidak merender #admin-gate,
+      jadi ada tidaknya elemen itu yang dipakai sebagai penanda apakah penjagaan
+      perlu dijalankan.
+    -->
+    <script>
+      import { requireAdmin, logout } from '@/lib/admin-auth';
+      import { url } from '@/utils/url';
+
+      const gate = document.getElementById('admin-gate');
+      const shell = document.getElementById('admin-shell');
+
+      if (gate && shell) {
+        (async () => {
+          const profile = await requireAdmin(url('/admin'));
+          if (!profile) return; // requireAdmin sudah melakukan redirect
+
+          const nameEl = document.getElementById('admin-name');
+          const roleEl = document.getElementById('admin-role');
+          if (nameEl) nameEl.textContent = profile.display_name || profile.username;
+          if (roleEl) roleEl.textContent = profile.role;
+
+          gate.remove();
+          shell.classList.remove('hidden');
+
+          // Beri tahu halaman bahwa sesi siap, supaya bisa mulai mengambil data.
+          document.dispatchEvent(new CustomEvent('admin:ready', { detail: profile }));
+        })();
+
+        document.getElementById('admin-logout')?.addEventListener('click', async () => {
+          await logout();
+          window.location.replace(url('/admin'));
+        });
+      }
+    </script>
+  </body>
+</html>

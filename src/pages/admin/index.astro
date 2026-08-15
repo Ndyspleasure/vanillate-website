@@ -1,0 +1,130 @@
+---
+// Halaman login admin. Ini pintu masuk /admin.
+//
+// Halaman ini statis dan publik — memang tidak bisa disembunyikan di GitHub
+// Pages. Yang penting: halaman ini tidak memuat data apa pun. Semua data baru
+// bisa diambil setelah Supabase menerbitkan JWT admin yang sah.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { url } from '@utils/url';
+---
+
+<AdminLayout title="Masuk" requireAuth={false}>
+  <main class="min-h-screen flex items-center justify-center px-6 py-16">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-10">
+        <p class="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">Vanillate Studio</p>
+        <h1 class="font-display text-3xl font-semibold tracking-tightest mt-2">Panel Admin</h1>
+        <p class="mt-3 text-sm text-ink-500 dark:text-cream-300/60">
+          Area khusus pengelola. Masuk untuk melihat log, statistik, dan konten.
+        </p>
+      </div>
+
+      {!isSupabaseConfigured ? (
+        <div class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
+          <p class="font-display font-semibold mb-2">Belum dikonfigurasi</p>
+          <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+            Variabel <code class="font-mono text-[0.85em]">PUBLIC_SUPABASE_URL</code> dan
+            <code class="font-mono text-[0.85em]">PUBLIC_SUPABASE_ANON_KEY</code> belum diisi saat build,
+            jadi form login dimatikan. Ikuti langkah di
+            <code class="font-mono text-[0.85em]">docs/ADMIN-CMS.md</code>.
+          </p>
+        </div>
+      ) : (
+        <form id="login-form" class="space-y-4" novalidate>
+          <div>
+            <label for="identifier" class="block text-sm font-medium mb-1.5">Username atau email</label>
+            <input
+              id="identifier"
+              name="identifier"
+              type="text"
+              autocomplete="username"
+              required
+              class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium mb-1.5">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors"
+            />
+          </div>
+
+          <p
+            id="login-error"
+            class="hidden rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400"
+            role="alert"
+            aria-live="polite"
+          ></p>
+
+          <button
+            type="submit"
+            id="login-submit"
+            class="w-full rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            Masuk
+          </button>
+        </form>
+      )}
+
+      <p class="mt-8 text-center text-xs text-ink-400 dark:text-cream-300/40">
+        <a href={url('/')} class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">← Kembali ke vanillate.id</a>
+      </p>
+    </div>
+  </main>
+</AdminLayout>
+
+<script>
+  import { login, getAdminProfile } from '@/lib/admin-auth';
+  import { url } from '@/utils/url';
+
+  const form = document.getElementById('login-form') as HTMLFormElement | null;
+
+  /**
+   * Tujuan setelah login. Hanya menerima path internal — parameter `next`
+   * berasal dari URL yang bisa diutak-atik siapa saja, jadi URL absolut
+   * ditolak supaya tidak bisa dipakai untuk open redirect.
+   */
+  function tujuanSetelahLogin(): string {
+    const next = new URLSearchParams(window.location.search).get('next');
+    if (next && next.startsWith('/') && !next.startsWith('//')) return next;
+    return url('/admin/dashboard');
+  }
+
+  // Sudah punya sesi aktif? Langsung masuk, jangan suruh login lagi.
+  (async () => {
+    const profile = await getAdminProfile();
+    if (profile) window.location.replace(tujuanSetelahLogin());
+  })();
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submit = document.getElementById('login-submit') as HTMLButtonElement;
+    const errorEl = document.getElementById('login-error') as HTMLParagraphElement;
+    const identifier = (document.getElementById('identifier') as HTMLInputElement).value;
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+
+    errorEl.classList.add('hidden');
+    submit.disabled = true;
+    submit.textContent = 'Memeriksa…';
+
+    const result = await login(identifier, password);
+
+    if (result.ok) {
+      window.location.replace(tujuanSetelahLogin());
+      return;
+    }
+
+    errorEl.textContent = result.error ?? 'Gagal masuk.';
+    errorEl.classList.remove('hidden');
+    submit.disabled = false;
+    submit.textContent = 'Masuk';
+  });
+</script>

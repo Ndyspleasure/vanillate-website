@@ -79,6 +79,14 @@ jobs:
       - name: Build
         if: steps.commit.outputs.changed == 'true'
         run: npm run build
+        env:
+          # Kunci publik Supabase untuk panel /admin. Keduanya memang ikut
+          # terkirim ke browser — itu wajar untuk anon key. Yang menjaga data
+          # adalah Row Level Security di Supabase, bukan kerahasiaan kunci ini.
+          # Bila secret belum diisi, build tetap jalan dan form login otomatis
+          # menampilkan panduan setup.
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Setup Pages
         if: steps.commit.outputs.changed == 'true'

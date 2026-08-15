@@ -1,0 +1,185 @@
+---
+// Editor konten ringan.
+//
+// Sumber kebenaran konten website tetap file .ts di repo — itu yang membuat
+// setiap perubahan punya jejak di git. Yang bisa diubah dari sini hanya bagian
+// yang memang dirancang untuk sering berganti (pengumuman/banner), tersimpan di
+// tabel `site_content`.
+//
+// Perubahan di sini TIDAK langsung terlihat di vanillate.id. Situsnya statis,
+// jadi harus di-build ulang dulu. Alurnya mengikuti pola auto-sync yang sudah
+// dipakai repo ini — lihat docs/ADMIN-CMS.md bagian 6.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Konten" active="konten">
+  <AdminPageHeader
+    eyebrow="Pengelolaan"
+    title="Konten"
+    description="Ubah teks yang sering berganti tanpa menyentuh kode."
+  />
+
+  <div class="px-6 lg:px-10 py-8 max-w-2xl">
+    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4 mb-8">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Perubahan tersimpan ke database saat kamu menekan Simpan, tapi baru tampil
+        di vanillate.id setelah website di-build ulang. Build berjalan otomatis
+        terjadwal, jadi biasanya perlu menunggu beberapa menit.
+      </p>
+    </div>
+
+    <form id="form-konten" class="space-y-6">
+      <div id="konten-fields"></div>
+
+      <div id="konten-aksi" class="hidden flex-wrap items-center gap-3 pt-2">
+        <button
+          type="submit"
+          id="btn-simpan"
+          class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        >
+          Simpan
+        </button>
+        <p id="konten-pesan" class="text-sm" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    // Peran viewer hanya boleh melihat. Ini cuma penyesuaian tampilan —
+    // penolakan sebenarnya tetap dilakukan RLS di Supabase.
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    void muat();
+  });
+
+  async function muat() {
+    const wadah = document.getElementById('konten-fields')!;
+    wadah.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('site_content')
+      .select('key, label, value, kind, help')
+      .order('key', { ascending: true });
+
+    if (error) {
+      wadah.innerHTML = stateBlock('error', pesanError(error));
+      return;
+    }
+    if (!data || data.length === 0) {
+      wadah.innerHTML = stateBlock('empty', 'Belum ada konten yang bisa diedit.');
+      return;
+    }
+
+    wadah.innerHTML = data.map(field).join('');
+    document.getElementById('konten-aksi')!.classList.remove('hidden');
+
+    if (!bolehEdit) {
+      wadah.querySelectorAll('input, textarea').forEach((el) => {
+        (el as HTMLInputElement).disabled = true;
+      });
+      const btn = document.getElementById('btn-simpan') as HTMLButtonElement;
+      btn.disabled = true;
+      document.getElementById('konten-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
+    }
+  }
+
+  function field(row: any): string {
+    const id = `f-${row.key}`;
+    const help = row.help
+      ? `<p class="mt-1.5 text-xs text-ink-500 dark:text-cream-300/60">${esc(row.help)}</p>`
+      : '';
+
+    if (row.kind === 'boolean') {
+      const aktif = row.value === 'true';
+      return `
+        <div class="mb-6">
+          <label class="flex items-center gap-3 text-sm font-medium">
+            <input type="checkbox" id="${esc(id)}" data-key="${esc(row.key)}" data-kind="boolean" ${aktif ? 'checked' : ''}
+              class="rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+            ${esc(row.label)}
+          </label>
+          ${help}
+        </div>`;
+    }
+
+    const tipe = row.kind === 'url' ? 'url' : 'text';
+
+    if (row.kind === 'markdown') {
+      return `
+        <div class="mb-6">
+          <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}</label>
+          <textarea id="${esc(id)}" data-key="${esc(row.key)}" data-kind="markdown" rows="5"
+            class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors">${esc(row.value ?? '')}</textarea>
+          ${help}
+        </div>`;
+    }
+
+    return `
+      <div class="mb-6">
+        <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}</label>
+        <input type="${tipe}" id="${esc(id)}" data-key="${esc(row.key)}" data-kind="${esc(row.kind)}" value="${esc(row.value ?? '')}"
+          class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors" />
+        ${help}
+      </div>`;
+  }
+
+  document.getElementById('form-konten')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!bolehEdit) return;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const btn = document.getElementById('btn-simpan') as HTMLButtonElement;
+    const pesan = document.getElementById('konten-pesan')!;
+
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan…';
+    pesan.textContent = '';
+    pesan.className = 'text-sm';
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    const fields = Array.from(
+      document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-key]'),
+    );
+
+    const hasil = await Promise.all(
+      fields.map((el) => {
+        const nilai =
+          el.dataset.kind === 'boolean'
+            ? String((el as HTMLInputElement).checked)
+            : el.value;
+
+        return supabase
+          .from('site_content')
+          .update({ value: nilai, updated_at: new Date().toISOString(), updated_by: uid })
+          .eq('key', el.dataset.key!);
+      }),
+    );
+
+    const gagal = hasil.find((r) => r.error);
+    if (gagal?.error) {
+      pesan.textContent = pesanError(gagal.error);
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+    } else {
+      pesan.textContent = 'Tersimpan. Menunggu build berikutnya untuk tampil di situs.';
+      pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Simpan';
+  });
+</script>
