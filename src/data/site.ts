@@ -12,10 +12,11 @@ export const site = {
   // Google Search Console verification
   googleSiteVerification: 'U25-rJMHaxtxI6CT73HN72IctS63oFj1X_bl-iHc_to',
 
-  // Tautan eksternal
+  // Tautan eksternal.
+  // Repository GitHub sengaja tidak ditautkan di situs publik.
+  // Kanal WhatsApp & email support dikelola di src/data/support.ts.
   links: {
     discordSupport: 'https://discord.gg/A7n88d6uRW',
-    github: 'https://github.com/Ndyspleasure',
   },
 
   // Halaman legal

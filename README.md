@@ -25,7 +25,8 @@ vanillate-website/
 ├── src/
 │   ├── components/
 │   │   ├── Header.astro            Header dengan nav & dark/light toggle
-│   │   ├── Footer.astro            Footer dengan social (SVG) & contact links
+│   │   ├── Footer.astro            Footer dengan kanal support (Discord/WhatsApp/Email)
+│   │   ├── SupportWizard.astro     Support Center: form → template pesan → WhatsApp/Email
 │   │   ├── Button.astro            Tombol (internal url() helper built-in)
 │   │   ├── BotCard.astro           Card untuk bot di katalog
 │   │   ├── Icon.astro              Komponen ikon SVG tunggal (satu icon pack: Lucide)
@@ -36,13 +37,14 @@ vanillate-website/
 │   │   ├── site.ts                 Global config: domain, titles, social links
 │   │   ├── bots.ts                 Registry semua bot + buildInviteUrl() helper
 │   │   ├── icons.ts                Registry ikon SVG (Lucide) — satu sumber kebenaran
+│   │   ├── support.ts              Konfigurasi kanal support + template pesan & Support ID
 │   │   └── docs.ts                 Konten dokumentasi (Sambung Kata)
 │   ├── i18n/id.ts                  Copy text ID (siap + EN nanti)
 │   ├── layouts/BaseLayout.astro    Base layout semua page (Header, Footer, SEO)
 │   ├── pages/                      File-based routing
 │   │   ├── index.astro             / (Beranda)
 │   │   ├── about.astro             /about (Tentang Studio)
-│   │   ├── support.astro           /support (Kontak & bantuan)
+│   │   ├── support.astro           /support (Support Center, kontak & bantuan)
 │   │   ├── terms.astro             /terms (ToS — studio-wide, berlaku semua produk)
 │   │   ├── privacy.astro           /privacy (PP — studio-wide + future bots)
 │   │   ├── bots/
@@ -55,6 +57,7 @@ vanillate-website/
 │   ├── utils/
 │   │   └── url.ts                  url() helper untuk internal links (base path aware)
 │   └── styles/global.css           Tailwind + global styles
+├── .env.example                    Contoh environment variable (kanal support)
 ├── astro.config.mjs                SITE_URL: https://vanillate.id (no base)
 ├── tailwind.config.mjs             Brand palette (ink, cream, amber, teal) + typography
 ├── tsconfig.json
@@ -135,7 +138,10 @@ Setup sekarang **sudah lengkap** untuk **vanillate.id**:
 
 **`src/data/site.ts`:**
 - ✅ `links.discordSupport` = `https://discord.gg/A7n88d6uRW`
-- ✅ `links.github` = `https://github.com/Ndyspleasure` (opsional)
+- ℹ️ Repository GitHub sengaja **tidak** ditautkan di situs publik (footer & JSON-LD)
+
+**`src/data/support.ts`:**
+- ✅ Nomor WhatsApp Business & alamat email support (lihat [Support Center](#support-center--whatsapp--email))
 
 **`src/data/bots.ts`:**
 - ⚠️ `clientId` per bot — pastikan terisi dengan Discord Application ID (gunakan untuk invite button)
@@ -229,6 +235,94 @@ Domain sudah aktif dan live. Setup yang dilakukan:
 - Comply dengan Discord ToS & best practice privasi
 
 **Last Updated:** 6 July 2026
+
+## Support Center → WhatsApp / Email
+
+Halaman `/support` punya wizard **Pilih → Isi → Review → Kirim** (anchor
+`#hubungi-support`). Website **tidak** mengirim pesan apa pun dan tidak menyimpan
+data ke server mana pun: seluruh proses berjalan di browser, lalu WhatsApp atau
+aplikasi email dibuka dengan pesan yang sudah terisi. User sendiri yang menekan
+Kirim, sehingga tetap bisa memeriksa isinya lebih dulu.
+
+**Alur:** Produk → Kategori → Kendala → Detail (opsional) → Review → WhatsApp/Email
+
+**File terkait:**
+
+| File | Isi |
+| --- | --- |
+| `src/data/support.ts` | Konfigurasi kanal, daftar produk & kategori, Support ID, template pesan, builder URL. Semua fungsinya murni (tanpa DOM) sehingga dipakai bersama oleh build & browser. |
+| `src/components/SupportWizard.astro` | UI wizard + logika langkah, validasi, review, dan redirect. |
+| `src/pages/support.astro` | Menempatkan wizard di section `#hubungi-support`. |
+
+### Konfigurasi kanal
+
+Nomor WhatsApp dan alamat email **tidak ditulis hardcode** di komponen mana pun.
+Keduanya dibaca sekali di `src/data/support.ts` dari environment variable, dengan
+konstanta fallback agar build tetap jalan tanpa `.env`:
+
+```bash
+# .env (salin dari .env.example)
+PUBLIC_SUPPORT_WHATSAPP=6281540040115
+PUBLIC_SUPPORT_EMAIL=vanillatestudio@gmail.com
+```
+
+Prefix `PUBLIC_` wajib karena nilainya dipakai di sisi klien. Situs ini statis,
+jadi nilai tersebut ikut ter-bundle ke output — **jangan menaruh rahasia di sana**.
+Untuk mengubahnya di produksi, set variable-nya di GitHub Actions atau cukup ubah
+konstanta fallback di `src/data/support.ts`.
+
+### Support ID
+
+Setiap pengajuan mendapat ID dengan format konsisten `VS-YYYYMMDD-NNNN`
+(mis. `VS-20260815-4827`): prefix studio, tanggal lokal, dan 4 digit acak dari
+`crypto.getRandomValues`. ID ini masuk ke pesan WhatsApp maupun subjek email,
+jadi bisa langsung dipakai sebagai identifier bila nanti berkembang jadi ticketing.
+
+### Template pesan
+
+Satu template dipakai oleh kedua kanal supaya laporan yang masuk terbaca sama:
+
+```text
+Halo Tim Vanillate,
+
+Saya ingin meminta bantuan terkait kendala yang saya alami.
+
+━━━━━━━━━━━━━━━━━━
+DETAIL SUPPORT
+━━━━━━━━━━━━━━━━━━
+
+Support ID : VS-20260815-4827
+Produk     : Vanillate Sambung Kata
+Kategori   : Bug / Error
+
+Kendala:
+Tombol permainan tidak muncul setelah pertandingan dimulai.
+
+Discord    : @username
+
+━━━━━━━━━━━━━━━━━━
+
+Terima kasih atas bantuannya.
+```
+
+Aturannya: tanpa emoji, separator sederhana, label sejajar, dan **field kosong
+dihilangkan sepenuhnya** — tidak pernah muncul `-`, `null`, atau `undefined`.
+Blok `INFORMASI TEKNIS` (browser, OS, halaman, versi situs) hanya ditambahkan
+bila user membiarkan checkbox-nya aktif di Step 4.
+
+Subjek email memakai format `[Support] <Support ID> — <Kategori> — <Produk>`.
+
+### Menambah produk atau kategori
+
+Cukup tambahkan objek ke `supportProducts` atau `supportCategories` di
+`src/data/support.ts`; kartu di wizard ikut terbentuk otomatis. `icon` harus
+nama yang ada di registry `src/data/icons.ts`.
+
+### Catatan lampiran
+
+Field screenshot hanya membuat pratinjau lokal — `wa.me` dan `mailto:` tidak bisa
+membawa file. Pesannya menyertakan baris `Lampiran`, dan setelah redirect user
+diingatkan untuk melampirkan gambarnya sendiri di chat/email.
 
 ## Sistem Ikon (SVG — Satu Icon Pack)
 
