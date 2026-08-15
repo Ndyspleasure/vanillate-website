@@ -1,5 +1,17 @@
 [
   {
+    "version": "2.38.0",
+    "date": "2026-08-15",
+    "title": "Catatan event transkrip stabil + side-game recording",
+    "highlights": [
+      "📝 Event dalam permainan (AI Challenger, Lost Signal, Traveling Merchant) kini selalu tercatat di transkrip, bahkan tanpa pesan chat",
+      "🎭 Werewolf, Pengacara & Dungeon kini memiliki catatan event lengkap untuk setiap hasil game",
+      "🛡️ Bonus reward x2 dari event kini dipertahankan dengan benar saat game berakhir",
+      "💾 Transkrip otomatis dipangkas jika terlalu besar, tetapi catatan event tetap aman",
+      "📢 Sambutan bot & pesan pertama pemain kini menampilkan versi terbaru & update highlights secara otomatis"
+    ]
+  },
+  {
     "version": "2.37.0",
     "date": "2026-08-14",
     "title": "Peningkatan Stabilitas & Pemantauan Semua Mode Permainan",
