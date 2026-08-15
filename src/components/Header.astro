@@ -2,6 +2,7 @@
 import { nav, site } from '@data/site';
 import ThemeToggle from './ThemeToggle.astro';
 import LogoPNG from './LogoPNG.astro';
+import Icon from './Icon.astro';
 import { url } from '@utils/url';
 
 // Normalisasi current path dengan menghilangkan base prefix supaya comparison
@@ -76,10 +77,17 @@ const currentPath = base && rawPath.startsWith(base) ? (rawPath.slice(base.lengt
         );
       })}
       <a
+        href={url('/support#hubungi-support')}
+        class="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 text-ink-950 px-4 py-3 text-sm font-medium hover:bg-amber-400 transition-colors"
+      >
+        <Icon name="life-buoy" class="h-4 w-4" />
+        Hubungi Support
+      </a>
+      <a
         href={site.links.discordSupport}
         target="_blank"
         rel="noopener noreferrer"
-        class="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 text-ink-950 px-4 py-3 text-sm font-medium hover:bg-amber-400 transition-colors"
+        class="inline-flex items-center justify-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 px-4 py-3 text-sm font-medium text-ink-800 dark:text-cream-100 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
       >
         Gabung Discord Support
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>

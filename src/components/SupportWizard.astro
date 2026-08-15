@@ -1,0 +1,1039 @@
+---
+// ─────────────────────────────────────────────────────────────────────────────
+// Support Center — wizard "Pilih → Isi → Review → WhatsApp".
+//
+// Komponen ini mengumpulkan informasi kendala, menyusunnya jadi pesan
+// terstruktur, lalu membuka WhatsApp Business dengan pesan yang sudah terisi.
+// Tidak ada pesan yang terkirim otomatis dan tidak ada data yang dikirim ke
+// server mana pun — seluruh pemrosesan terjadi di browser user.
+//
+// Konfigurasi (nomor WhatsApp, produk, kategori, template pesan) ada di
+// `@data/support`. Ikon memakai registry SVG tunggal di `@data/icons`.
+// ─────────────────────────────────────────────────────────────────────────────
+import Icon from '@components/Icon.astro';
+import {
+  formatWhatsappNumber,
+  supportCategories,
+  supportConfig,
+  supportEmail,
+  supportProducts,
+} from '@data/support';
+import pkg from '../../package.json';
+
+// Versi situs dibaca saat build lalu dititipkan lewat data attribute, supaya
+// package.json tidak ikut masuk ke bundle JavaScript yang dikirim ke browser.
+const webVersion = pkg.version;
+const waDisplay = formatWhatsappNumber();
+
+const steps = ['Produk', 'Kategori', 'Kendala', 'Detail', 'Review'];
+
+// Gaya tombol & field disamakan dengan design system situs (lihat Button.astro).
+const btnBase =
+  'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 select-none px-6 py-3 text-sm';
+const btnPrimary = `${btnBase} bg-ink-900 text-cream-50 hover:bg-ink-800 hover:-translate-y-0.5 dark:bg-amber-500 dark:text-ink-950 dark:hover:bg-amber-400`;
+const btnSecondary = `${btnBase} bg-cream-100 text-ink-900 border border-ink-900/10 hover:bg-cream-200 dark:bg-ink-800 dark:text-cream-50 dark:border-cream-100/10 dark:hover:bg-ink-700`;
+const field =
+  'w-full rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 px-4 py-3 text-sm text-ink-900 dark:text-cream-50 placeholder:text-ink-400 dark:placeholder:text-cream-300/40 transition-colors focus:border-amber-500';
+const fieldLabel = 'mb-2 flex items-center gap-2 text-sm font-medium text-ink-800 dark:text-cream-100';
+const optionalTag = 'font-mono text-[0.65rem] uppercase tracking-widest text-ink-400 dark:text-cream-300/50';
+const errorBox = 'hidden mt-3 items-start gap-2 text-sm text-red-600 dark:text-red-400';
+const panelTitle = 'font-display text-xl md:text-2xl font-semibold tracking-tightest outline-none';
+const panelDesc = 'mt-2 text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed';
+
+// Kartu pilihan (produk & kategori) memakai radio asli agar tetap bisa
+// dioperasikan lewat keyboard; tampilannya digambar oleh <span> saudara input.
+const cardBox =
+  'flex h-full gap-3 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 p-4 pr-11 transition-colors hover:border-amber-500/50 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-500 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-cream-50 dark:peer-focus-visible:ring-offset-ink-950';
+const cardCheck =
+  'pointer-events-none absolute right-4 top-4 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-ink-950 opacity-0 transition-opacity peer-checked:opacity-100';
+const cardIcon =
+  'flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400';
+---
+
+<div
+  data-support-wizard
+  data-web-version={webVersion}
+  class="overflow-hidden rounded-3xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40"
+>
+  <!-- KEPALA + PROGRESS -->
+  <div class="border-b border-ink-900/10 dark:border-cream-100/10 p-6 md:p-8">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+          <Icon name="life-buoy" class="h-5 w-5" />
+        </span>
+        <div>
+          <p class="eyebrow">Support Center</p>
+          <h2 class="font-display text-xl font-semibold tracking-tightest">Hubungi Support</h2>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 px-3.5 py-2 text-xs text-ink-600 dark:text-cream-200/80">
+          <Icon name="whatsapp" class="h-4 w-4 flex-none text-teal-600 dark:text-teal-400" />
+          <span class="font-mono">{waDisplay}</span>
+        </div>
+        <div class="flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 px-3.5 py-2 text-xs text-ink-600 dark:text-cream-200/80">
+          <Icon name="mail" class="h-4 w-4 flex-none text-amber-600 dark:text-amber-400" />
+          <span class="break-all font-mono">{supportEmail}</span>
+        </div>
+      </div>
+    </div>
+
+    <div data-progress class="mt-6">
+      <div class="flex items-center justify-between gap-3 font-mono text-xs text-ink-500 dark:text-cream-300/60">
+        <span data-step-label>Langkah 1 dari 5 &middot; Produk</span>
+        <span data-step-percent>20%</span>
+      </div>
+      <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-ink-900/10 dark:bg-cream-100/10">
+        <div data-progress-bar class="h-full rounded-full bg-amber-500 transition-all duration-500" style="width: 20%"></div>
+      </div>
+      <ol class="mt-4 hidden grid-cols-5 gap-2 sm:grid" aria-hidden="true">
+        {steps.map((label, i) => (
+          <li data-step-dot={i + 1} class="flex items-center gap-2 text-xs">
+            <span
+              data-dot-circle
+              class="flex h-6 w-6 flex-none items-center justify-center rounded-full border border-ink-900/15 dark:border-cream-100/15 font-mono text-[0.65rem] text-ink-500 dark:text-cream-300/60 transition-colors"
+            >{i + 1}</span>
+            <span data-dot-label class="truncate text-ink-500 dark:text-cream-300/60 transition-colors">{label}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+
+  <form data-support-form novalidate>
+    <div class="p-6 md:p-8">
+      <!-- STEP 1 — PILIH PRODUK -->
+      <div data-step="1">
+        <h3 id="support-step-1" class={panelTitle} data-panel-heading tabindex="-1">
+          Produk mana yang ingin kamu tanyakan?
+        </h3>
+        <p class={panelDesc}>Pilih satu produk supaya laporanmu langsung sampai ke orang yang menanganinya.</p>
+
+        <div class="mt-6 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-labelledby="support-step-1">
+          {supportProducts.map((p) => (
+            <label class="relative block cursor-pointer">
+              <input type="radio" name="product" value={p.id} data-label={p.label} class="peer sr-only" />
+              <span class={cardCheck}><Icon name="check" class="h-3 w-3" strokeWidth={3} /></span>
+              <span class={cardBox}>
+                <span class={cardIcon}><Icon name={p.icon} class="h-5 w-5" /></span>
+                <span class="min-w-0">
+                  <span class="block font-display font-semibold leading-snug">{p.label}</span>
+                  <span class="mt-0.5 block text-sm leading-snug text-ink-600 dark:text-cream-200/80">{p.desc}</span>
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+
+        <p data-error class={errorBox} role="alert">
+          <Icon name="triangle-alert" class="mt-0.5 h-4 w-4 flex-none" />
+          <span data-error-text></span>
+        </p>
+      </div>
+
+      <!-- STEP 2 — PILIH KATEGORI -->
+      <div data-step="2" class="hidden" hidden>
+        <h3 id="support-step-2" class={panelTitle} data-panel-heading tabindex="-1">
+          Kendalanya masuk kategori apa?
+        </h3>
+        <p class={panelDesc}>Kategori membantu kami menyiapkan jawaban yang tepat sejak balasan pertama.</p>
+
+        <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-labelledby="support-step-2">
+          {supportCategories.map((c) => (
+            <label class="relative block cursor-pointer">
+              <input type="radio" name="category" value={c.id} data-label={c.label} data-hint={c.hint} class="peer sr-only" />
+              <span class={cardCheck}><Icon name="check" class="h-3 w-3" strokeWidth={3} /></span>
+              <span class={cardBox}>
+                <span class={cardIcon}><Icon name={c.icon} class="h-5 w-5" /></span>
+                <span class="min-w-0">
+                  <span class="block font-display font-semibold leading-snug">{c.label}</span>
+                  <span class="mt-0.5 block text-sm leading-snug text-ink-600 dark:text-cream-200/80">{c.desc}</span>
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+
+        <p data-error class={errorBox} role="alert">
+          <Icon name="triangle-alert" class="mt-0.5 h-4 w-4 flex-none" />
+          <span data-error-text></span>
+        </p>
+      </div>
+
+      <!-- STEP 3 — JELASKAN KENDALA -->
+      <div data-step="3" class="hidden" hidden>
+        <h3 class={panelTitle} data-panel-heading tabindex="-1">Jelaskan kendala yang kamu alami</h3>
+        <p class={panelDesc} data-category-hint>Semakin jelas ceritanya, semakin cepat kami bisa membantu.</p>
+
+        <div class="mt-6">
+          <label for="support-message" class="sr-only">Jelaskan kendala yang kamu alami</label>
+          <textarea
+            id="support-message"
+            name="message"
+            rows="7"
+            maxlength={supportConfig.maxMessage}
+            placeholder="Jelaskan masalah atau pertanyaan kamu secara jelas agar tim support dapat membantu lebih cepat."
+            class={`${field} resize-y leading-relaxed`}
+          ></textarea>
+
+          <div class="mt-2 flex items-start justify-between gap-3">
+            <p data-error class={`${errorBox} mt-0`} role="alert">
+              <Icon name="triangle-alert" class="mt-0.5 h-4 w-4 flex-none" />
+              <span data-error-text></span>
+            </p>
+            <p data-counter class="ml-auto flex-none font-mono text-xs text-ink-400 dark:text-cream-300/50">
+              0 / {supportConfig.maxMessage}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 — INFORMASI TAMBAHAN -->
+      <div data-step="4" class="hidden" hidden>
+        <h3 class={panelTitle} data-panel-heading tabindex="-1">Informasi tambahan</h3>
+        <p class={panelDesc}>Semuanya opsional. Isi seperlunya saja, langsung lanjut kalau tidak relevan.</p>
+
+        <div class="mt-6 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="support-name" class={fieldLabel}>
+              <Icon name="user" class="h-4 w-4 text-ink-400 dark:text-cream-300/50" />
+              Nama <span class={optionalTag}>Opsional</span>
+            </label>
+            <input
+              id="support-name"
+              name="name"
+              type="text"
+              autocomplete="name"
+              maxlength={supportConfig.maxName}
+              placeholder="Nama panggilan kamu"
+              class={field}
+            />
+          </div>
+
+          <div>
+            <label for="support-discord" class={fieldLabel}>
+              <Icon name="at-sign" class="h-4 w-4 text-ink-400 dark:text-cream-300/50" />
+              Discord Username <span class={optionalTag}>Opsional</span>
+            </label>
+            <input
+              id="support-discord"
+              name="discordUsername"
+              type="text"
+              maxlength={supportConfig.maxDiscordUsername}
+              placeholder="username"
+              class={field}
+            />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label for="support-discord-id" class={fieldLabel}>
+              <Icon name="hash" class="h-4 w-4 text-ink-400 dark:text-cream-300/50" />
+              Discord User ID <span class={optionalTag}>Opsional</span>
+            </label>
+            <input
+              id="support-discord-id"
+              name="discordUserId"
+              type="text"
+              inputmode="numeric"
+              maxlength="25"
+              placeholder="Contoh: 123456789012345678"
+              class={`${field} font-mono`}
+            />
+            <p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">
+              Aktifkan Developer Mode di Discord, klik kanan profilmu, lalu pilih <span class="font-medium">Copy User ID</span>.
+            </p>
+          </div>
+
+          <div class="sm:col-span-2">
+            <p class={fieldLabel}>
+              <Icon name="paperclip" class="h-4 w-4 text-ink-400 dark:text-cream-300/50" />
+              Screenshot / Lampiran <span class={optionalTag}>Opsional</span>
+            </p>
+            <label class="block cursor-pointer">
+              <input type="file" accept="image/*" data-attachment class="peer sr-only" />
+              <span class="flex items-center gap-3 rounded-xl border border-dashed border-ink-900/20 dark:border-cream-100/20 bg-cream-50 dark:bg-ink-900 px-4 py-3.5 transition-colors hover:border-amber-500/60 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-500 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-cream-50 dark:peer-focus-visible:ring-offset-ink-950">
+                <Icon name="image" class="h-5 w-5 flex-none text-amber-600 dark:text-amber-400" />
+                <span class="min-w-0">
+                  <span class="block text-sm font-medium">Pilih gambar</span>
+                  <span class="block text-xs text-ink-500 dark:text-cream-300/60">PNG atau JPG, maksimal 16 MB</span>
+                </span>
+              </span>
+            </label>
+
+            <div
+              data-attachment-preview
+              class="mt-3 hidden items-center gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 p-3"
+              hidden
+            >
+              <img data-attachment-thumb src="" alt="" class="h-12 w-12 flex-none rounded-lg object-cover" />
+              <div class="min-w-0 flex-1">
+                <p data-attachment-name class="truncate text-sm font-medium"></p>
+                <p data-attachment-size class="font-mono text-xs text-ink-500 dark:text-cream-300/60"></p>
+              </div>
+              <button
+                type="button"
+                data-attachment-clear
+                aria-label="Hapus lampiran"
+                class="flex h-8 w-8 flex-none items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-ink-900/5 hover:text-ink-900 dark:text-cream-300/60 dark:hover:bg-cream-100/5 dark:hover:text-cream-50"
+              >
+                <Icon name="x" class="h-4 w-4" />
+              </button>
+            </div>
+
+            <p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">
+              Gambar tidak diunggah ke mana pun. Lampirkan langsung di WhatsApp atau email setelah aplikasinya terbuka.
+            </p>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 p-4">
+              <input
+                type="checkbox"
+                data-tech-toggle
+                checked
+                class="mt-0.5 h-4 w-4 flex-none rounded border-ink-900/25 dark:border-cream-100/25 accent-amber-500"
+              />
+              <span class="min-w-0">
+                <span class="block text-sm font-medium">Sertakan informasi teknis</span>
+                <span class="mt-0.5 block text-xs leading-relaxed text-ink-500 dark:text-cream-300/60">
+                  Browser, sistem operasi, halaman, dan versi situs. Membantu tim menelusuri bug lebih cepat.
+                </span>
+                <span data-tech-preview class="mt-1.5 block font-mono text-[0.7rem] text-ink-400 dark:text-cream-300/50"></span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <p data-error class={errorBox} role="alert">
+          <Icon name="triangle-alert" class="mt-0.5 h-4 w-4 flex-none" />
+          <span data-error-text></span>
+        </p>
+      </div>
+
+      <!-- STEP 5 — REVIEW -->
+      <div data-step="5" class="hidden" hidden>
+        <h3 class={panelTitle} data-panel-heading tabindex="-1">Ringkasan Support</h3>
+        <p class={panelDesc}>Periksa sekali lagi sebelum lanjut. Kamu masih bisa memperbaiki bagian mana pun.</p>
+
+        <div class="mt-6 overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+            <div>
+              <p class="eyebrow">Support ID</p>
+              <p data-review-id class="mt-1 font-mono text-base font-medium text-ink-900 dark:text-cream-50"></p>
+            </div>
+            <button
+              type="button"
+              data-copy-id
+              class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 px-3.5 py-2 text-xs transition-colors hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
+            >
+              <Icon name="copy" class="h-3.5 w-3.5" />
+              <span data-copy-label>Salin ID</span>
+            </button>
+          </div>
+          <dl data-review-list class="divide-y divide-ink-900/10 dark:divide-cream-100/10"></dl>
+        </div>
+
+        <details class="group mt-4 overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-medium transition-colors hover:bg-cream-100/50 dark:hover:bg-ink-900/40">
+            <span>Lihat pesan yang akan dikirim</span>
+            <Icon name="chevron-down" class="h-4 w-4 flex-none text-amber-600 transition-transform duration-200 group-open:rotate-180 dark:text-amber-500" />
+          </summary>
+          <div class="border-t border-ink-900/10 dark:border-cream-100/10 p-5">
+            <p class="eyebrow mb-2">Subjek email</p>
+            <p data-review-subject class="mb-5 break-words font-mono text-xs leading-relaxed text-ink-700 dark:text-cream-200/85"></p>
+            <p class="eyebrow mb-2">Isi pesan</p>
+            <pre data-review-message class="max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-ink-700 dark:text-cream-200/85"></pre>
+            <button
+              type="button"
+              data-copy-message
+              class="mt-4 inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 px-3.5 py-2 text-xs transition-colors hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
+            >
+              <Icon name="copy" class="h-3.5 w-3.5" />
+              <span data-copy-label>Salin pesan</span>
+            </button>
+          </div>
+        </details>
+
+        <p class="mt-4 flex items-start gap-2 text-xs leading-relaxed text-ink-500 dark:text-cream-300/60">
+          <Icon name="info" class="mt-0.5 h-3.5 w-3.5 flex-none" />
+          <span>Website tidak mengirim pesan otomatis. WhatsApp atau aplikasi email akan terbuka dengan pesan yang sudah terisi, dan kamu sendiri yang menekan Kirim.</span>
+        </p>
+      </div>
+
+      <!-- STEP 6 — SELESAI (di luar hitungan progress) -->
+      <div data-step="6" class="hidden" hidden>
+        <div class="py-2 text-center">
+          <span data-done-icon="whatsapp" class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
+            <Icon name="whatsapp" class="h-7 w-7" />
+          </span>
+          <span data-done-icon="email" class="mx-auto hidden h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400" hidden>
+            <Icon name="mail" class="h-7 w-7" />
+          </span>
+
+          <h3 class={`${panelTitle} mt-5`} data-done-title data-panel-heading tabindex="-1">WhatsApp sedang dibuka</h3>
+          <p data-done-desc class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-600 dark:text-cream-200/80">
+            Pesanmu sudah tersusun rapi di sana. Tinggal tekan Kirim untuk mengirimkannya ke tim support.
+          </p>
+
+          <p class="mt-5 inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 px-4 py-2 font-mono text-sm dark:bg-ink-900">
+            <Icon name="tag" class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span data-done-id></span>
+          </p>
+
+          <p
+            data-done-attachment
+            class="mx-auto mt-5 hidden max-w-md items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left text-xs leading-relaxed text-ink-700 dark:text-cream-100/90"
+            hidden
+          >
+            <Icon name="paperclip" class="mt-0.5 h-3.5 w-3.5 flex-none text-amber-600 dark:text-amber-400" />
+            <span data-done-attachment-text></span>
+          </p>
+
+          <p class="mx-auto mt-4 max-w-md text-xs leading-relaxed text-ink-500 dark:text-cream-300/60">
+            Aplikasinya tidak terbuka atau isinya terpotong? Salin pesannya, lalu tempel manual.
+          </p>
+
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a data-wa-reopen href="#" target="_blank" rel="noopener noreferrer" class={btnSecondary}>
+              <Icon name="whatsapp" class="h-4 w-4" />
+              Buka WhatsApp lagi
+            </a>
+            <a data-mail-reopen href="#" class={`${btnSecondary} hidden`} hidden>
+              <Icon name="mail" class="h-4 w-4" />
+              Buka email lagi
+            </a>
+            <button
+              type="button"
+              data-copy-message
+              class={`${btnBase} text-ink-600 hover:bg-ink-900/5 dark:text-cream-200 dark:hover:bg-cream-100/5`}
+            >
+              <Icon name="copy" class="h-4 w-4" />
+              <span data-copy-label>Salin pesan</span>
+            </button>
+            <button type="button" data-reset class={`${btnBase} text-ink-600 hover:bg-ink-900/5 dark:text-cream-200 dark:hover:bg-cream-100/5`}>
+              Buat laporan baru
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAVIGASI -->
+    <div data-nav class="flex items-center justify-between gap-3 border-t border-ink-900/10 dark:border-cream-100/10 px-6 py-5 md:px-8">
+      <button type="button" data-back class={`${btnSecondary} hidden`} hidden>
+        <Icon name="arrow-left" class="h-4 w-4" />
+        Kembali
+      </button>
+      <span aria-hidden="true"></span>
+
+      <button type="submit" data-next class={btnPrimary}>
+        Lanjut
+        <Icon name="arrow-right" class="h-4 w-4" />
+      </button>
+
+      <div data-send class="flex hidden flex-wrap items-center justify-end gap-3" hidden>
+        <a data-mail-link href="#" aria-disabled="true" class={btnSecondary}>
+          <span data-mail-idle class="inline-flex items-center gap-2">
+            <Icon name="mail" class="h-4 w-4" />
+            Kirim lewat Email
+          </span>
+          <span data-mail-loading class="hidden items-center gap-2" hidden>
+            <Icon name="loader-circle" class="h-4 w-4 animate-spin" />
+            Membuka email
+          </span>
+        </a>
+
+        <a data-wa-link href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true" class={btnPrimary}>
+          <span data-wa-idle class="inline-flex items-center gap-2">
+            <Icon name="whatsapp" class="h-4 w-4" />
+            Lanjut ke WhatsApp
+          </span>
+          <span data-wa-loading class="hidden items-center gap-2" hidden>
+            <Icon name="loader-circle" class="h-4 w-4 animate-spin" />
+            Membuka WhatsApp
+          </span>
+        </a>
+      </div>
+    </div>
+  </form>
+
+  <!-- Ikon untuk baris ringkasan yang dirender lewat JavaScript. -->
+  <template data-edit-icon><Icon name="pencil" class="h-3 w-3" /></template>
+</div>
+
+<style>
+  /* Sembunyikan marker default <details> di semua browser. */
+  summary::-webkit-details-marker {
+    display: none;
+  }
+</style>
+
+<script>
+  import {
+    buildMailtoUrl,
+    buildSupportId,
+    buildSupportMessage,
+    buildSupportSubject,
+    buildWhatsappUrl,
+    supportConfig,
+    type SupportDraft,
+    type SupportTechInfo,
+  } from '@data/support';
+
+  const root = document.querySelector<HTMLElement>('[data-support-wizard]');
+
+  if (root) {
+    const TOTAL_STEPS = 5;
+    const DONE_STEP = 6;
+    const STEP_LABELS = ['Produk', 'Kategori', 'Kendala', 'Detail', 'Review'];
+
+    const form = root.querySelector<HTMLFormElement>('[data-support-form]');
+    const nav = root.querySelector<HTMLElement>('[data-nav]');
+    const progress = root.querySelector<HTMLElement>('[data-progress]');
+    const backBtn = root.querySelector<HTMLButtonElement>('[data-back]');
+    const nextBtn = root.querySelector<HTMLButtonElement>('[data-next]');
+    const sendGroup = root.querySelector<HTMLElement>('[data-send]');
+    const waLink = root.querySelector<HTMLAnchorElement>('[data-wa-link]');
+    const waReopen = root.querySelector<HTMLAnchorElement>('[data-wa-reopen]');
+    const mailLink = root.querySelector<HTMLAnchorElement>('[data-mail-link]');
+    const mailReopen = root.querySelector<HTMLAnchorElement>('[data-mail-reopen]');
+    const textarea = root.querySelector<HTMLTextAreaElement>('#support-message');
+    const counter = root.querySelector<HTMLElement>('[data-counter]');
+    const categoryHint = root.querySelector<HTMLElement>('[data-category-hint]');
+    const techToggle = root.querySelector<HTMLInputElement>('[data-tech-toggle]');
+    const techPreview = root.querySelector<HTMLElement>('[data-tech-preview]');
+    const fileInput = root.querySelector<HTMLInputElement>('[data-attachment]');
+    const editIconTpl = root.querySelector<HTMLTemplateElement>('[data-edit-icon]');
+
+    const panels = new Map<number, HTMLElement>();
+    root.querySelectorAll<HTMLElement>('[data-step]').forEach((el) => {
+      panels.set(Number(el.dataset.step), el);
+    });
+
+    const defaultHint = categoryHint?.textContent ?? '';
+    let current = 1;
+    let attachmentUrl: string | null = null;
+    let attachmentLabel = '';
+    let lastMessage = '';
+    let lastSupportId = '';
+
+    // ─── Util ────────────────────────────────────────────────────────────────
+
+    /** Tampilkan/sembunyikan elemen lewat class Tailwind DAN atribut hidden. */
+    function toggle(el: Element | null | undefined, show: boolean) {
+      if (!el) return;
+      el.classList.toggle('hidden', !show);
+      if (el instanceof HTMLElement) el.hidden = !show;
+    }
+
+    function showError(step: number, message: string) {
+      const box = panels.get(step)?.querySelector<HTMLElement>('[data-error]');
+      const text = box?.querySelector<HTMLElement>('[data-error-text]');
+      if (!box || !text) return;
+      text.textContent = message;
+      box.classList.add('flex');
+      toggle(box, true);
+    }
+
+    function clearError(step: number) {
+      const box = panels.get(step)?.querySelector<HTMLElement>('[data-error]');
+      if (!box) return;
+      box.classList.remove('flex');
+      toggle(box, false);
+    }
+
+    function checkedRadio(name: string): HTMLInputElement | null {
+      return root.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
+    }
+
+    function value(name: string): string {
+      const el = root.querySelector<HTMLInputElement>(`[name="${name}"]`);
+      return el ? el.value.trim() : '';
+    }
+
+    // ─── Navigasi langkah ────────────────────────────────────────────────────
+
+    function render() {
+      const isDone = current === DONE_STEP;
+
+      panels.forEach((panel, step) => toggle(panel, step === current));
+      toggle(progress, !isDone);
+      toggle(nav, !isDone);
+      toggle(backBtn, !isDone && current > 1);
+      toggle(nextBtn, !isDone && current < TOTAL_STEPS);
+      toggle(sendGroup, !isDone && current === TOTAL_STEPS);
+
+      if (isDone) return;
+
+      const percent = Math.round((current / TOTAL_STEPS) * 100);
+      const label = root.querySelector<HTMLElement>('[data-step-label]');
+      const percentEl = root.querySelector<HTMLElement>('[data-step-percent]');
+      const bar = root.querySelector<HTMLElement>('[data-progress-bar]');
+
+      if (label) label.textContent = `Langkah ${current} dari ${TOTAL_STEPS} · ${STEP_LABELS[current - 1]}`;
+      if (percentEl) percentEl.textContent = `${percent}%`;
+      if (bar) bar.style.width = `${percent}%`;
+
+      root.querySelectorAll<HTMLElement>('[data-step-dot]').forEach((dot) => {
+        const n = Number(dot.dataset.stepDot);
+        const circle = dot.querySelector<HTMLElement>('[data-dot-circle]');
+        const text = dot.querySelector<HTMLElement>('[data-dot-label]');
+        const active = n === current;
+        const passed = n < current;
+
+        circle?.classList.toggle('bg-amber-500', active);
+        circle?.classList.toggle('border-amber-500', active || passed);
+        circle?.classList.toggle('text-ink-950', active);
+        circle?.classList.toggle('text-amber-600', passed);
+        circle?.classList.toggle('dark:text-amber-400', passed);
+        text?.classList.toggle('text-ink-900', active);
+        text?.classList.toggle('dark:text-cream-50', active);
+        text?.classList.toggle('font-medium', active);
+      });
+    }
+
+    function goTo(step: number) {
+      current = step;
+      render();
+
+      panels.get(step)?.querySelector<HTMLElement>('[data-panel-heading]')?.focus({ preventScroll: true });
+
+      // Bawa kembali ke atas kartu supaya langkah baru terlihat utuh, dengan
+      // offset untuk header yang sticky.
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({
+        top: root.getBoundingClientRect().top + window.scrollY - 88,
+        behavior: reduced ? 'auto' : 'smooth',
+      });
+    }
+
+    // ─── Validasi ────────────────────────────────────────────────────────────
+
+    function validate(step: number): boolean {
+      clearError(step);
+
+      if (step === 1 && !checkedRadio('product')) {
+        showError(1, 'Pilih dulu produk yang ingin kamu tanyakan.');
+        return false;
+      }
+
+      if (step === 2 && !checkedRadio('category')) {
+        showError(2, 'Pilih dulu kategori kendalanya.');
+        return false;
+      }
+
+      if (step === 3) {
+        const text = textarea?.value.trim() ?? '';
+        if (!text) {
+          showError(3, 'Ceritakan dulu kendalanya supaya tim support bisa membantu.');
+          textarea?.focus();
+          return false;
+        }
+        if (text.length < supportConfig.minMessage) {
+          showError(3, `Tambahkan sedikit detail lagi, minimal ${supportConfig.minMessage} karakter.`);
+          textarea?.focus();
+          return false;
+        }
+      }
+
+      if (step === 4) {
+        const discordId = value('discordUserId');
+        if (discordId && !/^\d{15,25}$/.test(discordId)) {
+          showError(4, 'Discord User ID hanya berisi angka, biasanya 17–19 digit. Kosongkan bila tidak tahu.');
+          return false;
+        }
+        const username = value('discordUsername');
+        if (username && /\s/.test(username)) {
+          showError(4, 'Discord Username tidak memakai spasi. Contoh: vanillate.');
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // ─── Informasi teknis ────────────────────────────────────────────────────
+
+    function detectBrowser(): string | undefined {
+      const ua = navigator.userAgent;
+      const tests: [string, RegExp][] = [
+        ['Edge', /Edg\/(\d+)/],
+        ['Opera', /OPR\/(\d+)/],
+        ['Samsung Internet', /SamsungBrowser\/(\d+)/],
+        ['Firefox', /Firefox\/(\d+)/],
+        ['Chrome', /Chrome\/(\d+)/],
+        ['Safari', /Version\/(\d+)[\d.]* Safari/],
+      ];
+      for (const [name, pattern] of tests) {
+        const match = ua.match(pattern);
+        if (match) return `${name} ${match[1]}`;
+      }
+      return undefined;
+    }
+
+    function detectOS(): string | undefined {
+      const ua = navigator.userAgent;
+      if (/Windows/.test(ua)) return 'Windows';
+      if (/Android/.test(ua)) return 'Android';
+      if (/iPhone|iPad|iPod/.test(ua)) return 'iOS';
+      if (/Mac OS X/.test(ua)) return 'macOS';
+      if (/Linux/.test(ua)) return 'Linux';
+      return undefined;
+    }
+
+    function techInfo(): SupportTechInfo | undefined {
+      if (techToggle && !techToggle.checked) return undefined;
+      const info: SupportTechInfo = {
+        browser: detectBrowser(),
+        os: detectOS(),
+        page: (location.host + location.pathname).replace(/\/$/, '') || location.host,
+        version: root.dataset.webVersion,
+      };
+      return Object.values(info).some(Boolean) ? info : undefined;
+    }
+
+    function renderTechPreview() {
+      if (!techPreview) return;
+      const info = techInfo();
+      techPreview.textContent = info ? [info.browser, info.os, info.page].filter(Boolean).join(' · ') : '';
+    }
+
+    // ─── Lampiran ────────────────────────────────────────────────────────────
+
+    function formatBytes(bytes: number): string {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function clearAttachment() {
+      if (attachmentUrl) {
+        URL.revokeObjectURL(attachmentUrl);
+        attachmentUrl = null;
+      }
+      attachmentLabel = '';
+      if (fileInput) fileInput.value = '';
+      const preview = root.querySelector<HTMLElement>('[data-attachment-preview]');
+      preview?.classList.remove('flex');
+      toggle(preview, false);
+    }
+
+    fileInput?.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      clearError(4);
+      if (!file) {
+        clearAttachment();
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        clearAttachment();
+        showError(4, 'Lampiran harus berupa gambar (PNG atau JPG).');
+        return;
+      }
+      if (file.size > supportConfig.maxAttachmentBytes) {
+        clearAttachment();
+        showError(4, 'Ukuran gambar melebihi 16 MB. Kompres dulu atau pilih gambar lain.');
+        return;
+      }
+
+      if (attachmentUrl) URL.revokeObjectURL(attachmentUrl);
+      attachmentUrl = URL.createObjectURL(file);
+      // Kalimatnya netral kanal: pesan disusun sebelum user memilih
+      // WhatsApp atau email.
+      attachmentLabel = '1 gambar (dilampirkan menyusul)';
+
+      const preview = root.querySelector<HTMLElement>('[data-attachment-preview]');
+      const thumb = root.querySelector<HTMLImageElement>('[data-attachment-thumb]');
+      const name = root.querySelector<HTMLElement>('[data-attachment-name]');
+      const size = root.querySelector<HTMLElement>('[data-attachment-size]');
+      if (thumb) thumb.src = attachmentUrl;
+      if (name) name.textContent = file.name;
+      if (size) size.textContent = formatBytes(file.size);
+      preview?.classList.add('flex');
+      toggle(preview, true);
+    });
+
+    root.querySelector('[data-attachment-clear]')?.addEventListener('click', () => {
+      clearAttachment();
+      clearError(4);
+    });
+
+    // ─── Review ──────────────────────────────────────────────────────────────
+
+    function buildDraft(): SupportDraft {
+      return {
+        supportId: lastSupportId,
+        product: checkedRadio('product')?.dataset.label ?? '',
+        category: checkedRadio('category')?.dataset.label ?? '',
+        message: textarea?.value ?? '',
+        name: value('name'),
+        discordUsername: value('discordUsername'),
+        discordUserId: value('discordUserId'),
+        attachment: attachmentLabel,
+        tech: techInfo(),
+      };
+    }
+
+    function addReviewRow(list: HTMLElement, label: string, text: string, step: number) {
+      const row = document.createElement('div');
+      row.className = 'flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-start sm:gap-4';
+
+      const dt = document.createElement('dt');
+      dt.className =
+        'flex-none font-mono text-[0.65rem] uppercase tracking-widest text-ink-500 dark:text-cream-300/60 sm:w-28 sm:pt-0.5';
+      dt.textContent = label;
+
+      const dd = document.createElement('dd');
+      dd.className = 'min-w-0 flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed';
+      dd.textContent = text;
+
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className =
+        'inline-flex flex-none items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-xs text-ink-500 transition-colors hover:bg-ink-900/5 hover:text-amber-600 dark:text-cream-300/60 dark:hover:bg-cream-100/5 dark:hover:text-amber-400';
+      if (editIconTpl) edit.appendChild(editIconTpl.content.cloneNode(true));
+      edit.appendChild(document.createTextNode('Ubah'));
+      edit.addEventListener('click', () => goTo(step));
+
+      row.append(dt, dd, edit);
+      list.appendChild(row);
+    }
+
+    function renderReview() {
+      lastSupportId = buildSupportId();
+      const draft = buildDraft();
+      lastMessage = buildSupportMessage(draft);
+
+      const idEl = root.querySelector<HTMLElement>('[data-review-id]');
+      if (idEl) idEl.textContent = lastSupportId;
+
+      const list = root.querySelector<HTMLElement>('[data-review-list]');
+      if (list) {
+        list.textContent = '';
+        addReviewRow(list, 'Produk', draft.product, 1);
+        addReviewRow(list, 'Kategori', draft.category, 2);
+        addReviewRow(list, 'Kendala', draft.message.trim(), 3);
+        if (draft.name) addReviewRow(list, 'Nama', draft.name, 4);
+        if (draft.discordUsername) {
+          addReviewRow(list, 'Discord', `@${draft.discordUsername.replace(/^@+/, '')}`, 4);
+        }
+        if (draft.discordUserId) addReviewRow(list, 'Discord ID', draft.discordUserId, 4);
+        if (draft.attachment) addReviewRow(list, 'Lampiran', draft.attachment, 4);
+        if (draft.tech) {
+          const tech = [draft.tech.browser, draft.tech.os, draft.tech.page, draft.tech.version]
+            .filter(Boolean)
+            .join(' · ');
+          if (tech) addReviewRow(list, 'Info Teknis', tech, 4);
+        }
+      }
+
+      const preview = root.querySelector<HTMLElement>('[data-review-message]');
+      if (preview) preview.textContent = lastMessage;
+
+      const subjectEl = root.querySelector<HTMLElement>('[data-review-subject]');
+      if (subjectEl) subjectEl.textContent = buildSupportSubject(draft);
+
+      // Kedua kanal memakai isi pesan yang sama; hanya pembungkusnya berbeda.
+      const waHref = buildWhatsappUrl(lastMessage);
+      const mailHref = buildMailtoUrl(draft, lastMessage);
+
+      [waLink, waReopen].forEach((link) => {
+        if (!link) return;
+        link.href = waHref;
+        link.removeAttribute('aria-disabled');
+      });
+      [mailLink, mailReopen].forEach((link) => {
+        if (!link) return;
+        link.href = mailHref;
+        link.removeAttribute('aria-disabled');
+      });
+    }
+
+    // ─── Salin ke clipboard ──────────────────────────────────────────────────
+
+    async function copyText(text: string, button: HTMLElement) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const helper = document.createElement('textarea');
+        helper.value = text;
+        helper.setAttribute('readonly', '');
+        helper.style.position = 'fixed';
+        helper.style.opacity = '0';
+        document.body.appendChild(helper);
+        helper.select();
+        try {
+          document.execCommand('copy');
+        } catch {
+          /* Diamkan: user masih bisa menyalin manual dari pratinjau pesan. */
+        }
+        helper.remove();
+      }
+
+      const label = button.querySelector<HTMLElement>('[data-copy-label]');
+      if (!label) return;
+      const original = label.dataset.original ?? label.textContent ?? '';
+      label.dataset.original = original;
+      label.textContent = 'Tersalin';
+      window.setTimeout(() => {
+        label.textContent = original;
+      }, 1600);
+    }
+
+    root.querySelector<HTMLElement>('[data-copy-id]')?.addEventListener('click', (event) => {
+      copyText(lastSupportId, event.currentTarget as HTMLElement);
+    });
+    root.querySelectorAll<HTMLElement>('[data-copy-message]').forEach((button) => {
+      button.addEventListener('click', () => copyText(lastMessage, button));
+    });
+
+    // ─── Interaksi form ──────────────────────────────────────────────────────
+
+    // Enter di dalam field ikut memicu "Lanjut", bukan reload halaman.
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (current >= TOTAL_STEPS) return;
+      if (!validate(current)) return;
+      const next = current + 1;
+      if (next === TOTAL_STEPS) renderReview();
+      goTo(next);
+    });
+
+    backBtn?.addEventListener('click', () => {
+      if (current > 1) goTo(current - 1);
+    });
+
+    root.querySelectorAll<HTMLInputElement>('input[name="product"]').forEach((input) => {
+      input.addEventListener('change', () => clearError(1));
+    });
+
+    root.querySelectorAll<HTMLInputElement>('input[name="category"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        clearError(2);
+        if (categoryHint) categoryHint.textContent = input.dataset.hint || defaultHint;
+      });
+    });
+
+    function updateCounter() {
+      if (!counter || !textarea) return;
+      const length = textarea.value.length;
+      const nearLimit = length > supportConfig.maxMessage * 0.9;
+      counter.textContent = `${length} / ${supportConfig.maxMessage}`;
+      counter.classList.toggle('text-amber-600', nearLimit);
+      counter.classList.toggle('dark:text-amber-400', nearLimit);
+    }
+
+    textarea?.addEventListener('input', () => {
+      updateCounter();
+      if (textarea.value.trim().length >= supportConfig.minMessage) clearError(3);
+    });
+
+    techToggle?.addEventListener('change', renderTechPreview);
+
+    root.querySelectorAll<HTMLInputElement>('[name="discordUserId"], [name="discordUsername"]').forEach((input) => {
+      input.addEventListener('input', () => clearError(4));
+    });
+
+    // ─── Redirect ke WhatsApp / Email ────────────────────────────────────────
+
+    type Channel = 'whatsapp' | 'email';
+
+    const channelCopy: Record<Channel, { title: string; desc: string; attachment: string }> = {
+      whatsapp: {
+        title: 'WhatsApp sedang dibuka',
+        desc: 'Pesanmu sudah tersusun rapi di sana. Tinggal tekan Kirim untuk mengirimkannya ke tim support.',
+        attachment: 'Jangan lupa lampirkan screenshot-nya langsung di chat WhatsApp sebelum menekan Kirim.',
+      },
+      email: {
+        title: 'Aplikasi email sedang dibuka',
+        desc: 'Penerima, subjek, dan isi email sudah terisi otomatis. Tinggal tekan Kirim untuk mengirimkannya ke tim support.',
+        attachment: 'Jangan lupa lampirkan screenshot-nya sebagai attachment sebelum menekan Kirim.',
+      },
+    };
+
+    function showDone(channel: Channel) {
+      const copy = channelCopy[channel];
+
+      root.querySelectorAll<HTMLElement>('[data-done-icon]').forEach((icon) => {
+        const match = icon.dataset.doneIcon === channel;
+        icon.classList.toggle('flex', match);
+        toggle(icon, match);
+      });
+
+      const title = root.querySelector<HTMLElement>('[data-done-title]');
+      if (title) title.textContent = copy.title;
+      const desc = root.querySelector<HTMLElement>('[data-done-desc]');
+      if (desc) desc.textContent = copy.desc;
+      const doneId = root.querySelector<HTMLElement>('[data-done-id]');
+      if (doneId) doneId.textContent = lastSupportId;
+
+      const doneAttachment = root.querySelector<HTMLElement>('[data-done-attachment]');
+      const doneAttachmentText = root.querySelector<HTMLElement>('[data-done-attachment-text]');
+      if (doneAttachmentText) doneAttachmentText.textContent = copy.attachment;
+      doneAttachment?.classList.toggle('flex', Boolean(attachmentLabel));
+      toggle(doneAttachment, Boolean(attachmentLabel));
+
+      // Tombol "buka lagi" mengikuti kanal yang tadi dipakai.
+      toggle(waReopen, channel === 'whatsapp');
+      toggle(mailReopen, channel === 'email');
+
+      goTo(DONE_STEP);
+    }
+
+    /**
+     * Tautan dibiarkan bekerja sebagai anchor biasa (tanpa window.open) supaya
+     * tidak diblokir popup blocker. Loading state hanya penanda visual sesaat
+     * sebelum panel "selesai" muncul.
+     */
+    function bindSendLink(link: HTMLAnchorElement | null, channel: Channel) {
+      if (!link) return;
+      const idle = link.querySelector<HTMLElement>('[data-mail-idle], [data-wa-idle]');
+      const loading = link.querySelector<HTMLElement>('[data-mail-loading], [data-wa-loading]');
+
+      link.addEventListener('click', (event) => {
+        if (link.getAttribute('aria-disabled') === 'true' || link.getAttribute('href') === '#') {
+          event.preventDefault();
+          return;
+        }
+
+        toggle(idle, false);
+        loading?.classList.add('inline-flex');
+        toggle(loading, true);
+
+        window.setTimeout(() => {
+          idle?.classList.add('inline-flex');
+          toggle(idle, true);
+          toggle(loading, false);
+          showDone(channel);
+        }, 700);
+      });
+    }
+
+    bindSendLink(waLink, 'whatsapp');
+    bindSendLink(mailLink, 'email');
+
+    root.querySelector<HTMLButtonElement>('[data-reset]')?.addEventListener('click', () => {
+      form?.reset();
+      clearAttachment();
+      [1, 2, 3, 4].forEach(clearError);
+      if (categoryHint) categoryHint.textContent = defaultHint;
+      lastMessage = '';
+      lastSupportId = '';
+      [waLink, waReopen, mailLink, mailReopen].forEach((link) => {
+        if (!link) return;
+        link.href = '#';
+        link.setAttribute('aria-disabled', 'true');
+      });
+      updateCounter();
+      renderTechPreview();
+      goTo(1);
+    });
+
+    // ─── Inisialisasi ────────────────────────────────────────────────────────
+
+    updateCounter();
+    renderTechPreview();
+    render();
+  }
+</script>

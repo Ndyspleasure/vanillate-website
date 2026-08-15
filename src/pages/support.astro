@@ -3,6 +3,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
+import SupportWizard from '@components/SupportWizard.astro';
 import { site } from '@data/site';
 import { bots } from '@data/bots';
 import { generalFaqs } from '@data/faq';
@@ -42,7 +43,7 @@ const bugSteps = [
 ];
 ---
 
-<BaseLayout title="Support" description="Butuh bantuan, ingin melaporkan bug, atau punya ide fitur? Semua dukungan Vanillate Studio berpusat di satu server Discord yang aktif dijawab langsung oleh tim.">
+<BaseLayout title="Support" description="Butuh bantuan, ingin melaporkan bug, atau punya ide fitur? Kirim kendalamu lewat Support Center Vanillate ke WhatsApp Business atau email, atau gabung ke server Discord yang dijawab langsung oleh tim.">
   <!-- HERO -->
   <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
     <div class="aurora bg-teal-500/20 h-[400px] w-[400px] top-[-100px] right-[5%]" aria-hidden="true"></div>
@@ -52,8 +53,22 @@ const bugSteps = [
         Kami di sini<br />untuk <span class="italic text-amber-600 dark:text-amber-500">membantu</span>.
       </h1>
       <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
-        Semua dukungan Vanillate berpusat di satu server Discord. Bertanya, melaporkan bug, atau melempar ide, semuanya dibalas langsung oleh orang yang menulis kodenya, bukan template balasan otomatis.
+        Ceritakan kendalamu lewat formulir singkat, lalu lanjutkan ke WhatsApp atau email dengan pesan yang sudah tersusun rapi. Tidak perlu mengetik ulang. Atau gabung ke server Discord dan bertanya langsung ke orang yang menulis kodenya.
       </p>
+      <div class="mt-8 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
+        <a href="#hubungi-support" class="inline-flex items-center justify-center gap-2 rounded-full bg-ink-900 text-cream-50 px-7 py-3.5 text-base font-medium transition-all duration-200 hover:bg-ink-800 hover:-translate-y-0.5 dark:bg-amber-500 dark:text-ink-950 dark:hover:bg-amber-400">
+          <Icon name="life-buoy" class="h-4 w-4" />
+          Hubungi Support
+        </a>
+        <Button href={site.links.discordSupport} variant="secondary" size="lg" external>Gabung Discord</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUPPORT CENTER → WHATSAPP -->
+  <section id="hubungi-support" class="container-page scroll-mt-24 pb-16">
+    <div class="reveal">
+      <SupportWizard />
     </div>
   </section>
 

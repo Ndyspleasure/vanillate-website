@@ -21,8 +21,9 @@ export interface Props {
 const { name, class: className = 'h-5 w-5', strokeWidth = 2, label } = Astro.props;
 
 const path = icons[name];
-if (import.meta.env.DEV && !path) {
-  // Bantu ketahuan lebih awal saat nama ikon salah ketik.
+if (!path) {
+  // Ikon yang tidak ada di registry akan merender <svg> kosong tanpa error,
+  // jadi warning ini sengaja aktif saat build juga, bukan hanya di dev.
   console.warn(`[Icon] Ikon "${name}" tidak ada di registry (@data/icons.ts).`);
 }
 
