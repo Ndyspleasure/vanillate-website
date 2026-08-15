@@ -9,6 +9,7 @@
 //      yang tidak berhak dilihat user.
 
 import { getSupabase } from './supabase';
+import { pesanError } from './admin-ui';
 
 export interface AdminProfile {
   id: string;
@@ -62,33 +63,48 @@ export async function login(identifier: string, password: string): Promise<Login
 
   // Pastikan akun ini memang terdaftar sebagai admin. User Supabase yang ada
   // tapi tidak punya baris di admin_users tidak boleh masuk.
-  const profile = await getAdminProfile();
+  const { profile, dbError } = await getAdminProfile();
   if (!profile) {
     await supabase.auth.signOut();
-    return { ok: false, error: 'Akun ini tidak punya akses admin.' };
+    return { ok: false, error: dbError ?? 'Akun ini tidak punya akses admin.' };
   }
 
   await touchLastLogin();
   return { ok: true };
 }
 
-/** Ambil profil admin milik sesi aktif. null bila tidak login / bukan admin. */
-export async function getAdminProfile(): Promise<AdminProfile | null> {
+export interface ProfilResult {
+  profile: AdminProfile | null;
+  /**
+   * Terisi hanya bila query-nya sendiri gagal — bukan saat query berhasil tapi
+   * tidak menemukan baris.
+   *
+   * Perbedaan ini penting. Keduanya sama-sama menghasilkan profil null, tapi
+   * artinya jauh berbeda: yang satu "akun ini memang bukan admin", yang lain
+   * "database belum benar". Menyamakan keduanya membuat kesalahan konfigurasi
+   * tersamar sebagai penolakan akses, dan itu menyesatkan saat setup.
+   */
+  dbError: string | null;
+}
+
+/** Ambil profil admin milik sesi aktif. */
+export async function getAdminProfile(): Promise<ProfilResult> {
   const supabase = getSupabase();
-  if (!supabase) return null;
+  if (!supabase) return { profile: null, dbError: null };
 
   const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) return null;
+  if (!sessionData.session) return { profile: null, dbError: null };
 
-  // RLS membatasi baris admin_users hanya ke milik sendiri, jadi single() aman.
+  // RLS membatasi baris admin_users hanya ke milik sendiri.
   const { data, error } = await supabase
     .from('admin_users')
     .select('id, username, display_name, role, last_login_at')
     .eq('id', sessionData.session.user.id)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return data as AdminProfile;
+  if (error) return { profile: null, dbError: pesanError(error) };
+  if (!data) return { profile: null, dbError: null };
+  return { profile: data as AdminProfile, dbError: null };
 }
 
 /** Catat waktu login terakhir. Gagal di sini tidak boleh membatalkan login. */
@@ -119,7 +135,7 @@ export async function logout(): Promise<void> {
  * isinya kosong sampai login berhasil.
  */
 export async function requireAdmin(loginUrl: string): Promise<AdminProfile | null> {
-  const profile = await getAdminProfile();
+  const { profile } = await getAdminProfile();
   if (!profile) {
     const next = encodeURIComponent(window.location.pathname);
     window.location.replace(`${loginUrl}?next=${next}`);

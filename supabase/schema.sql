@@ -73,6 +73,25 @@ as $$
   );
 $$;
 
+-- Apakah pemanggil seorang owner?
+--
+-- Harus berupa fungsi SECURITY DEFINER, BUKAN subquery yang ditulis langsung di
+-- dalam policy admin_users. Policy pada sebuah tabel yang menanyai tabel itu
+-- sendiri membuat PostgreSQL menolaknya sebagai rekursi tak berujung
+-- (error 42P17), sehingga pembacaan profil admin gagal dan login ikut ditolak.
+create or replace function public.is_owner()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.admin_users
+    where id = auth.uid() and role = 'owner'
+  );
+$$;
+
 -- Menukar username menjadi email supaya admin bisa login pakai username.
 -- Supabase Auth hanya mengenal email, jadi halaman login memanggil fungsi ini
 -- lebih dulu. Fungsi ini hanya mengembalikan email — tidak ada data lain — dan
@@ -95,6 +114,7 @@ $$;
 grant execute on function public.resolve_admin_login(text) to anon, authenticated;
 grant execute on function public.is_admin() to authenticated;
 grant execute on function public.is_admin_editor() to authenticated;
+grant execute on function public.is_owner() to authenticated;
 
 
 -- ───────────────────────────────────────────────────────────────────────────
@@ -224,10 +244,7 @@ alter table public.site_content enable row level security;
 drop policy if exists "admin baca profil sendiri" on public.admin_users;
 create policy "admin baca profil sendiri" on public.admin_users
   for select to authenticated
-  using (
-    id = auth.uid()
-    or exists (select 1 from public.admin_users a where a.id = auth.uid() and a.role = 'owner')
-  );
+  using (id = auth.uid() or public.is_owner());
 
 drop policy if exists "admin update profil sendiri" on public.admin_users;
 create policy "admin update profil sendiri" on public.admin_users
