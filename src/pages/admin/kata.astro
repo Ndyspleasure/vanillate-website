@@ -1,0 +1,119 @@
+---
+// Moderasi Word Collection.
+//
+// Bot mengirim antrean kata tak dikenal ke tabel `bot_word_queue` (via
+// websiteSync). Terima/Tolak mengantre perintah `word.accept` / `word.reject`
+// ke `bot_commands`; bot memindahkan kata ke kamus atau daftar tolak.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Moderasi Kata" active="kata">
+  <AdminPageHeader
+    eyebrow="Konten"
+    title="Moderasi Kata"
+    description="Kata yang diajukan pemain dan menunggu ditinjau. Terima untuk masuk kamus, atau tolak."
+  />
+
+  <div class="px-6 lg:px-10 py-8 space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <p id="kata-info" class="text-sm text-ink-500 dark:text-cream-300/60"></p>
+      <button type="button" id="kata-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
+    </div>
+    <div id="kata-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    void muat();
+    setInterval(() => void muat(), 30_000);
+    document.getElementById('kata-refresh')?.addEventListener('click', () => void muat());
+    document.getElementById('kata-body')?.addEventListener('click', onAksi);
+  });
+
+  async function muat() {
+    const body = document.getElementById('kata-body')!;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('bot_word_queue')
+      .select('word, hits, first_seen')
+      .order('hits', { ascending: false, nullsFirst: false })
+      .limit(200);
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || data.length === 0) {
+      body.innerHTML = stateBlock('empty', 'Tidak ada kata menunggu moderasi. 🎉');
+      document.getElementById('kata-info')!.textContent = '';
+      return;
+    }
+
+    document.getElementById('kata-info')!.textContent = `${fmtAngka(data.length)} kata menunggu`;
+    const rows = data.map((w: any) => `
+      <tr class="border-t border-ink-900/5 dark:border-cream-100/5" data-word="${esc(w.word)}">
+        <td class="px-5 py-3 font-medium">${esc(w.word)}</td>
+        <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(w.hits))}</td>
+        <td class="px-5 py-3 text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(w.first_seen ? fmtWaktu(w.first_seen) : '—')}</td>
+        <td class="px-5 py-3 text-right space-x-2">
+          ${bolehEdit ? `
+            <button type="button" data-accept="${esc(w.word)}" class="rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-teal-400 transition-colors">Terima</button>
+            <button type="button" data-reject="${esc(w.word)}" class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-400 transition-colors">Tolak</button>
+          ` : '<span class="text-xs text-ink-400 dark:text-cream-300/40">—</span>'}
+        </td>
+      </tr>`).join('');
+
+    body.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
+            <tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+              <th class="px-5 py-3 font-medium">Kata</th>
+              <th class="px-5 py-3 font-medium">Percobaan</th>
+              <th class="px-5 py-3 font-medium">Pertama muncul</th>
+              <th class="px-5 py-3 font-medium text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  async function onAksi(e: Event) {
+    const el = (e.target as HTMLElement).closest('button[data-accept], button[data-reject]') as HTMLButtonElement | null;
+    if (!el) return;
+    const accept = el.hasAttribute('data-accept');
+    const word = (accept ? el.dataset.accept : el.dataset.reject)!;
+
+    let reason: string | undefined;
+    if (!accept) {
+      const r = window.prompt(`Tolak kata "${word}"? Alasan (opsional):`, '');
+      if (r === null) return; // batal
+      reason = r.trim() || undefined;
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const tr = el.closest('tr');
+    tr?.querySelectorAll('button').forEach((b) => ((b as HTMLButtonElement).disabled = true));
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const payload: Record<string, string> = { word };
+    if (reason) payload.reason = reason;
+    const { error } = await supabase.from('bot_commands').insert({
+      type: accept ? 'word.accept' : 'word.reject', payload, status: 'pending', created_by: sesi.session?.user.id ?? null,
+    });
+    if (error) { alert(pesanError(error)); tr?.querySelectorAll('button').forEach((b) => ((b as HTMLButtonElement).disabled = false)); return; }
+    // Tandai baris sudah diproses (akan hilang saat refresh berikutnya).
+    if (tr) { (tr as HTMLElement).style.opacity = '0.5'; el.textContent = 'Antre…'; }
+  }
+</script>

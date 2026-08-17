@@ -55,6 +55,7 @@ const urutan = [
             <tr class="text-left">
               <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Pemain</th>
               <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Level</th>
+              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Coin</th>
               <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Main</th>
               <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Menang</th>
               <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Terakhir main</th>
@@ -121,7 +122,7 @@ const urutan = [
 
     let query = supabase
       .from('bot_players')
-      .select('id, player_id, display_name, level, games_played, wins, last_seen_at, is_banned', { count: 'exact' })
+      .select('id, player_id, display_name, level, games_played, wins, last_seen_at, is_banned, meta', { count: 'exact' })
       .order(urut, { ascending: false, nullsFirst: false })
       .range(offset, offset + PER_HALAMAN - 1);
 
@@ -159,17 +160,47 @@ const urutan = [
   }
 
   function baris(row: any): string {
+    const m = (row.meta ?? {}) as Record<string, any>;
+    const detail = [
+      ['Player ID game', m.game_player_id ?? '—'],
+      ['Coin', fmtAngka(m.coins)],
+      ['EXP akun', fmtAngka(m.account_exp)],
+      ['Total kata', fmtAngka(m.total_words)],
+      ['Menang', fmtAngka(row.wins)],
+      ['Alasan ban', row.is_banned ? (m.ban_reason ?? '—') : '—'],
+    ]
+      .map(([label, nilai]) => `
+        <div>
+          <p class="text-[0.7rem] uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">${esc(label)}</p>
+          <p class="text-sm font-medium mt-0.5 break-words">${esc(nilai)}</p>
+        </div>`)
+      .join('');
+
     return `
-      <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+      <tr class="border-t border-ink-900/5 dark:border-cream-100/5 cursor-pointer hover:bg-ink-900/5 dark:hover:bg-cream-100/5" data-toggle>
         <td class="px-5 py-3">
           <span class="font-medium">${esc(row.display_name ?? 'Tanpa nama')}</span>
           ${row.is_banned ? '<span class="ml-2 inline-block rounded-full bg-red-500/15 px-2 py-0.5 text-[0.65rem] text-red-600 dark:text-red-400">Diblokir</span>' : ''}
           <span class="block font-mono text-[0.7rem] text-ink-400 dark:text-cream-300/40">${esc(row.player_id)}</span>
         </td>
         <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(row.level))}</td>
+        <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(m.coins))}</td>
         <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(row.games_played))}</td>
         <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(row.wins))}</td>
         <td class="px-5 py-3 whitespace-nowrap text-ink-500 dark:text-cream-300/60 text-xs">${esc(row.last_seen_at ? fmtWaktu(row.last_seen_at) : '—')}</td>
+      </tr>
+      <tr class="hidden border-t border-ink-900/5 dark:border-cream-100/5 bg-ink-900/[0.02] dark:bg-cream-100/[0.02]" data-detail>
+        <td colspan="6" class="px-5 py-4">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">${detail}</div>
+        </td>
       </tr>`;
   }
+
+  // Klik baris → buka/tutup panel detail pemain (event delegation).
+  document.getElementById('pemain-body')?.addEventListener('click', (e) => {
+    const tr = (e.target as HTMLElement).closest('tr[data-toggle]');
+    if (!tr) return;
+    const detail = tr.nextElementSibling;
+    if (detail && detail.hasAttribute('data-detail')) detail.classList.toggle('hidden');
+  });
 </script>

@@ -357,5 +357,101 @@ Tunggu workflow sync konten berikutnya, atau jalankan manual lewat tab Actions.
 | `src/lib/admin-chart.ts` | Grafik tren di halaman statistik |
 | `src/layouts/AdminLayout.astro` | Kerangka panel + penjaga sesi |
 | `src/pages/admin/*.astro` | Halaman login dan dashboard |
+| `src/pages/admin/kontrol.astro` | **Control panel** — atur setting bot + jadwal + kartu pemantauan + riwayat perubahan |
+| `src/pages/admin/operasi.astro` | **Console aksi** — antrean perintah bot (dengan konfirmasi aksi berbahaya & test-send) |
+| `src/pages/admin/games.astro` | **Monitor game** live (akhiri game mode klasik) |
+| `src/pages/admin/promo.astro` | **Manajemen promo** (daftar + analitik + nyalakan/matikan) |
+| `src/pages/admin/kata.astro` | **Moderasi kata** (terima/tolak usulan Word Collection) |
 | `scripts/sync-content.mjs` | Menarik konten Supabase saat build |
 | `.github/workflows/sync-content.yml` | Penjadwalan sync konten |
+
+---
+
+## 11. Control Panel Bot (arah balik: website → bot)
+
+Bagian 1–10 memakai arah data **bot → website** (bot menulis, panel membaca).
+Panel `/admin/kontrol` dan `/admin/operasi` menambahkan **arah balik website → bot**,
+mengubah panel menjadi control panel: developer mengatur bot dari website tanpa
+menyentuh source code atau me-restart bot. Setara Developer Dashboard di dalam
+Discord.
+
+Dua tabel Supabase (dibuat oleh `supabase/schema.sql` bagian 7):
+
+| Tabel | Peran | Ditulis oleh | Dibaca oleh |
+|---|---|---|---|
+| `bot_settings` | State deklaratif (maintenance, pengumuman, toggle mode, tunable, feature flag) | editor via panel `/admin/kontrol` | bot (service_role, live polling) |
+| `bot_commands` | Antrean aksi sekali-jalan (kelola pemain/boost/promo/quest/broadcast) | editor via panel `/admin/operasi` | bot (service_role, dieksekusi lalu status ditulis balik) |
+
+### Cara kerja
+
+```
+   Admin ubah setting di /admin/kontrol         Admin kirim aksi di /admin/operasi
+              │                                             │
+              ▼                                             ▼
+   Supabase: bot_settings                        Supabase: bot_commands (pending)
+              │                                             │
+              │  bot menarik tiap ± 1 menit                 │ bot menarik tiap ± 45 dtk
+              ▼                                             ▼
+   remoteConfig menerapkan LIVE:                 remoteCommands eksekusi lewat
+   maintenance, pengumuman, toggle mode,         manager bot (playerStats, boost,
+   tunable (di-clamp), feature flag              promo, broadcast) → tulis balik
+                                                 status done/error + hasil
+```
+
+Berbeda dari halaman **Konten** (yang me-rebuild situs statis), halaman kontrol
+menyetir bot, **bukan** situs publik — jadi tidak ada build/deploy yang terpicu.
+
+### Keamanan (RLS)
+
+- `bot_settings`: admin boleh baca, `owner`/`admin` boleh ubah. Bot menulis balik
+  (best-effort, saat kontrol yang sama diubah dari Discord) via service_role.
+- `bot_commands`: admin boleh baca riwayat; `owner`/`admin` boleh **INSERT** perintah,
+  dipaksa `status = 'pending'` + `created_by = auth.uid()`. **Tidak ada** UPDATE/DELETE
+  untuk `authenticated` — status hanya ditulis bot (service_role).
+- Nilai numerik & payload perintah **selalu divalidasi ulang & di-clamp di sisi bot**;
+  input panel tidak pernah dipercaya mentah.
+- **Versi & changelog tidak dikontrol dari sini** — SSoT-nya tetap `version.json` +
+  `CHANGELOG.json` di repo bot. Panel sengaja tidak menyediakan editornya.
+
+### Sisi bot (repo `sambung-kata-bot`)
+
+Aktif otomatis begitu `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` terisi (env yang
+sama dengan Website Sync — tanpa secret baru). Bila kosong, seluruh fitur diam total.
+
+| File | Peran |
+|---|---|
+| `src/services/remoteConfig.js` | Tarik `bot_settings`, terapkan live (`isModeEnabled`/`tunable`/`getFlag`) |
+| `src/services/remoteCommands.js` | Proses antrean `bot_commands` (registry `HANDLERS`) |
+| `src/services/websiteSync.js` | (sudah ada) kirim log/statistik + metrik pemantauan ke `bot_stats.meta` |
+
+### Menambah aksi/setting baru
+
+- **Setting**: tambah baris di seed `bot_settings` (`supabase/schema.sql`) — otomatis
+  muncul di `/admin/kontrol`. Konsumsi di bot lewat `remoteConfig.getFlag/tunable`.
+- **Aksi**: tambah entri form di `GRUP` (`src/pages/admin/operasi.astro`) + handler dengan
+  `type` yang sama di `HANDLERS` (`src/services/remoteCommands.js`). Tidak perlu tabel baru.
+
+### Peningkatan (bagian 8 schema)
+
+Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
+
+| Tabel | Peran |
+|---|---|
+| `bot_settings_audit` | Riwayat perubahan setting (trigger otomatis: key, old→new, kapan). Tampil di `/admin/kontrol`. |
+| `bot_games` | Snapshot game aktif (di-upsert bot ~30 dtk, auto-bersih saat selesai) → `/admin/games`. |
+| `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
+| `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
+
+Tambahan lain:
+- **Penjadwalan**: setting `maintenance_start_at`/`maintenance_end_at` (maintenance efektif =
+  manual OR jendela terjadwal) dan `discord_announcement_expires_at` (pengumuman auto-mati).
+- **Keselamatan aksi**: `/admin/operasi` meminta konfirmasi untuk aksi berbahaya; broadcast massal
+  wajib ketik `BROADCAST` dan punya **test-send** (`broadcast.test`) ke satu ID lebih dulu.
+- **Robustness bot**: perintah yang nyangkut di `processing` > 10 menit ditandai error
+  (bukan diulang); tunable pemain dijaga `min ≤ max`; lonjakan error memicu alert ke channel
+  developer.
+- **Pemantauan**: `bot_stats.meta` kini memuat memori, game aktif, total pemain/coin, banned —
+  ditampilkan sebagai kartu di `/admin/kontrol` dan grafik di `/admin/statistik`.
+
+> **Realtime:** kontrol memakai polling (setting ~60 dtk, perintah ~20 dtk). WebSocket realtime
+> sengaja tidak dipakai agar bot tetap pada jalur REST minimal & fail-safe tanpa dependency baru.

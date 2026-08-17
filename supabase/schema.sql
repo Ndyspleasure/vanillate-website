@@ -305,3 +305,258 @@ create policy "editor ubah konten" on public.site_content
 --
 --  Setelah itu login di /admin memakai username `andi` + password tadi.
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 7. CONTROL PANEL BOT — mengatur bot dari website (arah balik)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Sampai di sini, arah data hanya BOT → website (bot menulis, panel membaca).
+-- Dua tabel berikut menambahkan arah balik WEBSITE → BOT, mengubah panel /admin
+-- menjadi control panel: admin mengatur bot tanpa menyentuh source code.
+--
+--   * bot_settings  → state deklaratif (maintenance, pengumuman, toggle mode,
+--                     tunable angka, feature flag). Bot MENARIKNYA berkala
+--                     (live polling) lalu menerapkannya.
+--   * bot_commands  → antrean perintah sekali-jalan (aksi seperti Developer
+--                     Dashboard: kelola pemain/boost/promo/broadcast). Website
+--                     meng-INSERT perintah `pending`; bot mengeksekusi lalu
+--                     menulis balik statusnya.
+--
+-- Model keamanannya sama: browser hanya pegang anon key, RLS yang menjaga.
+-- Bot menulis balik status memakai service_role (mem-bypass RLS) — kunci itu
+-- HANYA di server bot. Versi/changelog TIDAK diatur di sini: SSoT-nya tetap
+-- version.json + CHANGELOG.json di repo bot.
+
+-- 7a. Settings bot yang bisa diubah dari panel
+create table if not exists public.bot_settings (
+  key         text primary key,
+  bot_slug    text not null default 'sambung-kata',
+  label       text not null,
+  value       text,
+  kind        text not null default 'text'
+                check (kind in ('text', 'markdown', 'url', 'boolean', 'number')),
+  category    text not null default 'umum',
+  help        text,
+  min_value   numeric,   -- hanya untuk kind = 'number' (batas bawah, inklusif)
+  max_value   numeric,   -- hanya untuk kind = 'number' (batas atas, inklusif)
+  sort        integer not null default 100,
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.bot_settings is
+  'Setting bot yang diatur dari panel /admin. Bot menariknya live (service_role) lalu menerapkannya. Bot meng-clamp/validasi setiap nilai — jangan percaya input mentah.';
+
+-- Nilai numerik SELALU divalidasi ulang & di-clamp di sisi bot. min_value/
+-- max_value di sini hanya untuk bantuan input di panel, bukan penjaga sebenarnya.
+insert into public.bot_settings (key, label, value, kind, category, help, min_value, max_value, sort) values
+  -- Maintenance
+  ('maintenance_mode',    'Maintenance mode',       'false', 'boolean', 'maintenance',
+   'Saat aktif, bot menolak command/permainan baru (jalur support tetap terbuka).', null, null, 10),
+  ('maintenance_message', 'Pesan maintenance',      '🔧 Bot sedang dalam maintenance. Mohon tunggu sebentar.', 'text', 'maintenance',
+   'Ditampilkan ke pemain saat maintenance aktif.', null, null, 20),
+
+  -- Pengumuman di dalam Discord (Lobby) — BUKAN banner website (itu di site_content).
+  ('discord_announcement_enabled', 'Tampilkan pengumuman di Discord', 'false', 'boolean', 'pengumuman',
+   'Menampilkan pengumuman di Lobby/embed bot.', null, null, 10),
+  ('discord_announcement_text',    'Isi pengumuman Discord',          '',      'text',    'pengumuman',
+   'Satu-dua kalimat singkat untuk pemain.', null, null, 20),
+
+  -- Toggle mode permainan (Sambung Kata + game sampingan)
+  ('mode_pvp_enabled',      'Mode PvP',              'true', 'boolean', 'mode', 'Player vs Player (2–10 pemain).',        null, null, 10),
+  ('mode_pvb_enabled',      'Mode PvB',              'true', 'boolean', 'mode', 'Player vs Bot (Battle Skill & Klasik).', null, null, 20),
+  ('mode_server_enabled',   'Mode Player vs Server', 'true', 'boolean', 'mode', 'Pertandingan lintas server.',            null, null, 30),
+  ('mode_dungeon_enabled',  'Mode Dungeon',          'true', 'boolean', 'mode', 'Dungeon Mode (butuh Golden Key).',       null, null, 40),
+  ('game_werewolf_enabled', 'Game Werewolf',         'true', 'boolean', 'mode', 'Game sampingan Werewolf.',               null, null, 50),
+  ('game_pengacara_enabled','Game Pengacara',        'true', 'boolean', 'mode', 'Game sampingan Pengacara.',              null, null, 60),
+
+  -- Tunable numerik gameplay (di-clamp di bot)
+  ('tunable_turn_timeout',        'Waktu per giliran (detik)',       '30', 'number', 'tunable',
+   'Batas waktu menjawab per giliran mode klasik/PvP.', 10, 120, 10),
+  ('tunable_min_players',         'Minimal pemain PvP',              '2',  'number', 'tunable',
+   'Jumlah pemain minimum agar match bisa dimulai.', 2, 10, 20),
+  ('tunable_max_players',         'Maksimal pemain PvP',             '10', 'number', 'tunable',
+   'Jumlah pemain maksimum dalam satu match.', 2, 10, 30),
+  ('tunable_battle_turn_timeout', 'Waktu per giliran PvB (detik)',   '30', 'number', 'tunable',
+   'Batas waktu menjawab per giliran mode Player vs Bot.', 10, 120, 40),
+
+  -- Feature flag sistem
+  ('feature_shop_enabled',   'Shop aktif',            'true', 'boolean', 'fitur', 'Menyalakan/mematikan /shop.',                 null, null, 10),
+  ('feature_quest_enabled',  'Quest aktif',           'true', 'boolean', 'fitur', 'Menyalakan/mematikan sistem quest.',          null, null, 20),
+  ('feature_events_enabled', 'Event in-game aktif',   'true', 'boolean', 'fitur', 'Event acak di dalam permainan.',              null, null, 30)
+on conflict (key) do nothing;
+
+create index if not exists bot_settings_category_idx on public.bot_settings (bot_slug, category, sort);
+
+-- 7b. Antrean perintah (aksi imperatif sekali-jalan)
+create table if not exists public.bot_commands (
+  id           bigint generated always as identity primary key,
+  bot_slug     text not null default 'sambung-kata',
+  type         text not null,                 -- mis. 'player.setCoin', 'promo.create'
+  payload      jsonb not null default '{}'::jsonb,
+  status       text not null default 'pending'
+                 check (status in ('pending', 'processing', 'done', 'error')),
+  result       jsonb,
+  error        text,
+  created_by   uuid references public.admin_users(id) on delete set null,
+  created_at   timestamptz not null default now(),
+  processed_at timestamptz
+);
+
+comment on table public.bot_commands is
+  'Antrean perintah dari panel /admin ke bot. Admin meng-INSERT status pending; bot (service_role) mengeksekusi lalu menulis status/result. Bot memvalidasi setiap payload.';
+
+create index if not exists bot_commands_status_idx on public.bot_commands (bot_slug, status, created_at);
+create index if not exists bot_commands_recent_idx on public.bot_commands (bot_slug, created_at desc);
+
+-- 7c. RLS untuk kedua tabel
+alter table public.bot_settings enable row level security;
+alter table public.bot_commands enable row level security;
+
+-- Settings: admin boleh baca, editor boleh ubah. (Bot pakai service_role → bypass.)
+drop policy if exists "admin baca bot_settings" on public.bot_settings;
+create policy "admin baca bot_settings" on public.bot_settings
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor ubah bot_settings" on public.bot_settings;
+create policy "editor ubah bot_settings" on public.bot_settings
+  for update to authenticated
+  using (public.is_admin_editor())
+  with check (public.is_admin_editor());
+
+-- Commands: admin boleh baca riwayat; editor boleh menaruh perintah baru.
+-- Status/result hanya ditulis bot (service_role) → tidak ada policy UPDATE/DELETE
+-- untuk `authenticated`. INSERT dipaksa `pending` + atas nama diri sendiri.
+drop policy if exists "admin baca bot_commands" on public.bot_commands;
+create policy "admin baca bot_commands" on public.bot_commands
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor tambah bot_commands" on public.bot_commands;
+create policy "editor tambah bot_commands" on public.bot_commands
+  for insert to authenticated
+  with check (
+    public.is_admin_editor()
+    and created_by = auth.uid()
+    and status = 'pending'
+  );
+-- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 8. CONTROL PANEL BOT — peningkatan (audit, penjadwalan, inspeksi live)
+-- ───────────────────────────────────────────────────────────────────────────
+
+-- 8a. Setting tambahan: jadwal maintenance & kadaluwarsa pengumuman.
+--     Bot mengevaluasinya tiap poll: maintenance efektif = manual OR jendela
+--     terjadwal aktif; pengumuman otomatis mati setelah waktu kadaluwarsa.
+insert into public.bot_settings (key, label, value, kind, category, help, sort) values
+  ('maintenance_start_at', 'Jadwal maintenance — mulai',   '', 'text', 'maintenance',
+   'Opsional. ISO/waktu lokal, mis. 2026-08-20T20:00. Kosong = tanpa jadwal.', 30),
+  ('maintenance_end_at',   'Jadwal maintenance — selesai', '', 'text', 'maintenance',
+   'Opsional. Setelah waktu ini, maintenance mati otomatis.', 40),
+  ('discord_announcement_expires_at', 'Pengumuman kadaluwarsa pada', '', 'text', 'pengumuman',
+   'Opsional. Setelah waktu ini, pengumuman berhenti tampil otomatis.', 30)
+on conflict (key) do nothing;
+
+-- 8b. Audit trail perubahan setting — siapa mengubah apa, kapan.
+create table if not exists public.bot_settings_audit (
+  id         bigint generated always as identity primary key,
+  key        text not null,
+  old_value  text,
+  new_value  text,
+  changed_by uuid references public.admin_users(id) on delete set null,
+  changed_at timestamptz not null default now()
+);
+create index if not exists bot_settings_audit_idx on public.bot_settings_audit (changed_at desc);
+
+-- Trigger: catat tiap UPDATE yang benar-benar mengubah value.
+create or replace function public.log_bot_settings_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.value is distinct from old.value then
+    insert into public.bot_settings_audit (key, old_value, new_value, changed_by)
+    values (new.key, old.value, new.value, new.updated_by);
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_bot_settings_audit on public.bot_settings;
+create trigger trg_bot_settings_audit
+  after update on public.bot_settings
+  for each row execute function public.log_bot_settings_change();
+
+-- 8c. Snapshot game aktif (live monitor). Di-upsert bot; game selesai dihapus.
+create table if not exists public.bot_games (
+  id           bigint generated always as identity primary key,
+  bot_slug     text not null default 'sambung-kata',
+  game_id      text not null,
+  mode         text,
+  guild_name   text,
+  channel_id   text,
+  player_count integer,
+  status       text,
+  started_at   timestamptz,
+  updated_at   timestamptz not null default now(),
+  meta         jsonb,
+  unique (bot_slug, game_id)
+);
+create index if not exists bot_games_idx on public.bot_games (bot_slug, updated_at desc);
+
+-- 8d. Cermin daftar promo (baca cepat untuk halaman Promo).
+create table if not exists public.bot_promos (
+  id            bigint generated always as identity primary key,
+  bot_slug      text not null default 'sambung-kata',
+  code          text not null,
+  title         text,
+  reward        text,
+  status        text,
+  claimed_count integer,
+  max_claims    integer,
+  expired_at    timestamptz,
+  created_at    timestamptz,
+  updated_at    timestamptz not null default now(),
+  meta          jsonb,
+  unique (bot_slug, code)
+);
+create index if not exists bot_promos_idx on public.bot_promos (bot_slug, updated_at desc);
+
+-- 8e. Antrean kata untuk moderasi (Word Collection). Di-upsert bot.
+create table if not exists public.bot_word_queue (
+  id         bigint generated always as identity primary key,
+  bot_slug   text not null default 'sambung-kata',
+  word       text not null,
+  hits       integer,
+  first_seen timestamptz,
+  updated_at timestamptz not null default now(),
+  meta       jsonb,
+  unique (bot_slug, word)
+);
+create index if not exists bot_word_queue_idx on public.bot_word_queue (bot_slug, hits desc);
+
+-- 8f. RLS: semua tabel inspeksi ini baca-saja untuk admin; ditulis bot (service_role).
+alter table public.bot_settings_audit enable row level security;
+alter table public.bot_games         enable row level security;
+alter table public.bot_promos        enable row level security;
+alter table public.bot_word_queue    enable row level security;
+
+drop policy if exists "admin baca audit" on public.bot_settings_audit;
+create policy "admin baca audit" on public.bot_settings_audit
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "admin baca bot_games" on public.bot_games;
+create policy "admin baca bot_games" on public.bot_games
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "admin baca bot_promos" on public.bot_promos;
+create policy "admin baca bot_promos" on public.bot_promos
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "admin baca word_queue" on public.bot_word_queue;
+create policy "admin baca word_queue" on public.bot_word_queue
+  for select to authenticated using (public.is_admin());
+-- ═══════════════════════════════════════════════════════════════════════════
