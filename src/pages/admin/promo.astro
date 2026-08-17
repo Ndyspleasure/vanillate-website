@@ -1,0 +1,135 @@
+---
+// Manajemen promo.
+//
+// Bot mengirim daftar promo ke tabel `bot_promos` (via websiteSync). Halaman ini
+// menampilkan daftar + analitik klaim, dan menyediakan nyalakan/matikan cepat
+// (mengantre perintah promo.enable / promo.disable). Buat & edit promo ada di
+// halaman Operasi.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import { url } from '@utils/url';
+---
+
+<AdminLayout title="Promo" active="promo">
+  <AdminPageHeader
+    eyebrow="Pemasaran"
+    title="Promo"
+    description="Kode promo bot beserta status & jumlah klaim. Buat/edit promo lewat halaman Operasi."
+  />
+
+  <div class="px-6 lg:px-10 py-8 space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <p id="promo-info" class="text-sm text-ink-500 dark:text-cream-300/60"></p>
+      <div class="flex items-center gap-2">
+        <a href={url('/admin/operasi')} class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">+ Buat / Edit di Operasi</a>
+        <button type="button" id="promo-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
+      </div>
+    </div>
+    <div id="promo-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+
+  let bolehEdit = false;
+
+  const WARNA_STATUS: Record<string, string> = {
+    active:    'bg-teal-500/15 text-teal-700 dark:text-teal-300',
+    expired:   'bg-red-500/15 text-red-600 dark:text-red-400',
+    scheduled: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+    disabled:  'bg-ink-500/15 text-ink-500 dark:text-cream-300/60',
+  };
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    void muat();
+    setInterval(() => void muat(), 30_000);
+    document.getElementById('promo-refresh')?.addEventListener('click', () => void muat());
+    document.getElementById('promo-body')?.addEventListener('click', onAksi);
+  });
+
+  async function muat() {
+    const body = document.getElementById('promo-body')!;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('bot_promos')
+      .select('code, title, reward, status, claimed_count, max_claims, expired_at, created_at')
+      .order('created_at', { ascending: false, nullsFirst: false })
+      .limit(200);
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || data.length === 0) {
+      body.innerHTML = stateBlock('empty', 'Belum ada promo. Buat lewat halaman Operasi.');
+      document.getElementById('promo-info')!.textContent = '';
+      return;
+    }
+
+    document.getElementById('promo-info')!.textContent = `${fmtAngka(data.length)} promo`;
+    const rows = data.map((p: any) => {
+      const status = String(p.status ?? '—');
+      const badge = WARNA_STATUS[status] ?? WARNA_STATUS.disabled;
+      const klaim = `${fmtAngka(p.claimed_count)} / ${p.max_claims ? fmtAngka(p.max_claims) : '∞'}`;
+      const nonaktif = status === 'disabled';
+      return `
+        <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+          <td class="px-5 py-3"><code class="text-xs font-mono font-semibold">${esc(p.code)}</code></td>
+          <td class="px-5 py-3 text-sm">${esc(p.title ?? '—')}</td>
+          <td class="px-5 py-3 text-sm">${esc(p.reward ?? '—')}</td>
+          <td class="px-5 py-3"><span class="inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] ${badge}">${esc(status)}</span></td>
+          <td class="px-5 py-3 whitespace-nowrap tabular-nums">${esc(klaim)}</td>
+          <td class="px-5 py-3 text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(p.expired_at ? fmtWaktu(p.expired_at) : 'Tanpa batas')}</td>
+          <td class="px-5 py-3 text-right">
+            ${bolehEdit
+              ? (nonaktif
+                  ? `<button type="button" data-enable="${esc(p.code)}" class="rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-teal-400 transition-colors">Nyalakan</button>`
+                  : `<button type="button" data-disable="${esc(p.code)}" class="rounded-lg border border-red-500/40 text-red-600 dark:text-red-400 px-3 py-1.5 text-xs font-semibold hover:bg-red-500/10 transition-colors">Matikan</button>`)
+              : '<span class="text-xs text-ink-400 dark:text-cream-300/40">—</span>'}
+          </td>
+        </tr>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
+            <tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+              <th class="px-5 py-3 font-medium">Kode</th>
+              <th class="px-5 py-3 font-medium">Judul</th>
+              <th class="px-5 py-3 font-medium">Reward</th>
+              <th class="px-5 py-3 font-medium">Status</th>
+              <th class="px-5 py-3 font-medium">Klaim</th>
+              <th class="px-5 py-3 font-medium">Kedaluwarsa</th>
+              <th class="px-5 py-3 font-medium text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  async function onAksi(e: Event) {
+    const el = (e.target as HTMLElement).closest('button[data-enable], button[data-disable]') as HTMLButtonElement | null;
+    if (!el) return;
+    const enable = el.hasAttribute('data-enable');
+    const code = (enable ? el.dataset.enable : el.dataset.disable)!;
+    if (!enable && !window.confirm(`Matikan promo "${code}"? Pemain tidak bisa klaim lagi.`)) return;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+    el.disabled = true;
+    el.textContent = 'Mengirim…';
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const { error } = await supabase.from('bot_commands').insert({
+      type: enable ? 'promo.enable' : 'promo.disable', payload: { code }, status: 'pending', created_by: sesi.session?.user.id ?? null,
+    });
+    if (error) { el.disabled = false; el.textContent = enable ? 'Nyalakan' : 'Matikan'; alert(pesanError(error)); return; }
+    el.textContent = 'Antre…';
+  }
+</script>

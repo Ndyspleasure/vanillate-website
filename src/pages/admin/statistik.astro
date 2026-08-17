@@ -4,10 +4,15 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 
 const metrik = [
-  { key: 'guild_count',    label: 'Jumlah server' },
-  { key: 'active_players', label: 'Pemain aktif' },
-  { key: 'games_played',   label: 'Game dimainkan' },
-  { key: 'commands_run',   label: 'Command dijalankan' },
+  { key: 'guild_count',      label: 'Jumlah server' },
+  { key: 'active_players',   label: 'Pemain aktif' },
+  { key: 'games_played',     label: 'Game dimainkan' },
+  { key: 'commands_run',     label: 'Command dijalankan' },
+  { key: 'member_reach',     label: 'Jangkauan member' },
+  { key: 'latency_ms',       label: 'Ping (ms)' },
+  { key: 'meta.memory_mb',   label: 'Memori (MB)' },
+  { key: 'meta.active_games', label: 'Game berlangsung' },
+  { key: 'meta.total_players', label: 'Total pemain' },
 ];
 
 const rentang = [
@@ -161,7 +166,7 @@ const rentang = [
 
     const { data, error } = await supabase
       .from('bot_stats')
-      .select('captured_at, guild_count, active_players, games_played, commands_run')
+      .select('captured_at, guild_count, active_players, games_played, commands_run, member_reach, latency_ms, meta')
       .gte('captured_at', sejak)
       .order('captured_at', { ascending: true })
       .limit(500);
@@ -181,9 +186,12 @@ const rentang = [
     const key = select.value;
     const label = select.options[select.selectedIndex].text;
 
+    // Dukung metrik dari kolom meta (jsonb) lewat prefix "meta.".
+    const ambilNilai = (r: any) => key.startsWith('meta.') ? r.meta?.[key.slice(5)] : r[key];
+
     const titik: TitikData[] = riwayat
-      .filter((r) => r[key] !== null && r[key] !== undefined)
-      .map((r) => ({ t: new Date(r.captured_at).getTime(), v: Number(r[key]) }));
+      .filter((r) => ambilNilai(r) !== null && ambilNilai(r) !== undefined)
+      .map((r) => ({ t: new Date(r.captured_at).getTime(), v: Number(ambilNilai(r)) }));
 
     gambarGrafik(wadah, titik, label.toLowerCase());
     isiTabel(titik, label);

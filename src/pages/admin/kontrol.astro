@@ -60,6 +60,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         <p id="kontrol-pesan" class="text-sm" role="status" aria-live="polite"></p>
       </div>
     </form>
+
+    <!-- RIWAYAT PERUBAHAN (audit) -->
+    <section class="space-y-4 pt-4">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Riwayat perubahan</h2>
+      <div id="audit-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    </section>
   </div>
 </AdminLayout>
 
@@ -93,7 +99,41 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
     void muatStatus();
     void muat();
+    void muatAudit();
   });
+
+  // ─── Riwayat perubahan setting (audit) ───────────────────────────────────
+  async function muatAudit() {
+    const body = document.getElementById('audit-body')!;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    body.innerHTML = stateBlock('loading', '');
+
+    const { data, error } = await supabase
+      .from('bot_settings_audit')
+      .select('key, old_value, new_value, changed_at')
+      .order('changed_at', { ascending: false })
+      .limit(20);
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || data.length === 0) { body.innerHTML = stateBlock('empty', 'Belum ada perubahan tercatat.'); return; }
+
+    const potong = (s: string | null) => {
+      const t = String(s ?? '—');
+      return t.length > 40 ? t.slice(0, 39) + '…' : (t || '—');
+    };
+    body.innerHTML = `<ul class="divide-y divide-ink-900/5 dark:divide-cream-100/5">${
+      data.map((r: any) => `
+        <li class="px-5 py-3 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
+          <code class="font-mono text-xs">${esc(r.key)}</code>
+          <span class="text-ink-400 dark:text-cream-300/40">·</span>
+          <span class="text-ink-500 dark:text-cream-300/60 line-through">${esc(potong(r.old_value))}</span>
+          <span class="text-ink-400 dark:text-cream-300/40">→</span>
+          <span class="font-medium">${esc(potong(r.new_value))}</span>
+          <span class="ml-auto text-xs text-ink-500 dark:text-cream-300/60">${esc(fmtWaktu(r.changed_at))}</span>
+        </li>`).join('')
+    }</ul>`;
+  }
 
   // ─── Status bot (ringkas, dari snapshot statistik terbaru) ────────────────
   async function muatStatus() {
@@ -311,6 +351,21 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const fields = Array.from(
       document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-key]'),
     );
+
+    // Validasi silang: min pemain tidak boleh melebihi max pemain.
+    const nilaiOf = (key: string) => {
+      const el = fields.find((f) => f.dataset.key === key);
+      return el ? parseInt((el as HTMLInputElement).value, 10) : NaN;
+    };
+    const minP = nilaiOf('tunable_min_players');
+    const maxP = nilaiOf('tunable_max_players');
+    if (Number.isFinite(minP) && Number.isFinite(maxP) && minP > maxP) {
+      pesan.textContent = 'Minimal pemain tidak boleh melebihi maksimal pemain.';
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      btn.disabled = false;
+      btn.textContent = 'Simpan perubahan';
+      return;
+    }
 
     const hasil = await Promise.all(
       fields.map((el) => {

@@ -1,0 +1,112 @@
+---
+// Monitor game live.
+//
+// Bot mengirim snapshot game aktif ke tabel `bot_games` (via websiteSync) tiap
+// ~30 dtk. Halaman ini menampilkannya dan — untuk mode klasik/PvP — menyediakan
+// tombol akhiri yang mengantre perintah `game.end` ke `bot_commands`.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Monitor Game" active="games">
+  <AdminPageHeader
+    eyebrow="Pemantauan"
+    title="Monitor Game"
+    description="Game yang sedang berjalan. Data disegarkan otomatis dari bot setiap beberapa detik."
+  />
+
+  <div class="px-6 lg:px-10 py-8 space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <p id="games-info" class="text-sm text-ink-500 dark:text-cream-300/60"></p>
+      <button type="button" id="games-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
+    </div>
+    <div id="games-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    void muat();
+    setInterval(() => void muat(), 15_000);
+    document.getElementById('games-refresh')?.addEventListener('click', () => void muat());
+    document.getElementById('games-body')?.addEventListener('click', onAksi);
+  });
+
+  async function muat() {
+    const body = document.getElementById('games-body')!;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('bot_games')
+      .select('game_id, mode, guild_name, channel_id, player_count, status, started_at, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(100);
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || data.length === 0) {
+      body.innerHTML = stateBlock('empty', 'Tidak ada game aktif saat ini.');
+      document.getElementById('games-info')!.textContent = '';
+      return;
+    }
+
+    document.getElementById('games-info')!.textContent = `${fmtAngka(data.length)} game aktif`;
+    const rows = data.map((g: any) => `
+      <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+        <td class="px-5 py-3"><code class="text-xs font-mono">${esc(g.game_id)}</code></td>
+        <td class="px-5 py-3"><span class="inline-block rounded-full bg-teal-500/15 px-2.5 py-0.5 text-[0.7rem] text-teal-700 dark:text-teal-300">${esc(g.mode ?? '—')}</span></td>
+        <td class="px-5 py-3 text-sm">${esc(g.guild_name ?? '—')}</td>
+        <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(g.player_count))}</td>
+        <td class="px-5 py-3 text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(g.started_at ? fmtWaktu(g.started_at) : '—')}</td>
+        <td class="px-5 py-3 text-right">
+          ${bolehEdit && (g.mode === 'classic' || g.mode === 'pvp')
+            ? `<button type="button" data-end="${esc(g.game_id)}" class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-400 transition-colors">Akhiri</button>`
+            : '<span class="text-xs text-ink-400 dark:text-cream-300/40">—</span>'}
+        </td>
+      </tr>`).join('');
+
+    body.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
+            <tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+              <th class="px-5 py-3 font-medium">Game ID</th>
+              <th class="px-5 py-3 font-medium">Mode</th>
+              <th class="px-5 py-3 font-medium">Server</th>
+              <th class="px-5 py-3 font-medium">Pemain</th>
+              <th class="px-5 py-3 font-medium">Mulai</th>
+              <th class="px-5 py-3 font-medium text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  async function onAksi(e: Event) {
+    const btn = (e.target as HTMLElement).closest('button[data-end]') as HTMLButtonElement | null;
+    if (!btn) return;
+    const gameId = btn.dataset.end!;
+    if (!window.confirm(`Akhiri game "${gameId}"? Pemain akan diberi tahu.`)) return;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+    btn.disabled = true;
+    btn.textContent = 'Mengirim…';
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const { error } = await supabase.from('bot_commands').insert({
+      type: 'game.end', payload: { gameId }, status: 'pending', created_by: sesi.session?.user.id ?? null,
+    });
+    if (error) { btn.disabled = false; btn.textContent = 'Akhiri'; alert(pesanError(error)); return; }
+    btn.textContent = 'Antre…';
+  }
+</script>

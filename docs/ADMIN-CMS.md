@@ -357,8 +357,11 @@ Tunggu workflow sync konten berikutnya, atau jalankan manual lewat tab Actions.
 | `src/lib/admin-chart.ts` | Grafik tren di halaman statistik |
 | `src/layouts/AdminLayout.astro` | Kerangka panel + penjaga sesi |
 | `src/pages/admin/*.astro` | Halaman login dan dashboard |
-| `src/pages/admin/kontrol.astro` | **Control panel** — atur setting bot (maintenance/pengumuman/mode/tunable/fitur) |
-| `src/pages/admin/operasi.astro` | **Console aksi** — antrean perintah bot (kelola pemain/boost/promo/quest/broadcast) |
+| `src/pages/admin/kontrol.astro` | **Control panel** — atur setting bot + jadwal + kartu pemantauan + riwayat perubahan |
+| `src/pages/admin/operasi.astro` | **Console aksi** — antrean perintah bot (dengan konfirmasi aksi berbahaya & test-send) |
+| `src/pages/admin/games.astro` | **Monitor game** live (akhiri game mode klasik) |
+| `src/pages/admin/promo.astro` | **Manajemen promo** (daftar + analitik + nyalakan/matikan) |
+| `src/pages/admin/kata.astro` | **Moderasi kata** (terima/tolak usulan Word Collection) |
 | `scripts/sync-content.mjs` | Menarik konten Supabase saat build |
 | `.github/workflows/sync-content.yml` | Penjadwalan sync konten |
 
@@ -427,3 +430,28 @@ sama dengan Website Sync — tanpa secret baru). Bila kosong, seluruh fitur diam
   muncul di `/admin/kontrol`. Konsumsi di bot lewat `remoteConfig.getFlag/tunable`.
 - **Aksi**: tambah entri form di `GRUP` (`src/pages/admin/operasi.astro`) + handler dengan
   `type` yang sama di `HANDLERS` (`src/services/remoteCommands.js`). Tidak perlu tabel baru.
+
+### Peningkatan (bagian 8 schema)
+
+Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
+
+| Tabel | Peran |
+|---|---|
+| `bot_settings_audit` | Riwayat perubahan setting (trigger otomatis: key, old→new, kapan). Tampil di `/admin/kontrol`. |
+| `bot_games` | Snapshot game aktif (di-upsert bot ~30 dtk, auto-bersih saat selesai) → `/admin/games`. |
+| `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
+| `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
+
+Tambahan lain:
+- **Penjadwalan**: setting `maintenance_start_at`/`maintenance_end_at` (maintenance efektif =
+  manual OR jendela terjadwal) dan `discord_announcement_expires_at` (pengumuman auto-mati).
+- **Keselamatan aksi**: `/admin/operasi` meminta konfirmasi untuk aksi berbahaya; broadcast massal
+  wajib ketik `BROADCAST` dan punya **test-send** (`broadcast.test`) ke satu ID lebih dulu.
+- **Robustness bot**: perintah yang nyangkut di `processing` > 10 menit ditandai error
+  (bukan diulang); tunable pemain dijaga `min ≤ max`; lonjakan error memicu alert ke channel
+  developer.
+- **Pemantauan**: `bot_stats.meta` kini memuat memori, game aktif, total pemain/coin, banned —
+  ditampilkan sebagai kartu di `/admin/kontrol` dan grafik di `/admin/statistik`.
+
+> **Realtime:** kontrol memakai polling (setting ~60 dtk, perintah ~20 dtk). WebSocket realtime
+> sengaja tidak dipakai agar bot tetap pada jalur REST minimal & fail-safe tanpa dependency baru.
