@@ -357,5 +357,73 @@ Tunggu workflow sync konten berikutnya, atau jalankan manual lewat tab Actions.
 | `src/lib/admin-chart.ts` | Grafik tren di halaman statistik |
 | `src/layouts/AdminLayout.astro` | Kerangka panel + penjaga sesi |
 | `src/pages/admin/*.astro` | Halaman login dan dashboard |
+| `src/pages/admin/kontrol.astro` | **Control panel** — atur setting bot (maintenance/pengumuman/mode/tunable/fitur) |
+| `src/pages/admin/operasi.astro` | **Console aksi** — antrean perintah bot (kelola pemain/boost/promo/quest/broadcast) |
 | `scripts/sync-content.mjs` | Menarik konten Supabase saat build |
 | `.github/workflows/sync-content.yml` | Penjadwalan sync konten |
+
+---
+
+## 11. Control Panel Bot (arah balik: website → bot)
+
+Bagian 1–10 memakai arah data **bot → website** (bot menulis, panel membaca).
+Panel `/admin/kontrol` dan `/admin/operasi` menambahkan **arah balik website → bot**,
+mengubah panel menjadi control panel: developer mengatur bot dari website tanpa
+menyentuh source code atau me-restart bot. Setara Developer Dashboard di dalam
+Discord.
+
+Dua tabel Supabase (dibuat oleh `supabase/schema.sql` bagian 7):
+
+| Tabel | Peran | Ditulis oleh | Dibaca oleh |
+|---|---|---|---|
+| `bot_settings` | State deklaratif (maintenance, pengumuman, toggle mode, tunable, feature flag) | editor via panel `/admin/kontrol` | bot (service_role, live polling) |
+| `bot_commands` | Antrean aksi sekali-jalan (kelola pemain/boost/promo/quest/broadcast) | editor via panel `/admin/operasi` | bot (service_role, dieksekusi lalu status ditulis balik) |
+
+### Cara kerja
+
+```
+   Admin ubah setting di /admin/kontrol         Admin kirim aksi di /admin/operasi
+              │                                             │
+              ▼                                             ▼
+   Supabase: bot_settings                        Supabase: bot_commands (pending)
+              │                                             │
+              │  bot menarik tiap ± 1 menit                 │ bot menarik tiap ± 45 dtk
+              ▼                                             ▼
+   remoteConfig menerapkan LIVE:                 remoteCommands eksekusi lewat
+   maintenance, pengumuman, toggle mode,         manager bot (playerStats, boost,
+   tunable (di-clamp), feature flag              promo, broadcast) → tulis balik
+                                                 status done/error + hasil
+```
+
+Berbeda dari halaman **Konten** (yang me-rebuild situs statis), halaman kontrol
+menyetir bot, **bukan** situs publik — jadi tidak ada build/deploy yang terpicu.
+
+### Keamanan (RLS)
+
+- `bot_settings`: admin boleh baca, `owner`/`admin` boleh ubah. Bot menulis balik
+  (best-effort, saat kontrol yang sama diubah dari Discord) via service_role.
+- `bot_commands`: admin boleh baca riwayat; `owner`/`admin` boleh **INSERT** perintah,
+  dipaksa `status = 'pending'` + `created_by = auth.uid()`. **Tidak ada** UPDATE/DELETE
+  untuk `authenticated` — status hanya ditulis bot (service_role).
+- Nilai numerik & payload perintah **selalu divalidasi ulang & di-clamp di sisi bot**;
+  input panel tidak pernah dipercaya mentah.
+- **Versi & changelog tidak dikontrol dari sini** — SSoT-nya tetap `version.json` +
+  `CHANGELOG.json` di repo bot. Panel sengaja tidak menyediakan editornya.
+
+### Sisi bot (repo `sambung-kata-bot`)
+
+Aktif otomatis begitu `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` terisi (env yang
+sama dengan Website Sync — tanpa secret baru). Bila kosong, seluruh fitur diam total.
+
+| File | Peran |
+|---|---|
+| `src/services/remoteConfig.js` | Tarik `bot_settings`, terapkan live (`isModeEnabled`/`tunable`/`getFlag`) |
+| `src/services/remoteCommands.js` | Proses antrean `bot_commands` (registry `HANDLERS`) |
+| `src/services/websiteSync.js` | (sudah ada) kirim log/statistik + metrik pemantauan ke `bot_stats.meta` |
+
+### Menambah aksi/setting baru
+
+- **Setting**: tambah baris di seed `bot_settings` (`supabase/schema.sql`) — otomatis
+  muncul di `/admin/kontrol`. Konsumsi di bot lewat `remoteConfig.getFlag/tunable`.
+- **Aksi**: tambah entri form di `GRUP` (`src/pages/admin/operasi.astro`) + handler dengan
+  `type` yang sama di `HANDLERS` (`src/services/remoteCommands.js`). Tidak perlu tabel baru.

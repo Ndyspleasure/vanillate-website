@@ -1,0 +1,344 @@
+---
+// Control Panel Bot — Operasi (antrean perintah).
+//
+// Halaman Kontrol mengubah STATE (setting). Halaman ini menjalankan AKSI sekali-
+// jalan seperti Developer Dashboard bot: kelola pemain, boost, promo, broadcast.
+//
+// Alurnya antrean: form di sini meng-INSERT satu baris `pending` ke tabel
+// `bot_commands`. Bot menariknya (live polling), mengeksekusi lewat manager-nya
+// sendiri, lalu menulis balik status (done/error) + hasil. Tabel di bawah
+// menampilkan riwayat & status terkini.
+//
+// Semua penulisan DB dijaga RLS Supabase (hanya editor yang boleh insert);
+// eksekusi sebenarnya + validasi payload dilakukan bot memakai service_role.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Operasi Bot" active="operasi">
+  <AdminPageHeader
+    eyebrow="Control Panel"
+    title="Operasi Bot"
+    description="Kirim perintah ke bot: kelola pemain, boost, promo, dan broadcast. Perintah dieksekusi bot dan statusnya tampil di bawah."
+  />
+
+  <div class="px-6 lg:px-10 py-8 max-w-4xl space-y-10">
+    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Perintah masuk antrean dan dijalankan bot pada siklus berikutnya (biasanya di bawah satu
+        menit). <strong>Player</strong> boleh diisi Player ID <em>atau</em> Discord ID. Bot memvalidasi
+        setiap perintah — perintah yang salah akan berstatus <em>error</em> dengan alasannya.
+      </p>
+    </div>
+
+    <!-- FORM AKSI (dirender per kategori dari registry) -->
+    <div id="aksi-body" class="space-y-10"></div>
+
+    <!-- RIWAYAT PERINTAH -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Riwayat perintah</h2>
+        <button
+          type="button"
+          id="btn-refresh"
+          class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium text-ink-600 dark:text-cream-200/70 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
+        >
+          Muat ulang
+        </button>
+      </div>
+      <div id="riwayat-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+
+  // ─── Registry aksi ────────────────────────────────────────────────────────
+  // Menambah aksi = menambah satu entri di sini + handler dengan `type` yang
+  // sama di bot (src/services/remoteCommands.js).
+  type Field = {
+    name: string;
+    label: string;
+    type?: 'text' | 'number' | 'textarea' | 'datetime-local';
+    placeholder?: string;
+    required?: boolean;
+    help?: string;
+  };
+  type Aksi = { type: string; label: string; danger?: boolean; fields: Field[]; help?: string };
+  type Grup = { key: string; label: string; desc: string; icon: string; aksi: Aksi[] };
+
+  const FPLAYER: Field = { name: 'player', label: 'Player ID / Discord ID', required: true, placeholder: 'mis. SK-XXXX atau 123456789012345678' };
+  const FPLAYER_OPT: Field = { name: 'player', label: 'Player ID / Discord ID', placeholder: 'kosongkan = semua pemain', help: 'Kosongkan untuk menerapkan ke semua pemain.' };
+
+  // Ikon Lucide (inline SVG, satu icon pack — konsisten dengan Icon.astro).
+  const IC = {
+    user: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+    star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    zap:  '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    tag:  '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
+    calendar: '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>',
+    database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>',
+    megaphone: '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  };
+
+  const GRUP: Grup[] = [
+    {
+      key: 'pemain', label: 'Pemain', icon: IC.user, desc: 'Ubah progres, moderasi, atau reset akun pemain.',
+      aksi: [
+        { type: 'player.setCoin',  label: 'Set Coin',  fields: [FPLAYER, { name: 'amount', label: 'Jumlah coin', type: 'number', required: true }] },
+        { type: 'player.setScore', label: 'Set Score', fields: [FPLAYER, { name: 'amount', label: 'Skor', type: 'number', required: true }] },
+        { type: 'player.setWins',  label: 'Set Wins',  fields: [FPLAYER, { name: 'amount', label: 'Jumlah menang', type: 'number', required: true }] },
+        { type: 'player.reset',    label: 'Reset Player', danger: true, help: 'Mengembalikan progres pemain ke awal.', fields: [FPLAYER] },
+        { type: 'player.ban',      label: 'Ban', danger: true, fields: [FPLAYER, { name: 'reason', label: 'Alasan', placeholder: 'opsional' }] },
+        { type: 'player.unban',    label: 'Unban', fields: [FPLAYER] },
+      ],
+    },
+    {
+      key: 'progression', label: 'Progression', icon: IC.star, desc: 'Coin, EXP, dan level akun pemain.',
+      aksi: [
+        { type: 'progression.giveCoin',        label: 'Give Coin', fields: [FPLAYER, { name: 'amount', label: 'Tambah coin', type: 'number', required: true }] },
+        { type: 'progression.giveExp',         label: 'Give EXP',  fields: [FPLAYER, { name: 'amount', label: 'Tambah EXP', type: 'number', required: true }] },
+        { type: 'progression.setAccountLevel', label: 'Set Account Level', fields: [FPLAYER, { name: 'level', label: 'Level', type: 'number', required: true }] },
+        { type: 'progression.reset',           label: 'Reset Progression', danger: true, help: 'Reset coin, EXP, level, class & talent.', fields: [FPLAYER] },
+      ],
+    },
+    {
+      key: 'boost', label: 'Boost', icon: IC.zap, desc: 'Beri atau atur boost pemain.',
+      aksi: [
+        { type: 'boost.give', label: 'Give Boost', fields: [FPLAYER, { name: 'boostId', label: 'Boost ID', required: true, placeholder: 'hint · reroll · shield · extra_life · extra_time · golden_key', help: 'ID sesuai katalog boost bot.' }, { name: 'amount', label: 'Jumlah', type: 'number', placeholder: 'default 1' }] },
+        { type: 'boost.set',  label: 'Set Boost',  fields: [FPLAYER, { name: 'boostId', label: 'Boost ID', required: true }, { name: 'amount', label: 'Jumlah', type: 'number', required: true }] },
+        { type: 'boost.reset', label: 'Reset Boost', danger: true, fields: [FPLAYER] },
+      ],
+    },
+    {
+      key: 'promo', label: 'Promo', icon: IC.tag, desc: 'Buat kode promo baru atau nyalakan/matikan yang ada.',
+      aksi: [
+        { type: 'promo.create', label: 'Buat Promo', fields: [
+          { name: 'code', label: 'Kode', required: true, placeholder: 'mis. GACOR2026' },
+          { name: 'title', label: 'Judul', required: true },
+          { name: 'description', label: 'Deskripsi', type: 'textarea' },
+          { name: 'rewardCoin', label: 'Reward coin', type: 'number' },
+          { name: 'rewardExp', label: 'Reward exp', type: 'number' },
+          { name: 'maxClaims', label: 'Maks klaim', type: 'number', help: 'Kosongkan untuk tak terbatas.' },
+          { name: 'expiredAt', label: 'Kedaluwarsa', type: 'datetime-local', help: 'Opsional.' },
+        ] },
+        { type: 'promo.disable', label: 'Matikan Promo', danger: true, fields: [{ name: 'code', label: 'Kode', required: true }] },
+        { type: 'promo.enable',  label: 'Nyalakan Promo', fields: [{ name: 'code', label: 'Kode', required: true }] },
+      ],
+    },
+    {
+      key: 'quest', label: 'Quest', icon: IC.calendar, desc: 'Reset quest harian / mingguan.',
+      aksi: [
+        { type: 'quest.resetDaily',  label: 'Reset Daily Quest',  danger: true, fields: [FPLAYER_OPT] },
+        { type: 'quest.resetWeekly', label: 'Reset Weekly Quest', danger: true, fields: [FPLAYER_OPT] },
+      ],
+    },
+    {
+      key: 'database', label: 'Database', icon: IC.database, desc: 'Perawatan data.',
+      aksi: [
+        { type: 'db.resetCooldown', label: 'Reset Cooldown Claim', fields: [FPLAYER_OPT] },
+      ],
+    },
+    {
+      key: 'broadcast', label: 'Broadcast', icon: IC.megaphone, desc: 'Kirim pesan DM ke seluruh pemain (hati-hati).',
+      aksi: [
+        { type: 'broadcast.dm', label: 'Kirim Broadcast DM', danger: true, help: 'Terkirim ke semua pemain yang membuka DM.', fields: [{ name: 'message', label: 'Pesan', type: 'textarea', required: true }] },
+      ],
+    },
+  ];
+
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    render();
+    void muatRiwayat();
+    // Auto-refresh riwayat supaya perubahan status dari bot terlihat.
+    setInterval(() => void muatRiwayat(), 10_000);
+  });
+
+  // ─── Render form aksi ───────────────────────────────────────────────────
+  function render() {
+    const body = document.getElementById('aksi-body')!;
+
+    if (!bolehEdit) {
+      body.innerHTML = `<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat riwayat perintah di bawah.</p>`;
+      return;
+    }
+
+    body.innerHTML = GRUP.map((g) => `
+      <section class="space-y-4">
+        <div class="flex items-start gap-3">
+          <span class="mt-0.5 flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${g.icon}</svg>
+          </span>
+          <div>
+            <h2 class="font-display text-lg font-semibold tracking-tightest">${esc(g.label)}</h2>
+            <p class="mt-0.5 text-sm text-ink-500 dark:text-cream-300/60">${esc(g.desc)}</p>
+          </div>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${g.aksi.map(kartuAksi).join('')}
+        </div>
+      </section>`).join('');
+
+    body.querySelectorAll<HTMLFormElement>('form[data-type]').forEach((f) => {
+      f.addEventListener('submit', onSubmit);
+    });
+  }
+
+  function kartuAksi(a: Aksi): string {
+    const fields = a.fields.map((f) => {
+      const id = `${a.type}-${f.name}`;
+      const req = f.required ? ' required' : '';
+      const ph = f.placeholder ? ` placeholder="${esc(f.placeholder)}"` : '';
+      const help = f.help ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(f.help)}</p>` : '';
+      const kelas = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500 transition-colors';
+      const input = f.type === 'textarea'
+        ? `<textarea id="${esc(id)}" name="${esc(f.name)}" rows="3"${req}${ph} class="${kelas}"></textarea>`
+        : `<input id="${esc(id)}" name="${esc(f.name)}" type="${esc(f.type ?? 'text')}"${req}${ph} class="${kelas}" />`;
+      return `<div><label for="${esc(id)}" class="block text-xs font-medium mb-1">${esc(f.label)}</label>${input}${help}</div>`;
+    }).join('');
+
+    const btnKelas = a.danger
+      ? 'bg-red-500 text-white hover:bg-red-400'
+      : 'bg-amber-500 text-ink-950 hover:bg-amber-400';
+    const catatan = a.help ? `<p class="text-xs text-ink-500 dark:text-cream-300/60">${esc(a.help)}</p>` : '';
+
+    return `
+      <form data-type="${esc(a.type)}" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-sm font-semibold">${esc(a.label)}</h3>
+          <code class="text-[0.65rem] text-ink-400 dark:text-cream-300/40 font-mono">${esc(a.type)}</code>
+        </div>
+        ${fields}
+        ${catatan}
+        <div class="flex items-center gap-3 pt-1">
+          <button type="submit" class="rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors ${btnKelas}">Kirim</button>
+          <p class="text-xs" role="status" aria-live="polite" data-status></p>
+        </div>
+      </form>`;
+  }
+
+  async function onSubmit(e: Event) {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const type = form.dataset.type!;
+    const status = form.querySelector('[data-status]') as HTMLElement;
+    const btn = form.querySelector('button[type=submit]') as HTMLButtonElement;
+
+    const payload: Record<string, string> = {};
+    form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea').forEach((el) => {
+      const v = el.value.trim();
+      if (v !== '') payload[el.name] = v;
+    });
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    btn.disabled = true;
+    const labelAsli = btn.textContent;
+    btn.textContent = 'Mengirim…';
+    status.textContent = '';
+    status.className = 'text-xs';
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    const { error } = await supabase
+      .from('bot_commands')
+      .insert({ type, payload, status: 'pending', created_by: uid });
+
+    if (error) {
+      status.textContent = pesanError(error);
+      status.className = 'text-xs text-red-600 dark:text-red-400';
+    } else {
+      status.textContent = 'Terkirim ke antrean.';
+      status.className = 'text-xs text-teal-700 dark:text-teal-300';
+      form.reset();
+      void muatRiwayat();
+    }
+
+    btn.disabled = false;
+    btn.textContent = labelAsli;
+  }
+
+  // ─── Riwayat perintah ─────────────────────────────────────────────────────
+  function statusBadge(s: string): string {
+    const peta: Record<string, string> = {
+      pending:    'bg-ink-500/15 text-ink-500 dark:text-cream-300/60',
+      processing: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+      done:       'bg-teal-500/15 text-teal-700 dark:text-teal-300',
+      error:      'bg-red-500/15 text-red-600 dark:text-red-400',
+    };
+    return peta[s] ?? peta.pending;
+  }
+
+  async function muatRiwayat() {
+    const body = document.getElementById('riwayat-body')!;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('bot_commands')
+      .select('id, type, status, result, error, created_at, processed_at')
+      .order('created_at', { ascending: false })
+      .limit(25);
+
+    if (error) {
+      body.innerHTML = stateBlock('error', pesanError(error));
+      return;
+    }
+    if (!data || data.length === 0) {
+      body.innerHTML = stateBlock('empty', 'Belum ada perintah dikirim.');
+      return;
+    }
+
+    const rows = data.map((r: any) => {
+      const detail = r.status === 'error'
+        ? `<span class="text-red-600 dark:text-red-400">${esc(r.error || 'error')}</span>`
+        : r.result
+          ? `<span class="text-ink-500 dark:text-cream-300/60">${esc(ringkas(r.result))}</span>`
+          : '<span class="text-ink-400 dark:text-cream-300/40">—</span>';
+      return `
+        <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+          <td class="px-4 py-3 align-top"><code class="text-xs font-mono">${esc(r.type)}</code></td>
+          <td class="px-4 py-3 align-top">
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.7rem] font-medium ${statusBadge(r.status)}">${esc(r.status)}</span>
+          </td>
+          <td class="px-4 py-3 align-top text-xs max-w-[16rem] break-words">${detail}</td>
+          <td class="px-4 py-3 align-top text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(fmtWaktu(r.created_at))}</td>
+        </tr>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+              <th class="px-4 py-3 font-medium">Perintah</th>
+              <th class="px-4 py-3 font-medium">Status</th>
+              <th class="px-4 py-3 font-medium">Hasil</th>
+              <th class="px-4 py-3 font-medium">Waktu</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function ringkas(result: unknown): string {
+    try {
+      const s = typeof result === 'string' ? result : JSON.stringify(result);
+      return s.length > 160 ? s.slice(0, 159) + '…' : s;
+    } catch {
+      return '';
+    }
+  }
+
+  document.getElementById('btn-refresh')?.addEventListener('click', () => void muatRiwayat());
+</script>
