@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.39.0",
+    "date": "2026-08-17",
+    "title": "Peningkatan stabilitas & pengelolaan bot",
+    "highlights": [
+      "🛠️ Pemeliharaan & pengumuman kini bisa dikelola lebih cepat — gangguan jadi lebih singkat",
+      "⚙️ Mode & pengaturan permainan bisa disesuaikan tanpa bot perlu di-restart",
+      "📈 Pemantauan kondisi bot ditingkatkan agar permainan tetap lancar & stabil"
+    ]
+  },
+  {
     "version": "2.38.0",
     "date": "2026-08-15",
     "title": "Catatan event transkrip stabil + side-game recording",
