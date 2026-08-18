@@ -17,12 +17,15 @@ website.
    config-data/bot-info.json   │   GitHub    ┌─ src/data/synced/*.json
    version.json                ├─► Actions ──►│  (di-commit bila berubah)
    CHANGELOG.json             ─┘  (sync)     └─ build + deploy ke Pages
-                                  tiap ~30 mnt
+                                  tiap 1 jam
                                   + manual
 ```
 
 Perubahan yang **tidak** mengubah data tidak memicu deploy — tidak ada rebuild
 sia-sia.
+
+Perkiraan waktu tayang, keterlambatan jadwal GitHub, dan cara menerbitkan
+segera dibahas terpisah di [`PIPELINE-TERBIT.md`](./PIPELINE-TERBIT.md).
 
 ---
 
@@ -70,7 +73,8 @@ menampilkan data terakhir yang baik).
 
 1. Edit file data di repo bot (mis. ganti `harga` di `config-data/shop.json`,
    atau tambah item fitur di `config-data/bot-info.json`). Merge ke `main`.
-2. Tunggu sinkronisasi terjadwal (±30 menit) **atau** picu manual:
+2. Tunggu sinkronisasi terjadwal (tiap jam, sering molor — lihat
+   [`PIPELINE-TERBIT.md`](./PIPELINE-TERBIT.md) bagian 5) **atau** picu manual:
    repo website → tab **Actions** → workflow **“Sync data dari bot repo”** →
    **Run workflow**.
 3. Bila ada perubahan, website commit data baru & re-deploy otomatis. Cek
@@ -92,6 +96,12 @@ Untuk versi & changelog, cukup rilis versi baru di bot seperti biasa
 - **Gagal total = alarm, bukan kerusakan.** Bila tidak ada satu pun file bisa
   ditarik (mis. token salah), job Actions berwarna merah sebagai peringatan,
   tetapi tidak ada perubahan pada situs.
+- **Tahan terhadap `main` yang bergerak.** Run terjadwal bisa menunggu lama di
+  antrean GitHub, dan selama itu `main` bisa maju karena PR lain. Workflow
+  karena itu checkout dengan `ref: main` (selalu versi terbaru) dan melakukan
+  `git pull --rebase origin main` sebelum push, dengan 3× percobaan. Tanpa itu
+  push ditolak `! [rejected] … (fetch first)` dan data yang sudah ditarik tidak
+  pernah terbit.
 
 ---
 
@@ -146,6 +156,7 @@ Repo website → Actions → workflow *Sync data dari bot repo* → menu **⋯**
 | Job sync merah, log `404` | `BOT_REPO_TOKEN` belum di-set / tidak punya akses Contents ke repo bot, atau path file salah. |
 | Job sync merah, log `401/403` | Token kedaluwarsa atau rate-limit. Perbarui token. |
 | Data tidak berubah di web | Belum ada perubahan data (deploy memang dilewati), atau workflow belum jalan — picu manual dari Actions. |
+| Job sync merah, log `! [rejected] … (fetch first)` | `main` maju saat run berjalan dan ketiga percobaan rebase+push gagal (jarang). Jalankan ulang run-nya. |
 | `/status` menunjukkan “Perlu perhatian” | Salah satu file gagal disinkron; website memakai data lama. Cek log run. |
 
 ---
@@ -155,5 +166,8 @@ Repo website → Actions → workflow *Sync data dari bot repo* → menu **⋯**
 - Sinkronisasi **satu arah**: repo bot → website. Jangan edit
   `src/data/synced/*.json` manual di repo website; akan tertimpa saat sync.
 - File data harus JSON valid & ≤ ~1 MB (batas GitHub Contents API).
-- Jadwal GitHub Actions bisa meleset beberapa menit dari waktu pas — untuk
-  update segera, gunakan **Run workflow** manual.
+- Jadwal GitHub Actions bisa meleset **jauh** dari waktu pas — pernah terpantau
+  4 jam untuk workflow ini. Untuk update segera, gunakan **Run workflow**
+  manual. Rinciannya di [`PIPELINE-TERBIT.md`](./PIPELINE-TERBIT.md).
+- Perubahan pada file workflow baru berlaku di run berikutnya: run terjadwal
+  memakai isi workflow dari saat ia diantrekan.

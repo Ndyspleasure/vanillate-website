@@ -12,7 +12,12 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # JANGAN dibatalkan di tengah jalan. Grup `pages` ini dipakai bersama kedua
+  # workflow sync, dan run sync sudah menekan commit-nya ke `main` sebelum
+  # membangun. Kalau run itu dibunuh saat build, isinya ada di repo tapi tidak
+  # pernah tayang — dan sync berikutnya melihat "tidak ada perubahan" sehingga
+  # situs bisa tertinggal diam-diam. Antre lebih aman daripada cepat.
+  cancel-in-progress: false
 
 jobs:
   build:

@@ -2,7 +2,8 @@ name: Sync data dari bot repo
 
 # Menarik data source-of-truth dari repo bot (Ndyspleasure/sambung-kata-bot),
 # menuliskannya ke src/data/synced/*.json, dan — HANYA bila ada perubahan —
-# commit lalu build & deploy ke GitHub Pages. Lihat docs/AUTO-SYNC-DATA.md.
+# commit lalu build & deploy ke GitHub Pages. Lihat docs/AUTO-SYNC-DATA.md dan
+# docs/PIPELINE-TERBIT.md.
 #
 # Repo bot PRIVAT → butuh secret BOT_REPO_TOKEN (fine-grained PAT, izin
 # Contents: Read pada sambung-kata-bot). Tanpa secret ini, sync akan gagal
@@ -13,7 +14,11 @@ name: Sync data dari bot repo
 
 on:
   schedule:
-    - cron: '0 */6 * * *'    # tiap 6 jam (00:00, 06:00, 12:00, 18:00 UTC)
+    # Tiap jam. Rilis bot (versi & changelog) biasanya menyusul beberapa menit
+    # setelah PR-nya merge; jadwal 6 jam dulu membuat halaman /status dan
+    # /changelog tertinggal setengah hari. GitHub kerap menunda jadwal ini —
+    # untuk sync sekarang juga, pakai "Run workflow".
+    - cron: '0 * * * *'
   workflow_dispatch:          # tombol "Run workflow" untuk sync manual
 
 permissions:
@@ -34,6 +39,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Ambil `main` yang TERBARU, bukan snapshot dari saat run diantrekan.
+          # Karena jadwal kerap tertunda, tanpa ini runner bisa bekerja di atas
+          # pohon kerja yang sudah usang — skrip lama, dan push pasti ditolak.
+          ref: main
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -62,13 +72,34 @@ jobs:
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "✓ Tidak ada perubahan data — lewati deploy."
-          else
-            git add src/data/synced/_status.json
-            git commit -m "chore(data): sync dari sambung-kata-bot"
-            git push
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "✓ Data berubah — commit & deploy."
+            exit 0
           fi
+
+          git add src/data/synced/_status.json
+          git commit -m "chore(data): sync dari sambung-kata-bot"
+
+          # `main` bisa maju (merge PR, run sync konten) selagi run ini berjalan.
+          # Tanpa rebase, push ditolak "fetch first" → job merah dan data baru
+          # tidak pernah terbit sampai jadwal berikutnya. Rebase dulu, lalu ulangi
+          # beberapa kali kalau ada yang push berbarengan.
+          terkirim=false
+          for percobaan in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              terkirim=true
+              break
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "! Push gagal (percobaan ${percobaan}/3) — main mungkin baru maju, coba lagi."
+            sleep $(( percobaan * 5 ))
+          done
+
+          if [ "$terkirim" != true ]; then
+            echo "::error::Gagal push data hasil sync setelah 3 percobaan. Data belum terbit."
+            exit 1
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "✓ Data berubah — commit & deploy."
 
       # Langkah build & deploy hanya jalan bila data berubah. Semuanya memakai
       # working tree yang sudah berisi data terbaru dari langkah fetch di atas.

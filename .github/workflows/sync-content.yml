@@ -4,7 +4,8 @@ name: Sync konten dari Supabase
 # HANYA bila ada perubahan — commit dan deploy ulang ke GitHub Pages.
 #   • site-content.json ← tabel `site_content`  (banner pengumuman)
 #   • partnership.json  ← tabel `partnership_*` (konten & HARGA /partnership)
-# Lihat docs/ADMIN-CMS.md bagian 6 & 12.
+# Lihat docs/ADMIN-CMS.md bagian 6 & 12, dan docs/PIPELINE-TERBIT.md untuk
+# perkiraan waktu tayang serta cara menerbitkan segera.
 #
 # Butuh dua secret:
 #   SUPABASE_URL               → URL project Supabase
@@ -16,7 +17,10 @@ name: Sync konten dari Supabase
 
 on:
   schedule:
-    - cron: '15 * * * *'     # tiap jam di menit ke-15
+    # Tiap 15 menit. GitHub sering menunda jadwal (pernah terpantau 30–50 menit,
+    # sesekali berjam-jam), jadi ini batas bawah, bukan janji. Untuk terbit
+    # sekarang juga: tab Actions → workflow ini → "Run workflow".
+    - cron: '*/15 * * * *'
   workflow_dispatch:          # tombol "Run workflow" untuk terbit segera
 
 permissions:
@@ -37,6 +41,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Ambil `main` yang TERBARU, bukan snapshot dari saat run diantrekan.
+          # Karena jadwal kerap tertunda, tanpa ini runner bisa bekerja di atas
+          # pohon kerja yang sudah usang — skrip lama, dan push pasti ditolak.
+          ref: main
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -59,12 +68,33 @@ jobs:
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "✓ Konten tidak berubah — lewati deploy."
-          else
-            git commit -m "chore(konten): sync dari Supabase"
-            git push
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "✓ Konten berubah — commit & deploy."
+            exit 0
           fi
+
+          git commit -m "chore(konten): sync dari Supabase"
+
+          # `main` bisa maju (merge PR, run sync lain) selagi run ini berjalan.
+          # Tanpa rebase, push ditolak "fetch first" → job merah dan konten baru
+          # tidak pernah terbit sampai jadwal berikutnya. Rebase dulu, lalu ulangi
+          # beberapa kali kalau ada yang push berbarengan.
+          terkirim=false
+          for percobaan in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              terkirim=true
+              break
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "! Push gagal (percobaan ${percobaan}/3) — main mungkin baru maju, coba lagi."
+            sleep $(( percobaan * 5 ))
+          done
+
+          if [ "$terkirim" != true ]; then
+            echo "::error::Gagal push konten hasil sync setelah 3 percobaan. Konten belum terbit."
+            exit 1
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "✓ Konten berubah — commit & deploy."
 
       - name: Install dependencies
         if: steps.commit.outputs.changed == 'true'

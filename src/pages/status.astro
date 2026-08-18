@@ -85,7 +85,7 @@ const overallOk = s.ok === true || s.seeded === true;
 
       <dl class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Terakhir diperbarui</dt>
+          <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Data terakhir berubah</dt>
           <dd class="font-display text-lg font-semibold">{lastSynced ?? '—'}</dd>
         </div>
         <div>
@@ -101,6 +101,12 @@ const overallOk = s.ok === true || s.seeded === true;
           <dd class="font-display text-lg font-semibold">{s.okCount ?? 0} / {s.total ?? syncedItems.length}</dd>
         </div>
       </dl>
+
+      <p class="mt-6 text-sm text-ink-500 dark:text-cream-300/60 max-w-2xl">
+        Pemeriksaan berjalan otomatis tiap jam. Waktu di atas adalah kapan data
+        terakhir benar-benar <em>berubah</em>, bukan kapan terakhir diperiksa —
+        jadi wajar bila terlihat lama saat bot memang belum merilis apa pun.
+      </p>
 
       {files.length > 0 && (
         <div class="mt-8 pt-6 border-t border-ink-900/10 dark:border-cream-100/10">

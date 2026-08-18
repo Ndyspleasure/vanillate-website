@@ -58,7 +58,7 @@ const kartu = [
 
         <dl class="grid gap-5 sm:grid-cols-3">
           <div>
-            <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1">Terakhir sinkron</dt>
+            <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1">Data terakhir berubah</dt>
             <dd class="text-sm" data-sync-time>{s.lastSyncedAt ?? '—'}</dd>
           </div>
           <div>
@@ -70,6 +70,12 @@ const kartu = [
             <dd class="text-sm">{s.okCount ?? 0} / {s.total ?? 0}</dd>
           </div>
         </dl>
+
+        <p class="mt-5 text-xs text-ink-500 dark:text-cream-300/60">
+          Sync berjalan tiap jam; waktu di atas hanya bergerak saat datanya
+          memang berubah. Untuk menariknya sekarang: Actions → “Sync data dari
+          bot repo” → Run workflow.
+        </p>
       </div>
     </section>
 
