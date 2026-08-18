@@ -10,10 +10,14 @@
       "tagline": "Pesan langsung ke DM pemain aktif.",
       "description": "Kami mengirim pesan promosi kamu langsung ke DM pemain yang masih aktif bermain. Cocok untuk pengumuman, promo, dan undangan komunitas.",
       "channel": "dm",
-      "price": null,
+      "price": 10000,
       "currency": "IDR",
       "priceUnit": "per campaign",
-      "priceNote": "",
+      "unit": "Pemain",
+      "minQuantity": 100,
+      "info": "",
+      "terms": "",
+      "priceNote": "Harga diatas untuk broadcast 100 pemain",
       "features": [
         "Terkirim langsung ke DM pemain aktif",
         "Target bisa dipilih (pemain paling aktif)",
@@ -23,11 +27,7 @@
       "badge": "Terpopuler",
       "ctaLabel": "Ajukan Partnership",
       "ctaMode": "whatsapp",
-      "ctaUrl": "",
-      "unit": "Pemain",
-      "minQuantity": 100,
-      "info": "",
-      "terms": ""
+      "ctaUrl": ""
     },
     {
       "key": "broadcast_lobby",
@@ -35,10 +35,14 @@
       "tagline": "Tampil di lobby permainan.",
       "description": "Pesan kamu ditampilkan di lobby permainan sehingga terlihat oleh pemain saat mereka hendak bermain. Cocok untuk eksposur berulang.",
       "channel": "lobby",
-      "price": null,
+      "price": 4000,
       "currency": "IDR",
       "priceUnit": "per campaign",
-      "priceNote": "",
+      "unit": "Hari",
+      "minQuantity": 15,
+      "info": "",
+      "terms": "",
+      "priceNote": "Harga diatas untuk broadcast 15 hari",
       "features": [
         "Tampil di lobby permainan",
         "Terlihat berulang oleh pemain aktif",
@@ -47,202 +51,81 @@
       "badge": "",
       "ctaLabel": "Ajukan Partnership",
       "ctaMode": "whatsapp",
-      "ctaUrl": "",
-      "unit": "Hari",
-      "minQuantity": 15,
-      "info": "",
-      "terms": ""
+      "ctaUrl": ""
     }
   ],
   "links": [],
   "content": {
+    "cta": {
+      "text": "Ceritakan rencana kamu, kami bantu menyesuaikan bentuk kerja samanya.",
+      "label": "Become a Partner",
+      "title": "Tertarik bekerja sama dengan kami?"
+    },
+    "faq": [
+      {
+        "a": "Pilih produk yang kamu inginkan di halaman ini, lalu tombolnya akan membuka WhatsApp official kami dengan pesan yang sudah terisi.",
+        "q": "Bagaimana cara mengajukan partnership?"
+      },
+      {
+        "a": "Bisa. Harga yang tertera adalah harga dasar; silakan diskusikan kebutuhan kamu lewat WhatsApp.",
+        "q": "Apakah harga bisa menyesuaikan kebutuhan?"
+      },
+      {
+        "a": "Konten menyesatkan, penipuan, judi, konten dewasa, dan apa pun yang melanggar Ketentuan Layanan Discord.",
+        "q": "Materi seperti apa yang tidak kami terima?"
+      },
+      {
+        "a": "Setelah materi dan paket disepakati, kampanye biasanya dijalankan dalam 1–3 hari kerja. Broadcast via Lobby mulai dihitung sejak hari pertama tayang.",
+        "q": "Berapa lama prosesnya sampai kampanye tayang?"
+      },
+      {
+        "a": "Ya. Untuk Broadcast via DM kami berikan rekap jumlah pesan terkirim, gagal, dan dilewati. Untuk Broadcast via Lobby kami sampaikan periode tayangnya.",
+        "q": "Apakah saya dapat laporan hasilnya?"
+      },
+      {
+        "a": "Pemain yang menutup DM atau memilih tidak menerima pesan promosi akan dilewati. Ini kami hormati agar bot tetap nyaman dipakai dan tidak dianggap spam.",
+        "q": "Kenapa ada pemain yang dilewati saat Broadcast DM?"
+      },
+      {
+        "a": "Bisa, dan biasanya hasilnya lebih baik: DM memberi dorongan awal, Lobby menjaga nama kamu tetap terlihat setelahnya.",
+        "q": "Bisakah dua paket dijalankan bersamaan?"
+      },
+      {
+        "a": "Pembayaran dibicarakan langsung lewat WhatsApp official kami sebelum kampanye dijalankan, menyesuaikan paket dan volume yang kamu pilih.",
+        "q": "Bagaimana cara pembayarannya?"
+      }
+    ],
+    "seo": {
+      "title": "Partnership",
+      "ogImage": "",
+      "description": "Jangkau ribuan pemain aktif Discord lewat Vanillate. Pilih Broadcast via DM atau Broadcast via Lobby — ajukan partnership langsung lewat WhatsApp."
+    },
     "hero": {
       "title": "Partnership",
-      "subtitle": "Jangkau ribuan pemain aktif Discord lewat bot yang mereka mainkan setiap hari.",
-      "ctaLabel": "Become a Partner"
+      "ctaLabel": "Become a Partner",
+      "subtitle": "Jangkau ribuan pemain aktif Discord lewat bot yang mereka mainkan setiap hari."
     },
     "intro": [
       {
-        "title": "Apa itu Partnership",
-        "text": "Program kerja sama antara Vanillate Studio dan komunitas, kreator, atau brand yang ingin menjangkau pemain kami."
+        "text": "Program kerja sama antara Vanillate Studio dan komunitas, kreator, atau brand yang ingin menjangkau pemain kami.",
+        "title": "Apa itu Partnership"
       },
       {
-        "title": "Tujuan",
-        "text": "Membantu partner memperkenalkan komunitas, produk, atau event mereka kepada audiens yang relevan dan aktif."
+        "text": "Membantu partner memperkenalkan komunitas, produk, atau event mereka kepada audiens yang relevan dan aktif.",
+        "title": "Tujuan"
       },
       {
-        "title": "Siapa yang dapat mengajukan",
-        "text": "Komunitas Discord, kreator konten, penyelenggara event, dan brand yang produknya relevan bagi pemain kami."
+        "text": "Komunitas Discord, kreator konten, penyelenggara event, dan brand yang produknya relevan bagi pemain kami.",
+        "title": "Siapa yang dapat mengajukan"
       },
       {
-        "title": "Ketentuan umum",
-        "text": "Materi promosi wajib sopan, tidak menyesatkan, bukan penipuan, tanpa konten dewasa, dan mematuhi Ketentuan Layanan Discord."
+        "text": "Materi promosi wajib sopan, tidak menyesatkan, bukan penipuan, tanpa konten dewasa, dan mematuhi Ketentuan Layanan Discord.",
+        "title": "Ketentuan umum"
       }
     ],
-    "benefits": [
-      {
-        "title": "Eksposur",
-        "text": "Pesan kamu dilihat pemain yang benar-benar aktif."
-      },
-      {
-        "title": "Dukungan promosi",
-        "text": "Kami bantu menyusun pesan agar mudah dipahami pemain."
-      },
-      {
-        "title": "Kolaborasi komunitas",
-        "text": "Peluang kerja sama lintas komunitas Discord."
-      },
-      {
-        "title": "Laporan campaign",
-        "text": "Ringkasan jumlah terkirim dan gagal setelah campaign selesai."
-      }
-    ],
-    "process": [
-      {
-        "n": "01",
-        "title": "Submit",
-        "text": "Ajukan partnership lewat WhatsApp official kami."
-      },
-      {
-        "n": "02",
-        "title": "Review",
-        "text": "Tim meninjau pengajuan dan kesesuaian materi."
-      },
-      {
-        "n": "03",
-        "title": "Discussion",
-        "text": "Diskusi bentuk kerja sama, jadwal, dan harga."
-      },
-      {
-        "n": "04",
-        "title": "Collaboration",
-        "text": "Campaign dijalankan dan laporannya kami sampaikan."
-      }
-    ],
-    "faq": [
-      {
-        "q": "Bagaimana cara mengajukan partnership?",
-        "a": "Pilih produk yang kamu inginkan di halaman ini, lalu tombolnya akan membuka WhatsApp official kami dengan pesan yang sudah terisi."
-      },
-      {
-        "q": "Apakah harga bisa menyesuaikan kebutuhan?",
-        "a": "Bisa. Harga yang tertera adalah harga dasar; silakan diskusikan kebutuhan kamu lewat WhatsApp."
-      },
-      {
-        "q": "Materi seperti apa yang tidak kami terima?",
-        "a": "Konten menyesatkan, penipuan, judi, konten dewasa, dan apa pun yang melanggar Ketentuan Layanan Discord."
-      },
-      {
-        "q": "Berapa lama prosesnya sampai kampanye tayang?",
-        "a": "Setelah materi dan paket disepakati, kampanye biasanya dijalankan dalam 1–3 hari kerja. Broadcast via Lobby mulai dihitung sejak hari pertama tayang."
-      },
-      {
-        "q": "Apakah saya dapat laporan hasilnya?",
-        "a": "Ya. Untuk Broadcast via DM kami berikan rekap jumlah pesan terkirim, gagal, dan dilewati. Untuk Broadcast via Lobby kami sampaikan periode tayangnya."
-      },
-      {
-        "q": "Kenapa ada pemain yang dilewati saat Broadcast DM?",
-        "a": "Pemain yang menutup DM atau memilih tidak menerima pesan promosi akan dilewati. Ini kami hormati agar bot tetap nyaman dipakai dan tidak dianggap spam."
-      },
-      {
-        "q": "Bisakah dua paket dijalankan bersamaan?",
-        "a": "Bisa, dan biasanya hasilnya lebih baik: DM memberi dorongan awal, Lobby menjaga nama kamu tetap terlihat setelahnya."
-      },
-      {
-        "q": "Bagaimana cara pembayarannya?",
-        "a": "Pembayaran dibicarakan langsung lewat WhatsApp official kami sebelum kampanye dijalankan, menyesuaikan paket dan volume yang kamu pilih."
-      }
-    ],
-    "cta": {
-      "title": "Tertarik bekerja sama dengan kami?",
-      "text": "Ceritakan rencana kamu, kami bantu menyesuaikan bentuk kerja samanya.",
-      "label": "Become a Partner"
-    },
-    "seo": {
-      "title": "Partnership",
-      "description": "Jangkau ribuan pemain aktif Discord lewat Vanillate. Pilih Broadcast via DM atau Broadcast via Lobby — ajukan partnership langsung lewat WhatsApp.",
-      "ogImage": ""
-    },
-    "showStats": true,
-    "audience": [
-      {
-        "title": "Komunitas & server Discord",
-        "text": "Server yang ingin menambah member aktif dan dikenal pemain baru."
-      },
-      {
-        "title": "Kreator & streamer",
-        "text": "Memperkenalkan channel, jadwal live, atau karya terbaru ke audiens yang relevan."
-      },
-      {
-        "title": "Brand & produk digital",
-        "text": "Brand yang menyasar audiens muda pengguna Discord di Indonesia."
-      },
-      {
-        "title": "Event & turnamen",
-        "text": "Penyelenggara yang butuh peserta atau penonton dalam waktu terbatas."
-      }
-    ],
-    "compare": {
-      "title": "Bandingkan dua paket",
-      "note": "Keduanya bisa dipakai bersamaan — DM untuk dorongan cepat, Lobby untuk kehadiran jangka panjang.",
-      "columns": [
-        "Broadcast via DM",
-        "Broadcast via Lobby"
-      ],
-      "rows": [
-        {
-          "label": "Cara tampil",
-          "a": "Masuk ke DM pemain, satu per satu",
-          "b": "Tampil di Dashboard Partnership pada lobby permainan"
-        },
-        {
-          "label": "Satuan paket",
-          "a": "Per pemain yang ditargetkan",
-          "b": "Per hari tayang"
-        },
-        {
-          "label": "Paling cocok untuk",
-          "a": "Pengumuman & promo yang butuh perhatian segera",
-          "b": "Pengenalan merek yang perlu dilihat berulang"
-        },
-        {
-          "label": "Sifat jangkauan",
-          "a": "Sekali kirim, langsung dibaca",
-          "b": "Terlihat setiap pemain membuka lobby"
-        },
-        {
-          "label": "Bisa ditargetkan?",
-          "a": "Ya — dapat diarahkan ke pemain paling aktif",
-          "b": "Tidak — tampil ke semua pemain yang membuka lobby"
-        },
-        {
-          "label": "Laporan",
-          "a": "Jumlah terkirim, gagal, dan dilewati",
-          "b": "Durasi tayang sesuai paket"
-        }
-      ]
-    },
-    "preview": {
-      "title": "Begini tampilannya nanti",
-      "note": "Contoh tampilan. Teks, tautan, dan tombol mengikuti materi yang kamu kirim.",
-      "items": [
-        {
-          "label": "Broadcast via DM",
-          "title": "📢 Pengumuman",
-          "text": "Pesanmu dikirim sebagai pesan resmi ke DM pemain, lengkap dengan tombol menuju tautanmu.",
-          "button": "Kunjungi Server"
-        },
-        {
-          "label": "Broadcast via Lobby",
-          "title": "🤝 Partnership",
-          "text": "Namamu tampil sebagai item pada Dashboard Partnership setiap kali pemain membuka lobby permainan.",
-          "button": "Cek Sekarang"
-        }
-      ]
-    },
     "rules": {
-      "title": "Ketentuan singkat",
       "note": "Aturan ini menjaga kenyamanan pemain — sekaligus menjaga kampanyemu tetap efektif.",
+      "title": "Ketentuan singkat",
       "allowed": [
         "Promosi server, komunitas, kreator, produk, dan event",
         "Materi berbahasa Indonesia atau Inggris",
@@ -255,6 +138,123 @@
         "Penipuan, phishing, atau tautan berbahaya",
         "Meniru identitas Vanillate atau pihak lain"
       ]
-    }
+    },
+    "compare": {
+      "note": "Keduanya bisa dipakai bersamaan — DM untuk dorongan cepat, Lobby untuk kehadiran jangka panjang.",
+      "rows": [
+        {
+          "a": "Masuk ke DM pemain, satu per satu",
+          "b": "Tampil di Dashboard Partnership pada lobby permainan",
+          "label": "Cara tampil"
+        },
+        {
+          "a": "Per pemain yang ditargetkan",
+          "b": "Per hari tayang",
+          "label": "Satuan paket"
+        },
+        {
+          "a": "Pengumuman & promo yang butuh perhatian segera",
+          "b": "Pengenalan merek yang perlu dilihat berulang",
+          "label": "Paling cocok untuk"
+        },
+        {
+          "a": "Sekali kirim, langsung dibaca",
+          "b": "Terlihat setiap pemain membuka lobby",
+          "label": "Sifat jangkauan"
+        },
+        {
+          "a": "Ya — dapat diarahkan ke pemain paling aktif",
+          "b": "Tidak — tampil ke semua pemain yang membuka lobby",
+          "label": "Bisa ditargetkan?"
+        },
+        {
+          "a": "Jumlah terkirim, gagal, dan dilewati",
+          "b": "Durasi tayang sesuai paket",
+          "label": "Laporan"
+        }
+      ],
+      "title": "Bandingkan dua paket",
+      "columns": [
+        "Broadcast via DM",
+        "Broadcast via Lobby"
+      ]
+    },
+    "preview": {
+      "note": "Contoh tampilan. Teks, tautan, dan tombol mengikuti materi yang kamu kirim.",
+      "items": [
+        {
+          "text": "Pesanmu dikirim sebagai pesan resmi ke DM pemain, lengkap dengan tombol menuju tautanmu.",
+          "label": "Broadcast via DM",
+          "title": "📢 Pengumuman",
+          "button": "Kunjungi Server"
+        },
+        {
+          "text": "Namamu tampil sebagai item pada Dashboard Partnership setiap kali pemain membuka lobby permainan.",
+          "label": "Broadcast via Lobby",
+          "title": "🤝 Partnership",
+          "button": "Cek Sekarang"
+        }
+      ],
+      "title": "Begini tampilannya nanti"
+    },
+    "process": [
+      {
+        "n": "01",
+        "text": "Ajukan partnership lewat WhatsApp official kami.",
+        "title": "Submit"
+      },
+      {
+        "n": "02",
+        "text": "Tim meninjau pengajuan dan kesesuaian materi.",
+        "title": "Review"
+      },
+      {
+        "n": "03",
+        "text": "Diskusi bentuk kerja sama, jadwal, dan harga.",
+        "title": "Discussion"
+      },
+      {
+        "n": "04",
+        "text": "Campaign dijalankan dan laporannya kami sampaikan.",
+        "title": "Collaboration"
+      }
+    ],
+    "audience": [
+      {
+        "text": "Server yang ingin menambah member aktif dan dikenal pemain baru.",
+        "title": "Komunitas & server Discord"
+      },
+      {
+        "text": "Memperkenalkan channel, jadwal live, atau karya terbaru ke audiens yang relevan.",
+        "title": "Kreator & streamer"
+      },
+      {
+        "text": "Brand yang menyasar audiens muda pengguna Discord di Indonesia.",
+        "title": "Brand & produk digital"
+      },
+      {
+        "text": "Penyelenggara yang butuh peserta atau penonton dalam waktu terbatas.",
+        "title": "Event & turnamen"
+      }
+    ],
+    "benefits": [
+      {
+        "text": "Pesan kamu dilihat pemain yang benar-benar aktif.",
+        "title": "Eksposur"
+      },
+      {
+        "text": "Kami bantu menyusun pesan agar mudah dipahami pemain.",
+        "title": "Dukungan promosi"
+      },
+      {
+        "text": "Peluang kerja sama lintas komunitas Discord.",
+        "title": "Kolaborasi komunitas"
+      },
+      {
+        "text": "Ringkasan jumlah terkirim dan gagal setelah campaign selesai.",
+        "title": "Laporan campaign"
+      }
+    ],
+    "showStats": true
   }
 }
