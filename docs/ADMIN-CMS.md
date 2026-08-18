@@ -555,7 +555,7 @@ juga diatur dari CMS. Halaman ini masuk `nav` dan sitemap.
 
 ---
 
-## 12. Partnership di Lobby Bot
+## 13. Partnership di Lobby Bot
 
 Selain halaman publik `/partnership`, Partnership punya "panggung" di dalam permainan:
 bot menampilkan **Dashboard Partnership** sebagai pesan **terpisah** tepat di bawah
@@ -581,3 +581,61 @@ nama partner, harga, satuan, atau minimum order yang ditulis di kode bot.
 
 Rinciannya (struktur embed, tombol, `customId` `ptn_*`) ada di repo bot:
 `docs/lobbysambungkata.md` § 7b.
+
+---
+
+## 14. Konten halaman publik `/partnership`
+
+Seluruh isi halaman penjualan dikelola dari **Partnership → Settings** (bagian
+*Konten publik*) dan disimpan sebagai satu JSON di `partnership_page.content`.
+Halaman publik membacanya **saat build** (lewat `scripts/sync-content.mjs`), jadi
+mengubah copy tidak pernah butuh perubahan kode.
+
+### Bagian yang tersedia
+
+| Bagian | Kunci JSON | Bentuk pengisian di CMS | Perilaku bila dikosongkan |
+|---|---|---|---|
+| Hero (judul, subjudul, label CTA) | `hero` | tiga kolom teks | judul jatuh ke "Partnership" |
+| Bukti jangkauan (statistik) | `showStats` | otomatis dari `homeStats` | set `false` untuk menyembunyikan |
+| Paket & harga | *(dari tab Produk & Harga)* | — | bagian hilang bila tak ada produk aktif |
+| **Bandingkan paket** | `compare` | judul, catatan, nama kolom (satu per baris), baris `Aspek \| Kolom 1 \| Kolom 2` | tabel disembunyikan |
+| **Contoh tampilan** | `preview` | judul, catatan, kartu `Label \| Judul \| Isi \| Label tombol` | bagian disembunyikan |
+| **Cocok untuk siapa** | `audience` | daftar `Judul \| Isi` | bagian disembunyikan |
+| Tentang program | `intro` | daftar `Judul \| Isi` | bagian disembunyikan |
+| Yang partner dapatkan | `benefits` | daftar `Judul \| Isi` | bagian disembunyikan |
+| Cara kerjanya | `process` | daftar `Judul \| Isi` (nomor otomatis) | bagian disembunyikan |
+| **Ketentuan** | `rules` | judul, catatan, dua daftar (diterima / tidak diterima), satu poin per baris | bagian disembunyikan |
+| Pertanyaan umum | `faq` | daftar `Pertanyaan \| Jawaban` | bagian & JSON-LD FAQ disembunyikan |
+| CTA penutup | `cta` | judul, teks, label tombol | judul jatuh ke teks bawaan |
+| SEO | `seo` | title, description, Open Graph image | jatuh ke hero + OG default situs |
+
+**Setiap bagian menghilang rapi bila dikosongkan** — tidak ada judul kosong atau
+kartu melayang. Jadi halaman bisa dibuat ringkas maupun lengkap tanpa ngoding.
+
+### Catatan isi
+
+- **Contoh tampilan** adalah ilustrasi ber-CSS (bukan tangkapan layar), jadi
+  selalu tajam, ringan, dan ikut berubah saat teksnya diedit. Halaman ini tetap
+  **tanpa JavaScript**.
+- **FAQ otomatis masuk JSON-LD `FAQPage`** — menambah pertanyaan di CMS berpeluang
+  memunculkan accordion di hasil pencarian Google, tanpa langkah tambahan.
+- **Harga & satuan** diambil dari tab *Produk & Harga* (`unit`, `min_quantity`),
+  sehingga kartu paket menulis mis. "Rp 15.000 / Hari" dan "Minimum 15 Hari".
+  Harga yang dibiarkan kosong tampil "—" + "Hubungi kami untuk penawaran".
+- Kami sengaja **tidak** menyediakan bagian testimoni berisi kutipan buatan.
+  Bila nanti ada testimoni asli dari partner, bagian itu bisa ditambahkan dengan
+  pola yang sama (kunci baru di `content` + satu section di halaman).
+
+### Menambah bagian baru
+
+1. Tambah kunci di `partnership_page.content` (lewat CMS atau blok top-up di
+   `supabase/schema.sql` § 10j — hanya menulis bila kunci belum ada, sehingga
+   editan admin tidak tertimpa).
+2. Tambah editornya di `src/pages/admin/partnership/settings.astro`
+   (`inp` untuk satu baris, `ta` untuk paragraf, `daftar` untuk tabel
+   berkolom, `listTeks` untuk daftar poin).
+3. Render di `src/pages/partnership.astro`, dibungkus pemeriksaan kosong agar
+   bagiannya hilang otomatis saat belum diisi.
+
+`scripts/sync-content.mjs` meneruskan `content` apa adanya, jadi **tidak perlu**
+diubah saat menambah bagian konten baru.

@@ -208,13 +208,27 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
       </div>`;
   }
 
-  /** Daftar berulang (title/text) → satu textarea per baris "Judul | Teks". */
-  function daftar(path: string, label: string, items: any[], kunci: [string, string], bantuan: string): string {
-    const teks = (items ?? []).map((it: any) => `${it[kunci[0]] ?? ''} | ${it[kunci[1]] ?? ''}`).join('\n');
+  /**
+   * Daftar berulang → satu textarea, satu item per baris, kolom dipisah "|".
+   * Jumlah kunci bebas (2 untuk Judul|Teks, 3 untuk baris perbandingan, dst).
+   */
+  function daftar(path: string, label: string, items: any[], kunci: string[], bantuan: string): string {
+    const teks = (items ?? []).map((it: any) => kunci.map((k) => it[k] ?? '').join(' | ')).join('\n');
     return `
       <div>
         <label class="block text-sm font-medium mb-1.5">${esc(label)}</label>
         <textarea data-klist="${esc(path)}" data-kk="${esc(kunci.join(','))}" rows="5" class="${INPUT} font-mono text-xs">${esc(teks)}</textarea>
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(bantuan)}</p>
+      </div>`;
+  }
+
+  /** Daftar teks sederhana → satu textarea, satu kalimat per baris. */
+  function listTeks(path: string, label: string, items: any[], bantuan: string): string {
+    const teks = (items ?? []).map((v: any) => String(v ?? '')).join('\n');
+    return `
+      <div>
+        <label class="block text-sm font-medium mb-1.5">${esc(label)}</label>
+        <textarea data-ktext="${esc(path)}" rows="5" class="${INPUT} font-mono text-xs">${esc(teks)}</textarea>
         <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(bantuan)}</p>
       </div>`;
   }
@@ -247,6 +261,34 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
       <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
         <h3 class="font-display text-base font-semibold tracking-tightest">FAQ</h3>
         ${daftar('faq', 'Pertanyaan', k.faq, ['q', 'a'], 'Satu FAQ per baris, format: Pertanyaan | Jawaban')}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Cocok untuk siapa</h3>
+        ${daftar('audience', 'Daftar audiens', k.audience, ['title', 'text'], 'Satu audiens per baris, format: Judul | Isi. Kosongkan semua untuk menyembunyikan bagian ini.')}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Bandingkan paket</h3>
+        ${inp('compare.title', 'Judul', k.compare?.title)}
+        ${ta('compare.note', 'Catatan', k.compare?.note, 2)}
+        ${listTeks('compare.columns', 'Nama kolom', k.compare?.columns, 'Satu nama kolom per baris (biasanya dua: nama kedua paket).')}
+        ${daftar('compare.rows', 'Baris perbandingan', k.compare?.rows, ['label', 'a', 'b'], 'Satu baris per aspek, format: Aspek | Kolom 1 | Kolom 2. Kosongkan semua untuk menyembunyikan tabel.')}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Contoh tampilan</h3>
+        ${inp('preview.title', 'Judul', k.preview?.title)}
+        ${ta('preview.note', 'Catatan', k.preview?.note, 2)}
+        ${daftar('preview.items', 'Kartu contoh', k.preview?.items, ['label', 'title', 'text', 'button'], 'Satu kartu per baris, format: Label | Judul pesan | Isi pesan | Label tombol.')}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Ketentuan</h3>
+        ${inp('rules.title', 'Judul', k.rules?.title)}
+        ${ta('rules.note', 'Catatan', k.rules?.note, 2)}
+        ${listTeks('rules.allowed', 'Kami terima', k.rules?.allowed, 'Satu poin per baris.')}
+        ${listTeks('rules.notAllowed', 'Tidak kami terima', k.rules?.notAllowed, 'Satu poin per baris.')}
       </div>
 
       <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
@@ -330,17 +372,26 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
       setPath(baru, n.dataset.kp!, n.value.trim());
     });
     document.querySelectorAll<HTMLTextAreaElement>('[data-klist]').forEach((n) => {
-      const [k1, k2] = (n.dataset.kk ?? 'title,text').split(',');
-      const items = n.value.split('\n').map((b) => b.trim()).filter(Boolean).map((b, i) => {
-        const idx = b.indexOf('|');
-        const a = idx >= 0 ? b.slice(0, idx).trim() : b;
-        const c = idx >= 0 ? b.slice(idx + 1).trim() : '';
-        const obj: any = { [k1]: a, [k2]: c };
+      const kunci = (n.dataset.kk ?? 'title,text').split(',');
+      const items = n.value.split('\n').map((b) => b.trim()).filter(Boolean).map((baris, i) => {
+        // Pisah maksimal sebanyak kunci: sisa "|" ikut ke kolom terakhir supaya
+        // teks yang memuat "|" tidak terpotong diam-diam.
+        const bagian = baris.split('|').map((v) => v.trim());
+        const nilai = bagian.length > kunci.length
+          ? [...bagian.slice(0, kunci.length - 1), bagian.slice(kunci.length - 1).join(' | ')]
+          : bagian;
+        const obj: any = {};
+        kunci.forEach((k, idx) => { obj[k] = nilai[idx] ?? ''; });
         // Nomor tahapan dibuat otomatis supaya admin tak perlu mengetiknya.
         if (n.dataset.klist === 'process') obj.n = String(i + 1).padStart(2, '0');
         return obj;
       });
       setPath(baru, n.dataset.klist!, items);
+    });
+    // Daftar teks sederhana (satu kalimat per baris) → array string.
+    document.querySelectorAll<HTMLTextAreaElement>('[data-ktext]').forEach((n) => {
+      const items = n.value.split('\n').map((b) => b.trim()).filter(Boolean);
+      setPath(baru, n.dataset.ktext!, items);
     });
     hasil.push(await supabase.from('partnership_page').update({ content: baru, ...stamp }).eq('id', 1));
 

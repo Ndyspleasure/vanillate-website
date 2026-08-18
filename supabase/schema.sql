@@ -907,6 +907,34 @@ create policy "editor tambah recipients" on public.partnership_recipients
 
 
 -- ───────────────────────────────────────────────────────────────────────────
+-- 10j. Top-up konten halaman publik (idempoten — tidak menimpa editan admin)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Bagian ini melengkapi `partnership_page.content` dengan section yang
+-- ditambahkan setelah seed awal: "Cocok untuk siapa", tabel perbandingan,
+-- contoh tampilan, dan ketentuan. Tiap key hanya ditulis bila BELUM ADA, jadi
+-- teks yang sudah diubah dari CMS tetap utuh dan skrip aman dijalankan ulang.
+update public.partnership_page
+   set content = content || jsonb_build_object('audience', '[{"title": "Komunitas & server Discord", "text": "Server yang ingin menambah member aktif dan dikenal pemain baru."}, {"title": "Kreator & streamer", "text": "Memperkenalkan channel, jadwal live, atau karya terbaru ke audiens yang relevan."}, {"title": "Brand & produk digital", "text": "Brand yang menyasar audiens muda pengguna Discord di Indonesia."}, {"title": "Event & turnamen", "text": "Penyelenggara yang butuh peserta atau penonton dalam waktu terbatas."}]'::jsonb)
+ where id = 1 and not (content ? 'audience');
+update public.partnership_page
+   set content = content || jsonb_build_object('compare', '{"title": "Bandingkan dua paket", "note": "Keduanya bisa dipakai bersamaan — DM untuk dorongan cepat, Lobby untuk kehadiran jangka panjang.", "columns": ["Broadcast via DM", "Broadcast via Lobby"], "rows": [{"label": "Cara tampil", "a": "Masuk ke DM pemain, satu per satu", "b": "Tampil di Dashboard Partnership pada lobby permainan"}, {"label": "Satuan paket", "a": "Per pemain yang ditargetkan", "b": "Per hari tayang"}, {"label": "Paling cocok untuk", "a": "Pengumuman & promo yang butuh perhatian segera", "b": "Pengenalan merek yang perlu dilihat berulang"}, {"label": "Sifat jangkauan", "a": "Sekali kirim, langsung dibaca", "b": "Terlihat setiap pemain membuka lobby"}, {"label": "Bisa ditargetkan?", "a": "Ya — dapat diarahkan ke pemain paling aktif", "b": "Tidak — tampil ke semua pemain yang membuka lobby"}, {"label": "Laporan", "a": "Jumlah terkirim, gagal, dan dilewati", "b": "Durasi tayang sesuai paket"}]}'::jsonb)
+ where id = 1 and not (content ? 'compare');
+update public.partnership_page
+   set content = content || jsonb_build_object('preview', '{"title": "Begini tampilannya nanti", "note": "Contoh tampilan. Teks, tautan, dan tombol mengikuti materi yang kamu kirim.", "items": [{"label": "Broadcast via DM", "title": "📢 Pengumuman", "text": "Pesanmu dikirim sebagai pesan resmi ke DM pemain, lengkap dengan tombol menuju tautanmu.", "button": "Kunjungi Server"}, {"label": "Broadcast via Lobby", "title": "🤝 Partnership", "text": "Namamu tampil sebagai item pada Dashboard Partnership setiap kali pemain membuka lobby permainan.", "button": "Cek Sekarang"}]}'::jsonb)
+ where id = 1 and not (content ? 'preview');
+update public.partnership_page
+   set content = content || jsonb_build_object('rules', '{"title": "Ketentuan singkat", "note": "Aturan ini menjaga kenyamanan pemain — sekaligus menjaga kampanyemu tetap efektif.", "allowed": ["Promosi server, komunitas, kreator, produk, dan event", "Materi berbahasa Indonesia atau Inggris", "Tautan ke Discord, media sosial, situs, atau halaman pendaftaran", "Revisi materi sebelum kampanye dijalankan"], "notAllowed": ["Judi, pinjaman ilegal, dan investasi berisiko tinggi", "Konten dewasa, kekerasan, atau ujaran kebencian", "Penipuan, phishing, atau tautan berbahaya", "Meniru identitas Vanillate atau pihak lain"]}'::jsonb)
+ where id = 1 and not (content ? 'rules');
+-- FAQ: hanya ditambah bila isinya MASIH seed awal (3 entri bawaan). Bila admin
+-- sudah menambah/mengubah FAQ, blok ini tidak menyentuhnya sama sekali.
+update public.partnership_page
+   set content = jsonb_set(content, '{faq}', (content -> 'faq') || '[{"q": "Berapa lama prosesnya sampai kampanye tayang?", "a": "Setelah materi dan paket disepakati, kampanye biasanya dijalankan dalam 1–3 hari kerja. Broadcast via Lobby mulai dihitung sejak hari pertama tayang."}, {"q": "Apakah saya dapat laporan hasilnya?", "a": "Ya. Untuk Broadcast via DM kami berikan rekap jumlah pesan terkirim, gagal, dan dilewati. Untuk Broadcast via Lobby kami sampaikan periode tayangnya."}, {"q": "Kenapa ada pemain yang dilewati saat Broadcast DM?", "a": "Pemain yang menutup DM atau memilih tidak menerima pesan promosi akan dilewati. Ini kami hormati agar bot tetap nyaman dipakai dan tidak dianggap spam."}, {"q": "Bisakah dua paket dijalankan bersamaan?", "a": "Bisa, dan biasanya hasilnya lebih baik: DM memberi dorongan awal, Lobby menjaga nama kamu tetap terlihat setelahnya."}, {"q": "Bagaimana cara pembayarannya?", "a": "Pembayaran dibicarakan langsung lewat WhatsApp official kami sebelum kampanye dijalankan, menyesuaikan paket dan volume yang kamu pilih."}]'::jsonb)
+ where id = 1
+   and jsonb_array_length(content -> 'faq') = 3
+   and (content -> 'faq') @> '[{"q": "Bagaimana cara mengajukan partnership?"}]'::jsonb;
+
+
+-- ───────────────────────────────────────────────────────────────────────────
 -- 11. PARTNERSHIP DI LOBBY BOT — slot partner, CTA, & satuan paket
 -- ───────────────────────────────────────────────────────────────────────────
 -- Bagian 10 menjual produk di halaman publik. Bagian ini memberi Partnership
