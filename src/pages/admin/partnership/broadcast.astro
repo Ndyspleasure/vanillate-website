@@ -1,0 +1,342 @@
+---
+// Partnership — Broadcast DM.
+//
+// Alur: paste User ID → validasi/dedup → isi nama & pesan → pilih tombol →
+// Preview → Confirm. Confirm hanya MENGANTREKAN campaign (status `queued`) plus
+// daftar penerimanya; yang benar-benar mengirim DM adalah bot (service_role),
+// karena hanya bot yang memegang token Discord.
+//
+// Tombol Partnership WAJIB ada di setiap broadcast — URL-nya diambil dari
+// Settings, bukan diketik ulang tiap campaign.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+
+const input = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+const labelCls = 'block text-sm font-medium mb-1.5';
+---
+
+<AdminLayout title="Broadcast DM" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Broadcast DM"
+    description="Kirim campaign ke daftar User ID. Bot yang mengirim DM-nya, dengan jeda aman antar pesan."
+  />
+  <PartnershipTabs active="broadcast" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-8 max-w-3xl">
+    <div id="gate-pesan" class="hidden rounded-2xl border border-amber-500/25 bg-amber-500/5 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80"></p>
+    </div>
+
+    <form id="form-bc" class="space-y-6">
+      <!-- 1. Kategori -->
+      <div>
+        <label for="f-kategori" class={labelCls}>Kategori broadcast</label>
+        <select id="f-kategori" class={input}>
+          <option value="marketing">Marketing</option>
+        </select>
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">
+          Tahap awal baru Marketing. Kategori lain bisa ditambah nanti tanpa mengubah struktur.
+        </p>
+      </div>
+
+      <!-- 2. Nama broadcast -->
+      <div>
+        <label for="f-nama" class={labelCls}>Broadcast Name</label>
+        <input id="f-nama" type="text" maxlength="120" required placeholder="mis. Marketing Partnership Agustus #1" class={input} />
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Dipakai untuk pencarian & riwayat.</p>
+      </div>
+
+      <!-- 3. Target -->
+      <div>
+        <label for="f-target" class={labelCls}>Target User ID</label>
+        <textarea id="f-target" rows="8" required spellcheck="false"
+          placeholder="Tempel User ID di sini — satu per baris, atau dipisah koma/spasi."
+          class={`${input} font-mono text-xs`}></textarea>
+        <div id="ringkas-target" class="mt-2 hidden flex-wrap items-center gap-2 text-xs"></div>
+        <div id="invalid-target" class="mt-2 hidden rounded-xl border border-red-500/25 bg-red-500/5 px-3 py-2 text-xs"></div>
+      </div>
+
+      <!-- 4. Pesan -->
+      <div>
+        <label for="f-pesan" class={labelCls}>Message</label>
+        <textarea id="f-pesan" rows="6" required maxlength="4000"
+          placeholder="Tulis pesan yang akan diterima pemain…" class={input}></textarea>
+        <div class="mt-1 flex items-center justify-between">
+          <p class="text-xs text-ink-500 dark:text-cream-300/60">Tanpa format khusus. Maks 4000 karakter.</p>
+          <p id="hitung-pesan" class="text-xs text-ink-400 dark:text-cream-300/40 tabular-nums">0</p>
+        </div>
+      </div>
+
+      <!-- 5. Tombol -->
+      <div class="space-y-3">
+        <p class={labelCls}>Tombol pada pesan</p>
+        <div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 px-4 py-3">
+          <p class="text-sm font-medium">Partnership <span class="ml-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[0.65rem] text-amber-700 dark:text-amber-400">wajib</span></p>
+          <p id="url-partnership" class="mt-0.5 break-all font-mono text-xs text-ink-500 dark:text-cream-300/60">memuat…</p>
+        </div>
+        <div id="custom-links" class="space-y-2"></div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 pt-2">
+        <button type="submit" id="btn-preview"
+          class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+          Preview
+        </button>
+        <p id="pesan-form" class="text-sm" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+
+    <!-- PREVIEW & KONFIRMASI -->
+    <section id="preview" class="hidden space-y-4">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Preview</h2>
+      <div id="preview-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 divide-y divide-ink-900/5 dark:divide-cream-100/5"></div>
+      <div class="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-5 py-4">
+        <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Setelah dikonfirmasi, campaign masuk antrean dan bot mulai mengirim. Pengiriman bisa
+          dibatalkan dari Campaign History, tapi pesan yang sudah terkirim tidak bisa ditarik.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" id="btn-confirm"
+          class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 transition-colors">
+          Confirm Broadcast
+        </button>
+        <button type="button" id="btn-cancel"
+          class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2.5 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+          Cancel
+        </button>
+        <p id="pesan-confirm" class="text-sm" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, pesanError } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { parseUserIds, safeUrl } from '@data/partnership';
+  import { url } from '@/utils/url';
+
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  let bolehEdit = false;
+  let partnershipUrl = '';
+  let linksTersedia: Array<{ id: number; label: string; url: string }> = [];
+  /** Hasil parse terakhir yang sudah lolos Preview. */
+  let siap: { ids: string[]; nama: string; pesan: string; buttons: Array<{ label: string; url: string }> } | null = null;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    if (!bolehEdit) {
+      const gate = el('gate-pesan');
+      gate.querySelector('p')!.textContent = 'Peran kamu hanya bisa melihat — broadcast tidak bisa dikirim.';
+      gate.classList.remove('hidden');
+      el<HTMLButtonElement>('btn-preview').disabled = true;
+    }
+    void muatKonfigurasi();
+
+    el('f-target').addEventListener('input', ringkasTarget);
+    el('f-pesan').addEventListener('input', () => {
+      el('hitung-pesan').textContent = String((el<HTMLTextAreaElement>('f-pesan').value || '').length);
+    });
+    el('form-bc').addEventListener('submit', onPreview);
+    el('btn-confirm').addEventListener('click', () => void onConfirm());
+    el('btn-cancel').addEventListener('click', () => {
+      el('preview').classList.add('hidden');
+      siap = null;
+    });
+  });
+
+  /** Ambil URL Partnership (wajib) + daftar custom link dari Settings. */
+  async function muatKonfigurasi() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const [st, lk] = await Promise.all([
+      supabase.from('partnership_settings').select('partnership_url').eq('id', 1).maybeSingle(),
+      supabase.from('partnership_links').select('id, label, url, enabled, sort').eq('enabled', true).order('sort', { ascending: true }),
+    ]);
+
+    partnershipUrl = safeUrl(st.data?.partnership_url) || '';
+    const target = el('url-partnership');
+    if (partnershipUrl) {
+      target.textContent = partnershipUrl;
+    } else {
+      target.innerHTML = '<span class="text-red-600 dark:text-red-400">Belum diatur — isi di tab Settings sebelum broadcast.</span>';
+    }
+
+    linksTersedia = (lk.data ?? []).map((r: any) => ({ id: r.id, label: r.label, url: safeUrl(r.url) })).filter((r) => r.url);
+    const wadah = el('custom-links');
+    if (linksTersedia.length === 0) {
+      wadah.innerHTML = '<p class="text-xs text-ink-500 dark:text-cream-300/60">Belum ada custom link. Tambahkan di tab Settings bila perlu (opsional).</p>';
+      return;
+    }
+    wadah.innerHTML = linksTersedia.map((l) => `
+      <label class="flex items-start gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 px-4 py-3 cursor-pointer">
+        <input type="checkbox" data-link="${l.id}" class="mt-0.5 h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+        <span class="min-w-0">
+          <span class="block text-sm font-medium">${esc(l.label)}</span>
+          <span class="block break-all font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(l.url)}</span>
+        </span>
+      </label>`).join('');
+  }
+
+  /** Ringkasan target live saat admin menempel ID. */
+  function ringkasTarget() {
+    const hasil = parseUserIds(el<HTMLTextAreaElement>('f-target').value);
+    const ringkas = el('ringkas-target');
+    const invalid = el('invalid-target');
+
+    if (hasil.parsed === 0) {
+      ringkas.classList.add('hidden');
+      invalid.classList.add('hidden');
+      return;
+    }
+
+    const chip = (teks: string, kelas: string) =>
+      `<span class="rounded-full px-2.5 py-0.5 font-medium ${kelas}">${esc(teks)}</span>`;
+    ringkas.innerHTML = [
+      chip(`${fmtAngka(hasil.valid.length)} valid`, 'bg-teal-500/15 text-teal-700 dark:text-teal-300'),
+      hasil.invalid.length ? chip(`${fmtAngka(hasil.invalid.length)} invalid`, 'bg-red-500/15 text-red-600 dark:text-red-400') : '',
+      hasil.duplicates ? chip(`${fmtAngka(hasil.duplicates)} duplikat dibuang`, 'bg-amber-500/15 text-amber-700 dark:text-amber-400') : '',
+      chip(`${fmtAngka(hasil.parsed)} terbaca`, 'bg-ink-900/5 dark:bg-cream-100/10 text-ink-500 dark:text-cream-300/60'),
+    ].filter(Boolean).join('');
+    ringkas.classList.remove('hidden');
+    ringkas.classList.add('flex');
+
+    if (hasil.invalid.length) {
+      invalid.innerHTML = `<p class="font-medium text-red-600 dark:text-red-400 mb-1">Tidak dikenali sebagai User ID:</p>
+        <p class="break-all font-mono text-ink-600 dark:text-cream-200/80">${esc(hasil.invalid.join(', '))}</p>
+        <p class="mt-1 text-ink-500 dark:text-cream-300/60">Entri ini akan dilewati. User ID Discord berupa 17–20 digit angka.</p>`;
+      invalid.classList.remove('hidden');
+    } else {
+      invalid.classList.add('hidden');
+    }
+  }
+
+  function onPreview(e: Event) {
+    e.preventDefault();
+    if (!bolehEdit) return;
+
+    const pesanForm = el('pesan-form');
+    pesanForm.textContent = '';
+    pesanForm.className = 'text-sm';
+
+    const nama = el<HTMLInputElement>('f-nama').value.trim();
+    const isi = el<HTMLTextAreaElement>('f-pesan').value.trim();
+    const hasil = parseUserIds(el<HTMLTextAreaElement>('f-target').value);
+
+    const gagal = (m: string) => {
+      pesanForm.textContent = m;
+      pesanForm.className = 'text-sm text-red-600 dark:text-red-400';
+    };
+
+    if (!nama) return gagal('Broadcast Name wajib diisi.');
+    if (!isi) return gagal('Message wajib diisi.');
+    if (hasil.valid.length === 0) return gagal('Belum ada User ID valid pada target.');
+    if (!partnershipUrl) return gagal('URL Partnership belum diatur. Isi dulu di tab Settings.');
+
+    // Tombol Partnership selalu pertama & wajib; custom link menyusul sesuai urutan.
+    const buttons = [{ label: 'Partnership', url: partnershipUrl }];
+    for (const l of linksTersedia) {
+      const cb = document.querySelector<HTMLInputElement>(`[data-link="${l.id}"]`);
+      if (cb?.checked) buttons.push({ label: l.label, url: l.url });
+    }
+
+    siap = { ids: hasil.valid, nama, pesan: isi, buttons };
+
+    const baris = (label: string, isiHtml: string) => `
+      <div class="px-5 py-3">
+        <p class="text-[0.7rem] uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">${esc(label)}</p>
+        <div class="mt-1 text-sm">${isiHtml}</div>
+      </div>`;
+
+    el('preview-body').innerHTML = [
+      baris('Broadcast Name', esc(nama)),
+      baris('Kategori', esc(el<HTMLSelectElement>('f-kategori').value)),
+      baris('Target', `${fmtAngka(hasil.valid.length)} user valid${hasil.invalid.length ? ` · <span class="text-red-600 dark:text-red-400">${fmtAngka(hasil.invalid.length)} invalid dilewati</span>` : ''}${hasil.duplicates ? ` · ${fmtAngka(hasil.duplicates)} duplikat dibuang` : ''}`),
+      baris('Message', `<div class="whitespace-pre-wrap rounded-xl bg-ink-900/5 dark:bg-cream-100/5 px-4 py-3">${esc(isi)}</div>`),
+      baris('Buttons', buttons.map((b) => `<span class="mr-2 inline-block rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-2.5 py-1 text-xs">${esc(b.label)}</span>`).join('')),
+    ].join('');
+
+    el('preview').classList.remove('hidden');
+    el('preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function onConfirm() {
+    if (!bolehEdit || !siap) return;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const btn = el<HTMLButtonElement>('btn-confirm');
+    const pesan = el('pesan-confirm');
+    btn.disabled = true;
+    btn.textContent = 'Mengantrekan…';
+    pesan.textContent = '';
+    pesan.className = 'text-sm';
+
+    const gagal = (m: string) => {
+      pesan.textContent = m;
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      btn.disabled = false;
+      btn.textContent = 'Confirm Broadcast';
+    };
+
+    // Broadcast ID dibuat database (bukan browser) supaya urutannya konsisten
+    // walau ada dua admin membuat campaign hampir bersamaan.
+    const { data: bid, error: eId } = await supabase.rpc('next_partnership_broadcast_id');
+    if (eId || !bid) return gagal(pesanError(eId) || 'Gagal membuat Broadcast ID.');
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    const { data: camp, error: eCamp } = await supabase
+      .from('partnership_campaigns')
+      .insert({
+        broadcast_id: bid,
+        name: siap.nama,
+        category: el<HTMLSelectElement>('f-kategori').value,
+        channel: 'dm',
+        status: 'queued',
+        message: siap.pesan,
+        partnership_url: partnershipUrl,
+        buttons: siap.buttons,
+        created_by: uid,
+        target_total: siap.ids.length,
+        valid_count: siap.ids.length,
+        invalid_count: 0,
+      })
+      .select('id, broadcast_id')
+      .single();
+
+    if (eCamp || !camp) return gagal(pesanError(eCamp) || 'Gagal membuat campaign.');
+
+    // Penerima dimasukkan per batch supaya request tidak kebesaran saat target ribuan.
+    const BATCH = 500;
+    for (let i = 0; i < siap.ids.length; i += BATCH) {
+      const batch = siap.ids.slice(i, i + BATCH).map((u) => ({
+        campaign_id: camp.id, user_id: u, status: 'pending',
+      }));
+      const { error: eRec } = await supabase.from('partnership_recipients').insert(batch);
+      if (eRec) {
+        // Campaign sudah ada tapi target belum lengkap → tandai gagal supaya bot
+        // tidak mengirim setengah-setengah tanpa disadari admin.
+        await supabase.from('partnership_campaigns')
+          .update({ status: 'failed', error: 'Gagal menyimpan sebagian daftar penerima.' })
+          .eq('id', camp.id);
+        return gagal(`${pesanError(eRec)} Campaign ditandai gagal — silakan ulangi.`);
+      }
+    }
+
+    pesan.textContent = `Campaign ${camp.broadcast_id} masuk antrean. Mengalihkan ke riwayat…`;
+    pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+    setTimeout(() => {
+      window.location.href = `${url('/admin/partnership/history')}?id=${encodeURIComponent(camp.broadcast_id)}`;
+    }, 1200);
+  }
+</script>

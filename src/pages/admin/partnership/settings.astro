@@ -1,0 +1,361 @@
+---
+// Partnership — Settings.
+//
+// Tiga hal diatur di sini:
+//   1. URL — halaman publik (dipakai tombol wajib di broadcast) & tujuan CTA.
+//   2. Custom Links — tombol tambahan opsional untuk broadcast.
+//   3. Konten halaman publik — hero, intro, benefit, proses, FAQ, CTA, SEO.
+//
+// Konten publik ditarik saat build (scripts/sync-content.mjs), jadi perubahan
+// tampil setelah website di-build ulang.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+
+const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+---
+
+<AdminLayout title="Partnership Settings" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Settings"
+    description="URL, custom link broadcast, dan seluruh konten halaman publik Partnership."
+  />
+  <PartnershipTabs active="settings" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-10 max-w-3xl">
+    <p id="gate" class="hidden text-sm text-amber-700 dark:text-amber-400"></p>
+
+    <!-- 1. URL -->
+    <section class="space-y-4">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">URL</h2>
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <div>
+          <label for="s-partnership-url" class="block text-sm font-medium mb-1.5">Partnership URL</label>
+          <input id="s-partnership-url" type="url" class={INPUT} placeholder="https://vanillate.id/partnership" />
+          <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">
+            Tujuan tombol <strong>Partnership</strong> yang wajib ada di setiap Broadcast Marketing.
+          </p>
+        </div>
+        <div>
+          <label for="s-apply-url" class="block text-sm font-medium mb-1.5">Apply URL (CTA)</label>
+          <input id="s-apply-url" type="url" class={INPUT} placeholder="kosongkan → tombol memakai WhatsApp" />
+          <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">
+            Tujuan tombol "Become a Partner". Bila dikosongkan, tombol membuka WhatsApp official.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Custom links -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Custom Links</h2>
+        <button type="button" id="btn-tambah-link"
+          class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+          + Tambah link
+        </button>
+      </div>
+      <p class="text-sm text-ink-500 dark:text-cream-300/60">
+        Tombol tambahan opsional untuk broadcast. Tombol Partnership tetap wajib dan tidak perlu ditambahkan di sini.
+      </p>
+      <div id="links-body" class="space-y-3"></div>
+    </section>
+
+    <!-- 3. Konten halaman publik -->
+    <section class="space-y-4">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Konten halaman publik</h2>
+      <div id="konten-body" class="space-y-6"></div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-3 pt-2">
+      <button type="button" id="btn-simpan"
+        class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+        Simpan semua
+      </button>
+      <p id="pesan" class="text-sm" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  let bolehEdit = false;
+  let konten: any = {};
+  /** Link yang dihapus di UI — dieksekusi saat Simpan. */
+  const linkDihapus: number[] = [];
+  let linkBaruSeq = -1;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    if (!bolehEdit) {
+      el('gate').textContent = 'Peran kamu hanya bisa melihat.';
+      el('gate').classList.remove('hidden');
+      el<HTMLButtonElement>('btn-simpan').disabled = true;
+    }
+    void muat();
+    el('btn-tambah-link').addEventListener('click', tambahLink);
+    el('btn-simpan').addEventListener('click', () => void simpan());
+  });
+
+  async function muat() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const [st, lk, pg] = await Promise.all([
+      supabase.from('partnership_settings').select('partnership_url, apply_url').eq('id', 1).maybeSingle(),
+      supabase.from('partnership_links').select('id, label, url, enabled, sort').order('sort', { ascending: true }),
+      supabase.from('partnership_page').select('content').eq('id', 1).maybeSingle(),
+    ]);
+
+    el<HTMLInputElement>('s-partnership-url').value = st.data?.partnership_url ?? '';
+    el<HTMLInputElement>('s-apply-url').value = st.data?.apply_url ?? '';
+
+    renderLinks(lk.data ?? []);
+
+    konten = pg.data?.content ?? {};
+    renderKonten();
+
+    if (!bolehEdit) {
+      document.querySelectorAll('input, textarea').forEach((n) => ((n as HTMLInputElement).disabled = true));
+      el('btn-tambah-link').setAttribute('disabled', 'true');
+    }
+  }
+
+  // ─── Custom links ────────────────────────────────────────────────────────
+  function renderLinks(rows: any[]) {
+    const body = el('links-body');
+    if (rows.length === 0) {
+      body.innerHTML = `<p class="text-sm text-ink-500 dark:text-cream-300/60">Belum ada custom link.</p>`;
+      return;
+    }
+    body.innerHTML = rows.map(barisLink).join('');
+    pasangHapus();
+  }
+
+  function barisLink(l: any): string {
+    return `
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4 space-y-3" data-link-row="${esc(l.id)}">
+        <div class="grid gap-3 sm:grid-cols-[1fr_2fr_auto_auto] sm:items-end">
+          <div>
+            <label class="block text-xs font-medium mb-1">Label</label>
+            <input data-lf="label" value="${esc(l.label ?? '')}" maxlength="40" class="${INPUT}" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1">URL</label>
+            <input data-lf="url" type="url" value="${esc(l.url ?? '')}" class="${INPUT}" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1">Urutan</label>
+            <input data-lf="sort" type="number" value="${esc(l.sort ?? 100)}" class="${INPUT} w-24" />
+          </div>
+          <div class="flex items-center gap-3 pb-2.5">
+            <label class="flex items-center gap-1.5 text-xs font-medium">
+              <input data-lf="enabled" type="checkbox" ${l.enabled ? 'checked' : ''}
+                class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+              Aktif
+            </label>
+            <button type="button" data-hapus="${esc(l.id)}"
+              class="rounded-lg border border-red-500/40 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+              Hapus
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function tambahLink() {
+    if (!bolehEdit) return;
+    const body = el('links-body');
+    if (body.querySelector('p')) body.innerHTML = '';
+    body.insertAdjacentHTML('beforeend', barisLink({ id: linkBaruSeq--, label: '', url: '', enabled: true, sort: 100 }));
+    pasangHapus();
+  }
+
+  function pasangHapus() {
+    document.querySelectorAll<HTMLButtonElement>('[data-hapus]').forEach((b) => {
+      b.onclick = () => {
+        const id = Number(b.dataset.hapus);
+        // Baris yang sudah ada di database perlu dihapus saat Simpan; baris baru
+        // (id negatif) cukup dibuang dari tampilan.
+        if (id > 0) linkDihapus.push(id);
+        document.querySelector(`[data-link-row="${id}"]`)?.remove();
+      };
+    });
+  }
+
+  // ─── Konten publik ───────────────────────────────────────────────────────
+  function ta(path: string, label: string, nilai: string, rows = 2, bantuan = ''): string {
+    return `
+      <div>
+        <label class="block text-sm font-medium mb-1.5">${esc(label)}</label>
+        <textarea data-kp="${esc(path)}" rows="${rows}" class="${INPUT}">${esc(nilai ?? '')}</textarea>
+        ${bantuan ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(bantuan)}</p>` : ''}
+      </div>`;
+  }
+  function inp(path: string, label: string, nilai: string, bantuan = ''): string {
+    return `
+      <div>
+        <label class="block text-sm font-medium mb-1.5">${esc(label)}</label>
+        <input data-kp="${esc(path)}" value="${esc(nilai ?? '')}" class="${INPUT}" />
+        ${bantuan ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(bantuan)}</p>` : ''}
+      </div>`;
+  }
+
+  /** Daftar berulang (title/text) → satu textarea per baris "Judul | Teks". */
+  function daftar(path: string, label: string, items: any[], kunci: [string, string], bantuan: string): string {
+    const teks = (items ?? []).map((it: any) => `${it[kunci[0]] ?? ''} | ${it[kunci[1]] ?? ''}`).join('\n');
+    return `
+      <div>
+        <label class="block text-sm font-medium mb-1.5">${esc(label)}</label>
+        <textarea data-klist="${esc(path)}" data-kk="${esc(kunci.join(','))}" rows="5" class="${INPUT} font-mono text-xs">${esc(teks)}</textarea>
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(bantuan)}</p>
+      </div>`;
+  }
+
+  function renderKonten() {
+    const k = konten ?? {};
+    el('konten-body').innerHTML = `
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Hero</h3>
+        ${inp('hero.title', 'Judul', k.hero?.title)}
+        ${ta('hero.subtitle', 'Subjudul', k.hero?.subtitle, 2)}
+        ${inp('hero.ctaLabel', 'Label CTA', k.hero?.ctaLabel)}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Informasi Partnership</h3>
+        ${daftar('intro', 'Bagian informasi', k.intro, ['title', 'text'], 'Satu bagian per baris, format: Judul | Isi')}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Benefit</h3>
+        ${daftar('benefits', 'Daftar benefit', k.benefits, ['title', 'text'], 'Satu benefit per baris, format: Judul | Isi')}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">How It Works</h3>
+        ${daftar('process', 'Tahapan', k.process, ['title', 'text'], 'Satu tahap per baris, format: Judul | Isi (nomor dibuat otomatis)')}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">FAQ</h3>
+        ${daftar('faq', 'Pertanyaan', k.faq, ['q', 'a'], 'Satu FAQ per baris, format: Pertanyaan | Jawaban')}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">CTA penutup</h3>
+        ${inp('cta.title', 'Judul', k.cta?.title)}
+        ${ta('cta.text', 'Teks', k.cta?.text, 2)}
+        ${inp('cta.label', 'Label tombol', k.cta?.label)}
+      </div>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">SEO</h3>
+        ${inp('seo.title', 'SEO title', k.seo?.title, 'Tampil di tab browser & hasil pencarian.')}
+        ${ta('seo.description', 'SEO description', k.seo?.description, 3, 'Idealnya 120–160 karakter.')}
+        ${inp('seo.ogImage', 'Open Graph image', k.seo?.ogImage, 'URL gambar untuk pratinjau saat dibagikan. Kosong → memakai OG default situs.')}
+      </div>`;
+
+    if (!bolehEdit) {
+      el('konten-body').querySelectorAll('input, textarea').forEach((n) => ((n as HTMLInputElement).disabled = true));
+    }
+  }
+
+  /** Tulis nilai ke objek bersarang berdasarkan path "a.b". */
+  function setPath(obj: any, path: string, value: any) {
+    const bagian = path.split('.');
+    let cur = obj;
+    for (let i = 0; i < bagian.length - 1; i++) {
+      if (typeof cur[bagian[i]] !== 'object' || cur[bagian[i]] === null) cur[bagian[i]] = {};
+      cur = cur[bagian[i]];
+    }
+    cur[bagian[bagian.length - 1]] = value;
+  }
+
+  async function simpan() {
+    if (!bolehEdit) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const btn = el<HTMLButtonElement>('btn-simpan');
+    const pesan = el('pesan');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan…';
+    pesan.textContent = '';
+    pesan.className = 'text-sm';
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+    const stamp = { updated_at: new Date().toISOString(), updated_by: uid };
+
+    // 1. Settings URL
+    const hasil: any[] = [];
+    hasil.push(await supabase.from('partnership_settings').update({
+      partnership_url: el<HTMLInputElement>('s-partnership-url').value.trim() || null,
+      apply_url: el<HTMLInputElement>('s-apply-url').value.trim() || null,
+      ...stamp,
+    }).eq('id', 1));
+
+    // 2. Custom links — hapus dulu, lalu update/insert.
+    if (linkDihapus.length) {
+      hasil.push(await supabase.from('partnership_links').delete().in('id', linkDihapus));
+      linkDihapus.length = 0;
+    }
+    for (const row of Array.from(document.querySelectorAll<HTMLElement>('[data-link-row]'))) {
+      const id = Number(row.dataset.linkRow);
+      const ambil = (f: string) => row.querySelector<HTMLInputElement>(`[data-lf="${f}"]`)!;
+      const patch = {
+        label: ambil('label').value.trim(),
+        url: ambil('url').value.trim(),
+        sort: Number(ambil('sort').value) || 100,
+        enabled: ambil('enabled').checked,
+        ...stamp,
+      };
+      if (!patch.label || !patch.url) continue; // baris kosong diabaikan
+      hasil.push(id > 0
+        ? await supabase.from('partnership_links').update(patch).eq('id', id)
+        : await supabase.from('partnership_links').insert(patch));
+    }
+
+    // 3. Konten publik
+    const baru: any = JSON.parse(JSON.stringify(konten ?? {}));
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-kp]').forEach((n) => {
+      setPath(baru, n.dataset.kp!, n.value.trim());
+    });
+    document.querySelectorAll<HTMLTextAreaElement>('[data-klist]').forEach((n) => {
+      const [k1, k2] = (n.dataset.kk ?? 'title,text').split(',');
+      const items = n.value.split('\n').map((b) => b.trim()).filter(Boolean).map((b, i) => {
+        const idx = b.indexOf('|');
+        const a = idx >= 0 ? b.slice(0, idx).trim() : b;
+        const c = idx >= 0 ? b.slice(idx + 1).trim() : '';
+        const obj: any = { [k1]: a, [k2]: c };
+        // Nomor tahapan dibuat otomatis supaya admin tak perlu mengetiknya.
+        if (n.dataset.klist === 'process') obj.n = String(i + 1).padStart(2, '0');
+        return obj;
+      });
+      setPath(baru, n.dataset.klist!, items);
+    });
+    hasil.push(await supabase.from('partnership_page').update({ content: baru, ...stamp }).eq('id', 1));
+
+    const gagal = hasil.find((r) => r?.error);
+    if (gagal?.error) {
+      pesan.textContent = pesanError(gagal.error);
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+    } else {
+      konten = baru;
+      pesan.textContent = 'Tersimpan. Halaman publik ter-update setelah build berikutnya.';
+      pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+      void muat();
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Simpan semua';
+  }
+</script>

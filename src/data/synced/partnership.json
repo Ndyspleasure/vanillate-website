@@ -1,0 +1,140 @@
+{
+  "settings": {
+    "partnershipUrl": "https://vanillate.id/partnership",
+    "applyUrl": ""
+  },
+  "products": [
+    {
+      "key": "broadcast_dm",
+      "name": "Broadcast via DM",
+      "tagline": "Pesan langsung ke DM pemain aktif.",
+      "description": "Kami mengirim pesan promosi kamu langsung ke DM pemain yang masih aktif bermain. Cocok untuk pengumuman, promo, dan undangan komunitas.",
+      "channel": "dm",
+      "price": null,
+      "currency": "IDR",
+      "priceUnit": "per campaign",
+      "priceNote": "",
+      "features": [
+        "Terkirim langsung ke DM pemain aktif",
+        "Target bisa dipilih (pemain paling aktif)",
+        "Tombol menuju link kamu",
+        "Laporan terkirim & gagal"
+      ],
+      "badge": "Terpopuler",
+      "ctaLabel": "Ajukan Partnership",
+      "ctaMode": "whatsapp",
+      "ctaUrl": ""
+    },
+    {
+      "key": "broadcast_lobby",
+      "name": "Broadcast via Lobby",
+      "tagline": "Tampil di lobby permainan.",
+      "description": "Pesan kamu ditampilkan di lobby permainan sehingga terlihat oleh pemain saat mereka hendak bermain. Cocok untuk eksposur berulang.",
+      "channel": "lobby",
+      "price": null,
+      "currency": "IDR",
+      "priceUnit": "per campaign",
+      "priceNote": "",
+      "features": [
+        "Tampil di lobby permainan",
+        "Terlihat berulang oleh pemain aktif",
+        "Tombol menuju link kamu"
+      ],
+      "badge": "",
+      "ctaLabel": "Ajukan Partnership",
+      "ctaMode": "whatsapp",
+      "ctaUrl": ""
+    }
+  ],
+  "links": [],
+  "content": {
+    "hero": {
+      "title": "Partnership",
+      "subtitle": "Jangkau ribuan pemain aktif Discord lewat bot yang mereka mainkan setiap hari.",
+      "ctaLabel": "Become a Partner"
+    },
+    "intro": [
+      {
+        "title": "Apa itu Partnership",
+        "text": "Program kerja sama antara Vanillate Studio dan komunitas, kreator, atau brand yang ingin menjangkau pemain kami."
+      },
+      {
+        "title": "Tujuan",
+        "text": "Membantu partner memperkenalkan komunitas, produk, atau event mereka kepada audiens yang relevan dan aktif."
+      },
+      {
+        "title": "Siapa yang dapat mengajukan",
+        "text": "Komunitas Discord, kreator konten, penyelenggara event, dan brand yang produknya relevan bagi pemain kami."
+      },
+      {
+        "title": "Ketentuan umum",
+        "text": "Materi promosi wajib sopan, tidak menyesatkan, bukan penipuan, tanpa konten dewasa, dan mematuhi Ketentuan Layanan Discord."
+      }
+    ],
+    "benefits": [
+      {
+        "title": "Eksposur",
+        "text": "Pesan kamu dilihat pemain yang benar-benar aktif."
+      },
+      {
+        "title": "Dukungan promosi",
+        "text": "Kami bantu menyusun pesan agar mudah dipahami pemain."
+      },
+      {
+        "title": "Kolaborasi komunitas",
+        "text": "Peluang kerja sama lintas komunitas Discord."
+      },
+      {
+        "title": "Laporan campaign",
+        "text": "Ringkasan jumlah terkirim dan gagal setelah campaign selesai."
+      }
+    ],
+    "process": [
+      {
+        "n": "01",
+        "title": "Submit",
+        "text": "Ajukan partnership lewat WhatsApp official kami."
+      },
+      {
+        "n": "02",
+        "title": "Review",
+        "text": "Tim meninjau pengajuan dan kesesuaian materi."
+      },
+      {
+        "n": "03",
+        "title": "Discussion",
+        "text": "Diskusi bentuk kerja sama, jadwal, dan harga."
+      },
+      {
+        "n": "04",
+        "title": "Collaboration",
+        "text": "Campaign dijalankan dan laporannya kami sampaikan."
+      }
+    ],
+    "faq": [
+      {
+        "q": "Bagaimana cara mengajukan partnership?",
+        "a": "Pilih produk yang kamu inginkan di halaman ini, lalu tombolnya akan membuka WhatsApp official kami dengan pesan yang sudah terisi."
+      },
+      {
+        "q": "Apakah harga bisa menyesuaikan kebutuhan?",
+        "a": "Bisa. Harga yang tertera adalah harga dasar; silakan diskusikan kebutuhan kamu lewat WhatsApp."
+      },
+      {
+        "q": "Materi seperti apa yang tidak kami terima?",
+        "a": "Konten menyesatkan, penipuan, judi, konten dewasa, dan apa pun yang melanggar Ketentuan Layanan Discord."
+      }
+    ],
+    "cta": {
+      "title": "Tertarik bekerja sama dengan kami?",
+      "text": "Ceritakan rencana kamu, kami bantu menyesuaikan bentuk kerja samanya.",
+      "label": "Become a Partner"
+    },
+    "seo": {
+      "title": "Partnership",
+      "description": "Jangkau ribuan pemain aktif Discord lewat Vanillate. Pilih Broadcast via DM atau Broadcast via Lobby — ajukan partnership langsung lewat WhatsApp.",
+      "ogImage": ""
+    },
+    "showStats": true
+  }
+}

@@ -1,8 +1,10 @@
 name: Sync konten dari Supabase
 
-# Menarik tabel `site_content` (diedit lewat panel /admin) ke
-# src/data/synced/site-content.json, lalu — HANYA bila ada perubahan — commit
-# dan deploy ulang ke GitHub Pages. Lihat docs/ADMIN-CMS.md bagian 6.
+# Menarik konten yang diedit lewat panel /admin ke src/data/synced/, lalu —
+# HANYA bila ada perubahan — commit dan deploy ulang ke GitHub Pages.
+#   • site-content.json ← tabel `site_content`  (banner pengumuman)
+#   • partnership.json  ← tabel `partnership_*` (konten & HARGA /partnership)
+# Lihat docs/ADMIN-CMS.md bagian 6 & 12.
 #
 # Butuh dua secret:
 #   SUPABASE_URL               → URL project Supabase
@@ -53,7 +55,7 @@ jobs:
         run: |
           git config user.name "vanillate-sync-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/data/synced/site-content.json
+          git add src/data/synced/site-content.json src/data/synced/partnership.json
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "✓ Konten tidak berubah — lewati deploy."

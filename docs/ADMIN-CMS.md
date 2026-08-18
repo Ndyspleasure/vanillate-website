@@ -461,3 +461,92 @@ Tambahan lain:
 
 > **Realtime:** kontrol memakai polling (setting ~60 dtk, perintah ~20 dtk). WebSocket realtime
 > sengaja tidak dipakai agar bot tetap pada jalur REST minimal & fail-safe tanpa dependency baru.
+
+---
+
+## 12. Partnership System
+
+Partnership adalah **layanan berbayar**: studio menjual dua produk broadcast ke partner, dan
+seluruh harga serta konten halaman publiknya dikelola dari CMS.
+
+| Produk | `channel` | Status |
+|---|---|---|
+| **Broadcast via DM** | `dm` | Dijual **dan** dieksekusi otomatis oleh bot (queue + rate limit + laporan) |
+| **Broadcast via Lobby** | `lobby` | Dijual & ditampilkan dengan harga; delivery masih manual |
+
+Kolom `channel` sudah ada sejak awal, jadi delivery Lobby bisa ditambahkan nanti tanpa mengubah
+struktur.
+
+### Dua sisi
+
+- **Admin** — `/admin/partnership` dengan tab: Overview, Broadcast DM, Active Players,
+  Campaign History, Produk & Harga, Templates, Settings.
+- **Publik** — `/partnership`, halaman penjualan: hero, bukti jangkauan, kartu produk + harga,
+  info program, benefit, cara kerja, FAQ, CTA.
+
+### Alur broadcast
+
+```
+Active Players → Copy User IDs → Broadcast DM → paste → validasi & dedup
+   → nama + pesan → tombol Partnership (wajib) + custom link → Preview → Confirm
+   → campaign `queued` + daftar penerima
+        │  bot poll tiap ~30 dtk (service_role)
+        ▼
+   running → kirim DM (jeda ≥800ms, retry 1× untuk error sesaat)
+   → status per User ID (success/failed/skipped) + progress
+   → completed  →  terlihat di Campaign History
+```
+
+Penerima broadcast menekan tombol **Partnership** → mendarat di `/partnership`.
+
+### Tabel (bagian 10 schema)
+
+| Tabel | Peran |
+|---|---|
+| `partnership_products` | Katalog + **harga** (dikelola CMS → tampil di halaman publik) |
+| `partnership_campaigns` | Campaign persistent: pesan, tombol, counter, status, log |
+| `partnership_recipients` | Status pengiriman **per User ID** |
+| `partnership_links` | Custom link opsional untuk tombol broadcast |
+| `partnership_settings` | Partnership URL & Apply URL |
+| `partnership_page` | Seluruh konten halaman publik (jsonb) |
+| `partnership_templates` | Template pesan yang bisa dipakai ulang |
+
+Fungsi `next_partnership_broadcast_id()` membuat ID harian `PTN-YYYYMMDD-NNNN`.
+
+### Keamanan & konsen
+
+- **RLS**: admin baca; `owner`/`admin` kelola. Penerima hanya boleh **di-INSERT** dengan status
+  `pending` — status pengiriman **tidak bisa diubah dari browser**, hanya bot (service_role), supaya
+  laporan pengiriman tidak bisa dipalsukan.
+- **Konsen dihormati di jalur mana pun**: bot melewati pemain yang `dm_opt_in=false` atau diblokir,
+  walau User ID-nya diketik manual oleh admin — ditandai `skipped`, bukan `failed`.
+- URL tombol wajib http(s) (menutup `javascript:`), maksimal 5 tombol per pesan (batas Discord).
+- **Cancel**: panel menyetel `cancel_requested`; bot berhenti di sela pengiriman dan menandai sisa
+  penerima `skipped`. Pesan yang sudah terkirim tentu tidak bisa ditarik.
+- Bot melanjutkan campaign `running` setelah restart (penerima `pending` diproses lagi).
+
+### Harga & konten publik → build
+
+`scripts/sync-content.mjs` menarik `partnership_products` (yang `enabled`), `partnership_settings`,
+`partnership_links`, dan `partnership_page.content` ke `src/data/synced/partnership.json`; halaman
+publik meng-`import` file itu. **Perubahan harga tampil setelah build ulang** (terjadwal, atau
+jalankan **Actions → Sync konten dari Supabase** untuk segera).
+
+Harga yang dibiarkan kosong disimpan `null` dan tampil **"—"** + "Hubungi kami untuk penawaran" —
+sengaja dibedakan dari `0` supaya tidak terbaca "gratis".
+
+### CTA → WhatsApp official
+
+Tombol tiap produk membuka WhatsApp official dengan pesan terisi (produk + kategori; **tanpa harga
+dan tanpa ID**). Nomornya diambil dari `whatsappNumber` di `src/data/support.ts` (env
+`PUBLIC_SUPPORT_WHATSAPP`) — tidak pernah ditulis ulang di komponen. Karena pesannya statis per
+produk, tautannya dibangun saat build sehingga halaman publik **tidak butuh JavaScript**.
+
+Per produk, admin bisa mengganti tujuan tombol ke URL kustom (`cta_mode = url`, mis. Google Form).
+
+### SEO
+
+`/partnership` memasang structured data khusus lewat slot `head` di `BaseLayout`:
+`Service` + **`Offer` per produk** (harga dari CMS → berpeluang rich result harga), `FAQPage`
+(berpeluang accordion di hasil pencarian), dan `BreadcrumbList`. SEO title/description/OG image
+juga diatur dari CMS. Halaman ini masuk `nav` dan sitemap.

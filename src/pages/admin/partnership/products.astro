@@ -1,0 +1,233 @@
+---
+// Partnership — Produk & Harga.
+//
+// Inilah yang mengendalikan harga di halaman publik /partnership. Perubahan di
+// sini tersimpan ke Supabase, lalu ditarik saat build (scripts/sync-content.mjs)
+// sehingga halaman publik menampilkan harga terbaru tanpa mengubah kode.
+//
+// Dua produk bawaan: Broadcast via DM dan Broadcast via Lobby. Struktur tabelnya
+// terbuka, jadi produk lain bisa ditambah nanti.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+---
+
+<AdminLayout title="Produk & Harga" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Produk & Harga"
+    description="Atur produk yang dijual beserta harganya. Nilai di sini yang tampil di halaman publik."
+  />
+  <PartnershipTabs active="products" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
+    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Perubahan tersimpan ke database saat kamu menekan Simpan, lalu tampil di
+        <strong>/partnership</strong> setelah website di-build ulang (berjalan otomatis terjadwal).
+        Harga yang dibiarkan kosong akan tampil sebagai <strong>—</strong>, bukan "Rp 0".
+      </p>
+    </div>
+
+    <form id="form-produk" class="space-y-8">
+      <div id="produk-body" class="space-y-8"></div>
+
+      <div id="produk-aksi" class="hidden flex-wrap items-center gap-3">
+        <button type="submit" id="btn-simpan"
+          class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+          Simpan perubahan
+        </button>
+        <p id="produk-pesan" class="text-sm" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { formatPrice } from '@data/partnership';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    void muat();
+    document.getElementById('form-produk')!.addEventListener('submit', onSimpan);
+  });
+
+  async function muat() {
+    const body = document.getElementById('produk-body')!;
+    body.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+
+    const { data, error } = await supabase
+      .from('partnership_products')
+      .select('key, name, tagline, description, channel, price, currency, price_unit, price_note, features, badge, cta_label, cta_mode, cta_url, enabled, sort')
+      .order('sort', { ascending: true });
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || data.length === 0) {
+      body.innerHTML = stateBlock('empty', 'Belum ada produk. Jalankan supabase/schema.sql terbaru.');
+      return;
+    }
+
+    body.innerHTML = data.map(kartu).join('');
+    document.getElementById('produk-aksi')!.classList.remove('hidden');
+
+    if (!bolehEdit) {
+      body.querySelectorAll('input, textarea, select').forEach((n) => ((n as HTMLInputElement).disabled = true));
+      const btn = document.getElementById('btn-simpan') as HTMLButtonElement;
+      btn.disabled = true;
+      document.getElementById('produk-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
+    }
+  }
+
+  function kartu(p: any): string {
+    const fitur = Array.isArray(p.features) ? p.features.join('\n') : '';
+    const f = (nama: string, label: string, isi: string, bantuan = '') => `
+      <div>
+        <label class="block text-sm font-medium mb-1.5" for="${esc(p.key)}-${esc(nama)}">${esc(label)}</label>
+        ${isi}
+        ${bantuan ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(bantuan)}</p>` : ''}
+      </div>`;
+
+    const teks = (nama: string, nilai: string, extra = '') =>
+      `<input id="${esc(p.key)}-${esc(nama)}" data-key="${esc(p.key)}" data-field="${esc(nama)}" value="${esc(nilai ?? '')}" ${extra} class="${INPUT}" />`;
+
+    return `
+      <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="font-display text-lg font-semibold tracking-tightest">${esc(p.name)}</h2>
+            <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(p.key)} · channel: ${esc(p.channel)}</p>
+          </div>
+          <label class="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" data-key="${esc(p.key)}" data-field="enabled" ${p.enabled ? 'checked' : ''}
+              class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+            Tampilkan di halaman publik
+          </label>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${f('name', 'Nama produk', teks('name', p.name, 'maxlength="80"'))}
+          ${f('badge', 'Badge', teks('badge', p.badge, 'maxlength="30" placeholder="mis. Terpopuler"'), 'Kosongkan bila tidak perlu.')}
+        </div>
+
+        ${f('tagline', 'Tagline', teks('tagline', p.tagline, 'maxlength="120"'), 'Satu baris singkat di bawah nama produk.')}
+
+        ${f('description', 'Deskripsi',
+          `<textarea id="${esc(p.key)}-description" data-key="${esc(p.key)}" data-field="description" rows="3" maxlength="600" class="${INPUT}">${esc(p.description ?? '')}</textarea>`)}
+
+        <div class="grid gap-4 sm:grid-cols-3">
+          ${f('price', 'Harga', teks('price', p.price ?? '', 'type="number" min="0" step="1000" placeholder="kosong = —"'), 'Kosong → tampil "—".')}
+          ${f('currency', 'Mata uang', teks('currency', p.currency ?? 'IDR', 'maxlength="8"'))}
+          ${f('price_unit', 'Satuan harga', teks('price_unit', p.price_unit, 'maxlength="40" placeholder="per campaign"'))}
+        </div>
+
+        ${f('price_note', 'Catatan harga', teks('price_note', p.price_note, 'maxlength="160" placeholder="mis. Harga dapat menyesuaikan volume"'))}
+
+        ${f('features', 'Fitur (satu per baris)',
+          `<textarea id="${esc(p.key)}-features" data-key="${esc(p.key)}" data-field="features" rows="4" class="${INPUT}">${esc(fitur)}</textarea>`,
+          'Ditampilkan sebagai daftar bullet di kartu produk.')}
+
+        <div class="grid gap-4 sm:grid-cols-3">
+          ${f('cta_label', 'Label tombol', teks('cta_label', p.cta_label, 'maxlength="40"'))}
+          ${f('cta_mode', 'Tujuan tombol',
+            `<select id="${esc(p.key)}-cta_mode" data-key="${esc(p.key)}" data-field="cta_mode" class="${INPUT}">
+               <option value="whatsapp" ${p.cta_mode === 'whatsapp' ? 'selected' : ''}>WhatsApp official</option>
+               <option value="url" ${p.cta_mode === 'url' ? 'selected' : ''}>URL kustom</option>
+             </select>`,
+            'WhatsApp: pesan otomatis terisi nama produk & kategori.')}
+          ${f('cta_url', 'URL kustom', teks('cta_url', p.cta_url, 'type="url" placeholder="dipakai bila mode URL"'))}
+        </div>
+
+        <p class="text-xs text-ink-500 dark:text-cream-300/60">
+          Pratinjau harga: <strong data-preview="${esc(p.key)}">${esc(formatPrice(p.price, p.currency))}</strong>
+          ${p.price_unit ? esc(' ' + p.price_unit) : ''}
+        </p>
+      </section>`;
+  }
+
+  async function onSimpan(e: Event) {
+    e.preventDefault();
+    if (!bolehEdit) return;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const btn = document.getElementById('btn-simpan') as HTMLButtonElement;
+    const pesan = document.getElementById('produk-pesan')!;
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan…';
+    pesan.textContent = '';
+    pesan.className = 'text-sm';
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    // Kumpulkan field per produk.
+    const perProduk = new Map<string, Record<string, any>>();
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[data-key][data-field]').forEach((n) => {
+      const key = n.dataset.key!;
+      const field = n.dataset.field!;
+      if (!perProduk.has(key)) perProduk.set(key, {});
+      const bucket = perProduk.get(key)!;
+
+      if (field === 'enabled') {
+        bucket.enabled = (n as HTMLInputElement).checked;
+      } else if (field === 'price') {
+        const v = n.value.trim();
+        // Kosong disimpan sebagai NULL → halaman publik menampilkan "—",
+        // bukan "Rp 0" yang terbaca gratis.
+        bucket.price = v === '' ? null : Number(v);
+      } else if (field === 'features') {
+        bucket.features = n.value.split('\n').map((s) => s.trim()).filter(Boolean);
+      } else {
+        bucket[field] = n.value.trim();
+      }
+    });
+
+    // Validasi ringan sebelum kirim.
+    for (const [key, patch] of perProduk) {
+      if (patch.price !== null && patch.price !== undefined && (!Number.isFinite(patch.price) || patch.price < 0)) {
+        pesan.textContent = `Harga produk "${key}" harus angka ≥ 0.`;
+        pesan.className = 'text-sm text-red-600 dark:text-red-400';
+        btn.disabled = false;
+        btn.textContent = 'Simpan perubahan';
+        return;
+      }
+      if (patch.cta_mode === 'url' && !patch.cta_url) {
+        pesan.textContent = `Produk "${key}" memakai mode URL tapi URL-nya kosong.`;
+        pesan.className = 'text-sm text-red-600 dark:text-red-400';
+        btn.disabled = false;
+        btn.textContent = 'Simpan perubahan';
+        return;
+      }
+    }
+
+    const hasil = await Promise.all(
+      [...perProduk.entries()].map(([key, patch]) =>
+        supabase.from('partnership_products')
+          .update({ ...patch, updated_at: new Date().toISOString(), updated_by: uid })
+          .eq('key', key)),
+    );
+
+    const gagal = hasil.find((r) => r.error);
+    if (gagal?.error) {
+      pesan.textContent = pesanError(gagal.error);
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+    } else {
+      pesan.textContent = 'Tersimpan. Harga baru tampil di /partnership setelah build berikutnya.';
+      pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+      void muat();
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Simpan perubahan';
+  }
+</script>

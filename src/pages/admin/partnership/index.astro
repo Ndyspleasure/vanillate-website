@@ -1,0 +1,137 @@
+---
+// Partnership — Overview.
+//
+// Ringkasan campaign: jumlah campaign, yang sedang jalan, total penerima, dan
+// hasil pengiriman. Angka dibaca langsung dari Supabase saat halaman dibuka.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+import { url } from '@utils/url';
+
+const kartu = [
+  { key: 'total',     label: 'Total Campaign',  hint: 'Seluruh campaign yang pernah dibuat' },
+  { key: 'aktif',     label: 'Campaign Aktif',  hint: 'Sedang mengantre atau berjalan' },
+  { key: 'recipient', label: 'Total Recipient', hint: 'Akumulasi target seluruh campaign' },
+  { key: 'success',   label: 'Total Success',   hint: 'Pesan berhasil terkirim' },
+  { key: 'failed',    label: 'Total Failed',    hint: 'Gagal terkirim (DM tertutup, dll)' },
+];
+---
+
+<AdminLayout title="Partnership" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Overview"
+    description="Ringkasan campaign Partnership dan hasil pengirimannya."
+  />
+  <PartnershipTabs active="overview" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <section>
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        {kartu.map((k) => (
+          <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+            <p class="font-display text-3xl font-semibold tabular-nums" data-stat={k.key}>—</p>
+            <p class="text-sm font-medium mt-1">{k.label}</p>
+            <p class="text-xs text-ink-500 dark:text-cream-300/60 mt-0.5">{k.hint}</p>
+          </div>
+        ))}
+      </div>
+      <p id="stat-note" class="hidden mt-3 text-xs text-ink-500 dark:text-cream-300/60"></p>
+    </section>
+
+    <section class="space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Campaign terbaru</h2>
+        <a href={url('/admin/partnership/history')} class="text-sm font-medium text-amber-700 dark:text-amber-400 hover:underline">Lihat semua →</a>
+      </div>
+      <div id="terbaru" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    </section>
+
+    <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Alur singkat: <strong>Active Players</strong> → Copy User IDs →
+        <strong>Broadcast DM</strong> → paste, tulis pesan, Preview → Confirm.
+        Bot yang mengirim DM-nya, jadi progres akan muncul di Campaign History.
+      </p>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { statusBadge } from '@/lib/partnership-ui';
+  import { url } from '@/utils/url';
+
+  document.addEventListener('admin:ready', () => {
+    void muat();
+  });
+
+  async function muat() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('partnership_campaigns')
+      .select('broadcast_id, name, category, status, target_total, success_count, failed_count, created_at')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    const note = document.getElementById('stat-note')!;
+    const wadah = document.getElementById('terbaru')!;
+
+    if (error) {
+      note.textContent = pesanError(error);
+      note.classList.remove('hidden');
+      wadah.innerHTML = stateBlock('error', pesanError(error));
+      return;
+    }
+
+    const rows = data ?? [];
+    const aktif = rows.filter((r: any) => r.status === 'queued' || r.status === 'running').length;
+    const jum = (k: string) => rows.reduce((n: number, r: any) => n + (Number(r[k]) || 0), 0);
+
+    const nilai: Record<string, number> = {
+      total: rows.length,
+      aktif,
+      recipient: jum('target_total'),
+      success: jum('success_count'),
+      failed: jum('failed_count'),
+    };
+    for (const [k, v] of Object.entries(nilai)) {
+      const el = document.querySelector(`[data-stat="${k}"]`);
+      if (el) el.textContent = fmtAngka(v);
+    }
+
+    if (rows.length === 0) {
+      wadah.innerHTML = stateBlock('empty', 'Belum ada campaign. Mulai dari tab Broadcast DM.');
+      return;
+    }
+
+    wadah.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
+            <tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+              <th class="px-5 py-3 font-medium">ID</th>
+              <th class="px-5 py-3 font-medium">Nama</th>
+              <th class="px-5 py-3 font-medium">Target</th>
+              <th class="px-5 py-3 font-medium">Status</th>
+              <th class="px-5 py-3 font-medium">Dibuat</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.slice(0, 5).map((r: any) => `
+              <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+                <td class="px-5 py-3"><a class="font-mono text-xs hover:underline" href="${esc(url('/admin/partnership/history'))}?id=${encodeURIComponent(r.broadcast_id)}">${esc(r.broadcast_id)}</a></td>
+                <td class="px-5 py-3">${esc(r.name)}</td>
+                <td class="px-5 py-3 tabular-nums">${esc(fmtAngka(r.target_total))}</td>
+                <td class="px-5 py-3">${statusBadge(r.status)}</td>
+                <td class="px-5 py-3 text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(fmtWaktu(r.created_at))}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+</script>

@@ -1,0 +1,238 @@
+---
+// Partnership — Active Players.
+//
+// Mengambil pemain paling aktif dari tabel `bot_players` (diisi bot), lalu
+// menyajikan User ID-nya siap-copy. Tujuannya satu alur cepat:
+//   Active Players → Copy User IDs → Broadcast DM → Paste
+//
+// PRIVASI: yang ditampilkan hanya Discord ID + nama tampilan + angka progres,
+// sesuai batasan yang sudah berlaku di halaman Pemain. Jangan menambah data
+// pribadi lain ke sini.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+
+const jumlahOpsi = [
+  { value: '100', label: 'Top 100' },
+  { value: '200', label: 'Top 200' },
+  { value: '500', label: 'Top 500' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const rentangOpsi = [
+  { value: '7', label: '7 hari terakhir' },
+  { value: '30', label: '30 hari terakhir' },
+  { value: 'all', label: 'Semua waktu' },
+  { value: 'custom', label: 'Custom range' },
+];
+
+const urutOpsi = [
+  { value: 'last_seen_at', label: 'Paling baru bermain' },
+  { value: 'games_played', label: 'Paling banyak bermain' },
+  { value: 'wins', label: 'Paling banyak menang' },
+];
+---
+
+<AdminLayout title="Active Players" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Active Players"
+    description="Ambil pemain paling aktif, lalu salin User ID-nya untuk dipakai di Broadcast DM."
+  />
+  <PartnershipTabs active="players" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-6 max-w-4xl">
+    <div class="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        <strong>Data pribadi.</strong> Daftar ini untuk keperluan campaign internal.
+        Jangan membagikan Discord ID pemain ke luar tim.
+      </p>
+    </div>
+
+    <!-- FILTER -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <label for="f-jumlah" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Jumlah</label>
+        <select id="f-jumlah" class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
+          {jumlahOpsi.map((o) => <option value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
+      <div id="wrap-custom-jumlah" class="hidden">
+        <label for="f-jumlah-custom" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Jumlah custom</label>
+        <input id="f-jumlah-custom" type="number" min="1" max="2000" value="250"
+          class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+      </div>
+      <div>
+        <label for="f-rentang" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Rentang aktif</label>
+        <select id="f-rentang" class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
+          {rentangOpsi.map((o) => <option value={o.value} selected={o.value === '30'}>{o.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label for="f-urut" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Urutkan</label>
+        <select id="f-urut" class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
+          {urutOpsi.map((o) => <option value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
+    </div>
+
+    <div id="wrap-custom-range" class="hidden grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="f-dari" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Dari tanggal</label>
+        <input id="f-dari" type="date" class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+      </div>
+      <div>
+        <label for="f-sampai" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Sampai tanggal</label>
+        <input id="f-sampai" type="date" class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="button" id="btn-ambil"
+        class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 transition-colors">
+        Ambil pemain
+      </button>
+      <button type="button" id="btn-copy"
+        class="hidden rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2.5 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+        Copy User IDs
+      </button>
+      <p id="pesan" class="text-sm" role="status" aria-live="polite"></p>
+    </div>
+
+    <!-- HASIL -->
+    <div id="hasil-wrap" class="hidden space-y-3">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">User IDs</h2>
+        <p id="hasil-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
+      </div>
+      <textarea id="hasil" readonly rows="12" spellcheck="false"
+        class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-3 font-mono text-xs outline-none focus:border-amber-500"></textarea>
+      <p class="text-xs text-ink-500 dark:text-cream-300/60">
+        Satu User ID per baris — siap ditempel ke tab <strong>Broadcast DM</strong>.
+      </p>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { pesanError } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  document.addEventListener('admin:ready', () => {
+    // Tampilkan input tambahan hanya saat opsinya dipilih.
+    el<HTMLSelectElement>('f-jumlah').addEventListener('change', (e) => {
+      const custom = (e.target as HTMLSelectElement).value === 'custom';
+      el('wrap-custom-jumlah').classList.toggle('hidden', !custom);
+    });
+    el<HTMLSelectElement>('f-rentang').addEventListener('change', (e) => {
+      const custom = (e.target as HTMLSelectElement).value === 'custom';
+      el('wrap-custom-range').classList.toggle('hidden', !custom);
+      el('wrap-custom-range').classList.toggle('grid', custom);
+    });
+
+    el('btn-ambil').addEventListener('click', () => void ambil());
+    el('btn-copy').addEventListener('click', () => void salin());
+  });
+
+  function batasJumlah(): number {
+    const pilih = el<HTMLSelectElement>('f-jumlah').value;
+    if (pilih !== 'custom') return parseInt(pilih, 10);
+    const n = parseInt(el<HTMLInputElement>('f-jumlah-custom').value, 10);
+    // Batas atas menjaga query & clipboard tetap wajar.
+    return Math.min(Math.max(Number.isFinite(n) ? n : 100, 1), 2000);
+  }
+
+  /** Batas bawah waktu aktif, atau null bila tanpa batas. */
+  function sejakIso(): string | null {
+    const r = el<HTMLSelectElement>('f-rentang').value;
+    if (r === 'all') return null;
+    if (r === 'custom') {
+      const dari = el<HTMLInputElement>('f-dari').value;
+      return dari ? new Date(dari + 'T00:00:00').toISOString() : null;
+    }
+    const hari = parseInt(r, 10) || 30;
+    return new Date(Date.now() - hari * 86400000).toISOString();
+  }
+
+  function sampaiIso(): string | null {
+    if (el<HTMLSelectElement>('f-rentang').value !== 'custom') return null;
+    const sampai = el<HTMLInputElement>('f-sampai').value;
+    // Akhir hari supaya tanggal yang dipilih ikut terhitung.
+    return sampai ? new Date(sampai + 'T23:59:59').toISOString() : null;
+  }
+
+  async function ambil() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const btn = el<HTMLButtonElement>('btn-ambil');
+    const pesan = el('pesan');
+    btn.disabled = true;
+    btn.textContent = 'Mengambil…';
+    pesan.textContent = '';
+    pesan.className = 'text-sm';
+
+    const limit = batasJumlah();
+    const urut = el<HTMLSelectElement>('f-urut').value;
+
+    let q = supabase
+      .from('bot_players')
+      .select('player_id, display_name, games_played, wins, last_seen_at, is_banned')
+      .eq('is_banned', false)
+      .order(urut, { ascending: false, nullsFirst: false })
+      .limit(limit);
+
+    const sejak = sejakIso();
+    if (sejak) q = q.gte('last_seen_at', sejak);
+    const sampai = sampaiIso();
+    if (sampai) q = q.lte('last_seen_at', sampai);
+
+    const { data, error } = await q;
+
+    btn.disabled = false;
+    btn.textContent = 'Ambil pemain';
+
+    if (error) {
+      pesan.textContent = pesanError(error);
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+    if (!data || data.length === 0) {
+      pesan.textContent = 'Tidak ada pemain yang cocok dengan filter ini.';
+      pesan.className = 'text-sm text-ink-500 dark:text-cream-300/60';
+      el('hasil-wrap').classList.add('hidden');
+      el('btn-copy').classList.add('hidden');
+      return;
+    }
+
+    // `player_id` di bot_players memang berisi Discord User ID (lihat websiteSync).
+    const ids = data.map((r: any) => String(r.player_id)).filter(Boolean);
+    el<HTMLTextAreaElement>('hasil').value = ids.join('\n');
+    el('hasil-info').textContent = `${fmtAngka(ids.length)} User ID`;
+    el('hasil-wrap').classList.remove('hidden');
+    el('btn-copy').classList.remove('hidden');
+    pesan.textContent = '';
+  }
+
+  async function salin() {
+    const teks = el<HTMLTextAreaElement>('hasil').value;
+    if (!teks) return;
+    const pesan = el('pesan');
+    try {
+      await navigator.clipboard.writeText(teks);
+      pesan.textContent = 'User ID tersalin. Tempel di tab Broadcast DM.';
+      pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+    } catch {
+      // Clipboard API bisa ditolak (izin/konteks non-HTTPS). Pilih teksnya
+      // supaya admin tetap bisa menyalin manual — jangan berhenti tanpa jalan.
+      const ta = el<HTMLTextAreaElement>('hasil');
+      ta.focus();
+      ta.select();
+      pesan.textContent = 'Tidak bisa menyalin otomatis. Teks sudah dipilih — tekan Ctrl/Cmd + C.';
+      pesan.className = 'text-sm text-amber-700 dark:text-amber-400';
+    }
+  }
+</script>
