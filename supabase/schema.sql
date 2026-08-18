@@ -560,3 +560,44 @@ drop policy if exists "admin baca word_queue" on public.bot_word_queue;
 create policy "admin baca word_queue" on public.bot_word_queue
   for select to authenticated using (public.is_admin());
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 9. KATEGORI SETTING — hierarki Kategori → Item yang data-driven
+-- ───────────────────────────────────────────────────────────────────────────
+-- Sebelumnya label/urutan/ikon kategori di-hardcode di frontend, sehingga
+-- kategori/item baru yang ditambah lewat DB tidak ikut terorganisir. Tabel ini
+-- menjadikan metadata kategori sebagai DATA: panel /admin/kontrol membacanya
+-- lalu merender satu section per kategori (masing-masing dengan daftar item-nya
+-- sendiri). Menambah kategori baru = cukup INSERT satu baris di sini; setting
+-- (bot_settings.category) yang menunjuk ke `key` otomatis mengelompok di bawahnya.
+--
+-- `icon` menyimpan NAMA ikon (Lucide), bukan markup — frontend memetakannya ke
+-- SVG lewat registry aman (mencegah HTML sembarang dari DB). Nama tak dikenal
+-- jatuh ke ikon default.
+
+create table if not exists public.bot_setting_categories (
+  key         text primary key,
+  label       text not null,
+  description text,
+  icon        text,               -- nama ikon Lucide (mis. 'wrench'); bukan SVG mentah
+  sort        integer not null default 100
+);
+
+comment on table public.bot_setting_categories is
+  'Metadata kategori untuk bot_settings (hierarki Kategori → Item). Dibaca panel /admin. Bot tidak memakainya.';
+
+insert into public.bot_setting_categories (key, label, description, icon, sort) values
+  ('maintenance', 'Maintenance',        'Hentikan sementara permainan baru; jalur support tetap terbuka.', 'wrench',    10),
+  ('pengumuman',  'Pengumuman Discord', 'Pesan singkat yang tampil ke pemain di dalam bot.',               'megaphone', 20),
+  ('mode',        'Mode & Game',        'Nyalakan / matikan tiap mode permainan.',                          'gamepad',   30),
+  ('tunable',     'Tunable Gameplay',   'Nilai numerik permainan. Bot tetap membatasi ke rentang aman.',    'sliders',   40),
+  ('fitur',       'Fitur Sistem',       'Aktif / nonaktifkan subsistem bot.',                               'toggle',    50)
+on conflict (key) do nothing;
+
+alter table public.bot_setting_categories enable row level security;
+
+drop policy if exists "admin baca kategori setting" on public.bot_setting_categories;
+create policy "admin baca kategori setting" on public.bot_setting_categories
+  for select to authenticated using (public.is_admin());
+-- ═══════════════════════════════════════════════════════════════════════════

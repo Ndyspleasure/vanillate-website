@@ -426,8 +426,13 @@ sama dengan Website Sync — tanpa secret baru). Bila kosong, seluruh fitur diam
 
 ### Menambah aksi/setting baru
 
-- **Setting**: tambah baris di seed `bot_settings` (`supabase/schema.sql`) — otomatis
-  muncul di `/admin/kontrol`. Konsumsi di bot lewat `remoteConfig.getFlag/tunable`.
+- **Setting (item)**: tambah baris di seed `bot_settings` (`supabase/schema.sql`) dengan
+  kolom `category` menunjuk ke sebuah `key` di `bot_setting_categories` — otomatis muncul
+  sebagai item di bawah section kategori itu di `/admin/kontrol`. Konsumsi di bot lewat
+  `remoteConfig.getFlag/tunable`.
+- **Kategori**: tambah baris di `bot_setting_categories` (`key`, `label`, `description`,
+  `icon`, `sort`). Section baru langsung terbentuk — tampilannya **data-driven**, tak perlu
+  ubah frontend. `icon` = nama Lucide (mis. `wrench`); nama tak dikenal memakai ikon default.
 - **Aksi**: tambah entri form di `GRUP` (`src/pages/admin/operasi.astro`) + handler dengan
   `type` yang sama di `HANDLERS` (`src/services/remoteCommands.js`). Tidak perlu tabel baru.
 
@@ -437,6 +442,7 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 
 | Tabel | Peran |
 |---|---|
+| `bot_setting_categories` | Metadata kategori (label/deskripsi/ikon/urutan) — hierarki **Kategori → Item** yang data-driven di `/admin/kontrol` (bagian 9). |
 | `bot_settings_audit` | Riwayat perubahan setting (trigger otomatis: key, old→new, kapan). Tampil di `/admin/kontrol`. |
 | `bot_games` | Snapshot game aktif (di-upsert bot ~30 dtk, auto-bersih saat selesai) → `/admin/games`. |
 | `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
