@@ -165,6 +165,14 @@ function hargaAman(nilai) {
   return n;
 }
 
+/** Minimum order: bilangan bulat ≥ 0; sisanya null (dianggap tanpa minimum). */
+function minimumAman(nilai) {
+  if (nilai === null || nilai === undefined || String(nilai).trim() === '') return null;
+  const n = Number(nilai);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.floor(n);
+}
+
 function daftarTeks(nilai, maks = 12) {
   if (!Array.isArray(nilai)) return [];
   return nilai
@@ -177,7 +185,7 @@ async function syncPartnership() {
   let produkRaw, linkRaw, settingRaw, pageRaw;
   try {
     [produkRaw, linkRaw, settingRaw, pageRaw] = await Promise.all([
-      ambil('partnership_products?select=key,name,tagline,description,channel,price,currency,price_unit,price_note,features,badge,cta_label,cta_mode,cta_url,enabled,sort&enabled=is.true&order=sort.asc'),
+      ambil('partnership_products?select=key,name,tagline,description,channel,price,currency,price_unit,price_note,features,badge,cta_label,cta_mode,cta_url,enabled,sort,unit,min_quantity,info,terms&enabled=is.true&order=sort.asc'),
       ambil('partnership_links?select=label,url,enabled,sort&enabled=is.true&order=sort.asc'),
       ambil('partnership_settings?select=partnership_url,apply_url&id=eq.1'),
       ambil('partnership_page?select=content&id=eq.1'),
@@ -199,6 +207,12 @@ async function syncPartnership() {
     price: hargaAman(p.price),
     currency: String(p.currency ?? 'IDR').trim() || 'IDR',
     priceUnit: String(p.price_unit ?? '').trim(),
+    // Satuan & minimum order paket (mis. 100 Pemain / 15 Hari). Keduanya dari
+    // CMS; minimum dinormalisasi ke bilangan bulat ≥ 0, sisanya null.
+    unit: String(p.unit ?? '').trim(),
+    minQuantity: minimumAman(p.min_quantity),
+    info: String(p.info ?? '').trim(),
+    terms: String(p.terms ?? '').trim(),
     priceNote: String(p.price_note ?? '').trim(),
     features: daftarTeks(p.features),
     badge: String(p.badge ?? '').trim(),

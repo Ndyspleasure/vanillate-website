@@ -904,3 +904,121 @@ create policy "editor tambah recipients" on public.partnership_recipients
   for insert to authenticated
   with check (public.is_admin_editor() and status = 'pending');
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 11. PARTNERSHIP DI LOBBY BOT — slot partner, CTA, & satuan paket
+-- ───────────────────────────────────────────────────────────────────────────
+-- Bagian 10 menjual produk di halaman publik. Bagian ini memberi Partnership
+-- "panggung"-nya di dalam permainan: bot menampilkan **Dashboard Partnership**
+-- terpisah di bawah Dashboard Lobby, berisi daftar partner aktif + satu item
+-- CTA untuk mengajak pemain/pemilik server mengajukan kerja sama.
+--
+-- SEMUA teks, tombol, urutan, dan tanggal tayang dikelola dari CMS — bot hanya
+-- menampilkan. Tidak ada nama partner, harga, satuan, atau minimum order yang
+-- ditulis di kode bot.
+--
+-- Bot membaca tabel-tabel ini memakai service_role (mem-bypass RLS), sama
+-- seperti bot_settings. Panel admin membaca/menulisnya lewat RLS di bawah.
+
+-- 11a. Satuan & minimum order paket (kolom tambahan untuk katalog bagian 10)
+--      Broadcast DM  → satuan 'Pemain', minimum 100
+--      Broadcast Lobby → satuan 'Hari', minimum 15
+--      Angka & satuan TIDAK di-hardcode: keduanya kolom biasa yang bisa diubah
+--      dari CMS kapan pun tanpa menyentuh kode bot maupun website.
+alter table public.partnership_products add column if not exists unit         text;
+alter table public.partnership_products add column if not exists min_quantity integer;
+alter table public.partnership_products add column if not exists banner_url   text;
+alter table public.partnership_products add column if not exists info         text;
+alter table public.partnership_products add column if not exists terms        text;
+
+comment on column public.partnership_products.unit is
+  'Satuan paket, mis. "Pemain" (Broadcast DM) atau "Hari" (Broadcast Lobby). Dipakai untuk menulis harga & minimum order.';
+comment on column public.partnership_products.min_quantity is
+  'Minimum order dalam satuan di atas (mis. 100 pemain / 15 hari). Bisa diubah dari CMS.';
+
+-- Backfill default HANYA bila masih kosong — tidak menimpa nilai yang sudah
+-- diatur admin (skema ini aman dijalankan berulang).
+update public.partnership_products
+   set unit = 'Pemain', min_quantity = coalesce(min_quantity, 100)
+ where key = 'broadcast_dm' and unit is null;
+update public.partnership_products
+   set unit = 'Hari', min_quantity = coalesce(min_quantity, 15)
+ where key = 'broadcast_lobby' and unit is null;
+
+-- 11b. Slot partner yang tampil di Dashboard Partnership (lobby bot)
+create table if not exists public.partnership_slots (
+  id            bigint generated always as identity primary key,
+  partner_name  text not null,                  -- nama partner / server
+  title         text,                           -- judul item (default: partner_name)
+  description   text,                           -- deskripsi singkat
+  emoji         text,                           -- ikon teks di depan item (mis. '🏆')
+  logo_url      text,                           -- thumbnail embed
+  banner_url    text,                           -- image besar embed
+  url           text,                           -- tautan utama partner
+  button_label  text,                           -- label tombol (kosong = tanpa tombol)
+  button_url    text,                           -- tujuan tombol (wajib http(s))
+  enabled       boolean not null default true,
+  sort          integer not null default 100,
+  start_at      timestamptz,                    -- mulai tayang (kosong = langsung)
+  end_at        timestamptz,                    -- berakhir (kosong = tanpa batas)
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  updated_by    uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.partnership_slots is
+  'Partner yang tampil sebagai item di Dashboard Partnership pada lobby bot. Dikelola dari /admin/partnership/lobby.';
+
+create index if not exists partnership_slots_aktif_idx
+  on public.partnership_slots (enabled, sort, start_at, end_at);
+
+-- 11c. Konfigurasi Dashboard Partnership + item CTA (satu baris, id = 1)
+--      Item CTA adalah BAGIAN DARI LIST (bukan footer) dan selalu tampil —
+--      termasuk saat belum ada partner sama sekali, supaya area ini tidak
+--      pernah terlihat kosong atau seperti fitur yang belum jadi.
+create table if not exists public.partnership_lobby (
+  id               smallint primary key default 1 check (id = 1),
+  enabled          boolean not null default true,
+  dashboard_title  text not null default '🤝 Partnership',
+  dashboard_note   text,                         -- keterangan kecil di bawah judul
+  cta_emoji        text not null default '🤝',
+  cta_title        text not null default 'Ingin server atau produkmu tampil di sini?',
+  cta_description  text not null default 'Hubungi tim kami untuk mengajukan kerja sama.',
+  cta_button_label text not null default '🤝 Order Partnership',
+  cta_button_url   text,                         -- kosong → pakai partnership_settings.partnership_url
+  -- Posisi item CTA di dalam list: 'last' (default) atau 'first'.
+  cta_position     text not null default 'last' check (cta_position in ('first', 'last')),
+  updated_at       timestamptz not null default now(),
+  updated_by       uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.partnership_lobby is
+  'Konfigurasi Dashboard Partnership di lobby bot + item CTA Order Partnership. Semua teks dapat diubah dari CMS.';
+
+insert into public.partnership_lobby (id) values (1) on conflict (id) do nothing;
+
+-- 11d. RLS — admin baca, editor kelola. Bot memakai service_role (bypass).
+alter table public.partnership_slots enable row level security;
+alter table public.partnership_lobby enable row level security;
+
+drop policy if exists "admin baca slots" on public.partnership_slots;
+create policy "admin baca slots" on public.partnership_slots
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor kelola slots" on public.partnership_slots;
+create policy "editor kelola slots" on public.partnership_slots
+  for all to authenticated
+  using (public.is_admin_editor())
+  with check (public.is_admin_editor());
+
+drop policy if exists "admin baca lobby cfg" on public.partnership_lobby;
+create policy "admin baca lobby cfg" on public.partnership_lobby
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor ubah lobby cfg" on public.partnership_lobby;
+create policy "editor ubah lobby cfg" on public.partnership_lobby
+  for update to authenticated
+  using (public.is_admin_editor())
+  with check (public.is_admin_editor());
+-- ═══════════════════════════════════════════════════════════════════════════

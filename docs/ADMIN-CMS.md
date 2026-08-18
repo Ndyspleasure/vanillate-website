@@ -447,6 +447,8 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 | `bot_games` | Snapshot game aktif (di-upsert bot ~30 dtk, auto-bersih saat selesai) → `/admin/games`. |
 | `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
 | `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
+| `partnership_slots` | Partner yang tampil di **Dashboard Partnership** pada lobby bot → `/admin/partnership/lobby` (bagian 11). |
+| `partnership_lobby` | Judul dashboard + seluruh teks & posisi item **Order Partnership** (bagian 11). |
 
 Tambahan lain:
 - **Penjadwalan**: setting `maintenance_start_at`/`maintenance_end_at` (maintenance efektif =
@@ -550,3 +552,32 @@ Per produk, admin bisa mengganti tujuan tombol ke URL kustom (`cta_mode = url`, 
 `Service` + **`Offer` per produk** (harga dari CMS → berpeluang rich result harga), `FAQPage`
 (berpeluang accordion di hasil pencarian), dan `BreadcrumbList`. SEO title/description/OG image
 juga diatur dari CMS. Halaman ini masuk `nav` dan sitemap.
+
+---
+
+## 12. Partnership di Lobby Bot
+
+Selain halaman publik `/partnership`, Partnership punya "panggung" di dalam permainan:
+bot menampilkan **Dashboard Partnership** sebagai pesan **terpisah** tepat di bawah
+Dashboard Lobby. Semua isinya dikelola dari `/admin/partnership/lobby` — tidak ada
+nama partner, harga, satuan, atau minimum order yang ditulis di kode bot.
+
+| Yang diatur | Di mana | Dipakai bot untuk |
+|---|---|---|
+| Partner (nama, emoji, judul, deskripsi, logo/banner, tautan, label+URL tombol, urutan, aktif, jadwal mulai/berakhir) | tab **Lobby Bot** → *Partner yang tampil* | item list di Dashboard Partnership |
+| Judul dashboard, catatan, dan seluruh teks item CTA + posisinya (`atas`/`bawah`) | tab **Lobby Bot** → *Dashboard & item CTA* | header + item CTA "Order Partnership" |
+| Satuan paket & minimum order (mis. **Pemain** min 100, **Hari** min 15) + harga | tab **Produk & Harga** | layar paket saat pemain menekan **Order Partnership** |
+
+**Perilaku yang dijamin**
+
+- Dashboard **selalu tampil**, bahkan tanpa partner sama sekali — item CTA menjadi
+  satu-satunya isi list, sehingga areanya tidak pernah terlihat kosong.
+- Item CTA adalah **bagian dari list** (field embed), **bukan footer**.
+- Partner otomatis berhenti tampil di luar jendela `start_at`–`end_at` atau saat
+  dinonaktifkan — tanpa perlu menghapusnya.
+- Harga yang belum diisi ditulis **"Hubungi kami untuk penawaran"**, bukan `Rp 0`.
+- Bot menyegarkan konten berkala (± 5 menit), jadi perubahan berlaku **tanpa restart
+  bot dan tanpa build website**.
+
+Rinciannya (struktur embed, tombol, `customId` `ptn_*`) ada di repo bot:
+`docs/lobbysambungkata.md` § 7b.

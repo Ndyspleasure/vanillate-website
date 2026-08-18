@@ -193,10 +193,19 @@ const jsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
             <div class="mt-5">
               <p class="font-display text-3xl font-semibold tracking-tightest">
                 {formatPrice(p.price, p.currency)}
-                {p.priceUnit && (
-                  <span class="ml-1.5 text-sm font-normal text-ink-500 dark:text-cream-300/60">{p.priceUnit}</span>
+                {/* Satuan paket dari CMS ("Pemain"/"Hari") lebih spesifik daripada
+                    priceUnit lama, jadi ia yang dipakai bila tersedia. */}
+                {(p.unit || p.priceUnit) && (
+                  <span class="ml-1.5 text-sm font-normal text-ink-500 dark:text-cream-300/60">
+                    {p.unit ? `/ ${p.unit}` : p.priceUnit}
+                  </span>
                 )}
               </p>
+              {p.minQuantity > 0 && (
+                <p class="mt-1 text-sm font-medium text-amber-700 dark:text-amber-400">
+                  Minimum {new Intl.NumberFormat('id-ID').format(p.minQuantity)}{p.unit ? ` ${p.unit}` : ''}
+                </p>
+              )}
               {p.priceNote && (
                 <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">{p.priceNote}</p>
               )}
@@ -209,6 +218,10 @@ const jsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
 
             {p.description && (
               <p class="mt-5 text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{p.description}</p>
+            )}
+
+            {p.info && (
+              <p class="mt-3 text-sm text-ink-600 dark:text-cream-200/80">{p.info}</p>
             )}
 
             {p.features?.length > 0 && (

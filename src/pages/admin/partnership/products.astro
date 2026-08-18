@@ -67,7 +67,7 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
 
     const { data, error } = await supabase
       .from('partnership_products')
-      .select('key, name, tagline, description, channel, price, currency, price_unit, price_note, features, badge, cta_label, cta_mode, cta_url, enabled, sort')
+      .select('key, name, tagline, description, channel, price, currency, price_unit, price_note, features, badge, cta_label, cta_mode, cta_url, enabled, sort, unit, min_quantity, banner_url, info, terms')
       .order('sort', { ascending: true });
 
     if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
@@ -131,6 +131,19 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
 
         ${f('price_note', 'Catatan harga', teks('price_note', p.price_note, 'maxlength="160" placeholder="mis. Harga dapat menyesuaikan volume"'))}
 
+        <!-- Satuan & minimum order paket. Dipakai halaman publik DAN Dashboard
+             Partnership di lobby bot. Keduanya kolom biasa → bebas diubah. -->
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${f('unit', 'Satuan paket', teks('unit', p.unit, 'maxlength="24" placeholder="mis. Pemain / Hari"'),
+            'Broadcast DM biasanya "Pemain"; Broadcast Lobby "Hari".')}
+          ${f('min_quantity', 'Minimum order', teks('min_quantity', p.min_quantity ?? '', 'type="number" min="0" step="1" placeholder="mis. 100"'),
+            'Ditulis bersama satuan, mis. "Minimum 100 Pemain". Kosong = tanpa minimum.')}
+        </div>
+
+        ${f('info', 'Informasi tambahan', teks('info', p.info, 'maxlength="200"'), 'Satu baris; tampil di daftar paket dalam bot.')}
+        ${f('terms', 'Ketentuan paket', teks('terms', p.terms, 'maxlength="200"'), 'Ringkas; tampil miring di bawah paket.')}
+        ${f('banner_url', 'Banner paket (URL)', teks('banner_url', p.banner_url, 'type="url" placeholder="https://…"'))}
+
         ${f('features', 'Fitur (satu per baris)',
           `<textarea id="${esc(p.key)}-features" data-key="${esc(p.key)}" data-field="features" rows="4" class="${INPUT}">${esc(fitur)}</textarea>`,
           'Ditampilkan sebagai daftar bullet di kartu produk.')}
@@ -148,7 +161,8 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
 
         <p class="text-xs text-ink-500 dark:text-cream-300/60">
           Pratinjau harga: <strong data-preview="${esc(p.key)}">${esc(formatPrice(p.price, p.currency))}</strong>
-          ${p.price_unit ? esc(' ' + p.price_unit) : ''}
+          ${p.unit ? esc(' / ' + p.unit) : (p.price_unit ? esc(' ' + p.price_unit) : '')}
+          ${Number(p.min_quantity) > 0 ? esc(` · Minimum ${p.min_quantity} ${p.unit ?? ''}`.trimEnd()) : ''}
         </p>
       </section>`;
   }
@@ -180,6 +194,9 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
 
       if (field === 'enabled') {
         bucket.enabled = (n as HTMLInputElement).checked;
+      } else if (field === 'min_quantity') {
+        const v = n.value.trim();
+        bucket.min_quantity = v === '' ? null : Number(v);
       } else if (field === 'price') {
         const v = n.value.trim();
         // Kosong disimpan sebagai NULL → halaman publik menampilkan "—",
@@ -196,6 +213,14 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
     for (const [key, patch] of perProduk) {
       if (patch.price !== null && patch.price !== undefined && (!Number.isFinite(patch.price) || patch.price < 0)) {
         pesan.textContent = `Harga produk "${key}" harus angka ≥ 0.`;
+        pesan.className = 'text-sm text-red-600 dark:text-red-400';
+        btn.disabled = false;
+        btn.textContent = 'Simpan perubahan';
+        return;
+      }
+      if (patch.min_quantity !== null && patch.min_quantity !== undefined
+          && (!Number.isInteger(patch.min_quantity) || patch.min_quantity < 0)) {
+        pesan.textContent = `Minimum order produk "${key}" harus bilangan bulat ≥ 0.`;
         pesan.className = 'text-sm text-red-600 dark:text-red-400';
         btn.disabled = false;
         btn.textContent = 'Simpan perubahan';

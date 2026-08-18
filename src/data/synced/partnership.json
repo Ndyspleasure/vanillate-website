@@ -23,7 +23,11 @@
       "badge": "Terpopuler",
       "ctaLabel": "Ajukan Partnership",
       "ctaMode": "whatsapp",
-      "ctaUrl": ""
+      "ctaUrl": "",
+      "unit": "Pemain",
+      "minQuantity": 100,
+      "info": "",
+      "terms": ""
     },
     {
       "key": "broadcast_lobby",
@@ -43,7 +47,11 @@
       "badge": "",
       "ctaLabel": "Ajukan Partnership",
       "ctaMode": "whatsapp",
-      "ctaUrl": ""
+      "ctaUrl": "",
+      "unit": "Hari",
+      "minQuantity": 15,
+      "info": "",
+      "terms": ""
     }
   ],
   "links": [],
