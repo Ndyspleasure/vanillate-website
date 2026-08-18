@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.40.0",
+    "date": "2026-08-18",
+    "title": "Dashboard Partnership di lobby",
+    "highlights": [
+      "🤝 Dashboard Partnership baru tampil di bawah lobby — lihat partner resmi Vanillate dan peluang kerja sama",
+      "📩 Pengumuman resmi dikirim lebih tertib; pemain yang menutup DM atau menolak pesan promosi tidak akan diganggu",
+      "🔄 Info partner selalu terbaru tanpa bot perlu di-restart"
+    ]
+  },
+  {
     "version": "2.39.0",
     "date": "2026-08-17",
     "title": "Peningkatan stabilitas & pengelolaan bot",
