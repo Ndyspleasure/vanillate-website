@@ -560,3 +560,493 @@ drop policy if exists "admin baca word_queue" on public.bot_word_queue;
 create policy "admin baca word_queue" on public.bot_word_queue
   for select to authenticated using (public.is_admin());
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 9. KATEGORI SETTING — hierarki Kategori → Item yang data-driven
+-- ───────────────────────────────────────────────────────────────────────────
+-- Sebelumnya label/urutan/ikon kategori di-hardcode di frontend, sehingga
+-- kategori/item baru yang ditambah lewat DB tidak ikut terorganisir. Tabel ini
+-- menjadikan metadata kategori sebagai DATA: panel /admin/kontrol membacanya
+-- lalu merender satu section per kategori (masing-masing dengan daftar item-nya
+-- sendiri). Menambah kategori baru = cukup INSERT satu baris di sini; setting
+-- (bot_settings.category) yang menunjuk ke `key` otomatis mengelompok di bawahnya.
+--
+-- `icon` menyimpan NAMA ikon (Lucide), bukan markup — frontend memetakannya ke
+-- SVG lewat registry aman (mencegah HTML sembarang dari DB). Nama tak dikenal
+-- jatuh ke ikon default.
+
+create table if not exists public.bot_setting_categories (
+  key         text primary key,
+  label       text not null,
+  description text,
+  icon        text,               -- nama ikon Lucide (mis. 'wrench'); bukan SVG mentah
+  sort        integer not null default 100
+);
+
+comment on table public.bot_setting_categories is
+  'Metadata kategori untuk bot_settings (hierarki Kategori → Item). Dibaca panel /admin. Bot tidak memakainya.';
+
+insert into public.bot_setting_categories (key, label, description, icon, sort) values
+  ('maintenance', 'Maintenance',        'Hentikan sementara permainan baru; jalur support tetap terbuka.', 'wrench',    10),
+  ('pengumuman',  'Pengumuman Discord', 'Pesan singkat yang tampil ke pemain di dalam bot.',               'megaphone', 20),
+  ('mode',        'Mode & Game',        'Nyalakan / matikan tiap mode permainan.',                          'gamepad',   30),
+  ('tunable',     'Tunable Gameplay',   'Nilai numerik permainan. Bot tetap membatasi ke rentang aman.',    'sliders',   40),
+  ('fitur',       'Fitur Sistem',       'Aktif / nonaktifkan subsistem bot.',                               'toggle',    50)
+on conflict (key) do nothing;
+
+alter table public.bot_setting_categories enable row level security;
+
+drop policy if exists "admin baca kategori setting" on public.bot_setting_categories;
+create policy "admin baca kategori setting" on public.bot_setting_categories
+  for select to authenticated using (public.is_admin());
+-- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 10. PARTNERSHIP SYSTEM
+-- ───────────────────────────────────────────────────────────────────────────
+-- Partnership adalah LAYANAN BERBAYAR: studio menjual dua produk broadcast ke
+-- partner — Broadcast via DM dan Broadcast via Lobby — dengan harga yang diatur
+-- dari CMS dan tampil otomatis di halaman publik /partnership.
+--
+-- Pembagian peran (sama seperti bagian 7):
+--   • Website (panel /admin) → membuat & mengelola campaign + katalog + konten.
+--   • Bot (service_role)     → SATU-SATUNYA yang mengirim DM, lalu menulis
+--                              balik progress & status per penerima.
+--
+-- Catatan cakupan: eksekusi otomatis tahap ini hanya `channel = 'dm'`. Kolom
+-- `channel` sudah ada sejak awal supaya delivery Lobby bisa ditambah nanti
+-- tanpa mengubah struktur. Produk Lobby tetap dijual & ditangani manual dulu.
+
+-- 10a. Katalog produk + HARGA (dikelola CMS, tampil di halaman publik)
+create table if not exists public.partnership_products (
+  key         text primary key,                 -- 'broadcast_dm' | 'broadcast_lobby' | dst
+  name        text not null,
+  tagline     text,
+  description text,
+  channel     text not null default 'dm' check (channel in ('dm', 'lobby')),
+  price       numeric(12,2) not null default 0 check (price >= 0),
+  currency    text not null default 'IDR',
+  price_unit  text,                              -- mis. 'per campaign'
+  price_note  text,                              -- mis. 'Harga dapat menyesuaikan volume'
+  features    jsonb not null default '[]'::jsonb,-- array string (bullet)
+  badge       text,                              -- mis. 'Terpopuler'
+  cta_label   text not null default 'Ajukan Partnership',
+  -- 'whatsapp' → tombol membuka WhatsApp official dengan pesan terisi.
+  -- 'url'      → tombol memakai cta_url (mis. Google Form).
+  cta_mode    text not null default 'whatsapp' check (cta_mode in ('whatsapp', 'url')),
+  cta_url     text,
+  enabled     boolean not null default true,
+  sort        integer not null default 100,
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.partnership_products is
+  'Katalog produk Partnership + harga. Dikelola dari /admin/partnership/products, ditarik saat build ke halaman publik /partnership.';
+
+insert into public.partnership_products
+  (key, name, tagline, description, channel, price, price_unit, features, badge, sort) values
+  ('broadcast_dm', 'Broadcast via DM',
+   'Pesan langsung ke DM pemain aktif.',
+   'Kami mengirim pesan promosi kamu langsung ke DM pemain yang masih aktif bermain. Cocok untuk pengumuman, promo, dan undangan komunitas.',
+   'dm', 0, 'per campaign',
+   '["Terkirim langsung ke DM pemain aktif","Target bisa dipilih (pemain paling aktif)","Tombol menuju link kamu","Laporan terkirim & gagal"]'::jsonb,
+   'Terpopuler', 10),
+  ('broadcast_lobby', 'Broadcast via Lobby',
+   'Tampil di lobby permainan.',
+   'Pesan kamu ditampilkan di lobby permainan sehingga terlihat oleh pemain saat mereka hendak bermain. Cocok untuk eksposur berulang.',
+   'lobby', 0, 'per campaign',
+   '["Tampil di lobby permainan","Terlihat berulang oleh pemain aktif","Tombol menuju link kamu"]'::jsonb,
+   null, 20)
+on conflict (key) do nothing;
+
+-- 10b. Campaign (persistent — tidak hilang setelah broadcast selesai)
+create table if not exists public.partnership_campaigns (
+  id              bigint generated always as identity primary key,
+  broadcast_id    text not null unique,          -- 'PTN-YYYYMMDD-NNNN'
+  name            text not null,
+  category        text not null default 'marketing',
+  channel         text not null default 'dm' check (channel in ('dm', 'lobby')),
+  status          text not null default 'draft'
+                    check (status in ('draft','scheduled','queued','running','completed','cancelled','failed')),
+  message         text not null,
+  partnership_url text,                          -- snapshot URL tombol Partnership
+  buttons         jsonb not null default '[]'::jsonb, -- snapshot [{label,url}]
+  created_by      uuid references public.admin_users(id) on delete set null,
+  target_total    integer not null default 0,
+  valid_count     integer not null default 0,
+  invalid_count   integer not null default 0,
+  sent_count      integer not null default 0,
+  success_count   integer not null default 0,
+  failed_count    integer not null default 0,
+  skipped_count   integer not null default 0,
+  scheduled_at    timestamptz,
+  started_at      timestamptz,
+  completed_at    timestamptz,
+  cancel_requested boolean not null default false,
+  error           text,
+  logs            jsonb not null default '[]'::jsonb,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+create index if not exists partnership_campaigns_status_idx  on public.partnership_campaigns (status, created_at);
+create index if not exists partnership_campaigns_recent_idx  on public.partnership_campaigns (created_at desc);
+create index if not exists partnership_campaigns_name_idx    on public.partnership_campaigns (name);
+
+comment on table public.partnership_campaigns is
+  'Campaign Partnership (persistent). Website membuat status queued; bot (service_role) mengeksekusi & menulis progress.';
+
+-- 10c. Status pengiriman per penerima
+create table if not exists public.partnership_recipients (
+  id          bigint generated always as identity primary key,
+  campaign_id bigint not null references public.partnership_campaigns(id) on delete cascade,
+  user_id     text not null,
+  status      text not null default 'pending'
+                check (status in ('pending','success','failed','skipped')),
+  error       text,
+  sent_at     timestamptz,
+  unique (campaign_id, user_id)
+);
+
+create index if not exists partnership_recipients_idx on public.partnership_recipients (campaign_id, status);
+
+-- 10d. Custom link tambahan untuk tombol broadcast
+create table if not exists public.partnership_links (
+  id         bigint generated always as identity primary key,
+  label      text not null,
+  url        text not null,
+  enabled    boolean not null default true,
+  sort       integer not null default 100,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references public.admin_users(id) on delete set null
+);
+
+-- 10e. Setting Partnership (satu baris)
+create table if not exists public.partnership_settings (
+  id              smallint primary key default 1 check (id = 1),
+  partnership_url text,     -- URL halaman publik untuk tombol wajib di broadcast
+  apply_url       text,     -- CTA 'Become a Partner' (opsional; kosong → WhatsApp)
+  updated_at      timestamptz not null default now(),
+  updated_by      uuid references public.admin_users(id) on delete set null
+);
+
+insert into public.partnership_settings (id, partnership_url)
+values (1, 'https://vanillate.id/partnership')
+on conflict (id) do nothing;
+
+-- 10f. Konten halaman publik (dikelola CMS, ditarik saat build)
+create table if not exists public.partnership_page (
+  id         smallint primary key default 1 check (id = 1),
+  content    jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references public.admin_users(id) on delete set null
+);
+
+insert into public.partnership_page (id, content) values (1, jsonb_build_object(
+  'hero', jsonb_build_object(
+    'title', 'Partnership',
+    'subtitle', 'Jangkau ribuan pemain aktif Discord lewat bot yang mereka mainkan setiap hari.',
+    'ctaLabel', 'Become a Partner'
+  ),
+  'intro', jsonb_build_array(
+    jsonb_build_object('title', 'Apa itu Partnership', 'text', 'Program kerja sama antara Vanillate Studio dan komunitas, kreator, atau brand yang ingin menjangkau pemain kami.'),
+    jsonb_build_object('title', 'Tujuan', 'text', 'Membantu partner memperkenalkan komunitas, produk, atau event mereka kepada audiens yang relevan dan aktif.'),
+    jsonb_build_object('title', 'Siapa yang dapat mengajukan', 'text', 'Komunitas Discord, kreator konten, penyelenggara event, dan brand yang produknya relevan bagi pemain kami.'),
+    jsonb_build_object('title', 'Ketentuan umum', 'text', 'Materi promosi wajib sopan, tidak menyesatkan, bukan penipuan, tanpa konten dewasa, dan mematuhi Ketentuan Layanan Discord.')
+  ),
+  'benefits', jsonb_build_array(
+    jsonb_build_object('title', 'Eksposur', 'text', 'Pesan kamu dilihat pemain yang benar-benar aktif.'),
+    jsonb_build_object('title', 'Dukungan promosi', 'text', 'Kami bantu menyusun pesan agar mudah dipahami pemain.'),
+    jsonb_build_object('title', 'Kolaborasi komunitas', 'text', 'Peluang kerja sama lintas komunitas Discord.'),
+    jsonb_build_object('title', 'Laporan campaign', 'text', 'Ringkasan jumlah terkirim dan gagal setelah campaign selesai.')
+  ),
+  'process', jsonb_build_array(
+    jsonb_build_object('n', '01', 'title', 'Submit', 'text', 'Ajukan partnership lewat WhatsApp official kami.'),
+    jsonb_build_object('n', '02', 'title', 'Review', 'text', 'Tim meninjau pengajuan dan kesesuaian materi.'),
+    jsonb_build_object('n', '03', 'title', 'Discussion', 'text', 'Diskusi bentuk kerja sama, jadwal, dan harga.'),
+    jsonb_build_object('n', '04', 'title', 'Collaboration', 'text', 'Campaign dijalankan dan laporannya kami sampaikan.')
+  ),
+  'faq', jsonb_build_array(
+    jsonb_build_object('q', 'Bagaimana cara mengajukan partnership?', 'a', 'Pilih produk yang kamu inginkan di halaman ini, lalu tombolnya akan membuka WhatsApp official kami dengan pesan yang sudah terisi.'),
+    jsonb_build_object('q', 'Apakah harga bisa menyesuaikan kebutuhan?', 'a', 'Bisa. Harga yang tertera adalah harga dasar; silakan diskusikan kebutuhan kamu lewat WhatsApp.'),
+    jsonb_build_object('q', 'Materi seperti apa yang tidak kami terima?', 'a', 'Konten menyesatkan, penipuan, judi, konten dewasa, dan apa pun yang melanggar Ketentuan Layanan Discord.')
+  ),
+  'cta', jsonb_build_object(
+    'title', 'Tertarik bekerja sama dengan kami?',
+    'text', 'Ceritakan rencana kamu, kami bantu menyesuaikan bentuk kerja samanya.',
+    'label', 'Become a Partner'
+  ),
+  'seo', jsonb_build_object(
+    'title', 'Partnership',
+    'description', 'Jangkau ribuan pemain aktif Discord lewat Vanillate. Pilih Broadcast via DM atau Broadcast via Lobby — ajukan partnership langsung lewat WhatsApp.',
+    'ogImage', ''
+  ),
+  'showStats', true
+))
+on conflict (id) do nothing;
+
+-- 10g. Template pesan broadcast (minimal, extensible)
+create table if not exists public.partnership_templates (
+  id         bigint generated always as identity primary key,
+  name       text not null,
+  message    text not null,
+  buttons    jsonb not null default '[]'::jsonb,
+  created_by uuid references public.admin_users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- 10h. Generator Broadcast ID harian: PTN-YYYYMMDD-NNNN
+create or replace function public.next_partnership_broadcast_id()
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  hari   text := to_char(now() at time zone 'Asia/Jakarta', 'YYYYMMDD');
+  urut   integer;
+begin
+  -- Hitung dari campaign hari ini, lalu ambil nomor berikutnya. Loop kecil
+  -- menjaga aman bila ada dua pembuatan hampir bersamaan (unique constraint
+  -- yang menjadi penentu akhir).
+  select coalesce(max(substring(broadcast_id from 14 for 4)::integer), 0) + 1
+    into urut
+  from public.partnership_campaigns
+  where broadcast_id like 'PTN-' || hari || '-%';
+
+  return 'PTN-' || hari || '-' || lpad(urut::text, 4, '0');
+end;
+$$;
+
+grant execute on function public.next_partnership_broadcast_id() to authenticated;
+
+-- 10i. RLS
+alter table public.partnership_products  enable row level security;
+alter table public.partnership_campaigns enable row level security;
+alter table public.partnership_recipients enable row level security;
+alter table public.partnership_links     enable row level security;
+alter table public.partnership_settings  enable row level security;
+alter table public.partnership_page      enable row level security;
+alter table public.partnership_templates enable row level security;
+
+-- Katalog produk, link, setting, konten, template: admin baca; editor kelola.
+-- Ditulis eksplisit (bukan loop dinamis) supaya konsisten dengan bagian lain
+-- file ini dan mudah dibaca saat di-review di SQL Editor.
+
+drop policy if exists "admin baca produk" on public.partnership_products;
+create policy "admin baca produk" on public.partnership_products
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola produk" on public.partnership_products;
+create policy "editor kelola produk" on public.partnership_products
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+drop policy if exists "admin baca links" on public.partnership_links;
+create policy "admin baca links" on public.partnership_links
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola links" on public.partnership_links;
+create policy "editor kelola links" on public.partnership_links
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+drop policy if exists "admin baca ptn settings" on public.partnership_settings;
+create policy "admin baca ptn settings" on public.partnership_settings
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola ptn settings" on public.partnership_settings;
+create policy "editor kelola ptn settings" on public.partnership_settings
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+drop policy if exists "admin baca ptn page" on public.partnership_page;
+create policy "admin baca ptn page" on public.partnership_page
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola ptn page" on public.partnership_page;
+create policy "editor kelola ptn page" on public.partnership_page
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+drop policy if exists "admin baca templates" on public.partnership_templates;
+create policy "admin baca templates" on public.partnership_templates
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola templates" on public.partnership_templates;
+create policy "editor kelola templates" on public.partnership_templates
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+-- Campaign: admin baca; editor boleh membuat & mengubah (mis. minta cancel).
+-- Progress/eksekusi ditulis bot lewat service_role (bypass RLS).
+drop policy if exists "admin baca campaigns" on public.partnership_campaigns;
+create policy "admin baca campaigns" on public.partnership_campaigns
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor buat campaigns" on public.partnership_campaigns;
+create policy "editor buat campaigns" on public.partnership_campaigns
+  for insert to authenticated with check (public.is_admin_editor());
+
+drop policy if exists "editor ubah campaigns" on public.partnership_campaigns;
+create policy "editor ubah campaigns" on public.partnership_campaigns
+  for update to authenticated
+  using (public.is_admin_editor())
+  with check (public.is_admin_editor());
+
+-- Recipients: admin baca; editor hanya boleh MENAMBAH target saat membuat
+-- campaign. Status pengiriman TIDAK boleh diubah dari browser — itu wewenang
+-- bot (service_role), supaya laporan pengiriman tidak bisa dipalsukan.
+drop policy if exists "admin baca recipients" on public.partnership_recipients;
+create policy "admin baca recipients" on public.partnership_recipients
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor tambah recipients" on public.partnership_recipients;
+create policy "editor tambah recipients" on public.partnership_recipients
+  for insert to authenticated
+  with check (public.is_admin_editor() and status = 'pending');
+-- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 10j. Top-up konten halaman publik (idempoten — tidak menimpa editan admin)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Bagian ini melengkapi `partnership_page.content` dengan section yang
+-- ditambahkan setelah seed awal: "Cocok untuk siapa", tabel perbandingan,
+-- contoh tampilan, dan ketentuan. Tiap key hanya ditulis bila BELUM ADA, jadi
+-- teks yang sudah diubah dari CMS tetap utuh dan skrip aman dijalankan ulang.
+update public.partnership_page
+   set content = content || jsonb_build_object('audience', '[{"title": "Komunitas & server Discord", "text": "Server yang ingin menambah member aktif dan dikenal pemain baru."}, {"title": "Kreator & streamer", "text": "Memperkenalkan channel, jadwal live, atau karya terbaru ke audiens yang relevan."}, {"title": "Brand & produk digital", "text": "Brand yang menyasar audiens muda pengguna Discord di Indonesia."}, {"title": "Event & turnamen", "text": "Penyelenggara yang butuh peserta atau penonton dalam waktu terbatas."}]'::jsonb)
+ where id = 1 and not (content ? 'audience');
+update public.partnership_page
+   set content = content || jsonb_build_object('compare', '{"title": "Bandingkan dua paket", "note": "Keduanya bisa dipakai bersamaan — DM untuk dorongan cepat, Lobby untuk kehadiran jangka panjang.", "columns": ["Broadcast via DM", "Broadcast via Lobby"], "rows": [{"label": "Cara tampil", "a": "Masuk ke DM pemain, satu per satu", "b": "Tampil di Dashboard Partnership pada lobby permainan"}, {"label": "Satuan paket", "a": "Per pemain yang ditargetkan", "b": "Per hari tayang"}, {"label": "Paling cocok untuk", "a": "Pengumuman & promo yang butuh perhatian segera", "b": "Pengenalan merek yang perlu dilihat berulang"}, {"label": "Sifat jangkauan", "a": "Sekali kirim, langsung dibaca", "b": "Terlihat setiap pemain membuka lobby"}, {"label": "Bisa ditargetkan?", "a": "Ya — dapat diarahkan ke pemain paling aktif", "b": "Tidak — tampil ke semua pemain yang membuka lobby"}, {"label": "Laporan", "a": "Jumlah terkirim, gagal, dan dilewati", "b": "Durasi tayang sesuai paket"}]}'::jsonb)
+ where id = 1 and not (content ? 'compare');
+update public.partnership_page
+   set content = content || jsonb_build_object('preview', '{"title": "Begini tampilannya nanti", "note": "Contoh tampilan. Teks, tautan, dan tombol mengikuti materi yang kamu kirim.", "items": [{"label": "Broadcast via DM", "title": "📢 Pengumuman", "text": "Pesanmu dikirim sebagai pesan resmi ke DM pemain, lengkap dengan tombol menuju tautanmu.", "button": "Kunjungi Server"}, {"label": "Broadcast via Lobby", "title": "🤝 Partnership", "text": "Namamu tampil sebagai item pada Dashboard Partnership setiap kali pemain membuka lobby permainan.", "button": "Cek Sekarang"}]}'::jsonb)
+ where id = 1 and not (content ? 'preview');
+update public.partnership_page
+   set content = content || jsonb_build_object('rules', '{"title": "Ketentuan singkat", "note": "Aturan ini menjaga kenyamanan pemain — sekaligus menjaga kampanyemu tetap efektif.", "allowed": ["Promosi server, komunitas, kreator, produk, dan event", "Materi berbahasa Indonesia atau Inggris", "Tautan ke Discord, media sosial, situs, atau halaman pendaftaran", "Revisi materi sebelum kampanye dijalankan"], "notAllowed": ["Judi, pinjaman ilegal, dan investasi berisiko tinggi", "Konten dewasa, kekerasan, atau ujaran kebencian", "Penipuan, phishing, atau tautan berbahaya", "Meniru identitas Vanillate atau pihak lain"]}'::jsonb)
+ where id = 1 and not (content ? 'rules');
+-- FAQ: hanya ditambah bila isinya MASIH seed awal (3 entri bawaan). Bila admin
+-- sudah menambah/mengubah FAQ, blok ini tidak menyentuhnya sama sekali.
+update public.partnership_page
+   set content = jsonb_set(content, '{faq}', (content -> 'faq') || '[{"q": "Berapa lama prosesnya sampai kampanye tayang?", "a": "Setelah materi dan paket disepakati, kampanye biasanya dijalankan dalam 1–3 hari kerja. Broadcast via Lobby mulai dihitung sejak hari pertama tayang."}, {"q": "Apakah saya dapat laporan hasilnya?", "a": "Ya. Untuk Broadcast via DM kami berikan rekap jumlah pesan terkirim, gagal, dan dilewati. Untuk Broadcast via Lobby kami sampaikan periode tayangnya."}, {"q": "Kenapa ada pemain yang dilewati saat Broadcast DM?", "a": "Pemain yang menutup DM atau memilih tidak menerima pesan promosi akan dilewati. Ini kami hormati agar bot tetap nyaman dipakai dan tidak dianggap spam."}, {"q": "Bisakah dua paket dijalankan bersamaan?", "a": "Bisa, dan biasanya hasilnya lebih baik: DM memberi dorongan awal, Lobby menjaga nama kamu tetap terlihat setelahnya."}, {"q": "Bagaimana cara pembayarannya?", "a": "Pembayaran dibicarakan langsung lewat WhatsApp official kami sebelum kampanye dijalankan, menyesuaikan paket dan volume yang kamu pilih."}]'::jsonb)
+ where id = 1
+   and jsonb_array_length(content -> 'faq') = 3
+   and (content -> 'faq') @> '[{"q": "Bagaimana cara mengajukan partnership?"}]'::jsonb;
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 11. PARTNERSHIP DI LOBBY BOT — slot partner, CTA, & satuan paket
+-- ───────────────────────────────────────────────────────────────────────────
+-- Bagian 10 menjual produk di halaman publik. Bagian ini memberi Partnership
+-- "panggung"-nya di dalam permainan: bot menampilkan **Dashboard Partnership**
+-- terpisah di bawah Dashboard Lobby, berisi daftar partner aktif + satu item
+-- CTA untuk mengajak pemain/pemilik server mengajukan kerja sama.
+--
+-- SEMUA teks, tombol, urutan, dan tanggal tayang dikelola dari CMS — bot hanya
+-- menampilkan. Tidak ada nama partner, harga, satuan, atau minimum order yang
+-- ditulis di kode bot.
+--
+-- Bot membaca tabel-tabel ini memakai service_role (mem-bypass RLS), sama
+-- seperti bot_settings. Panel admin membaca/menulisnya lewat RLS di bawah.
+
+-- 11a. Satuan & minimum order paket (kolom tambahan untuk katalog bagian 10)
+--      Broadcast DM  → satuan 'Pemain', minimum 100
+--      Broadcast Lobby → satuan 'Hari', minimum 15
+--      Angka & satuan TIDAK di-hardcode: keduanya kolom biasa yang bisa diubah
+--      dari CMS kapan pun tanpa menyentuh kode bot maupun website.
+alter table public.partnership_products add column if not exists unit         text;
+alter table public.partnership_products add column if not exists min_quantity integer;
+alter table public.partnership_products add column if not exists banner_url   text;
+alter table public.partnership_products add column if not exists info         text;
+alter table public.partnership_products add column if not exists terms        text;
+
+comment on column public.partnership_products.unit is
+  'Satuan paket, mis. "Pemain" (Broadcast DM) atau "Hari" (Broadcast Lobby). Dipakai untuk menulis harga & minimum order.';
+comment on column public.partnership_products.min_quantity is
+  'Minimum order dalam satuan di atas (mis. 100 pemain / 15 hari). Bisa diubah dari CMS.';
+
+-- Backfill default HANYA bila masih kosong — tidak menimpa nilai yang sudah
+-- diatur admin (skema ini aman dijalankan berulang).
+update public.partnership_products
+   set unit = 'Pemain', min_quantity = coalesce(min_quantity, 100)
+ where key = 'broadcast_dm' and unit is null;
+update public.partnership_products
+   set unit = 'Hari', min_quantity = coalesce(min_quantity, 15)
+ where key = 'broadcast_lobby' and unit is null;
+
+-- 11b. Slot partner yang tampil di Dashboard Partnership (lobby bot)
+create table if not exists public.partnership_slots (
+  id            bigint generated always as identity primary key,
+  partner_name  text not null,                  -- nama partner / server
+  title         text,                           -- judul item (default: partner_name)
+  description   text,                           -- deskripsi singkat
+  emoji         text,                           -- ikon teks di depan item (mis. '🏆')
+  logo_url      text,                           -- thumbnail embed
+  banner_url    text,                           -- image besar embed
+  url           text,                           -- tautan utama partner
+  button_label  text,                           -- label tombol (kosong = tanpa tombol)
+  button_url    text,                           -- tujuan tombol (wajib http(s))
+  enabled       boolean not null default true,
+  sort          integer not null default 100,
+  start_at      timestamptz,                    -- mulai tayang (kosong = langsung)
+  end_at        timestamptz,                    -- berakhir (kosong = tanpa batas)
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  updated_by    uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.partnership_slots is
+  'Partner yang tampil sebagai item di Dashboard Partnership pada lobby bot. Dikelola dari /admin/partnership/lobby.';
+
+create index if not exists partnership_slots_aktif_idx
+  on public.partnership_slots (enabled, sort, start_at, end_at);
+
+-- 11c. Konfigurasi Dashboard Partnership + item CTA (satu baris, id = 1)
+--      Item CTA adalah BAGIAN DARI LIST (bukan footer) dan selalu tampil —
+--      termasuk saat belum ada partner sama sekali, supaya area ini tidak
+--      pernah terlihat kosong atau seperti fitur yang belum jadi.
+create table if not exists public.partnership_lobby (
+  id               smallint primary key default 1 check (id = 1),
+  enabled          boolean not null default true,
+  dashboard_title  text not null default '🤝 Partnership',
+  dashboard_note   text,                         -- keterangan kecil di bawah judul
+  cta_emoji        text not null default '🤝',
+  cta_title        text not null default 'Ingin server atau produkmu tampil di sini?',
+  cta_description  text not null default 'Hubungi tim kami untuk mengajukan kerja sama.',
+  cta_button_label text not null default '🤝 Order Partnership',
+  cta_button_url   text,                         -- kosong → pakai partnership_settings.partnership_url
+  -- Posisi item CTA di dalam list: 'last' (default) atau 'first'.
+  cta_position     text not null default 'last' check (cta_position in ('first', 'last')),
+  updated_at       timestamptz not null default now(),
+  updated_by       uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.partnership_lobby is
+  'Konfigurasi Dashboard Partnership di lobby bot + item CTA Order Partnership. Semua teks dapat diubah dari CMS.';
+
+insert into public.partnership_lobby (id) values (1) on conflict (id) do nothing;
+
+-- 11d. RLS — admin baca, editor kelola. Bot memakai service_role (bypass).
+alter table public.partnership_slots enable row level security;
+alter table public.partnership_lobby enable row level security;
+
+drop policy if exists "admin baca slots" on public.partnership_slots;
+create policy "admin baca slots" on public.partnership_slots
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor kelola slots" on public.partnership_slots;
+create policy "editor kelola slots" on public.partnership_slots
+  for all to authenticated
+  using (public.is_admin_editor())
+  with check (public.is_admin_editor());
+
+drop policy if exists "admin baca lobby cfg" on public.partnership_lobby;
+create policy "admin baca lobby cfg" on public.partnership_lobby
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor ubah lobby cfg" on public.partnership_lobby;
+create policy "editor ubah lobby cfg" on public.partnership_lobby
+  for update to authenticated
+  using (public.is_admin_editor())
+  with check (public.is_admin_editor());
+-- ═══════════════════════════════════════════════════════════════════════════

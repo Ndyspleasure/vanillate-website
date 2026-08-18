@@ -1,0 +1,161 @@
+---
+// Partnership — Templates.
+//
+// Simpan pesan yang sering dipakai supaya campaign berikutnya tidak menulis
+// ulang dari nol. Sengaja minimal (nama + pesan): cukup berguna sekarang, dan
+// strukturnya siap dikembangkan (mis. template dengan konfigurasi tombol).
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+
+const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+---
+
+<AdminLayout title="Broadcast Templates" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Templates"
+    description="Simpan pesan yang sering dipakai untuk campaign berikutnya."
+  />
+  <PartnershipTabs active="templates" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-8 max-w-3xl">
+    <!-- Tambah -->
+    <section id="form-wrap" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+      <h2 class="font-display text-base font-semibold tracking-tightest">Template baru</h2>
+      <div>
+        <label for="t-nama" class="block text-sm font-medium mb-1.5">Nama template</label>
+        <input id="t-nama" type="text" maxlength="80" placeholder="mis. Promo komunitas" class={INPUT} />
+      </div>
+      <div>
+        <label for="t-pesan" class="block text-sm font-medium mb-1.5">Pesan</label>
+        <textarea id="t-pesan" rows="5" maxlength="4000" class={INPUT}></textarea>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" id="btn-tambah"
+          class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 transition-colors">
+          Simpan template
+        </button>
+        <p id="pesan" class="text-sm" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- Daftar -->
+    <section class="space-y-4">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Template tersimpan</h2>
+      <div id="daftar" class="space-y-3"></div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    if (!bolehEdit) {
+      el('form-wrap').classList.add('hidden');
+    }
+    void muat();
+    el('btn-tambah').addEventListener('click', () => void tambah());
+  });
+
+  async function muat() {
+    const body = el('daftar');
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('partnership_templates')
+      .select('id, name, message, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || data.length === 0) { body.innerHTML = stateBlock('empty', 'Belum ada template.'); return; }
+
+    body.innerHTML = data.map((t: any) => `
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4 space-y-2">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <p class="text-sm font-semibold">${esc(t.name)}</p>
+            <p class="text-xs text-ink-500 dark:text-cream-300/60">${esc(fmtWaktu(t.created_at))}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" data-copy="${esc(t.id)}"
+              class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-2.5 py-1 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Copy pesan</button>
+            ${bolehEdit ? `<button type="button" data-hapus="${esc(t.id)}"
+              class="rounded-lg border border-red-500/40 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">Hapus</button>` : ''}
+          </div>
+        </div>
+        <pre class="whitespace-pre-wrap rounded-xl bg-ink-900/5 dark:bg-cream-100/5 px-4 py-3 text-xs font-sans" data-isi="${esc(t.id)}">${esc(t.message)}</pre>
+      </div>`).join('');
+
+    body.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => {
+      b.onclick = async () => {
+        const teks = body.querySelector(`[data-isi="${b.dataset.copy}"]`)?.textContent ?? '';
+        try {
+          await navigator.clipboard.writeText(teks);
+          b.textContent = 'Tersalin!';
+          setTimeout(() => (b.textContent = 'Copy pesan'), 1500);
+        } catch {
+          b.textContent = 'Gagal menyalin';
+          setTimeout(() => (b.textContent = 'Copy pesan'), 1500);
+        }
+      };
+    });
+    body.querySelectorAll<HTMLButtonElement>('[data-hapus]').forEach((b) => {
+      b.onclick = () => void hapus(Number(b.dataset.hapus));
+    });
+  }
+
+  async function tambah() {
+    if (!bolehEdit) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const nama = el<HTMLInputElement>('t-nama').value.trim();
+    const isi = el<HTMLTextAreaElement>('t-pesan').value.trim();
+    const pesan = el('pesan');
+    pesan.className = 'text-sm';
+
+    if (!nama || !isi) {
+      pesan.textContent = 'Nama dan pesan wajib diisi.';
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const { error } = await supabase.from('partnership_templates').insert({
+      name: nama, message: isi, created_by: sesi.session?.user.id ?? null,
+    });
+
+    if (error) {
+      pesan.textContent = pesanError(error);
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+    el<HTMLInputElement>('t-nama').value = '';
+    el<HTMLTextAreaElement>('t-pesan').value = '';
+    pesan.textContent = 'Template tersimpan.';
+    pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+    void muat();
+  }
+
+  async function hapus(id: number) {
+    if (!bolehEdit) return;
+    if (!window.confirm('Hapus template ini?')) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { error } = await supabase.from('partnership_templates').delete().eq('id', id);
+    if (error) { alert(pesanError(error)); return; }
+    void muat();
+  }
+</script>

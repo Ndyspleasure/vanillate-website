@@ -426,8 +426,13 @@ sama dengan Website Sync — tanpa secret baru). Bila kosong, seluruh fitur diam
 
 ### Menambah aksi/setting baru
 
-- **Setting**: tambah baris di seed `bot_settings` (`supabase/schema.sql`) — otomatis
-  muncul di `/admin/kontrol`. Konsumsi di bot lewat `remoteConfig.getFlag/tunable`.
+- **Setting (item)**: tambah baris di seed `bot_settings` (`supabase/schema.sql`) dengan
+  kolom `category` menunjuk ke sebuah `key` di `bot_setting_categories` — otomatis muncul
+  sebagai item di bawah section kategori itu di `/admin/kontrol`. Konsumsi di bot lewat
+  `remoteConfig.getFlag/tunable`.
+- **Kategori**: tambah baris di `bot_setting_categories` (`key`, `label`, `description`,
+  `icon`, `sort`). Section baru langsung terbentuk — tampilannya **data-driven**, tak perlu
+  ubah frontend. `icon` = nama Lucide (mis. `wrench`); nama tak dikenal memakai ikon default.
 - **Aksi**: tambah entri form di `GRUP` (`src/pages/admin/operasi.astro`) + handler dengan
   `type` yang sama di `HANDLERS` (`src/services/remoteCommands.js`). Tidak perlu tabel baru.
 
@@ -437,10 +442,13 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 
 | Tabel | Peran |
 |---|---|
+| `bot_setting_categories` | Metadata kategori (label/deskripsi/ikon/urutan) — hierarki **Kategori → Item** yang data-driven di `/admin/kontrol` (bagian 9). |
 | `bot_settings_audit` | Riwayat perubahan setting (trigger otomatis: key, old→new, kapan). Tampil di `/admin/kontrol`. |
 | `bot_games` | Snapshot game aktif (di-upsert bot ~30 dtk, auto-bersih saat selesai) → `/admin/games`. |
 | `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
 | `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
+| `partnership_slots` | Partner yang tampil di **Dashboard Partnership** pada lobby bot → `/admin/partnership/lobby` (bagian 11). |
+| `partnership_lobby` | Judul dashboard + seluruh teks & posisi item **Order Partnership** (bagian 11). |
 
 Tambahan lain:
 - **Penjadwalan**: setting `maintenance_start_at`/`maintenance_end_at` (maintenance efektif =
@@ -455,3 +463,179 @@ Tambahan lain:
 
 > **Realtime:** kontrol memakai polling (setting ~60 dtk, perintah ~20 dtk). WebSocket realtime
 > sengaja tidak dipakai agar bot tetap pada jalur REST minimal & fail-safe tanpa dependency baru.
+
+---
+
+## 12. Partnership System
+
+Partnership adalah **layanan berbayar**: studio menjual dua produk broadcast ke partner, dan
+seluruh harga serta konten halaman publiknya dikelola dari CMS.
+
+| Produk | `channel` | Status |
+|---|---|---|
+| **Broadcast via DM** | `dm` | Dijual **dan** dieksekusi otomatis oleh bot (queue + rate limit + laporan) |
+| **Broadcast via Lobby** | `lobby` | Dijual & ditampilkan dengan harga; delivery masih manual |
+
+Kolom `channel` sudah ada sejak awal, jadi delivery Lobby bisa ditambahkan nanti tanpa mengubah
+struktur.
+
+### Dua sisi
+
+- **Admin** — `/admin/partnership` dengan tab: Overview, Broadcast DM, Active Players,
+  Campaign History, Produk & Harga, Templates, Settings.
+- **Publik** — `/partnership`, halaman penjualan: hero, bukti jangkauan, kartu produk + harga,
+  info program, benefit, cara kerja, FAQ, CTA.
+
+### Alur broadcast
+
+```
+Active Players → Copy User IDs → Broadcast DM → paste → validasi & dedup
+   → nama + pesan → tombol Partnership (wajib) + custom link → Preview → Confirm
+   → campaign `queued` + daftar penerima
+        │  bot poll tiap ~30 dtk (service_role)
+        ▼
+   running → kirim DM (jeda ≥800ms, retry 1× untuk error sesaat)
+   → status per User ID (success/failed/skipped) + progress
+   → completed  →  terlihat di Campaign History
+```
+
+Penerima broadcast menekan tombol **Partnership** → mendarat di `/partnership`.
+
+### Tabel (bagian 10 schema)
+
+| Tabel | Peran |
+|---|---|
+| `partnership_products` | Katalog + **harga** (dikelola CMS → tampil di halaman publik) |
+| `partnership_campaigns` | Campaign persistent: pesan, tombol, counter, status, log |
+| `partnership_recipients` | Status pengiriman **per User ID** |
+| `partnership_links` | Custom link opsional untuk tombol broadcast |
+| `partnership_settings` | Partnership URL & Apply URL |
+| `partnership_page` | Seluruh konten halaman publik (jsonb) |
+| `partnership_templates` | Template pesan yang bisa dipakai ulang |
+
+Fungsi `next_partnership_broadcast_id()` membuat ID harian `PTN-YYYYMMDD-NNNN`.
+
+### Keamanan & konsen
+
+- **RLS**: admin baca; `owner`/`admin` kelola. Penerima hanya boleh **di-INSERT** dengan status
+  `pending` — status pengiriman **tidak bisa diubah dari browser**, hanya bot (service_role), supaya
+  laporan pengiriman tidak bisa dipalsukan.
+- **Konsen dihormati di jalur mana pun**: bot melewati pemain yang `dm_opt_in=false` atau diblokir,
+  walau User ID-nya diketik manual oleh admin — ditandai `skipped`, bukan `failed`.
+- URL tombol wajib http(s) (menutup `javascript:`), maksimal 5 tombol per pesan (batas Discord).
+- **Cancel**: panel menyetel `cancel_requested`; bot berhenti di sela pengiriman dan menandai sisa
+  penerima `skipped`. Pesan yang sudah terkirim tentu tidak bisa ditarik.
+- Bot melanjutkan campaign `running` setelah restart (penerima `pending` diproses lagi).
+
+### Harga & konten publik → build
+
+`scripts/sync-content.mjs` menarik `partnership_products` (yang `enabled`), `partnership_settings`,
+`partnership_links`, dan `partnership_page.content` ke `src/data/synced/partnership.json`; halaman
+publik meng-`import` file itu. **Perubahan harga tampil setelah build ulang** (terjadwal, atau
+jalankan **Actions → Sync konten dari Supabase** untuk segera).
+
+Harga yang dibiarkan kosong disimpan `null` dan tampil **"—"** + "Hubungi kami untuk penawaran" —
+sengaja dibedakan dari `0` supaya tidak terbaca "gratis".
+
+### CTA → WhatsApp official
+
+Tombol tiap produk membuka WhatsApp official dengan pesan terisi (produk + kategori; **tanpa harga
+dan tanpa ID**). Nomornya diambil dari `whatsappNumber` di `src/data/support.ts` (env
+`PUBLIC_SUPPORT_WHATSAPP`) — tidak pernah ditulis ulang di komponen. Karena pesannya statis per
+produk, tautannya dibangun saat build sehingga halaman publik **tidak butuh JavaScript**.
+
+Per produk, admin bisa mengganti tujuan tombol ke URL kustom (`cta_mode = url`, mis. Google Form).
+
+### SEO
+
+`/partnership` memasang structured data khusus lewat slot `head` di `BaseLayout`:
+`Service` + **`Offer` per produk** (harga dari CMS → berpeluang rich result harga), `FAQPage`
+(berpeluang accordion di hasil pencarian), dan `BreadcrumbList`. SEO title/description/OG image
+juga diatur dari CMS. Halaman ini masuk `nav` dan sitemap.
+
+---
+
+## 13. Partnership di Lobby Bot
+
+Selain halaman publik `/partnership`, Partnership punya "panggung" di dalam permainan:
+bot menampilkan **Dashboard Partnership** sebagai pesan **terpisah** tepat di bawah
+Dashboard Lobby. Semua isinya dikelola dari `/admin/partnership/lobby` — tidak ada
+nama partner, harga, satuan, atau minimum order yang ditulis di kode bot.
+
+| Yang diatur | Di mana | Dipakai bot untuk |
+|---|---|---|
+| Partner (nama, emoji, judul, deskripsi, logo/banner, tautan, label+URL tombol, urutan, aktif, jadwal mulai/berakhir) | tab **Lobby Bot** → *Partner yang tampil* | item list di Dashboard Partnership |
+| Judul dashboard, catatan, dan seluruh teks item CTA + posisinya (`atas`/`bawah`) | tab **Lobby Bot** → *Dashboard & item CTA* | header + item CTA "Order Partnership" |
+| Satuan paket & minimum order (mis. **Pemain** min 100, **Hari** min 15) + harga | tab **Produk & Harga** | layar paket saat pemain menekan **Order Partnership** |
+
+**Perilaku yang dijamin**
+
+- Dashboard **selalu tampil**, bahkan tanpa partner sama sekali — item CTA menjadi
+  satu-satunya isi list, sehingga areanya tidak pernah terlihat kosong.
+- Item CTA adalah **bagian dari list** (field embed), **bukan footer**.
+- Partner otomatis berhenti tampil di luar jendela `start_at`–`end_at` atau saat
+  dinonaktifkan — tanpa perlu menghapusnya.
+- Harga yang belum diisi ditulis **"Hubungi kami untuk penawaran"**, bukan `Rp 0`.
+- Bot menyegarkan konten berkala (± 5 menit), jadi perubahan berlaku **tanpa restart
+  bot dan tanpa build website**.
+
+Rinciannya (struktur embed, tombol, `customId` `ptn_*`) ada di repo bot:
+`docs/lobbysambungkata.md` § 7b.
+
+---
+
+## 14. Konten halaman publik `/partnership`
+
+Seluruh isi halaman penjualan dikelola dari **Partnership → Settings** (bagian
+*Konten publik*) dan disimpan sebagai satu JSON di `partnership_page.content`.
+Halaman publik membacanya **saat build** (lewat `scripts/sync-content.mjs`), jadi
+mengubah copy tidak pernah butuh perubahan kode.
+
+### Bagian yang tersedia
+
+| Bagian | Kunci JSON | Bentuk pengisian di CMS | Perilaku bila dikosongkan |
+|---|---|---|---|
+| Hero (judul, subjudul, label CTA) | `hero` | tiga kolom teks | judul jatuh ke "Partnership" |
+| Bukti jangkauan (statistik) | `showStats` | otomatis dari `homeStats` | set `false` untuk menyembunyikan |
+| Paket & harga | *(dari tab Produk & Harga)* | — | bagian hilang bila tak ada produk aktif |
+| **Bandingkan paket** | `compare` | judul, catatan, nama kolom (satu per baris), baris `Aspek \| Kolom 1 \| Kolom 2` | tabel disembunyikan |
+| **Contoh tampilan** | `preview` | judul, catatan, kartu `Label \| Judul \| Isi \| Label tombol` | bagian disembunyikan |
+| **Cocok untuk siapa** | `audience` | daftar `Judul \| Isi` | bagian disembunyikan |
+| Tentang program | `intro` | daftar `Judul \| Isi` | bagian disembunyikan |
+| Yang partner dapatkan | `benefits` | daftar `Judul \| Isi` | bagian disembunyikan |
+| Cara kerjanya | `process` | daftar `Judul \| Isi` (nomor otomatis) | bagian disembunyikan |
+| **Ketentuan** | `rules` | judul, catatan, dua daftar (diterima / tidak diterima), satu poin per baris | bagian disembunyikan |
+| Pertanyaan umum | `faq` | daftar `Pertanyaan \| Jawaban` | bagian & JSON-LD FAQ disembunyikan |
+| CTA penutup | `cta` | judul, teks, label tombol | judul jatuh ke teks bawaan |
+| SEO | `seo` | title, description, Open Graph image | jatuh ke hero + OG default situs |
+
+**Setiap bagian menghilang rapi bila dikosongkan** — tidak ada judul kosong atau
+kartu melayang. Jadi halaman bisa dibuat ringkas maupun lengkap tanpa ngoding.
+
+### Catatan isi
+
+- **Contoh tampilan** adalah ilustrasi ber-CSS (bukan tangkapan layar), jadi
+  selalu tajam, ringan, dan ikut berubah saat teksnya diedit. Halaman ini tetap
+  **tanpa JavaScript**.
+- **FAQ otomatis masuk JSON-LD `FAQPage`** — menambah pertanyaan di CMS berpeluang
+  memunculkan accordion di hasil pencarian Google, tanpa langkah tambahan.
+- **Harga & satuan** diambil dari tab *Produk & Harga* (`unit`, `min_quantity`),
+  sehingga kartu paket menulis mis. "Rp 15.000 / Hari" dan "Minimum 15 Hari".
+  Harga yang dibiarkan kosong tampil "—" + "Hubungi kami untuk penawaran".
+- Kami sengaja **tidak** menyediakan bagian testimoni berisi kutipan buatan.
+  Bila nanti ada testimoni asli dari partner, bagian itu bisa ditambahkan dengan
+  pola yang sama (kunci baru di `content` + satu section di halaman).
+
+### Menambah bagian baru
+
+1. Tambah kunci di `partnership_page.content` (lewat CMS atau blok top-up di
+   `supabase/schema.sql` § 10j — hanya menulis bila kunci belum ada, sehingga
+   editan admin tidak tertimpa).
+2. Tambah editornya di `src/pages/admin/partnership/settings.astro`
+   (`inp` untuk satu baris, `ta` untuk paragraf, `daftar` untuk tabel
+   berkolom, `listTeks` untuk daftar poin).
+3. Render di `src/pages/partnership.astro`, dibungkus pemeriksaan kosong agar
+   bagiannya hilang otomatis saat belum diisi.
+
+`scripts/sync-content.mjs` meneruskan `content` apa adanya, jadi **tidak perlu**
+diubah saat menambah bagian konten baru.

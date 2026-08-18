@@ -32,6 +32,7 @@ export const nav = [
   { label: 'Bot Kami', href: '/bots' },
   { label: 'Dokumentasi', href: '/docs' },
   { label: 'Changelog', href: '/changelog' },
+  { label: 'Partnership', href: '/partnership' },
   { label: 'Support', href: '/support' },
 ];
 

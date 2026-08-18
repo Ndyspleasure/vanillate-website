@@ -55,6 +55,14 @@ const { title, description, image, noindex } = Astro.props;
     />
 
     <SEO title={title} description={description} image={image} noindex={noindex} />
+
+    <!--
+      Titik sisip <head> per-halaman. SEO.astro sudah memasang meta & JSON-LD
+      yang berlaku di semua halaman; slot ini untuk tambahan KHUSUS satu halaman
+      (mis. structured data Service/Offer/FAQPage di /partnership) supaya tidak
+      perlu menumpuk logika halaman tertentu ke dalam SEO.astro.
+    -->
+    <slot name="head" />
   </head>
   <body class="min-h-screen flex flex-col">
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:bg-amber-500 focus:px-4 focus:py-2 focus:text-ink-950">Lewati ke konten</a>

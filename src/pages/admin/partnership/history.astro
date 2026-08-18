@@ -1,0 +1,326 @@
+---
+// Partnership — Campaign History.
+//
+// Dua tampilan dalam satu halaman:
+//   • Daftar campaign + pencarian/filter.
+//   • Detail satu campaign (?id=PTN-...) berisi seluruh field, progres live,
+//     status pengiriman per User ID, dan tombol Cancel.
+//
+// Semua data dibaca dari Supabase; pembatalan hanya MENITIPKAN permintaan
+// (`cancel_requested`) yang dihormati bot di antara pengiriman.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+
+const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
+---
+
+<AdminLayout title="Campaign History" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Campaign History"
+    description="Riwayat lengkap campaign beserta hasil pengiriman per penerima."
+  />
+  <PartnershipTabs active="history" />
+
+  <!-- DAFTAR -->
+  <div id="tampil-daftar" class="px-6 lg:px-10 py-8 space-y-5">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <label for="f-cari" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Cari nama / ID</label>
+        <input id="f-cari" type="search" placeholder="Nama atau PTN-…" class={`w-full ${kontrol}`} />
+      </div>
+      <div>
+        <label for="f-status" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Status</label>
+        <select id="f-status" class={`w-full ${kontrol}`}>
+          <option value="">Semua status</option>
+          <option value="draft">Draft</option>
+          <option value="queued">Mengantre</option>
+          <option value="running">Berjalan</option>
+          <option value="completed">Selesai</option>
+          <option value="cancelled">Dibatalkan</option>
+          <option value="failed">Gagal</option>
+        </select>
+      </div>
+      <div>
+        <label for="f-dari" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Dari tanggal</label>
+        <input id="f-dari" type="date" class={`w-full ${kontrol}`} />
+      </div>
+      <div>
+        <label for="f-sampai" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Sampai tanggal</label>
+        <input id="f-sampai" type="date" class={`w-full ${kontrol}`} />
+      </div>
+    </div>
+
+    <div id="daftar-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    <p id="daftar-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
+  </div>
+
+  <!-- DETAIL -->
+  <div id="tampil-detail" class="hidden px-6 lg:px-10 py-8 space-y-6 max-w-4xl">
+    <a id="link-kembali" href="#" class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:underline">
+      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      Kembali ke daftar
+    </a>
+    <div id="detail-body" class="space-y-6"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { statusBadge, recipientBadge, bisaDibatalkan, progressBar } from '@/lib/partnership-ui';
+  import { url } from '@/utils/url';
+
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  let bolehEdit = false;
+  let timerDetail: ReturnType<typeof setInterval> | null = null;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+
+    el('link-kembali').setAttribute('href', url('/admin/partnership/history'));
+
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) {
+      el('tampil-daftar').classList.add('hidden');
+      el('tampil-detail').classList.remove('hidden');
+      void muatDetail(id);
+      // Campaign yang sedang jalan berubah terus → segarkan berkala.
+      timerDetail = setInterval(() => void muatDetail(id, true), 8000);
+    } else {
+      void muatDaftar();
+      let t: ReturnType<typeof setTimeout>;
+      el('f-cari').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => void muatDaftar(), 350); });
+      for (const f of ['f-status', 'f-dari', 'f-sampai']) {
+        el(f).addEventListener('change', () => void muatDaftar());
+      }
+    }
+  });
+
+  // ─── Daftar ───────────────────────────────────────────────────────────────
+  async function muatDaftar() {
+    const body = el('daftar-body');
+    const info = el('daftar-info');
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    body.innerHTML = stateBlock('loading', '');
+
+    let q = supabase
+      .from('partnership_campaigns')
+      .select('broadcast_id, name, category, status, target_total, success_count, failed_count, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    const cari = el<HTMLInputElement>('f-cari').value.trim();
+    if (cari) {
+      const aman = cari.replace(/[%,()\\]/g, '\\$&');
+      q = q.or(`name.ilike.%${aman}%,broadcast_id.ilike.%${aman}%`);
+    }
+    const status = el<HTMLSelectElement>('f-status').value;
+    if (status) q = q.eq('status', status);
+    const dari = el<HTMLInputElement>('f-dari').value;
+    if (dari) q = q.gte('created_at', new Date(dari + 'T00:00:00').toISOString());
+    const sampai = el<HTMLInputElement>('f-sampai').value;
+    if (sampai) q = q.lte('created_at', new Date(sampai + 'T23:59:59').toISOString());
+
+    const { data, error, count } = await q;
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); info.textContent = ''; return; }
+    if (!data || data.length === 0) {
+      body.innerHTML = stateBlock('empty', cari || status || dari || sampai ? 'Tidak ada campaign yang cocok.' : 'Belum ada campaign.');
+      info.textContent = '';
+      return;
+    }
+
+    body.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
+            <tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+              <th class="px-5 py-3 font-medium">ID</th>
+              <th class="px-5 py-3 font-medium">Broadcast Name</th>
+              <th class="px-5 py-3 font-medium">Kategori</th>
+              <th class="px-5 py-3 font-medium text-right">Target</th>
+              <th class="px-5 py-3 font-medium text-right">Success</th>
+              <th class="px-5 py-3 font-medium text-right">Failed</th>
+              <th class="px-5 py-3 font-medium">Status</th>
+              <th class="px-5 py-3 font-medium">Dibuat</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((r: any) => `
+              <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+                <td class="px-5 py-3"><a class="font-mono text-xs text-amber-700 dark:text-amber-400 hover:underline" href="${esc(url('/admin/partnership/history'))}?id=${encodeURIComponent(r.broadcast_id)}">${esc(r.broadcast_id)}</a></td>
+                <td class="px-5 py-3">${esc(r.name)}</td>
+                <td class="px-5 py-3 text-xs">${esc(r.category)}</td>
+                <td class="px-5 py-3 text-right tabular-nums">${esc(fmtAngka(r.target_total))}</td>
+                <td class="px-5 py-3 text-right tabular-nums text-teal-700 dark:text-teal-300">${esc(fmtAngka(r.success_count))}</td>
+                <td class="px-5 py-3 text-right tabular-nums ${r.failed_count > 0 ? 'text-red-600 dark:text-red-400' : ''}">${esc(fmtAngka(r.failed_count))}</td>
+                <td class="px-5 py-3">${statusBadge(r.status)}</td>
+                <td class="px-5 py-3 text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(fmtWaktu(r.created_at))}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    info.textContent = `Menampilkan ${fmtAngka(data.length)} dari ${fmtAngka(count ?? data.length)} campaign`;
+  }
+
+  // ─── Detail ───────────────────────────────────────────────────────────────
+  async function muatDetail(broadcastId: string, sunyi = false) {
+    const body = el('detail-body');
+    const supabase = getSupabase();
+    if (!supabase) return;
+    if (!sunyi) body.innerHTML = stateBlock('loading', '');
+
+    const { data: c, error } = await supabase
+      .from('partnership_campaigns')
+      .select('*')
+      .eq('broadcast_id', broadcastId)
+      .maybeSingle();
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!c) { body.innerHTML = stateBlock('empty', `Campaign ${broadcastId} tidak ditemukan.`); return; }
+
+    const { data: rec } = await supabase
+      .from('partnership_recipients')
+      .select('user_id, status, error, sent_at')
+      .eq('campaign_id', c.id)
+      .order('id', { ascending: true })
+      .limit(1000);
+
+    // Berhenti menyegarkan begitu campaign selesai — tidak ada gunanya lagi.
+    if (timerDetail && !bisaDibatalkan(c.status)) { clearInterval(timerDetail); timerDetail = null; }
+
+    const buttons = Array.isArray(c.buttons) ? c.buttons : [];
+    const logs = Array.isArray(c.logs) ? c.logs : [];
+
+    const info = (label: string, isi: string) => `
+      <div>
+        <p class="text-[0.7rem] uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">${esc(label)}</p>
+        <div class="mt-0.5 text-sm">${isi}</div>
+      </div>`;
+
+    body.innerHTML = `
+      <!-- Ringkasan -->
+      <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(c.broadcast_id)}</p>
+            <h2 class="font-display text-xl font-semibold tracking-tightest mt-0.5">${esc(c.name)}</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            ${statusBadge(c.status)}
+            ${bolehEdit && bisaDibatalkan(c.status)
+              ? `<button type="button" id="btn-batal" class="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">Cancel campaign</button>`
+              : ''}
+          </div>
+        </div>
+
+        ${bisaDibatalkan(c.status) || c.sent_count > 0 ? progressBar(c.sent_count, c.target_total) : ''}
+        ${c.cancel_requested && bisaDibatalkan(c.status)
+          ? `<p class="text-xs text-amber-700 dark:text-amber-400">Permintaan pembatalan sudah dikirim — bot akan berhenti setelah pesan yang sedang diproses.</p>` : ''}
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          ${info('Target', `<span class="tabular-nums">${fmtAngka(c.target_total)}</span>`)}
+          ${info('Success', `<span class="tabular-nums text-teal-700 dark:text-teal-300">${fmtAngka(c.success_count)}</span>`)}
+          ${info('Failed', `<span class="tabular-nums ${c.failed_count > 0 ? 'text-red-600 dark:text-red-400' : ''}">${fmtAngka(c.failed_count)}</span>`)}
+          ${info('Skipped', `<span class="tabular-nums">${fmtAngka(c.skipped_count)}</span>`)}
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 border-t border-ink-900/5 dark:border-cream-100/5">
+          ${info('Kategori', esc(c.category))}
+          ${info('Channel', esc(c.channel))}
+          ${info('Dibuat', esc(fmtWaktu(c.created_at)))}
+          ${info('Mulai', esc(c.started_at ? fmtWaktu(c.started_at) : '—'))}
+          ${info('Selesai', esc(c.completed_at ? fmtWaktu(c.completed_at) : '—'))}
+          ${info('Valid / Invalid', `${fmtAngka(c.valid_count)} / ${fmtAngka(c.invalid_count)}`)}
+        </div>
+
+        ${c.error ? `<p class="rounded-xl border border-red-500/25 bg-red-500/5 px-4 py-3 text-sm text-red-600 dark:text-red-400">${esc(c.error)}</p>` : ''}
+      </section>
+
+      <!-- Pesan & tombol -->
+      <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Pesan</h3>
+        <div class="whitespace-pre-wrap rounded-xl bg-ink-900/5 dark:bg-cream-100/5 px-4 py-3 text-sm">${esc(c.message)}</div>
+        <div>
+          <p class="text-[0.7rem] uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60 mb-1.5">Buttons</p>
+          ${buttons.length
+            ? buttons.map((b: any) => `<span class="mr-2 mb-2 inline-block rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-2.5 py-1 text-xs">${esc(b.label)}</span>`).join('')
+            : '<p class="text-sm text-ink-500 dark:text-cream-300/60">—</p>'}
+        </div>
+      </section>
+
+      <!-- Delivery per penerima -->
+      <section class="space-y-3">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Delivery per User ID</h3>
+        <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
+          ${(rec ?? []).length === 0
+            ? stateBlock('empty', 'Belum ada data penerima.')
+            : `<div class="max-h-96 overflow-y-auto">
+                 <table class="w-full text-left text-sm">
+                   <thead class="sticky top-0 bg-cream-50 dark:bg-ink-950 border-b border-ink-900/5 dark:border-cream-100/5">
+                     <tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+                       <th class="px-5 py-2.5 font-medium">User ID</th>
+                       <th class="px-5 py-2.5 font-medium">Status</th>
+                       <th class="px-5 py-2.5 font-medium">Keterangan</th>
+                       <th class="px-5 py-2.5 font-medium">Waktu</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     ${(rec ?? []).map((r: any) => `
+                       <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
+                         <td class="px-5 py-2 font-mono text-xs">${esc(r.user_id)}</td>
+                         <td class="px-5 py-2">${recipientBadge(r.status)}</td>
+                         <td class="px-5 py-2 text-xs text-ink-500 dark:text-cream-300/60">${esc(r.error ?? '—')}</td>
+                         <td class="px-5 py-2 text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(r.sent_at ? fmtWaktu(r.sent_at) : '—')}</td>
+                       </tr>`).join('')}
+                   </tbody>
+                 </table>
+               </div>`}
+        </div>
+        ${(rec ?? []).length >= 1000 ? '<p class="text-xs text-ink-500 dark:text-cream-300/60">Menampilkan 1000 penerima pertama.</p>' : ''}
+      </section>
+
+      ${logs.length ? `
+      <section class="space-y-3">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Execution logs</h3>
+        <ul class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 divide-y divide-ink-900/5 dark:divide-cream-100/5">
+          ${logs.slice(-30).reverse().map((l: any) => `
+            <li class="px-5 py-2.5 text-xs flex flex-wrap gap-x-3">
+              <span class="font-mono text-ink-500 dark:text-cream-300/60">${esc(l.at ? fmtWaktu(l.at) : '—')}</span>
+              <span class="font-medium">${esc(l.event ?? '')}</span>
+              <span class="text-ink-500 dark:text-cream-300/60">${esc(l.detail ?? '')}</span>
+            </li>`).join('')}
+        </ul>
+      </section>` : ''}`;
+
+    document.getElementById('btn-batal')?.addEventListener('click', () => void batalkan(c.id, c.broadcast_id));
+  }
+
+  async function batalkan(id: number, broadcastId: string) {
+    if (!window.confirm(`Batalkan campaign ${broadcastId}? Pesan yang sudah terkirim tidak bisa ditarik kembali.`)) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const btn = document.getElementById('btn-batal') as HTMLButtonElement | null;
+    if (btn) { btn.disabled = true; btn.textContent = 'Membatalkan…'; }
+
+    const { error } = await supabase
+      .from('partnership_campaigns')
+      .update({ cancel_requested: true })
+      .eq('id', id);
+
+    if (error) {
+      alert(pesanError(error));
+      if (btn) { btn.disabled = false; btn.textContent = 'Cancel campaign'; }
+      return;
+    }
+    void muatDetail(broadcastId);
+  }
+</script>
