@@ -250,7 +250,7 @@ Halaman **Konten** di panel admin mengubah teks yang sering berganti
               ▼
    Supabase: tabel site_content
               │
-              │  GitHub Actions (sync-content.yml), tiap jam + manual
+              │  GitHub Actions (sync-content.yml), tiap 15 menit + manual
               ▼
    src/data/synced/site-content.json  ─── di-commit bila berubah
               │
@@ -259,8 +259,13 @@ Halaman **Konten** di panel admin mengubah teks yang sering berganti
 ```
 
 **Perubahan tidak langsung tampil.** Situsnya statis, jadi harus di-build ulang
-dulu — biasanya beberapa menit. Untuk menerbitkan segera: tab **Actions** →
-**Sync konten dari Supabase** → **Run workflow**.
+dulu. Realistisnya **~5–45 menit**: sync terjadwal tiap 15 menit, tetapi jadwal
+GitHub Actions kerap tertunda, lalu build + deploy Pages memakan ~2–3 menit.
+Untuk menerbitkan segera: tab **Actions** → **Sync konten dari Supabase** →
+**Run workflow** (~2–3 menit).
+
+Perkiraan waktu untuk semua jalur data, penyebab keterlambatan, dan
+troubleshooting-nya ada di [`PIPELINE-TERBIT.md`](./PIPELINE-TERBIT.md).
 
 Kenapa lewat build, bukan dibaca langsung di browser pengunjung? Karena
 `site_content` dijaga RLS. Kalau halaman publik membacanya langsung, tabel itu
@@ -341,7 +346,20 @@ build. Isi secret-nya lalu jalankan ulang workflow deploy.
 Normal bila bot belum mengirim data. Lihat bagian 5.
 
 **Konten sudah disimpan tapi belum tampil di situs**
-Tunggu workflow sync konten berikutnya, atau jalankan manual lewat tab Actions.
+Normal sampai ~45 menit: situsnya statis dan menunggu sync terjadwal + build.
+Jalankan **Actions → Sync konten dari Supabase → Run workflow** untuk terbit
+dalam ~2–3 menit. Kalau setelah workflow hijau isinya tetap lama, cek apakah
+field itu memang disinkron oleh `scripts/sync-content.mjs`.
+
+**Panel terasa "tidak nyambung" ke bot**
+Cek `/admin/logs` dulu. Kalau ada log berumur detik/menit, jalur bot ↔ Supabase
+sehat dan yang tertinggal adalah halaman publik (butuh build). Setting di
+`/admin/kontrol` sendiri diterapkan bot dalam ≤60 detik tanpa build.
+
+**"Data terakhir berubah" terlihat basi berjam-jam**
+Itu memang stempel *perubahan terakhir*, bukan *pemeriksaan terakhir* —
+`_status.json` sengaja hanya di-commit saat datanya berubah. Bukti bahwa
+pemeriksaan jalan ada di tab Actions.
 
 ---
 
@@ -531,8 +549,13 @@ Fungsi `next_partnership_broadcast_id()` membuat ID harian `PTN-YYYYMMDD-NNNN`.
 
 `scripts/sync-content.mjs` menarik `partnership_products` (yang `enabled`), `partnership_settings`,
 `partnership_links`, dan `partnership_page.content` ke `src/data/synced/partnership.json`; halaman
-publik meng-`import` file itu. **Perubahan harga tampil setelah build ulang** (terjadwal, atau
-jalankan **Actions → Sync konten dari Supabase** untuk segera).
+publik meng-`import` file itu. **Perubahan harga tampil setelah build ulang** — terjadwal tiap 15
+menit (realistis ~5–45 menit), atau jalankan **Actions → Sync konten dari Supabase** untuk terbit
+dalam ~2–3 menit. Lihat [`PIPELINE-TERBIT.md`](./PIPELINE-TERBIT.md).
+
+Field yang belum disebut di `scripts/sync-content.mjs` **tidak ikut terbit** walau bisa diisi di
+panel. Saat menambah kolom baru di `partnership_products`, tambahkan juga namanya di query `select`
+dan pemetaan objeknya di skrip itu.
 
 Harga yang dibiarkan kosong disimpan `null` dan tampil **"—"** + "Hubungi kami untuk penawaran" —
 sengaja dibedakan dari `0` supaya tidak terbaca "gratis".

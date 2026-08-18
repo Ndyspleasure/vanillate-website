@@ -72,6 +72,7 @@ vanillate-website/
 │   └── styles/global.css           Tailwind + global styles
 ├── supabase/schema.sql             Skema tabel + Row Level Security panel admin
 ├── scripts/sync-content.mjs        Tarik konten Supabase → JSON saat build
+├── scripts/sync-data.mjs           Tarik data repo bot → JSON saat build
 ├── .env.example                    Contoh environment variable (support + Supabase)
 ├── astro.config.mjs                SITE_URL: https://vanillate.id (no base)
 ├── tailwind.config.mjs             Brand palette (ink, cream, amber, teal) + typography
@@ -79,6 +80,8 @@ vanillate-website/
 ├── package.json
 ├── PANDUAN-DEPLOY.md               Dokumentasi deploy step-by-step
 ├── docs/ADMIN-CMS.md               Panduan panel admin & CMS
+├── docs/AUTO-SYNC-DATA.md          Sinkronisasi data repo bot → website
+├── docs/PIPELINE-TERBIT.md         Alur & waktu tayang: edit → sync → build → Pages
 └── README.md                        (file ini)
 ```
 
