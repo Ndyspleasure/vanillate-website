@@ -77,9 +77,12 @@ export function parseUserIds(raw: string): ParsedTargets {
 // ─── Harga ───────────────────────────────────────────────────────────────────
 
 /**
- * Format harga untuk tampilan publik. `IDR` dirender sebagai "Rp150.000"
- * (tanpa desimal — harga layanan selalu bulat), mata uang lain memakai format
- * standar Intl.
+ * Format harga untuk tampilan publik. `IDR` dirender sebagai "Rp150.000",
+ * mata uang lain memakai format standar Intl.
+ *
+ * TANPA pembatasan nominal: berapa pun angkanya (termasuk pecahan dan nilai
+ * yang sangat besar) tetap dirender apa adanya. Desimal hanya ditulis bila
+ * harganya memang punya pecahan, jadi harga bulat tetap bersih.
  */
 export function formatPrice(price: number | null | undefined, currency = 'IDR'): string {
   // Null/kosong DIBEDAKAN dari nol. `Number(null)` bernilai 0, jadi tanpa
@@ -87,17 +90,90 @@ export function formatPrice(price: number | null | undefined, currency = 'IDR'):
   // terbaca "gratis" oleh calon partner. Harga belum diisi harus tampil "—".
   if (price === null || price === undefined || String(price).trim() === '') return '—';
   const n = Number(price);
-  if (!Number.isFinite(n) || n < 0) return '—';
+  if (!Number.isFinite(n)) return '—';
+  // Nol adalah harga yang sah (dan berarti gratis) — beda dari "belum diisi".
+  if (n === 0) return 'Gratis';
+  const pecahan = Math.abs(n % 1) > 0 ? 2 : 0;
   try {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: currency || 'IDR',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: pecahan,
     }).format(n);
   } catch {
-    return `${currency} ${n.toLocaleString('id-ID')}`;
+    return `${currency} ${n.toLocaleString('id-ID', { maximumFractionDigits: pecahan })}`;
   }
+}
+
+export interface ParsedPrice {
+  /** Input terbaca sebagai angka (atau memang sengaja dikosongkan). */
+  valid: boolean;
+  /** Nilai numerik; null = kosong (harga belum ditentukan). */
+  value: number | null;
+}
+
+/**
+ * Baca harga yang diketik admin — TANPA batas nominal, tanpa kelipatan.
+ *
+ * Input `<input type="number">` dengan `step` menolak nominal yang bukan
+ * kelipatan step-nya (mis. 150.500 pada step 1000), dan `min`/`max` mengunci
+ * rentang. Karena itu harga kini diketik sebagai teks bebas lalu dibaca di
+ * sini: "150000", "150.000", "150,000", "Rp 150.000", bahkan "1.250.000,75"
+ * semuanya diterima. Yang ditolak hanya yang benar-benar bukan angka.
+ *
+ * Pemisah ribuan/desimal gaya Indonesia dan gaya internasional sama-sama
+ * dikenali: pemisah yang muncul TERAKHIR dianggap desimal bila sisa digit di
+ * belakangnya bukan kelompok ribuan (tiga digit).
+ */
+export function parsePrice(raw: string | number | null | undefined): ParsedPrice {
+  if (raw === null || raw === undefined) return { valid: true, value: null };
+  if (typeof raw === 'number') {
+    return Number.isFinite(raw) ? { valid: true, value: raw } : { valid: false, value: null };
+  }
+
+  // Buang simbol mata uang, spasi (termasuk spasi tak terpisah), dan pemisah
+  // yang kadang ikut ter-copy dari spreadsheet.
+  let teks = String(raw).trim().replace(/[\s ]/g, '').replace(/^(rp|idr)/i, '');
+  if (teks === '') return { valid: true, value: null };
+
+  const negatif = teks.startsWith('-');
+  if (negatif || teks.startsWith('+')) teks = teks.slice(1);
+  if (!/^[\d.,]+$/.test(teks)) return { valid: false, value: null };
+
+  const titik = teks.lastIndexOf('.');
+  const koma = teks.lastIndexOf(',');
+  const posisi = Math.max(titik, koma);
+
+  let angka: string;
+  if (posisi === -1) {
+    angka = teks;
+  } else {
+    const belakang = teks.slice(posisi + 1);
+    // Tepat tiga digit di belakang pemisah terakhir = kelompok ribuan
+    // ("150.000"), kecuali memang tidak ada pemisah lain dan penulisnya
+    // memakai gaya campuran — pada kasus ambigu itu ribuan lebih masuk akal
+    // untuk harga rupiah.
+    const desimal = !/^\d{3}$/.test(belakang);
+    angka = desimal
+      ? `${teks.slice(0, posisi).replace(/[.,]/g, '')}.${belakang}`
+      : teks.replace(/[.,]/g, '');
+  }
+
+  if (angka === '' || angka === '.') return { valid: false, value: null };
+  const n = Number(angka);
+  if (!Number.isFinite(n)) return { valid: false, value: null };
+  return { valid: true, value: negatif ? -n : n };
+}
+
+/**
+ * Baca jumlah bulat bebas (mis. minimum order). Sama seperti `parsePrice`,
+ * tanpa batas atas — hanya dibulatkan ke bilangan bulat.
+ */
+export function parseJumlah(raw: string | number | null | undefined): ParsedPrice {
+  const hasil = parsePrice(raw);
+  if (!hasil.valid || hasil.value === null) return hasil;
+  return { valid: true, value: Math.round(hasil.value) };
 }
 
 // ─── Pesan WhatsApp ──────────────────────────────────────────────────────────

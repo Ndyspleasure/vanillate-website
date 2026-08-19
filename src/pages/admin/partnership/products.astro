@@ -5,11 +5,16 @@
 // sini tersimpan ke Supabase, lalu ditarik saat build (scripts/sync-content.mjs)
 // sehingga halaman publik menampilkan harga terbaru tanpa mengubah kode.
 //
-// Dua produk bawaan: Broadcast via DM dan Broadcast via Lobby. Struktur tabelnya
-// terbuka, jadi produk lain bisa ditambah nanti.
+// Dua hal yang membedakan halaman ini dari versi sebelumnya:
+//   • HARGA BEBAS — tidak ada `min`, `max`, atau kelipatan `step`. Admin boleh
+//     mengetik nominal berapa pun ("150000", "150.000", "Rp 1.250.000,75");
+//     yang ditolak hanya input yang bukan angka.
+//   • KATEGORI — produk dikelompokkan per kategori (satu section per kategori)
+//     memakai `partnership_categories`, bukan menumpuk jadi satu daftar.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 import PartnershipTabs from '@components/PartnershipTabs.astro';
+import { url } from '@utils/url';
 ---
 
 <AdminLayout title="Produk & Harga" active="partnership">
@@ -25,12 +30,14 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
         Perubahan tersimpan ke database saat kamu menekan Simpan, lalu tampil di
         <strong>/partnership</strong> setelah website di-build ulang (berjalan otomatis terjadwal).
-        Harga yang dibiarkan kosong akan tampil sebagai <strong>—</strong>, bukan "Rp 0".
+        Harga <strong>bebas nominal</strong> — ketik angka berapa pun; kosongkan bila harganya
+        belum ditentukan (tampil <strong>—</strong>, bukan "Rp 0").
+        Kategori produk diatur di tab <a class="font-medium text-amber-700 dark:text-amber-400 hover:underline" href={url('/admin/partnership/categories')}>Kategori</a>.
       </p>
     </div>
 
-    <form id="form-produk" class="space-y-8">
-      <div id="produk-body" class="space-y-8"></div>
+    <form id="form-produk" class="space-y-10">
+      <div id="produk-body" class="space-y-10"></div>
 
       <div id="produk-aksi" class="hidden flex-wrap items-center gap-3">
         <button type="submit" id="btn-simpan"
@@ -46,16 +53,21 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
 <script>
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
-  import { formatPrice } from '@data/partnership';
+  import { headerKategori, kelompokkan, opsiKategori, untukScope, type Kategori } from '@/lib/partnership-kategori';
+  import { formatPrice, parsePrice, parseJumlah } from '@data/partnership';
 
   const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
   let bolehEdit = false;
+  let kategori: Kategori[] = [];
 
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
     void muat();
     document.getElementById('form-produk')!.addEventListener('submit', onSimpan);
+    // Pratinjau harga ikut berubah saat diketik — admin langsung melihat
+    // bagaimana nominalnya dibaca sistem (mis. "150.000" → Rp150.000).
+    document.getElementById('produk-body')!.addEventListener('input', onKetik);
   });
 
   async function muat() {
@@ -65,18 +77,33 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
     const supabase = getSupabase();
     if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
 
-    const { data, error } = await supabase
-      .from('partnership_products')
-      .select('key, name, tagline, description, channel, price, currency, price_unit, price_note, features, badge, cta_label, cta_mode, cta_url, enabled, sort, unit, min_quantity, banner_url, info, terms')
-      .order('sort', { ascending: true });
+    const [kat, prod] = await Promise.all([
+      supabase.from('partnership_categories')
+        .select('key, label, description, icon, emoji, scope, enabled, sort')
+        .order('sort', { ascending: true }),
+      supabase.from('partnership_products')
+        .select('key, name, tagline, description, channel, category, price, currency, price_unit, price_note, features, badge, cta_label, cta_mode, cta_url, enabled, sort, unit, min_quantity, banner_url, info, terms')
+        .order('sort', { ascending: true }),
+    ]);
 
-    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
-    if (!data || data.length === 0) {
+    if (prod.error) { body.innerHTML = stateBlock('error', pesanError(prod.error)); return; }
+    const data = prod.data ?? [];
+    if (data.length === 0) {
       body.innerHTML = stateBlock('empty', 'Belum ada produk. Jalankan supabase/schema.sql terbaru.');
       return;
     }
 
-    body.innerHTML = data.map(kartu).join('');
+    // Kategori gagal dimuat (mis. schema belum diperbarui) tidak boleh membuat
+    // halaman kosong — produk tetap tampil, hanya tanpa pengelompokan resmi.
+    kategori = untukScope((kat.error ? [] : (kat.data ?? [])) as Kategori[], 'produk');
+
+    body.innerHTML = kelompokkan(data as any[], kategori)
+      .map((g) => `
+        <section class="space-y-4">
+          ${headerKategori(g.kategori, g.items.length)}
+          <div class="space-y-6">${g.items.map(kartu).join('')}</div>
+        </section>`)
+      .join('');
     document.getElementById('produk-aksi')!.classList.remove('hidden');
 
     if (!bolehEdit) {
@@ -86,6 +113,9 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       document.getElementById('produk-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
     }
   }
+
+  /** Nilai harga/minimum untuk kotak input: apa adanya, tanpa pemformatan. */
+  const nilaiAngka = (v: any) => (v === null || v === undefined || String(v).trim() === '' ? '' : String(v));
 
   function kartu(p: any): string {
     const fitur = Array.isArray(p.features) ? p.features.join('\n') : '';
@@ -115,7 +145,16 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
 
         <div class="grid gap-4 sm:grid-cols-2">
           ${f('name', 'Nama produk', teks('name', p.name, 'maxlength="80"'))}
+          ${f('category', 'Kategori',
+            `<select id="${esc(p.key)}-category" data-key="${esc(p.key)}" data-field="category" class="${INPUT}">
+               ${opsiKategori(kategori, p.category)}
+             </select>`,
+            'Menentukan pengelompokan di CMS dan di halaman publik.')}
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
           ${f('badge', 'Badge', teks('badge', p.badge, 'maxlength="30" placeholder="mis. Terpopuler"'), 'Kosongkan bila tidak perlu.')}
+          ${f('sort', 'Urutan', teks('sort', nilaiAngka(p.sort), 'inputmode="numeric" placeholder="100"'), 'Makin kecil makin atas.')}
         </div>
 
         ${f('tagline', 'Tagline', teks('tagline', p.tagline, 'maxlength="120"'), 'Satu baris singkat di bawah nama produk.')}
@@ -123,8 +162,11 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
         ${f('description', 'Deskripsi',
           `<textarea id="${esc(p.key)}-description" data-key="${esc(p.key)}" data-field="description" rows="3" maxlength="600" class="${INPUT}">${esc(p.description ?? '')}</textarea>`)}
 
+        <!-- HARGA BEBAS: kotak teks biasa, bukan input number. Tidak ada min,
+             max, atau kelipatan step yang bisa menolak nominal tertentu. -->
         <div class="grid gap-4 sm:grid-cols-3">
-          ${f('price', 'Harga', teks('price', p.price ?? '', 'type="number" min="0" step="1000" placeholder="kosong = —"'), 'Kosong → tampil "—".')}
+          ${f('price', 'Harga', teks('price', nilaiAngka(p.price), 'inputmode="decimal" placeholder="kosong = —"'),
+            'Bebas nominal: 150000, 150.000, atau 1.250.000,75. Kosong → tampil "—".')}
           ${f('currency', 'Mata uang', teks('currency', p.currency ?? 'IDR', 'maxlength="8"'))}
           ${f('price_unit', 'Satuan harga', teks('price_unit', p.price_unit, 'maxlength="40" placeholder="per campaign"'))}
         </div>
@@ -136,8 +178,8 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
         <div class="grid gap-4 sm:grid-cols-2">
           ${f('unit', 'Satuan paket', teks('unit', p.unit, 'maxlength="24" placeholder="mis. Pemain / Hari"'),
             'Broadcast DM biasanya "Pemain"; Broadcast Lobby "Hari".')}
-          ${f('min_quantity', 'Minimum order', teks('min_quantity', p.min_quantity ?? '', 'type="number" min="0" step="1" placeholder="mis. 100"'),
-            'Ditulis bersama satuan, mis. "Minimum 100 Pemain". Kosong = tanpa minimum.')}
+          ${f('min_quantity', 'Minimum order', teks('min_quantity', nilaiAngka(p.min_quantity), 'inputmode="numeric" placeholder="mis. 100"'),
+            'Bebas angka, tanpa batas atas. Kosong = tanpa minimum.')}
         </div>
 
         ${f('info', 'Informasi tambahan', teks('info', p.info, 'maxlength="200"'), 'Satu baris; tampil di daftar paket dalam bot.')}
@@ -160,11 +202,42 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
         </div>
 
         <p class="text-xs text-ink-500 dark:text-cream-300/60">
-          Pratinjau harga: <strong data-preview="${esc(p.key)}">${esc(formatPrice(p.price, p.currency))}</strong>
-          ${p.unit ? esc(' / ' + p.unit) : (p.price_unit ? esc(' ' + p.price_unit) : '')}
-          ${Number(p.min_quantity) > 0 ? esc(` · Minimum ${p.min_quantity} ${p.unit ?? ''}`.trimEnd()) : ''}
+          Pratinjau harga: <strong data-preview="${esc(p.key)}">${esc(pratinjau(p.price, p.currency, p.unit, p.price_unit, p.min_quantity))}</strong>
         </p>
       </section>`;
+  }
+
+  /** Satu baris pratinjau: harga + satuan + minimum, persis seperti di publik. */
+  function pratinjau(price: any, currency: any, unit: any, priceUnit: any, minQty: any): string {
+    const harga = parsePrice(price);
+    if (!harga.valid) return 'Harga tidak terbaca sebagai angka';
+    const satuan = String(unit ?? '').trim()
+      ? ` / ${String(unit).trim()}`
+      : (String(priceUnit ?? '').trim() ? ` ${String(priceUnit).trim()}` : '');
+    const min = parseJumlah(minQty);
+    const minimum = min.valid && min.value !== null && min.value !== 0
+      ? ` · Minimum ${new Intl.NumberFormat('id-ID').format(min.value)}${String(unit ?? '').trim() ? ` ${String(unit).trim()}` : ''}`
+      : '';
+    return `${formatPrice(harga.value, String(currency || 'IDR'))}${satuan}${minimum}`;
+  }
+
+  /** Perbarui pratinjau kartu yang sedang diketik. */
+  function onKetik(e: Event) {
+    const el = e.target as HTMLInputElement | null;
+    const key = el?.dataset?.key;
+    if (!key) return;
+    const target = document.querySelector(`[data-preview="${CSS.escape(key)}"]`);
+    if (!target) return;
+    const ambil = (field: string) =>
+      (document.querySelector(`[data-key="${CSS.escape(key)}"][data-field="${field}"]`) as HTMLInputElement | null)?.value ?? '';
+    target.textContent = pratinjau(ambil('price'), ambil('currency'), ambil('unit'), ambil('price_unit'), ambil('min_quantity'));
+  }
+
+  function gagal(pesan: HTMLElement, btn: HTMLButtonElement, teks: string) {
+    pesan.textContent = teks;
+    pesan.className = 'text-sm text-red-600 dark:text-red-400';
+    btn.disabled = false;
+    btn.textContent = 'Simpan perubahan';
   }
 
   async function onSimpan(e: Event) {
@@ -186,6 +259,7 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
 
     // Kumpulkan field per produk.
     const perProduk = new Map<string, Record<string, any>>();
+    const bermasalah: string[] = [];
     document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[data-key][data-field]').forEach((n) => {
       const key = n.dataset.key!;
       const field = n.dataset.field!;
@@ -194,14 +268,19 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
 
       if (field === 'enabled') {
         bucket.enabled = (n as HTMLInputElement).checked;
-      } else if (field === 'min_quantity') {
-        const v = n.value.trim();
-        bucket.min_quantity = v === '' ? null : Number(v);
       } else if (field === 'price') {
-        const v = n.value.trim();
-        // Kosong disimpan sebagai NULL → halaman publik menampilkan "—",
-        // bukan "Rp 0" yang terbaca gratis.
-        bucket.price = v === '' ? null : Number(v);
+        // Harga bebas nominal: hanya dibaca, tidak dibatasi. Kosong disimpan
+        // sebagai NULL → halaman publik menampilkan "—", bukan "Rp 0".
+        const hasil = parsePrice(n.value);
+        if (!hasil.valid) bermasalah.push(`Harga produk "${key}" bukan angka yang bisa dibaca.`);
+        else bucket.price = hasil.value;
+      } else if (field === 'min_quantity') {
+        const hasil = parseJumlah(n.value);
+        if (!hasil.valid) bermasalah.push(`Minimum order produk "${key}" bukan angka yang bisa dibaca.`);
+        else bucket.min_quantity = hasil.value;
+      } else if (field === 'sort') {
+        const hasil = parseJumlah(n.value);
+        bucket.sort = hasil.valid && hasil.value !== null ? hasil.value : 100;
       } else if (field === 'features') {
         bucket.features = n.value.split('\n').map((s) => s.trim()).filter(Boolean);
       } else {
@@ -209,28 +288,11 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       }
     });
 
-    // Validasi ringan sebelum kirim.
+    if (bermasalah.length > 0) { gagal(pesan, btn, bermasalah[0]); return; }
+
     for (const [key, patch] of perProduk) {
-      if (patch.price !== null && patch.price !== undefined && (!Number.isFinite(patch.price) || patch.price < 0)) {
-        pesan.textContent = `Harga produk "${key}" harus angka ≥ 0.`;
-        pesan.className = 'text-sm text-red-600 dark:text-red-400';
-        btn.disabled = false;
-        btn.textContent = 'Simpan perubahan';
-        return;
-      }
-      if (patch.min_quantity !== null && patch.min_quantity !== undefined
-          && (!Number.isInteger(patch.min_quantity) || patch.min_quantity < 0)) {
-        pesan.textContent = `Minimum order produk "${key}" harus bilangan bulat ≥ 0.`;
-        pesan.className = 'text-sm text-red-600 dark:text-red-400';
-        btn.disabled = false;
-        btn.textContent = 'Simpan perubahan';
-        return;
-      }
       if (patch.cta_mode === 'url' && !patch.cta_url) {
-        pesan.textContent = `Produk "${key}" memakai mode URL tapi URL-nya kosong.`;
-        pesan.className = 'text-sm text-red-600 dark:text-red-400';
-        btn.disabled = false;
-        btn.textContent = 'Simpan perubahan';
+        gagal(pesan, btn, `Produk "${key}" memakai mode URL tapi URL-nya kosong.`);
         return;
       }
     }
@@ -242,15 +304,15 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
           .eq('key', key)),
     );
 
-    const gagal = hasil.find((r) => r.error);
-    if (gagal?.error) {
-      pesan.textContent = pesanError(gagal.error);
-      pesan.className = 'text-sm text-red-600 dark:text-red-400';
-    } else {
-      pesan.textContent = 'Tersimpan. Harga baru tampil di /partnership setelah build berikutnya.';
-      pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
-      void muat();
+    const gagalSimpan = hasil.find((r) => r.error);
+    if (gagalSimpan?.error) {
+      gagal(pesan, btn, pesanError(gagalSimpan.error));
+      return;
     }
+
+    pesan.textContent = 'Tersimpan. Harga baru tampil di /partnership setelah build berikutnya.';
+    pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+    void muat();
 
     btn.disabled = false;
     btn.textContent = 'Simpan perubahan';

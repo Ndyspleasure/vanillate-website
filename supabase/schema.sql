@@ -626,7 +626,12 @@ create table if not exists public.partnership_products (
   tagline     text,
   description text,
   channel     text not null default 'dm' check (channel in ('dm', 'lobby')),
-  price       numeric(12,2) not null default 0 check (price >= 0),
+  -- HARGA BEBAS: tanpa presisi tetap, tanpa batas atas, boleh NULL.
+  -- Kolom ini pernah `numeric(12,2) not null default 0 check (price >= 0)` —
+  -- itu menolak harga besar (> 10 miliar), memaksa "Rp 0" untuk harga yang
+  -- belum ditentukan, dan membuat CMS gagal menyimpan harga kosong. Sekarang
+  -- admin bebas mengisi nominal berapa pun; kosong = belum ada harga ("—").
+  price       numeric,
   currency    text not null default 'IDR',
   price_unit  text,                              -- mis. 'per campaign'
   price_note  text,                              -- mis. 'Harga dapat menyesuaikan volume'
@@ -651,13 +656,13 @@ insert into public.partnership_products
   ('broadcast_dm', 'Broadcast via DM',
    'Pesan langsung ke DM pemain aktif.',
    'Kami mengirim pesan promosi kamu langsung ke DM pemain yang masih aktif bermain. Cocok untuk pengumuman, promo, dan undangan komunitas.',
-   'dm', 0, 'per campaign',
+   'dm', null, 'per campaign',
    '["Terkirim langsung ke DM pemain aktif","Target bisa dipilih (pemain paling aktif)","Tombol menuju link kamu","Laporan terkirim & gagal"]'::jsonb,
    'Terpopuler', 10),
   ('broadcast_lobby', 'Broadcast via Lobby',
    'Tampil di lobby permainan.',
    'Pesan kamu ditampilkan di lobby permainan sehingga terlihat oleh pemain saat mereka hendak bermain. Cocok untuk eksposur berulang.',
-   'lobby', 0, 'per campaign',
+   'lobby', null, 'per campaign',
    '["Tampil di lobby permainan","Terlihat berulang oleh pemain aktif","Tombol menuju link kamu"]'::jsonb,
    null, 20)
 on conflict (key) do nothing;
@@ -1047,6 +1052,128 @@ create policy "admin baca lobby cfg" on public.partnership_lobby
 drop policy if exists "editor ubah lobby cfg" on public.partnership_lobby;
 create policy "editor ubah lobby cfg" on public.partnership_lobby
   for update to authenticated
+  using (public.is_admin_editor())
+  with check (public.is_admin_editor());
+-- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 12. PARTNERSHIP — KATEGORI, DETAIL PARTNER, & HARGA BEBAS
+-- ───────────────────────────────────────────────────────────────────────────
+-- Tiga perbaikan yang saling berkaitan, semuanya dikendalikan dari CMS:
+--
+--   a) KATEGORI (hierarki Kategori → Item, pola yang sama dengan bagian 9).
+--      Sebelumnya partner & produk menumpuk jadi SATU daftar panjang di CMS
+--      maupun di Dashboard Partnership. Tabel ini menjadikan kategori sebagai
+--      DATA: CMS merender satu section per kategori, bot mengelompokkan item
+--      embed & barisan tombolnya dengan urutan yang sama persis.
+--
+--   b) DETAIL PARTNER. Tombol partner di dashboard bot TIDAK lagi melompat
+--      langsung ke link tujuan. Tombolnya kini membalas ephemeral (flag 64)
+--      berisi detail partner — dan seluruh isi detail itu diatur di sini.
+--
+--   c) HARGA BEBAS. Lihat bagian 10a: `price` sekarang `numeric` biasa
+--      (nullable, tanpa check/presisi) sehingga admin bisa memasukkan nominal
+--      berapa pun. Blok migrasi di bawah melonggarkan database yang sudah
+--      terlanjur dibuat dengan definisi lama.
+
+-- 12a. Metadata kategori Partnership
+--      `icon`  → nama ikon Lucide untuk CMS (registry aman di frontend; DB
+--                tidak pernah menyimpan markup).
+--      `emoji` → ikon teks untuk Discord (bot tidak bisa merender SVG).
+--      `scope` → di mana kategori ini boleh dipilih: partner, produk, atau
+--                keduanya. Menjaga dropdown CMS tetap relevan.
+create table if not exists public.partnership_categories (
+  key         text primary key,
+  label       text not null,
+  description text,
+  icon        text,
+  emoji       text,
+  scope       text not null default 'semua' check (scope in ('semua', 'partner', 'produk')),
+  enabled     boolean not null default true,
+  sort        integer not null default 100,
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.partnership_categories is
+  'Metadata kategori Partnership (hierarki Kategori → Item). Dipakai CMS /admin/partnership DAN bot untuk mengelompokkan Dashboard Partnership — urutannya sengaja sama di kedua sisi.';
+
+insert into public.partnership_categories (key, label, description, icon, emoji, scope, sort) values
+  ('server',     'Server & Komunitas',  'Server Discord dan komunitas mitra.',                 'users',     '🏠', 'partner', 10),
+  ('kreator',    'Kreator & Konten',    'Kreator konten, streamer, dan media partner.',        'sparkles',  '🎬', 'partner', 20),
+  ('brand',      'Brand & Produk',      'Brand, toko, atau produk yang bekerja sama.',         'tag',       '🏷️', 'partner', 30),
+  ('event',      'Event & Kolaborasi',  'Event, turnamen, dan kolaborasi berjangka waktu.',    'calendar',  '🎉', 'partner', 40),
+  ('broadcast',  'Broadcast Pesan',     'Paket menjangkau pemain lewat pesan langsung.',       'megaphone', '📢', 'produk',  10),
+  ('penempatan', 'Penempatan di Lobby', 'Paket tampil di dalam permainan.',                    'layout',    '🖼️', 'produk',  20),
+  ('lainnya',    'Lainnya',             'Belum dikategorikan — pindahkan ke kategori di atas.', 'settings',  '🤝', 'semua',   900)
+on conflict (key) do nothing;
+
+create index if not exists partnership_categories_urut_idx
+  on public.partnership_categories (enabled, scope, sort);
+
+-- 12b. Kolom kategori pada partner & produk
+--      Sengaja TANPA foreign key, sama seperti `bot_settings.category`: admin
+--      boleh menghapus kategori tanpa ikut menghapus partner/produknya. Nilai
+--      yang tidak dikenal jatuh ke section "Lainnya" di CMS maupun di bot.
+alter table public.partnership_slots    add column if not exists category text not null default 'lainnya';
+alter table public.partnership_products add column if not exists category text not null default 'lainnya';
+
+create index if not exists partnership_slots_kategori_idx
+  on public.partnership_slots (category, sort);
+
+-- Backfill sekali jalan: produk bawaan masuk kategori yang sesuai kanalnya.
+-- Hanya menyentuh baris yang masih 'lainnya' → aman dijalankan berulang dan
+-- tidak pernah menimpa pilihan admin.
+update public.partnership_products set category = 'broadcast'
+ where category = 'lainnya' and channel = 'dm';
+update public.partnership_products set category = 'penempatan'
+ where category = 'lainnya' and channel = 'lobby';
+
+-- 12c. Detail partner (isi balasan ephemeral saat tombol partner ditekan)
+--      Tombol partner di Dashboard Partnership bukan lagi tombol Link. Pemain
+--      menekannya → bot membalas ephemeral (flag 64, hanya terlihat olehnya)
+--      berisi kolom-kolom di bawah. Tautan tujuan tetap ada, tapi sebagai
+--      tombol DI DALAM balasan itu — pemain paham dulu, baru memutuskan.
+alter table public.partnership_slots add column if not exists detail_title       text;
+alter table public.partnership_slots add column if not exists detail_description text;
+alter table public.partnership_slots add column if not exists detail_highlights  jsonb not null default '[]'::jsonb;
+alter table public.partnership_slots add column if not exists detail_image_url   text;
+alter table public.partnership_slots add column if not exists detail_footer      text;
+alter table public.partnership_slots add column if not exists detail_link_label  text;
+
+comment on column public.partnership_slots.detail_description is
+  'Isi utama balasan ephemeral saat tombol partner ditekan. Kosong → memakai description.';
+comment on column public.partnership_slots.detail_highlights is
+  'Array string (bullet) pada detail partner. Dikelola dari /admin/partnership/lobby.';
+comment on column public.partnership_slots.detail_link_label is
+  'Label tombol tautan DI DALAM balasan detail. Kosong → "Kunjungi <partner>".';
+
+-- 12d. Migrasi harga bebas untuk database yang sudah ada
+--      Definisi lama (`numeric(12,2) not null default 0 check (price >= 0)`)
+--      membatasi nominal & menolak harga kosong. Blok ini melonggarkannya
+--      tanpa menyentuh nilai yang sudah tersimpan.
+alter table public.partnership_products
+  alter column price type numeric,
+  alter column price drop not null,
+  alter column price drop default;
+
+alter table public.partnership_products
+  drop constraint if exists partnership_products_price_check;
+
+comment on column public.partnership_products.price is
+  'Harga paket. Tanpa batas nominal, tanpa presisi tetap. NULL = belum ditentukan → ditampilkan "—" / "Hubungi kami", bukan "Rp 0".';
+
+-- 12e. RLS — admin baca, editor kelola. Bot memakai service_role (bypass).
+alter table public.partnership_categories enable row level security;
+
+drop policy if exists "admin baca kategori partnership" on public.partnership_categories;
+create policy "admin baca kategori partnership" on public.partnership_categories
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor kelola kategori partnership" on public.partnership_categories;
+create policy "editor kelola kategori partnership" on public.partnership_categories
+  for all to authenticated
   using (public.is_admin_editor())
   with check (public.is_admin_editor());
 -- ═══════════════════════════════════════════════════════════════════════════

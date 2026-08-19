@@ -467,6 +467,7 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 | `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
 | `partnership_slots` | Partner yang tampil di **Dashboard Partnership** pada lobby bot → `/admin/partnership/lobby` (bagian 11). |
 | `partnership_lobby` | Judul dashboard + seluruh teks & posisi item **Order Partnership** (bagian 11). |
+| `partnership_categories` | Struktur kategori partner & paket — dipakai CMS, halaman publik, dan bot (bagian 12). |
 
 Tambahan lain:
 - **Penjadwalan**: setting `maintenance_start_at`/`maintenance_end_at` (maintenance efektif =
@@ -500,7 +501,7 @@ struktur.
 ### Dua sisi
 
 - **Admin** — `/admin/partnership` dengan tab: Overview, Broadcast DM, Active Players,
-  Campaign History, Produk & Harga, Templates, Settings.
+  Campaign History, Produk & Harga, **Kategori**, Lobby Bot, Templates, Settings.
 - **Publik** — `/partnership`, halaman penjualan: hero, bukti jangkauan, kartu produk + harga,
   info program, benefit, cara kerja, FAQ, CTA.
 
@@ -530,6 +531,7 @@ Penerima broadcast menekan tombol **Partnership** → mendarat di `/partnership`
 | `partnership_settings` | Partnership URL & Apply URL |
 | `partnership_page` | Seluruh konten halaman publik (jsonb) |
 | `partnership_templates` | Template pesan yang bisa dipakai ulang |
+| `partnership_categories` | **Struktur kategori** partner & paket (bagian 12) — dipakai CMS, halaman publik, dan bot |
 
 Fungsi `next_partnership_broadcast_id()` membuat ID harian `PTN-YYYYMMDD-NNNN`.
 
@@ -548,8 +550,8 @@ Fungsi `next_partnership_broadcast_id()` membuat ID harian `PTN-YYYYMMDD-NNNN`.
 ### Harga & konten publik → build
 
 `scripts/sync-content.mjs` menarik `partnership_products` (yang `enabled`), `partnership_settings`,
-`partnership_links`, dan `partnership_page.content` ke `src/data/synced/partnership.json`; halaman
-publik meng-`import` file itu. **Perubahan harga tampil setelah build ulang** — terjadwal tiap 15
+`partnership_links`, `partnership_categories`, dan `partnership_page.content` ke
+`src/data/synced/partnership.json`; halaman publik meng-`import` file itu. **Perubahan harga tampil setelah build ulang** — terjadwal tiap 15
 menit (realistis ~5–45 menit), atau jalankan **Actions → Sync konten dari Supabase** untuk terbit
 dalam ~2–3 menit. Lihat [`PIPELINE-TERBIT.md`](./PIPELINE-TERBIT.md).
 
@@ -557,8 +559,21 @@ Field yang belum disebut di `scripts/sync-content.mjs` **tidak ikut terbit** wal
 panel. Saat menambah kolom baru di `partnership_products`, tambahkan juga namanya di query `select`
 dan pemetaan objeknya di skrip itu.
 
-Harga yang dibiarkan kosong disimpan `null` dan tampil **"—"** + "Hubungi kami untuk penawaran" —
-sengaja dibedakan dari `0` supaya tidak terbaca "gratis".
+**Harga tanpa pembatasan nominal.** Kolom `price` adalah `numeric` biasa: tanpa presisi tetap,
+tanpa batas atas, dan tanpa `check`. Di CMS harganya diketik sebagai teks bebas — `150000`,
+`150.000`, `Rp 1.250.000,75` semuanya diterima (dibaca `parsePrice` di `src/data/partnership.ts`),
+dan tidak ada `step`/`min`/`max` yang menolak nominal tertentu. Yang ditolak hanya input yang
+memang bukan angka.
+
+Tiga keadaan sengaja dibedakan:
+
+| Nilai | Halaman publik | Dashboard bot |
+|---|---|---|
+| kosong (`null`) | **"—"** + "Hubungi kami untuk penawaran" | "Hubungi kami untuk penawaran" |
+| `0` | **"Gratis"** | "Gratis" (+ satuan bila ada) |
+| angka lain | diformat penuh, mis. `Rp1.250.000,75` | `Rp 1.250.000,75 / <satuan>` |
+
+Minimum order mengikuti aturan yang sama: bebas angka, tanpa batas atas.
 
 ### CTA → WhatsApp official
 
@@ -587,23 +602,64 @@ nama partner, harga, satuan, atau minimum order yang ditulis di kode bot.
 
 | Yang diatur | Di mana | Dipakai bot untuk |
 |---|---|---|
-| Partner (nama, emoji, judul, deskripsi, logo/banner, tautan, label+URL tombol, urutan, aktif, jadwal mulai/berakhir) | tab **Lobby Bot** → *Partner yang tampil* | item list di Dashboard Partnership |
+| Partner (nama, emoji, judul, deskripsi, **kategori**, logo/banner, tautan, label tombol, urutan, aktif, jadwal mulai/berakhir) | tab **Lobby Bot** → *Partner yang tampil* | item list di Dashboard Partnership |
+| **Detail partnership** (judul, deskripsi panjang, sorotan, gambar, label tombol tautan, catatan kaki) | tab **Lobby Bot** → kotak *Detail partnership* pada tiap partner | isi balasan ephemeral saat tombol partner ditekan |
 | Judul dashboard, catatan, dan seluruh teks item CTA + posisinya (`atas`/`bawah`) | tab **Lobby Bot** → *Dashboard & item CTA* | header + item CTA "Order Partnership" |
+| Struktur kategori (label, deskripsi, emoji, urutan, cakupan) | tab **Kategori** | judul & urutan kelompok di dashboard dan baris tombolnya |
 | Satuan paket & minimum order (mis. **Pemain** min 100, **Hari** min 15) + harga | tab **Produk & Harga** | layar paket saat pemain menekan **Order Partnership** |
+
+**Tombol partner: detail dulu, baru tautan**
+
+Menekan tombol partner **tidak** langsung membuka link tujuan. Bot membalas
+**ephemeral** (`flags: 64` — hanya terlihat oleh penekannya) berisi detail
+partnership dari CMS; tautan tujuan menjadi tombol **di dalam** balasan itu,
+berdampingan dengan jalan pintas *Order Partnership*. Jadi pemain memahami
+partnernya lebih dulu sebelum memutuskan.
+
+Kolom detail yang dikosongkan jatuh ke kolom ringkasnya (judul item, deskripsi
+singkat, banner), sehingga balasannya tidak pernah kosong.
 
 **Perilaku yang dijamin**
 
 - Dashboard **selalu tampil**, bahkan tanpa partner sama sekali — item CTA menjadi
   satu-satunya isi list, sehingga areanya tidak pernah terlihat kosong.
 - Item CTA adalah **bagian dari list** (field embed), **bukan footer**.
+- Partner **dikelompokkan per kategori** dengan urutan yang sama persis dengan CMS;
+  kategori yang belum terdaftar tetap tampil di akhir, jadi tidak ada partner yang
+  hilang dari dashboard.
 - Partner otomatis berhenti tampil di luar jendela `start_at`–`end_at` atau saat
   dinonaktifkan — tanpa perlu menghapusnya.
-- Harga yang belum diisi ditulis **"Hubungi kami untuk penawaran"**, bukan `Rp 0`.
+- Harga bebas nominal; yang belum diisi ditulis **"Hubungi kami untuk penawaran"**,
+  `0` ditulis **"Gratis"**.
 - Bot menyegarkan konten berkala (± 5 menit), jadi perubahan berlaku **tanpa restart
   bot dan tanpa build website**.
 
 Rinciannya (struktur embed, tombol, `customId` `ptn_*`) ada di repo bot:
 `docs/lobbysambungkata.md` § 7b.
+
+### Kategori Partnership (bagian 12 schema)
+
+`partnership_categories` adalah **satu-satunya** sumber struktur kategori, dipakai
+tiga tempat sekaligus supaya tidak pernah berbeda:
+
+| Tempat | Yang mengikuti kategori |
+|---|---|
+| CMS | Section per kategori di tab **Produk & Harga** dan **Lobby Bot** (tidak lagi satu daftar panjang) |
+| Halaman publik `/partnership` | Pengelompokan kartu paket (setelah build) |
+| Dashboard Partnership di bot | Header kelompok di embed + pengelompokan baris tombol |
+
+| Kolom | Peran |
+|---|---|
+| `key` | Kunci yang disimpan `partnership_slots.category` / `partnership_products.category` |
+| `label`, `description` | Judul & keterangan section |
+| `icon` | Nama ikon Lucide untuk CMS (registry aman di `src/lib/partnership-kategori.ts`; DB tidak pernah menyimpan markup) |
+| `emoji` | Ikon teks untuk Discord — bot tidak bisa merender SVG |
+| `scope` | `partner` / `produk` / `semua` — menentukan di tab mana kategori boleh dipilih |
+| `enabled`, `sort` | Muncul sebagai pilihan atau tidak, dan urutan section di semua tempat |
+
+Kategori **tanpa foreign key** (sama seperti `bot_settings.category`): menghapus
+kategori tidak ikut menghapus partner/produknya — item-nya hanya berpindah ke
+section **Lainnya** sampai admin memindahkannya.
 
 ---
 
