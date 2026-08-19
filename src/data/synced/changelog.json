@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.42.0",
+    "date": "2026-08-19",
+    "title": "Info changelog di lobby kini bisa diatur tampil/sembunyi",
+    "highlights": [
+      "🗒️ Tim kini bisa menampilkan atau menyembunyikan info changelog di lobby — tampilan lobby bisa dibuat lebih ringkas saat diperlukan",
+      "🔄 Pengaturannya langsung berlaku tanpa bot perlu di-restart"
+    ]
+  },
+  {
     "version": "2.41.0",
     "date": "2026-08-19",
     "title": "Detail partner & kategori rapi di Dashboard Partnership",
