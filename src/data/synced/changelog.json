@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.41.0",
+    "date": "2026-08-19",
+    "title": "Detail partner & kategori rapi di Dashboard Partnership",
+    "highlights": [
+      "🤝 Tombol partner kini menampilkan detail partnership dulu — deskripsi, sorotan, dan tautannya, dan hanya kamu yang melihatnya",
+      "🗂️ Partner & paket kini tersusun per kategori, tidak lagi menumpuk jadi satu daftar panjang",
+      "💰 Harga paket tampil apa adanya untuk nominal berapa pun; yang belum ditentukan tetap tertulis \"Hubungi kami\", yang gratis tertulis \"Gratis\""
+    ]
+  },
+  {
     "version": "2.40.0",
     "date": "2026-08-18",
     "title": "Dashboard Partnership di lobby",
