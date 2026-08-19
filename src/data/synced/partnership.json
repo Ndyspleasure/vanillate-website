@@ -5,18 +5,11 @@
   },
   "categories": [
     {
-      "key": "broadcast",
-      "label": "Broadcast Pesan",
-      "description": "Paket menjangkau pemain lewat pesan langsung.",
-      "emoji": "📢",
-      "sort": 10
-    },
-    {
-      "key": "penempatan",
-      "label": "Penempatan di Lobby",
-      "description": "Paket tampil di dalam permainan.",
-      "emoji": "🖼️",
-      "sort": 20
+      "key": "lainnya",
+      "label": "Lainnya",
+      "description": "Belum dikategorikan - pindahkan ke kategori di atas.",
+      "emoji": "🤝",
+      "sort": 900
     }
   ],
   "products": [
@@ -26,7 +19,7 @@
       "tagline": "Pesan langsung ke DM pemain aktif.",
       "description": "Kami mengirim pesan promosi kamu langsung ke DM pemain yang masih aktif bermain. Cocok untuk pengumuman, promo, dan undangan komunitas.",
       "channel": "dm",
-      "category": "broadcast",
+      "category": "lainnya",
       "price": 150,
       "currency": "IDR",
       "priceUnit": "per dm",
@@ -52,7 +45,7 @@
       "tagline": "Tampil di lobby permainan.",
       "description": "Pesan kamu ditampilkan di lobby permainan sehingga terlihat oleh pemain saat mereka hendak bermain. Cocok untuk eksposur berulang.",
       "channel": "lobby",
-      "category": "penempatan",
+      "category": "lainnya",
       "price": 200,
       "currency": "IDR",
       "priceUnit": "per hari",
