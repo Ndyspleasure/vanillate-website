@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.43.0",
+    "date": "2026-08-19",
+    "title": "Werewolf: kartu peran otomatis, pembagian peran yang adil, & penjelasan akhir permainan",
+    "highlights": [
+      "🎭 Kartu peranmu kini muncul otomatis begitu permainan dimulai — tak perlu lagi mencari tombolnya sendiri",
+      "📖 Isi kartu peran jauh lebih lengkap: tugas, kemampuan, langkah yang harus dilakukan, cara menang & kalah, kondisi khusus, plus tips bermain",
+      "🎲 Pembagian peran dipastikan adil — host maupun pemain lain punya peluang yang sama persis untuk setiap peran",
+      "🏆 Layar akhir kini menjelaskan kenapa satu pihak menang, kenapa pihak lain kalah, dan kenapa permainan berhenti di situ",
+      "📚 Panduan \"Cara Main\" diperluas jadi tutorial lengkap: alur tiap fase, fungsi tiap tombol, tips pemain baru, & arti istilah",
+      "🐺 Serigala yang salah memilih kawanannya sebagai mangsa kini diberi tahu alasannya"
+    ]
+  },
+  {
     "version": "2.42.0",
     "date": "2026-08-19",
     "title": "Info changelog di lobby kini bisa diatur tampil/sembunyi",
