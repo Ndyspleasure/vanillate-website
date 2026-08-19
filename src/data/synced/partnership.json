@@ -3,6 +3,22 @@
     "partnershipUrl": "https://vanillate.id/partnership",
     "applyUrl": ""
   },
+  "categories": [
+    {
+      "key": "broadcast",
+      "label": "Broadcast Pesan",
+      "description": "Paket menjangkau pemain lewat pesan langsung.",
+      "emoji": "📢",
+      "sort": 10
+    },
+    {
+      "key": "penempatan",
+      "label": "Penempatan di Lobby",
+      "description": "Paket tampil di dalam permainan.",
+      "emoji": "🖼️",
+      "sort": 20
+    }
+  ],
   "products": [
     {
       "key": "broadcast_dm",
@@ -10,14 +26,15 @@
       "tagline": "Pesan langsung ke DM pemain aktif.",
       "description": "Kami mengirim pesan promosi kamu langsung ke DM pemain yang masih aktif bermain. Cocok untuk pengumuman, promo, dan undangan komunitas.",
       "channel": "dm",
-      "price": 10000,
+      "category": "broadcast",
+      "price": 150,
       "currency": "IDR",
-      "priceUnit": "per campaign",
+      "priceUnit": "per dm",
       "unit": "Per campaign",
       "minQuantity": 100,
       "info": "",
       "terms": "",
-      "priceNote": "Harga diatas untuk broadcast 100 pemain",
+      "priceNote": "Akumulasi untuk minimum 100 order adalah Rp 15.000",
       "features": [
         "Terkirim langsung ke DM pemain aktif",
         "Target bisa dipilih (pemain paling aktif)",
@@ -35,14 +52,15 @@
       "tagline": "Tampil di lobby permainan.",
       "description": "Pesan kamu ditampilkan di lobby permainan sehingga terlihat oleh pemain saat mereka hendak bermain. Cocok untuk eksposur berulang.",
       "channel": "lobby",
-      "price": 4000,
+      "category": "penempatan",
+      "price": 200,
       "currency": "IDR",
-      "priceUnit": "per campaign",
+      "priceUnit": "per hari",
       "unit": "Per campaign",
       "minQuantity": 20,
-      "info": "",
+      "info": "Akumulasi untuk minimum 20 order adalah Rp 4.000",
       "terms": "",
-      "priceNote": "Harga diatas untuk broadcast 20 hari",
+      "priceNote": "",
       "features": [
         "Tampil di lobby permainan",
         "Terlihat berulang oleh pemain aktif",
