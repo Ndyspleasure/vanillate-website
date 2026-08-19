@@ -3,7 +3,11 @@
 //
 // Mengelola **Dashboard Partnership** yang tampil terpisah di bawah Dashboard
 // Lobby di dalam permainan Discord:
-//   • Daftar partner (slot) yang tayang, lengkap dengan jadwal mulai/berakhir.
+//   • Daftar partner (slot) yang tayang — dikelompokkan per KATEGORI, lengkap
+//     dengan jadwal mulai/berakhir.
+//   • DETAIL tiap partner: isi balasan ephemeral saat pemain menekan tombol
+//     partner. Tombol partner TIDAK lagi melompat langsung ke link tujuan —
+//     pemain membaca detailnya dulu, tautannya ada di dalam balasan itu.
 //   • Seluruh teks item CTA "Order Partnership" + posisinya di dalam list.
 //
 // Bot MEMBACA tabel ini langsung dari Supabase (service_role) dan menyegarkan
@@ -12,13 +16,14 @@
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 import PartnershipTabs from '@components/PartnershipTabs.astro';
+import { url } from '@utils/url';
 ---
 
 <AdminLayout title="Lobby Bot" active="partnership">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Lobby Bot"
-    description="Atur partner yang tampil di Dashboard Partnership dalam permainan, beserta teks item Order Partnership."
+    description="Atur partner yang tampil di Dashboard Partnership dalam permainan, detail tiap partner, dan teks item Order Partnership."
   />
   <PartnershipTabs active="lobby" />
 
@@ -27,6 +32,11 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
         Dashboard Partnership <strong>selalu tampil</strong> di lobby — walau belum ada partner,
         item <em>Order Partnership</em> tetap ada supaya areanya tidak terlihat kosong.
+        Menekan tombol partner <strong>tidak langsung membuka link</strong>: bot membalas
+        pesan yang hanya terlihat oleh penekannya, berisi <strong>Detail partner</strong> di
+        bawah — tautannya menjadi tombol di dalam balasan itu.
+        Partner dikelompokkan menurut <a class="font-medium text-amber-700 dark:text-amber-400 hover:underline" href={url('/admin/partnership/categories')}>Kategori</a>,
+        dan urutan kelompoknya sama persis dengan yang dilihat pemain.
         Perubahan di halaman ini diterapkan bot dalam beberapa menit (tanpa restart).
       </p>
     </div>
@@ -46,13 +56,14 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       </form>
     </section>
 
-    <!-- DAFTAR PARTNER -->
+    <!-- DAFTAR PARTNER (per kategori) -->
     <section class="space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 class="font-display text-lg font-semibold tracking-tightest">Partner yang tampil</h2>
           <p class="mt-0.5 text-sm text-ink-500 dark:text-cream-300/60">
-            Urutan mengikuti kolom <em>Urutan</em>. Kosongkan tanggal untuk tayang tanpa batas.
+            Dikelompokkan per kategori; di dalam kelompok, urutan mengikuti kolom <em>Urutan</em>.
+            Kosongkan tanggal untuk tayang tanpa batas.
           </p>
         </div>
         <button type="button" id="btn-tambah"
@@ -60,7 +71,7 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
           + Tambah partner
         </button>
       </div>
-      <div id="slot-body" class="space-y-5"></div>
+      <div id="slot-body" class="space-y-10"></div>
       <p id="slot-pesan" class="text-sm" role="status" aria-live="polite"></p>
     </section>
   </div>
@@ -70,9 +81,11 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtWaktu } from '@/lib/admin-auth';
+  import { headerKategori, kelompokkan, opsiKategori, untukScope, type Kategori } from '@/lib/partnership-kategori';
 
   const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
   let bolehEdit = false;
+  let kategori: Kategori[] = [];
 
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
@@ -216,20 +229,37 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
     const supabase = getSupabase();
     if (!supabase) return;
 
-    const { data, error } = await supabase
-      .from('partnership_slots')
-      .select('id, partner_name, title, description, emoji, logo_url, banner_url, url, button_label, button_url, enabled, sort, start_at, end_at, updated_at')
-      .order('sort', { ascending: true });
+    const [kat, slot] = await Promise.all([
+      supabase.from('partnership_categories')
+        .select('key, label, description, icon, emoji, scope, enabled, sort')
+        .order('sort', { ascending: true }),
+      supabase.from('partnership_slots')
+        .select('id, partner_name, title, description, emoji, category, logo_url, banner_url, url, button_label, button_url, detail_title, detail_description, detail_highlights, detail_image_url, detail_footer, detail_link_label, enabled, sort, start_at, end_at, updated_at')
+        .order('sort', { ascending: true }),
+    ]);
 
-    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
-    if (!data || data.length === 0) {
+    if (slot.error) { body.innerHTML = stateBlock('error', pesanError(slot.error)); return; }
+    const data = slot.data ?? [];
+
+    // Kategori tetap dimuat walau daftar partner kosong: dropdown pada partner
+    // baru butuh isinya.
+    kategori = untukScope((kat.error ? [] : (kat.data ?? [])) as Kategori[], 'partner');
+
+    if (data.length === 0) {
       body.innerHTML = stateBlock('empty', 'Belum ada partner. Item Order Partnership tetap tampil di lobby.');
       return;
     }
 
-    body.innerHTML = data.map(kartuSlot).join('');
+    body.innerHTML = kelompokkan(data as any[], kategori)
+      .map((g) => `
+        <section class="space-y-4">
+          ${headerKategori(g.kategori, g.items.length)}
+          <div class="space-y-5">${g.items.map(kartuSlot).join('')}</div>
+        </section>`)
+      .join('');
+
     if (!bolehEdit) {
-      body.querySelectorAll('input, textarea, button').forEach((n) => ((n as HTMLInputElement).disabled = true));
+      body.querySelectorAll('input, textarea, select, button').forEach((n) => ((n as HTMLInputElement).disabled = true));
     }
   }
 
@@ -242,6 +272,8 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       </div>`;
     const teks = (nama: string, nilai: any, extra = '') =>
       `<input id="s${s.id}-${esc(nama)}" data-id="${esc(s.id)}" data-field="${esc(nama)}" value="${esc(nilai ?? '')}" ${extra} class="${INPUT}" />`;
+    const area = (nama: string, nilai: any, baris = 2, maks = 500) =>
+      `<textarea id="s${s.id}-${esc(nama)}" data-id="${esc(s.id)}" data-field="${esc(nama)}" rows="${baris}" maxlength="${maks}" class="${INPUT}">${esc(nilai ?? '')}</textarea>`;
 
     const tayang = s.enabled === false ? 'Nonaktif'
       : (s.start_at && Date.parse(s.start_at) > Date.now()) ? 'Belum mulai'
@@ -250,6 +282,8 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
     const warna = tayang === 'Tayang'
       ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300'
       : 'bg-ink-500/15 text-ink-500 dark:text-cream-300/60';
+
+    const sorotan = Array.isArray(s.detail_highlights) ? s.detail_highlights.join('\n') : '';
 
     return `
       <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4" data-slot="${esc(s.id)}">
@@ -274,21 +308,55 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
         <div class="grid gap-4 sm:grid-cols-[6rem_1fr_6rem]">
           ${f('emoji', 'Emoji', teks('emoji', s.emoji, 'maxlength="8"'))}
           ${f('partner_name', 'Nama partner', teks('partner_name', s.partner_name, 'maxlength="80"'))}
-          ${f('sort', 'Urutan', teks('sort', s.sort ?? 100, 'type="number" min="0" step="10"'))}
+          ${f('sort', 'Urutan', teks('sort', s.sort ?? 100, 'inputmode="numeric"'))}
         </div>
 
-        ${f('title', 'Judul item', teks('title', s.title, 'maxlength="120"'), 'Kosong = memakai nama partner.')}
-        ${f('description', 'Deskripsi',
-          `<textarea id="s${s.id}-description" data-id="${esc(s.id)}" data-field="description" rows="2" maxlength="500" class="${INPUT}">${esc(s.description ?? '')}</textarea>`)}
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${f('category', 'Kategori',
+            `<select id="s${s.id}-category" data-id="${esc(s.id)}" data-field="category" class="${INPUT}">
+               ${opsiKategori(kategori, s.category)}
+             </select>`,
+            'Menentukan kelompok partner ini di CMS dan di dashboard bot.')}
+          ${f('title', 'Judul item', teks('title', s.title, 'maxlength="120"'), 'Kosong = memakai nama partner.')}
+        </div>
+
+        ${f('description', 'Deskripsi singkat (di list dashboard)', area('description', s.description))}
+
+        <!-- DETAIL PARTNER — isi balasan ephemeral saat tombolnya ditekan. -->
+        <div class="rounded-xl border border-amber-500/30 bg-amber-500/[0.04] p-4 space-y-4">
+          <div>
+            <p class="text-sm font-semibold">Detail partnership (balasan tombol)</p>
+            <p class="mt-0.5 text-xs text-ink-500 dark:text-cream-300/60">
+              Yang dilihat pemain setelah menekan tombol partner — hanya dia yang melihatnya.
+              Kosongkan judul/deskripsi untuk memakai judul item &amp; deskripsi singkat di atas.
+            </p>
+          </div>
+
+          ${f('detail_title', 'Judul detail', teks('detail_title', s.detail_title, 'maxlength="120" placeholder="kosong = judul item"'))}
+          ${f('detail_description', 'Deskripsi detail', area('detail_description', s.detail_description, 5, 2000),
+            'Boleh beberapa paragraf. Markdown Discord (**tebal**, *miring*) berlaku.')}
+          ${f('detail_highlights', 'Sorotan (satu per baris)', area('detail_highlights', sorotan, 4, 1000),
+            'Ditampilkan sebagai daftar bullet di dalam detail. Kosongkan bila tidak perlu.')}
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            ${f('detail_link_label', 'Label tombol tautan', teks('detail_link_label', s.detail_link_label, 'maxlength="60" placeholder="kosong = Kunjungi <partner>"'),
+              'Tombol tautan muncul DI DALAM detail, memakai Tujuan tombol di bawah.')}
+            ${f('detail_image_url', 'Gambar detail (URL)', teks('detail_image_url', s.detail_image_url, 'type="url" placeholder="kosong = banner partner"'))}
+          </div>
+
+          ${f('detail_footer', 'Catatan kaki detail', teks('detail_footer', s.detail_footer, 'maxlength="120" placeholder="mis. Berlaku sampai 31 Des"'))}
+        </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
-          ${f('button_label', 'Label tombol', teks('button_label', s.button_label, 'maxlength="60" placeholder="kosong = tanpa tombol"'))}
-          ${f('button_url', 'Tujuan tombol', teks('button_url', s.button_url, 'type="url" placeholder="https://…"'))}
+          ${f('button_label', 'Label tombol di dashboard', teks('button_label', s.button_label, 'maxlength="60" placeholder="kosong = nama partner"'),
+            'Tombol ini membuka detail di atas, bukan link.')}
+          ${f('button_url', 'Tujuan tombol tautan', teks('button_url', s.button_url, 'type="url" placeholder="https://…"'),
+            'Dipakai tombol tautan di dalam detail. Kosong = detail tampil tanpa tombol tautan.')}
         </div>
 
         <div class="grid gap-4 sm:grid-cols-3">
-          ${f('url', 'Tautan "Selengkapnya"', teks('url', s.url, 'type="url"'))}
-          ${f('logo_url', 'Logo (URL)', teks('logo_url', s.logo_url, 'type="url"'), 'Tampil bila hanya 1 partner tayang.')}
+          ${f('url', 'Tautan "Selengkapnya"', teks('url', s.url, 'type="url"'), 'Cadangan bila Tujuan tombol kosong.')}
+          ${f('logo_url', 'Logo (URL)', teks('logo_url', s.logo_url, 'type="url"'), 'Thumbnail di detail; di list bila hanya 1 partner tayang.')}
           ${f('banner_url', 'Banner (URL)', teks('banner_url', s.banner_url, 'type="url"'), 'Tampil bila hanya 1 partner tayang.')}
         </div>
 
@@ -313,6 +381,9 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       partner_name: nama.trim(),
       enabled: false, // aman: baru tayang setelah admin melengkapi & mengaktifkan
       sort: 100,
+      // Kategori pertama yang tersedia supaya partner baru tidak langsung
+      // mendarat di section "Lainnya".
+      category: kategori[0]?.key ?? 'lainnya',
       updated_by: sesi.session?.user.id ?? null,
     });
 
@@ -322,7 +393,7 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       pesan.className = 'text-sm text-red-600 dark:text-red-400';
       return;
     }
-    pesan.textContent = 'Partner ditambahkan (masih nonaktif). Lengkapi lalu aktifkan.';
+    pesan.textContent = 'Partner ditambahkan (masih nonaktif). Lengkapi detailnya lalu aktifkan.';
     pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
     void muatSlots();
   }
@@ -350,11 +421,14 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
     // ── Simpan ──
     const id = el.dataset.simpan!;
     const patch: Record<string, any> = {};
-    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(`[data-id="${id}"][data-field]`).forEach((n) => {
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[data-id="${CSS.escape(id)}"][data-field]`).forEach((n) => {
       const field = n.dataset.field!;
       if (field === 'enabled') patch.enabled = (n as HTMLInputElement).checked;
       else if (field === 'sort') patch.sort = Number(n.value.trim() || 100);
       else if (field === 'start_at' || field === 'end_at') patch[field] = keIso(n.value.trim());
+      else if (field === 'detail_highlights') {
+        patch.detail_highlights = n.value.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 10);
+      } else if (field === 'category') patch.category = n.value.trim() || 'lainnya';
       else patch[field] = n.value.trim() || null;
     });
 
@@ -363,16 +437,25 @@ import PartnershipTabs from '@components/PartnershipTabs.astro';
       pesan.className = 'text-sm text-red-600 dark:text-red-400';
       return;
     }
-    // Tombol hanya berarti bila label DAN URL http(s) terisi — cegah tombol mati.
-    for (const [label, u] of [['button_url', patch.button_url], ['url', patch.url], ['logo_url', patch.logo_url], ['banner_url', patch.banner_url]] as const) {
+    // Semua kolom URL tetap wajib http(s) — nilainya dipakai bot sebagai href.
+    for (const label of ['button_url', 'url', 'logo_url', 'banner_url', 'detail_image_url'] as const) {
+      const u = patch[label];
       if (u && !/^https?:\/\//i.test(String(u))) {
         pesan.textContent = `Kolom ${label} harus diawali http:// atau https://.`;
         pesan.className = 'text-sm text-red-600 dark:text-red-400';
         return;
       }
     }
-    if (patch.button_label && !patch.button_url) {
-      pesan.textContent = 'Label tombol terisi tapi tujuan tombol kosong — tombol tidak akan tampil.';
+    // Tombol partner kini membuka DETAIL, jadi label tanpa URL bukan lagi
+    // kesalahan. Yang perlu diingatkan justru detail yang masih kosong: pemain
+    // akan mendapat balasan seadanya.
+    if (!patch.detail_description && !patch.description) {
+      pesan.textContent = 'Isi minimal Deskripsi singkat atau Deskripsi detail — itu yang dibaca pemain saat menekan tombol.';
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+    if (patch.detail_link_label && !patch.button_url && !patch.url) {
+      pesan.textContent = 'Label tombol tautan terisi tapi tidak ada URL tujuan — tombol tautan tidak akan tampil.';
       pesan.className = 'text-sm text-red-600 dark:text-red-400';
       return;
     }

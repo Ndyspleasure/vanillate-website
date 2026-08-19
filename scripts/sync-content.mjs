@@ -43,6 +43,7 @@ const SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 const KOSONG_KONTEN = { announcement: { enabled: false, text: '', url: '' } };
 const KOSONG_PARTNERSHIP = {
   settings: { partnershipUrl: '', applyUrl: '' },
+  categories: [],
   products: [],
   links: [],
   content: {},
@@ -111,6 +112,25 @@ async function ambil(pathQuery) {
 }
 
 /**
+ * Ambil dengan kolom opsional.
+ *
+ * Kolom baru (mis. `category`) baru ada setelah schema terbaru dijalankan. Di
+ * database yang belum dimigrasi PostgREST menjawab 400 untuk seluruh query —
+ * itu akan menjatuhkan sinkronisasi harga hanya karena satu kolom. Jadi bila
+ * percobaan pertama gagal, ulangi tanpa kolom opsional tersebut.
+ */
+async function ambilLonggar(tabel, kolomWajib, kolomOpsional, ekor) {
+  const semua = [...kolomWajib, ...kolomOpsional].join(',');
+  try {
+    return await ambil(`${tabel}?select=${semua}${ekor}`);
+  } catch (err) {
+    if (kolomOpsional.length === 0) throw err;
+    console.warn(`  ! ${tabel}: kolom ${kolomOpsional.join(', ')} belum ada — memakai kolom lama (${err.message})`);
+    return await ambil(`${tabel}?select=${kolomWajib.join(',')}${ekor}`);
+  }
+}
+
+/**
  * Hanya izinkan tautan http(s) atau path internal.
  *
  * Nilai ini berasal dari input admin dan akan jadi href; menolak skema lain
@@ -157,20 +177,24 @@ async function syncSiteContent() {
 
 // ─── 2. Halaman & harga Partnership ─────────────────────────────────────────
 
-/** Harga: kosong/negatif/bukan angka → null, supaya tampil "—" bukan "Rp 0". */
+/**
+ * Harga: kosong/bukan angka → null, supaya tampil "—" bukan "Rp 0".
+ *
+ * TANPA batas nominal — nilai sebesar/sekecil apa pun diteruskan apa adanya,
+ * termasuk pecahan. Yang disaring hanya yang bukan angka; `0` sengaja
+ * dipertahankan karena artinya "gratis", bukan "belum diisi".
+ */
 function hargaAman(nilai) {
   if (nilai === null || nilai === undefined || String(nilai).trim() === '') return null;
   const n = Number(nilai);
-  if (!Number.isFinite(n) || n < 0) return null;
-  return n;
+  return Number.isFinite(n) ? n : null;
 }
 
-/** Minimum order: bilangan bulat ≥ 0; sisanya null (dianggap tanpa minimum). */
+/** Minimum order: bilangan bulat, tanpa batas atas; bukan angka → null. */
 function minimumAman(nilai) {
   if (nilai === null || nilai === undefined || String(nilai).trim() === '') return null;
   const n = Number(nilai);
-  if (!Number.isFinite(n) || n < 0) return null;
-  return Math.floor(n);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
 function daftarTeks(nilai, maks = 12) {
@@ -182,10 +206,16 @@ function daftarTeks(nilai, maks = 12) {
 }
 
 async function syncPartnership() {
-  let produkRaw, linkRaw, settingRaw, pageRaw;
+  let produkRaw, linkRaw, settingRaw, pageRaw, kategoriRaw;
   try {
     [produkRaw, linkRaw, settingRaw, pageRaw] = await Promise.all([
-      ambil('partnership_products?select=key,name,tagline,description,channel,price,currency,price_unit,price_note,features,badge,cta_label,cta_mode,cta_url,enabled,sort,unit,min_quantity,info,terms&enabled=is.true&order=sort.asc'),
+      ambilLonggar(
+        'partnership_products',
+        ['key', 'name', 'tagline', 'description', 'channel', 'price', 'currency', 'price_unit', 'price_note',
+         'features', 'badge', 'cta_label', 'cta_mode', 'cta_url', 'enabled', 'sort', 'unit', 'min_quantity', 'info', 'terms'],
+        ['category'],
+        '&enabled=is.true&order=sort.asc',
+      ),
       ambil('partnership_links?select=label,url,enabled,sort&enabled=is.true&order=sort.asc'),
       ambil('partnership_settings?select=partnership_url,apply_url&id=eq.1'),
       ambil('partnership_page?select=content&id=eq.1'),
@@ -193,6 +223,17 @@ async function syncPartnership() {
   } catch (err) {
     pertahankanYangLama(FILE_PARTNERSHIP, KOSONG_PARTNERSHIP, err.message);
     return;
+  }
+
+  // Kategori memakai urutan yang sama dengan CMS & bot, jadi halaman publik
+  // mengelompokkan paket persis seperti yang diatur admin. Ditarik TERPISAH:
+  // pada database yang belum menjalankan schema terbaru tabelnya belum ada,
+  // dan itu tidak boleh menjatuhkan sinkronisasi produk/harga.
+  try {
+    kategoriRaw = await ambil('partnership_categories?select=key,label,description,emoji,scope,enabled,sort&enabled=is.true&order=sort.asc');
+  } catch (err) {
+    kategoriRaw = [];
+    console.warn(`  ! kategori partnership dilewati: ${err.message}`);
   }
 
   const setting = settingRaw[0] ?? {};
@@ -204,6 +245,10 @@ async function syncPartnership() {
     tagline: String(p.tagline ?? '').trim(),
     description: String(p.description ?? '').trim(),
     channel: p.channel === 'lobby' ? 'lobby' : 'dm',
+    // Kategori = kunci pengelompokan di halaman publik. Kosong → 'lainnya'
+    // supaya paket tidak pernah hilang dari halaman hanya karena belum
+    // dikategorikan.
+    category: String(p.category ?? '').trim() || 'lainnya',
     price: hargaAman(p.price),
     currency: String(p.currency ?? 'IDR').trim() || 'IDR',
     priceUnit: String(p.price_unit ?? '').trim(),
@@ -222,11 +267,26 @@ async function syncPartnership() {
     ctaUrl: urlAman(p.cta_url, `CTA produk ${p.key}`),
   })).filter((p) => p.key && p.name);
 
+  // Hanya kategori yang benar-benar dipakai paket yang ikut terbit — halaman
+  // publik tidak perlu tahu kategori khusus partner.
+  const dipakai = new Set(products.map((p) => p.category));
+  const categories = (kategoriRaw ?? [])
+    .filter((c) => c.scope !== 'partner' && dipakai.has(String(c.key)))
+    .map((c) => ({
+      key: String(c.key ?? ''),
+      label: String(c.label ?? '').trim() || String(c.key ?? ''),
+      description: String(c.description ?? '').trim(),
+      emoji: String(c.emoji ?? '').trim(),
+      sort: Number.isFinite(Number(c.sort)) ? Number(c.sort) : 100,
+    }))
+    .filter((c) => c.key);
+
   const hasil = {
     settings: {
       partnershipUrl: urlAman(setting.partnership_url, 'Partnership URL'),
       applyUrl: urlAman(setting.apply_url, 'Apply URL'),
     },
+    categories,
     products,
     links: linkRaw
       .map((l) => ({ label: String(l.label ?? '').trim(), url: urlAman(l.url, `Custom link ${l.label}`) }))
@@ -236,7 +296,7 @@ async function syncPartnership() {
 
   tulis(FILE_PARTNERSHIP, hasil);
   console.log('✓ partnership.json diperbarui.');
-  console.log(`  produk aktif: ${products.length} · custom link: ${hasil.links.length}`);
+  console.log(`  produk aktif: ${products.length} · kategori: ${categories.length} · custom link: ${hasil.links.length}`);
 }
 
 // ─── Jalan ──────────────────────────────────────────────────────────────────
