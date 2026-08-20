@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.47.0",
+    "date": "2026-08-20",
+    "title": "UNO makin ramai + hitung mundur mulai pertandingan",
+    "highlights": [
+      "⏳ Saat host tekan Mulai, muncul hitung mundur \"Persiapan Pertandingan\" 30 detik sebelum permainan jalan — kini juga di UNO & Werewolf.",
+      "👥 Meja UNO kini muat sampai 25 pemain (dari 10).",
+      "🧹 Daftar pemain di meja besar dirapikan otomatis biar tetap enak dibaca."
+    ]
+  },
+  {
     "version": "2.46.0",
     "date": "2026-08-20",
     "title": "Semua game kini main di dalam Thread — channel lebih rapi!",
