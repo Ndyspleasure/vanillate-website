@@ -1,5 +1,17 @@
 [
   {
+    "version": "2.44.0",
+    "date": "2026-08-20",
+    "title": "Game baru: UNO hadir di /game!",
+    "highlights": [
+      "🃏 Game sampingan baru — UNO! Adu kartu warna & angka bareng teman langsung di channel (2–10 pemain).",
+      "✨ Papan gaya feed: tiap aksi muncul update baru, seru diikuti seperti riwayat pertandingan.",
+      "🎴 Kartu spesial lengkap — Skip, Reverse, +2, Wild, dan Wild +4.",
+      "📢 Aturan UNO! — saat tersisa 1 kartu wajib teriak; lupa? kena tarik 2 kartu.",
+      "⏱️ Anti-nunggu: giliran yang kelamaan otomatis dilewati biar permainan terus jalan."
+    ]
+  },
+  {
     "version": "2.43.0",
     "date": "2026-08-19",
     "title": "Werewolf: kartu peran otomatis, pembagian peran yang adil, & penjelasan akhir permainan",
