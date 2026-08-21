@@ -1,5 +1,33 @@
 [
   {
+    "version": "2.49.4",
+    "date": "2026-08-21",
+    "title": "Tutorial game sampingan terasa lebih responsif",
+    "highlights": [
+      "🕹️ Pada latihan Werewolf, UNO, dan Pengacara, setiap tombol yang kamu tekan kini langsung dihitung sebagai aksi quest, jadi progresmu tidak lagi terasa mandek.",
+      "✅ Begitu aksi yang diminta terpenuhi, quest langsung lanjut ke pertanyaan pemahaman seperti biasa."
+    ]
+  },
+  {
+    "version": "2.49.3",
+    "date": "2026-08-21",
+    "title": "Perbaikan tutorial boost, tombol selalu bisa ditekan",
+    "highlights": [
+      "🎁 Semua boost kini tersedia selama tutorial, jadi kamu bisa mencoba boost pre match dan in game tanpa harus membelinya lebih dulu.",
+      "⏳ Pada latihan boost, pertandingan baru dimulai setelah kamu menekan boost pre match, jadi kamu tidak lagi kehilangan kesempatan memakainya.",
+      "🧹 Semua boost pinjaman selama tutorial otomatis ditarik kembali setelah tutorial selesai, tanpa memengaruhi koleksi aslimu."
+    ]
+  },
+  {
+    "version": "2.49.2",
+    "date": "2026-08-21",
+    "title": "Perbaikan tutorial, permainan latihan berhenti tepat waktu",
+    "highlights": [
+      "🎮 Saat sebuah quest permainan pada tutorial selesai, permainan latihannya kini langsung berhenti, jadi tidak ada lagi giliran pendamping atau hitung waktu yang berjalan di belakang.",
+      "✅ Setelah permainan berhenti, kamu langsung diarahkan ke pertanyaan pemahaman untuk melanjutkan ke quest berikutnya."
+    ]
+  },
+  {
     "version": "2.49.1",
     "date": "2026-08-21",
     "title": "Perbaikan tutorial, quest class dan hitungan waktu",
