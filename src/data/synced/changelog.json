@@ -1,5 +1,17 @@
 [
   {
+    "version": "2.48.0",
+    "date": "2026-08-21",
+    "title": "Tutorial Pemain Baru, belajar semua fitur sambil praktik langsung",
+    "highlights": [
+      "🎓 Command baru `/tutorial`, membuka ruang belajar pribadi berisi 20 quest yang mengenalkan seluruh command, mode, dan permainan satu per satu.",
+      "🎮 Semua mode bisa dicoba langsung di ruang tutorial, mulai dari Player vs Player, Player vs Bot, Player vs Server, Dungeon, sampai UNO, Werewolf, dan Pengacara, tanpa perlu menunggu pemain lain.",
+      "🤝 Pendamping bermain menemani latihanmu, dan Coin, item, serta class pinjaman selama tutorial tidak memengaruhi statistik maupun progres aslimu.",
+      "❓ Setiap quest ditutup dengan pertanyaan apakah kamu sudah paham, lengkap dengan bantuan yang bisa kamu pilih sendiri bagian mana yang ingin dijelaskan lebih detail.",
+      "⏳ Tutorial perlu diselesaikan sambil tetap aktif, karena sesi yang menganggur sepuluh menit akan dimulai lagi dari quest pertama."
+    ]
+  },
+  {
     "version": "2.47.0",
     "date": "2026-08-20",
     "title": "UNO makin ramai + hitung mundur mulai pertandingan",
