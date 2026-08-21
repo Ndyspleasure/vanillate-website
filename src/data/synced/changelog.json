@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.49.1",
+    "date": "2026-08-21",
+    "title": "Perbaikan tutorial, quest class dan hitungan waktu",
+    "highlights": [
+      "🎭 Quest class pada tutorial kini bisa diselesaikan, termasuk oleh pemain lama yang classnya sudah terbuka, sehingga tutorial tidak lagi berhenti di tahap ini.",
+      "⏳ Sisa waktu tutorial kembali menghitung dari awal setiap kali kamu beraksi, jadi sesi tidak lagi habis padahal kamu sedang aktif belajar.",
+      "🔔 Bila waktu tutorial benar benar hampir habis, bot mengingatkanmu lebih dulu di ruang tutorial sebelum sesi berakhir."
+    ]
+  },
+  {
     "version": "2.49.0",
     "date": "2026-08-21",
     "title": "Tutorial lebih mudah diikuti dan lebih cepat selesai",
