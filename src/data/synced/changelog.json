@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.49.0",
+    "date": "2026-08-21",
+    "title": "Tutorial lebih mudah diikuti dan lebih cepat selesai",
+    "highlights": [
+      "🧵 Setiap langkah tutorial kini dikirim sebagai pesan baru di bawah, jadi kamu tidak perlu lagi menggulir ke atas mencari petunjuk terakhir.",
+      "⏳ Sisa waktu tutorial tampil dengan hitung mundur yang berjalan sendiri, jelas tanpa perlu menyegarkan apa pun, dan bila waktu habis kamu diberi tahu di ruang tutorial.",
+      "⚡ Tutorial dipercepat menjadi sekitar sembilan menit, dengan latihan yang lebih ringkas namun materi tetap lengkap.",
+      "👉 Setelah kamu mengetik sebuah command, bot mengirim panduan langkah berikutnya supaya kamu tidak bingung menghadapi menu yang penuh tombol."
+    ]
+  },
+  {
     "version": "2.48.0",
     "date": "2026-08-21",
     "title": "Tutorial Pemain Baru, belajar semua fitur sambil praktik langsung",
