@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.51.0",
+    "date": "2026-08-25",
+    "title": "Sistem pemantauan & pemulihan otomatis untuk stabilitas bot",
+    "highlights": [
+      "🩺 Bot kini memantau error di latar belakang & dapat mengusulkan perbaikan otomatis untuk gangguan ringan",
+      "🛡️ Perbaikan berisiko tetap menunggu persetujuan pemilik — tidak ada perubahan produksi tanpa izin",
+      "📢 Insiden penting diteruskan ke tim developer secara real-time sehingga gangguan lebih cepat ditangani",
+      "🎯 Bot lebih stabil: setelah perbaikan otomatis, sistem cek kesehatan; jika bermasalah, otomatis kembali ke versi sebelumnya"
+    ]
+  },
+  {
     "version": "2.50.0",
     "date": "2026-08-25",
     "title": "Onboarding baru yang lebih ramah, bot untuk game sampingan, dan battle lebih seimbang",
