@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.50.0",
+    "date": "2026-08-25",
+    "title": "Onboarding baru yang lebih ramah, bot untuk game sampingan, dan battle lebih seimbang",
+    "highlights": [
+      "🎓 Tutorial pemain baru kini lebih ringkas dan informatif. Kamu cukup mengenal sistemnya tanpa dipaksa mencoba semua mode, lengkap dengan waktu membaca di tiap tahap, tombol Saya Sudah Paham, bantuan saat Belum Paham, serta opsi Lewati Tutorial yang tetap menampilkan ringkasan fitur utama.",
+      "🤖 Kamu bisa langsung bermain UNO dan Werewolf (Klasik maupun Lanjutan) tanpa menunggu teman dengan menambahkan bot ke lobby. Host bisa menambah atau menghapus bot kapan saja, dan bot bermain otomatis layaknya pemain biasa.",
+      "⚔️ Mode Player vs Bot Lanjutan kini lebih seimbang. Recovery memulihkan HP lebih banyak, HP bot diturunkan, dan bot memilih skill lebih cepat sehingga pertarungan terasa lebih hidup."
+    ]
+  },
+  {
     "version": "2.49.4",
     "date": "2026-08-21",
     "title": "Tutorial game sampingan terasa lebih responsif",
