@@ -1,5 +1,23 @@
 [
   {
+    "version": "2.51.2",
+    "date": "2026-08-25",
+    "title": "Perkakas uji internal untuk sistem pemulihan otomatis",
+    "highlights": [
+      "🧪 Tim developer kini bisa menguji sistem pemulihan otomatis secara aman tanpa mengganggu permainan",
+      "🛡️ Pengujian berjalan sepenuhnya terisolasi — tidak ada perubahan ke bot yang sedang berjalan"
+    ]
+  },
+  {
+    "version": "2.51.1",
+    "date": "2026-08-25",
+    "title": "Perbaikan stabilitas sistem pemulihan otomatis",
+    "highlights": [
+      "🛠️ Perbaikan agar sistem pemantauan & pemulihan otomatis bekerja andal di berbagai lingkungan server",
+      "🔧 Peningkatan diagnostik internal sehingga gangguan lebih cepat terdeteksi dan ditangani"
+    ]
+  },
+  {
     "version": "2.51.0",
     "date": "2026-08-25",
     "title": "Sistem pemantauan & pemulihan otomatis untuk stabilitas bot",
