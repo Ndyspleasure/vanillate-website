@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.52.0",
+    "date": "2026-08-26",
+    "title": "Kemampuan pemulihan otomatis yang lebih pintar (opsional, dengan pengaman)",
+    "highlights": [
+      "🧠 Sistem pemulihan otomatis kini bisa dibekali penalaran AI lokal untuk menangani lebih banyak jenis gangguan",
+      "🛡️ Setiap usulan perbaikan dari AI tetap wajib disetujui pemilik sebelum diterapkan — tidak ada perubahan otomatis tanpa izin",
+      "🔒 Fitur ini mati secara default dan sepenuhnya opsional; stabilitas & keamanan bot tetap prioritas utama"
+    ]
+  },
+  {
     "version": "2.51.2",
     "date": "2026-08-25",
     "title": "Perkakas uji internal untuk sistem pemulihan otomatis",
