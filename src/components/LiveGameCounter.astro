@@ -14,8 +14,8 @@
 //
 // Catatan: ini angka simulasi untuk efek visual, bukan telemetri nyata.
 
-const MIN = 58;
-const MAX = 1134;
+const MIN = 2000;
+const MAX = 12000;
 const PERIOD_MS = 5000;
 
 // Hash deterministik: ember-waktu → nilai. Fungsi yang sama persis dipakai di
@@ -115,8 +115,8 @@ const initial = valueForBucket(Math.floor(Date.now() / PERIOD_MS));
   const sr = root?.querySelector<HTMLElement>('[data-live-sr]');
 
   if (root && el) {
-    const MIN = Number(root.dataset.min) || 58;
-    const MAX = Number(root.dataset.max) || 1134;
+    const MIN = Number(root.dataset.min) || 2000;
+    const MAX = Number(root.dataset.max) || 12000;
     const PERIOD = Number(root.dataset.period) || 5000;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
