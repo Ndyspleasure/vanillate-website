@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import BotCard from '@components/BotCard.astro';
+import LiveGameCounter from '@components/LiveGameCounter.astro';
 import Icon from '@components/Icon.astro';
 import { bots, getFeaturedBot } from '@data/bots';
 import { site, homeStats } from '@data/site';
@@ -116,6 +117,9 @@ const steps = [
             </div>
           ))}
         </div>
+
+        <!-- Counter game berjalan (visual, sinkron antar-pengunjung) -->
+        <LiveGameCounter />
       </div>
     </div>
   </section>

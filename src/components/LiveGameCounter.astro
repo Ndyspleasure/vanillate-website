@@ -1,0 +1,150 @@
+---
+// LiveGameCounter.astro
+// Penghitung "game sedang berjalan" untuk visualisasi di beranda.
+//
+// Perilaku angka:
+//   • berubah tiap 5 detik,
+//   • acak dalam rentang 58–1134,
+//   • SINKRON antar-pengunjung — nilainya diturunkan secara deterministik dari
+//     "ember waktu" 5 detik (bukan Math.random yang beda tiap browser), lalu
+//     di-anchor ke jam server (header Date) sehingga klien dengan jam lokal yang
+//     meleset pun melihat angka yang sama pada detik yang sama.
+//
+// Catatan: ini angka simulasi untuk efek visual, bukan telemetri nyata.
+
+const MIN = 58;
+const MAX = 1134;
+const PERIOD_MS = 5000;
+
+// Hash deterministik: ember-waktu → nilai. Fungsi yang sama persis dipakai di
+// server (nilai awal, aman tanpa-JS) dan di client, jadi hasilnya identik.
+function valueForBucket(bucket: number): number {
+  let h = bucket >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 2246822507);
+  h = Math.imul(h ^ (h >>> 13), 3266489909);
+  h = (h ^ (h >>> 16)) >>> 0;
+  return MIN + (h % (MAX - MIN + 1));
+}
+
+function formatNum(n: number): string {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// Nilai awal dari waktu build — sekadar placeholder yang masuk akal untuk
+// pengunjung tanpa JS; client langsung mengoreksinya ke nilai tersinkron.
+const initial = valueForBucket(Math.floor(Date.now() / PERIOD_MS));
+---
+
+<div class="mt-6 max-w-4xl" data-live-game data-min={MIN} data-max={MAX} data-period={PERIOD_MS}>
+  <div
+    class="flex items-center justify-between gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-gradient-to-r from-amber-500/[0.08] via-cream-50 to-cream-50 dark:from-amber-500/[0.10] dark:via-ink-950 dark:to-ink-950 px-5 py-5 sm:px-6"
+  >
+    <div class="flex items-center gap-3.5">
+      <span class="relative flex h-2.5 w-2.5 flex-none" aria-hidden="true">
+        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500/70"></span>
+        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+      </span>
+      <div>
+        <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500 dark:text-cream-300/60">
+          Sedang berlangsung
+        </p>
+        <p class="text-sm font-semibold text-ink-800 dark:text-cream-100">Game berjalan di seluruh server</p>
+      </div>
+    </div>
+    <div class="text-right">
+      <span
+        class="block font-display text-3xl md:text-4xl font-semibold tracking-tightest text-ink-900 dark:text-cream-50 tabular-nums"
+        data-live-value
+      >{formatNum(initial)}</span>
+      <span class="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-400 dark:text-cream-300/50">
+        sesi aktif sekarang
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Penggerak counter "game sedang berjalan". Progressive enhancement: tanpa JS,
+  // angka awal dari server tetap tampil (statis).
+  const root = document.querySelector<HTMLElement>('[data-live-game]');
+  const el = root?.querySelector<HTMLElement>('[data-live-value]');
+
+  if (root && el) {
+    const MIN = Number(root.dataset.min) || 58;
+    const MAX = Number(root.dataset.max) || 1134;
+    const PERIOD = Number(root.dataset.period) || 5000;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Sama persis dengan hash di sisi server → sinkron lintas klien.
+    function valueForBucket(bucket: number): number {
+      let h = bucket >>> 0;
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      h = (h ^ (h >>> 16)) >>> 0;
+      return MIN + (h % (MAX - MIN + 1));
+    }
+    function formatNum(n: number): string {
+      return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    let offset = 0; // (jam server − jam lokal), dalam ms
+    const now = () => Date.now() + offset;
+
+    let displayed = parseInt((el.textContent || '').replace(/\./g, ''), 10);
+    if (!Number.isFinite(displayed)) displayed = valueForBucket(Math.floor(now() / PERIOD));
+
+    let raf = 0;
+    function tweenTo(target: number) {
+      const from = displayed;
+      const start = performance.now();
+      const dur = 650;
+      cancelAnimationFrame(raf);
+      function tick(t: number) {
+        const p = Math.min((t - start) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+        el!.textContent = formatNum(from + (target - from) * eased);
+        if (p < 1) raf = requestAnimationFrame(tick);
+        else displayed = target;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    let lastBucket = -1;
+    let first = true;
+    function update() {
+      const bucket = Math.floor(now() / PERIOD);
+      if (bucket === lastBucket) return;
+      lastBucket = bucket;
+      const target = valueForBucket(bucket);
+      if (first || reduced) {
+        first = false;
+        displayed = target;
+        el!.textContent = formatNum(target);
+      } else {
+        tweenTo(target);
+      }
+    }
+
+    // Jadwalkan pembaruan tepat di batas kelipatan 5 detik (dengan jam server),
+    // supaya semua klien berganti angka pada instan yang sama.
+    function loop() {
+      update();
+      const delay = PERIOD - (now() % PERIOD) + 20; // +20ms bantalan lewati batas
+      window.setTimeout(loop, delay);
+    }
+
+    // Anchor ke jam server via header Date (same-origin → header terbaca).
+    // Kalau gagal, pakai jam lokal — tetap jalan, hanya sinkronisasinya
+    // bergantung ketepatan jam perangkat.
+    fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
+      .then((res) => {
+        const d = res.headers.get('date');
+        if (d) {
+          const server = new Date(d).getTime();
+          if (Number.isFinite(server)) offset = server - Date.now();
+        }
+      })
+      .catch(() => {})
+      .finally(loop);
+  }
+</script>
