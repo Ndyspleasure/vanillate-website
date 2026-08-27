@@ -9,6 +9,8 @@
 //     "ember waktu" 5 detik (bukan Math.random yang beda tiap browser), lalu
 //     di-anchor ke jam server (header Date) sehingga klien dengan jam lokal yang
 //     meleset pun melihat angka yang sama pada detik yang sama.
+//   • pergantian angka dianimasikan gaya "odometer" — tiap digit menggulung
+//     vertikal dari angka lama ke angka baru.
 //
 // Catatan: ini angka simulasi untuk efek visual, bukan telemetri nyata.
 
@@ -53,21 +55,64 @@ const initial = valueForBucket(Math.floor(Date.now() / PERIOD_MS));
     </div>
     <div class="text-right">
       <span
-        class="block font-display text-3xl md:text-4xl font-semibold tracking-tightest text-ink-900 dark:text-cream-50 tabular-nums"
+        class="lgc-odometer font-display text-3xl md:text-4xl font-semibold text-ink-900 dark:text-cream-50"
         data-live-value
+        aria-hidden="true"
       >{formatNum(initial)}</span>
-      <span class="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-400 dark:text-cream-300/50">
+      <span class="sr-only" data-live-sr>{formatNum(initial)} sesi aktif</span>
+      <span class="block font-mono text-[10px] uppercase tracking-[0.15em] text-ink-400 dark:text-cream-300/50">
         sesi aktif sekarang
       </span>
     </div>
   </div>
 </div>
 
+<style is:global>
+  /* Odometer angka "live". Kelas diberi prefix lgc- dan dibuat global karena
+     elemen digit dibangun via JS (scoped-style Astro tak menjangkaunya). */
+  .lgc-odometer {
+    display: inline-flex;
+    align-items: flex-end;
+    line-height: 1;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .lgc-col {
+    position: relative;
+    display: inline-block;
+    width: 1ch;
+    height: 1em;
+    overflow: hidden;
+  }
+  .lgc-reel {
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .lgc-reel > span {
+    display: flex;
+    height: 1em;
+    line-height: 1;
+    align-items: center;
+    justify-content: center;
+  }
+  .lgc-sep {
+    display: inline-block;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lgc-reel {
+      transition: none !important;
+    }
+  }
+</style>
+
 <script>
   // Penggerak counter "game sedang berjalan". Progressive enhancement: tanpa JS,
   // angka awal dari server tetap tampil (statis).
   const root = document.querySelector<HTMLElement>('[data-live-game]');
   const el = root?.querySelector<HTMLElement>('[data-live-value]');
+  const sr = root?.querySelector<HTMLElement>('[data-live-sr]');
 
   if (root && el) {
     const MIN = Number(root.dataset.min) || 58;
@@ -87,27 +132,75 @@ const initial = valueForBucket(Math.floor(Date.now() / PERIOD_MS));
       return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
+    // ── Odometer: bangun kolom digit yang menggulung ──────────────────────
+    function makeReel(): HTMLElement {
+      const reel = document.createElement('span');
+      reel.className = 'lgc-reel';
+      for (let d = 0; d < 10; d++) {
+        const cell = document.createElement('span');
+        cell.textContent = String(d);
+        reel.appendChild(cell);
+      }
+      return reel;
+    }
+
+    // digit sekarang per posisi (satuan=0, puluhan=1, …) untuk titik awal roll.
+    let prevFromRight: number[] | null = null;
+
+    function renderValue(value: number, animate: boolean) {
+      const digits = String(value);
+      const total = digits.length;
+      const fromRight = digits.split('').reverse().map(Number);
+
+      const frag = document.createDocumentFragment();
+      const pending: { reel: HTMLElement; target: number; rightIndex: number }[] = [];
+
+      for (let i = 0; i < total; i++) {
+        const rightIndex = total - 1 - i;
+        const digit = Number(digits[i]);
+        const col = document.createElement('span');
+        col.className = 'lgc-col';
+        const reel = makeReel();
+        col.appendChild(reel);
+        frag.appendChild(col);
+
+        // Titik awal roll: angka lama di posisi yang sama (kalau ada), agar
+        // digit menggulung dari nilai sebelumnya ke nilai baru.
+        const startDigit =
+          animate && prevFromRight && prevFromRight[rightIndex] != null
+            ? prevFromRight[rightIndex]
+            : digit;
+        reel.style.transition = 'none';
+        reel.style.transform = `translateY(-${startDigit}em)`;
+        pending.push({ reel, target: digit, rightIndex });
+
+        // Pemisah ribuan.
+        const posFromRight = total - i;
+        if (posFromRight > 1 && (posFromRight - 1) % 3 === 0) {
+          const sep = document.createElement('span');
+          sep.className = 'lgc-sep';
+          sep.textContent = '.';
+          frag.appendChild(sep);
+        }
+      }
+
+      el!.replaceChildren(frag);
+      if (sr) sr.textContent = formatNum(value) + ' sesi aktif';
+
+      if (animate) {
+        void el!.offsetHeight; // commit posisi awal sebelum menganimasikan
+        for (const p of pending) {
+          p.reel.style.transition = ''; // pakai transisi dari stylesheet
+          p.reel.style.transitionDelay = `${p.rightIndex * 30}ms`;
+          p.reel.style.transform = `translateY(-${p.target}em)`;
+        }
+      }
+
+      prevFromRight = fromRight;
+    }
+
     let offset = 0; // (jam server − jam lokal), dalam ms
     const now = () => Date.now() + offset;
-
-    let displayed = parseInt((el.textContent || '').replace(/\./g, ''), 10);
-    if (!Number.isFinite(displayed)) displayed = valueForBucket(Math.floor(now() / PERIOD));
-
-    let raf = 0;
-    function tweenTo(target: number) {
-      const from = displayed;
-      const start = performance.now();
-      const dur = 650;
-      cancelAnimationFrame(raf);
-      function tick(t: number) {
-        const p = Math.min((t - start) / dur, 1);
-        const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
-        el!.textContent = formatNum(from + (target - from) * eased);
-        if (p < 1) raf = requestAnimationFrame(tick);
-        else displayed = target;
-      }
-      raf = requestAnimationFrame(tick);
-    }
 
     let lastBucket = -1;
     let first = true;
@@ -115,14 +208,8 @@ const initial = valueForBucket(Math.floor(Date.now() / PERIOD_MS));
       const bucket = Math.floor(now() / PERIOD);
       if (bucket === lastBucket) return;
       lastBucket = bucket;
-      const target = valueForBucket(bucket);
-      if (first || reduced) {
-        first = false;
-        displayed = target;
-        el!.textContent = formatNum(target);
-      } else {
-        tweenTo(target);
-      }
+      renderValue(valueForBucket(bucket), !first && !reduced);
+      first = false;
     }
 
     // Jadwalkan pembaruan tepat di batas kelipatan 5 detik (dengan jam server),
@@ -133,18 +220,28 @@ const initial = valueForBucket(Math.floor(Date.now() / PERIOD_MS));
       window.setTimeout(loop, delay);
     }
 
-    // Anchor ke jam server via header Date (same-origin → header terbaca).
-    // Kalau gagal, pakai jam lokal — tetap jalan, hanya sinkronisasinya
-    // bergantung ketepatan jam perangkat.
-    fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
-      .then((res) => {
-        const d = res.headers.get('date');
-        if (d) {
-          const server = new Date(d).getTime();
-          if (Number.isFinite(server)) offset = server - Date.now();
-        }
-      })
-      .catch(() => {})
-      .finally(loop);
+    // Counter langsung hidup memakai jam lokal — tak menunggu jaringan.
+    loop();
+
+    // Penyempurnaan sinkronisasi: anchor ke jam server via header Date
+    // (same-origin → header terbaca), dijalankan saat idle supaya tidak balapan
+    // dengan pemuatan halaman. Bila jam lokal meleset, offset dikoreksi dan
+    // tick berikutnya ikut menyesuaikan. Gagal → tetap pakai jam lokal.
+    function anchorToServerClock() {
+      fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
+        .then((res) => {
+          const d = res.headers.get('date');
+          if (d) {
+            const server = new Date(d).getTime();
+            if (Number.isFinite(server)) offset = server - Date.now();
+          }
+        })
+        .catch(() => {});
+    }
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(anchorToServerClock, { timeout: 2000 });
+    } else {
+      window.setTimeout(anchorToServerClock, 500);
+    }
   }
 </script>
