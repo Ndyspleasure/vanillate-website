@@ -1358,4 +1358,32 @@ values
    'Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord',
    'Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.')
 on conflict (slug) do nothing;
+
+-- 13g. Konten produk sepenuhnya dikelola CMS.
+--      Tujuannya: seluruh isi halaman produk (termasuk badge, FAQ, langkah
+--      pasang, dan CTA penutup) bisa diubah dari /admin/produk tanpa menyentuh
+--      source code. Aditif & backward-compatible — semua kolom nullable atau
+--      berdefault, jadi baris produk yang sudah ada tidak berubah.
+alter table public.products add column if not exists badge         text;
+alter table public.products add column if not exists badge_tone    text not null default 'accent';
+alter table public.products add column if not exists cta_heading   text;
+alter table public.products add column if not exists cta_text      text;
+alter table public.products add column if not exists cta_note      text;
+alter table public.products add column if not exists faq           jsonb not null default '[]'::jsonb;
+alter table public.products add column if not exists install_steps jsonb not null default '[]'::jsonb;
+
+-- Nada warna badge dibatasi ke daftar aman: nilainya dipetakan ke kelas CSS di
+-- situs, jadi DB tidak pernah menyimpan markup atau kelas mentah.
+alter table public.products drop constraint if exists products_badge_tone_check;
+alter table public.products add constraint products_badge_tone_check
+  check (badge_tone in ('accent', 'info', 'success', 'warn', 'neutral'));
+
+comment on column public.products.badge is
+  'Label kecil di kartu produk (mis. "Terpopuler"). Kosong = elemen badge tidak dirender sama sekali.';
+comment on column public.products.faq is
+  'FAQ khusus produk: array [{q, a}]. Kosong = section FAQ disembunyikan.';
+comment on column public.products.install_steps is
+  'Langkah pemasangan (array string). Kosong = memakai langkah bawaan sesuai platform.';
+comment on column public.products.thumbnail_url is
+  'Logo/cover produk. Kosong = halaman memakai ikon aksen sebagai fallback (bukan gambar rusak).';
 -- ═══════════════════════════════════════════════════════════════════════════

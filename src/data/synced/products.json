@@ -26,6 +26,13 @@
         "inviteUrl": ""
       },
       "android": null,
+      "badge": "",
+      "badgeTone": "accent",
+      "faq": [],
+      "installSteps": [],
+      "ctaHeading": "",
+      "ctaText": "",
+      "ctaNote": "",
       "ctaLabel": "",
       "ctaUrl": "",
       "docsSlug": "sambung-kata",

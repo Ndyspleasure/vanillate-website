@@ -13,7 +13,7 @@ const totalCount = bots.length;
 const categories = [...new Set(bots.map((b) => b.category))];
 ---
 
-<BaseLayout title="Produk" description="Katalog produk Vanillate Studio — dari Vanillate Sambung Kata, bot game kata berantai berbahasa Indonesia yang dimainkan ratusan ribu orang, sampai produk berikutnya. Gratis, dirawat tiap hari.">
+<BaseLayout title="Produk" description="Katalog produk Vanillate Studio — aplikasi sosial dan community tools buatan Indonesia yang dipakai ratusan ribu orang. Gratis, dirawat tiap hari.">
   <!-- HERO -->
   <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
     <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
@@ -25,7 +25,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
         Sedikit produk,<br /><span class="italic text-amber-600 dark:text-amber-500">perhatian</span> penuh.
       </h1>
       <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
-        Kami sengaja tidak membuat banyak produk sekaligus. Setiap yang dirilis diperlakukan sebagai produk utama, dengan update rutin, penyempurnaan yang terus berjalan, dan telinga yang selalu terbuka untuk komunitasnya. Undang atau unduh langsung, atau intip dokumentasinya dulu.
+        Kami sengaja tidak membuat banyak produk sekaligus. Setiap yang dirilis diperlakukan sebagai produk utama, dengan update rutin, penyempurnaan yang terus berjalan, dan telinga yang selalu terbuka untuk komunitasnya. Pakai langsung, atau intip dokumentasinya dulu.
       </p>
 
       <!-- Ringkasan katalog -->
@@ -47,7 +47,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
     </div>
   </section>
 
-  <!-- KATALOG BOT -->
+  <!-- KATALOG PRODUK -->
   <section class="container-page pb-8">
     <div class="grid gap-6 reveal">
       {bots.map((bot) => <BotCard bot={bot} featured />)}
@@ -57,12 +57,12 @@ const categories = [...new Set(bots.map((b) => b.category))];
   <!-- CARA MENGUNDANG -->
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="max-w-3xl mb-12 reveal">
-      <p class="eyebrow mb-3">Cara Mengundang</p>
+      <p class="eyebrow mb-3">Cara Mulai</p>
       <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest">
-        Tiga langkah, langsung main.
+        Tiga langkah, langsung jalan.
       </h2>
       <p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-        Tanpa daftar akun, tanpa setup rumit. Untuk bot Discord, semuanya berjalan langsung memakai slash command.
+        Tanpa setup rumit. Cara memasangnya menyesuaikan produk — undang ke komunitas, unduh aplikasinya, atau langsung buka di web.
       </p>
     </div>
 
@@ -117,7 +117,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
           Pertanyaan yang sering muncul.
         </h2>
         <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Butuh detail spesifik? Tiap produk punya FAQ dan dokumentasi sendiri. Belum ketemu jawabannya? Tanya langsung di Discord.
+          Butuh detail spesifik? Tiap produk punya FAQ dan dokumentasi sendiri. Belum ketemu jawabannya? Tanya langsung di komunitas kami.
         </p>
       </div>
       <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
@@ -135,7 +135,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
           Masih ada pertanyaan?
         </h2>
         <p class="mt-4 text-cream-100/80 text-lg leading-relaxed">
-          Cek dokumentasi lengkapnya, atau langsung tanya-tanya di server Discord kami.
+          Cek dokumentasi lengkapnya, atau langsung tanya-tanya di komunitas kami.
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
           <a href={url('/docs')} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">

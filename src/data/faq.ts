@@ -1,50 +1,52 @@
-// Pertanyaan yang sering ditanyakan, per bot.
-// Dipakai oleh komponen <FAQAccordion> di halaman /bots/[slug].
+// Pertanyaan yang sering ditanyakan, per produk.
+// Dipakai oleh komponen <FAQAccordion> di halaman /products/[slug].
 // Jawaban ditulis mengikuti konten dokumentasi (docs.ts) supaya selalu akurat.
 // Sintaks `kode` di dalam jawaban akan dirender sebagai <code> (lihat FAQAccordion).
 
 export type FaqItem = { q: string; a: string };
 
 // ═══════════════════════════════════════════════════════════════════
-// FAQ UMUM (bukan spesifik satu bot)
-// Dipakai di halaman /bots, /docs, dan /support lewat <FAQAccordion>.
+// FAQ UMUM — level studio, berlaku untuk seluruh produk.
+// Dipakai di halaman /products, /docs, dan /support lewat <FAQAccordion>.
+// Pertanyaannya sengaja netral platform; contoh spesifik (mis. Discord)
+// hanya muncul di JAWABAN saat memang perlu supaya tetap akurat.
 // ═══════════════════════════════════════════════════════════════════
 export const generalFaqs: FaqItem[] = [
   {
-    q: 'Apakah bot ini bisa membantu menghidupkan server yang sepi?',
-    a: 'Bisa, dan itu memang salah satu kekuatannya. Karena setiap permainan mengajak banyak anggota ikut mengetik di channel yang sama, obrolan yang tadinya sepi cepat kembali ramai. Buat server yang memakai bot leveling berbasis keaktifan chat, satu sesi Vanillate Sambung Kata bisa mendongkrak jumlah pesan sampai ratusan sekaligus membantu anggota naik level lebih cepat.',
+    q: 'Apakah produk Vanillate bisa membantu menghidupkan komunitas yang sepi?',
+    a: 'Bisa, dan itu memang salah satu kekuatannya. Produk kami dirancang mengajak banyak anggota ikut berinteraksi sekaligus, sehingga obrolan yang tadinya sepi cepat kembali ramai. Contohnya satu sesi Vanillate Sambung Kata di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.',
   },
   {
-    q: 'Apakah bot Vanillate gratis?',
-    a: 'Ya. Vanillate Sambung Kata gratis dimainkan tanpa langganan wajib. Kamu cukup mengundang bot ke server dan langsung bermain. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati intinya.',
+    q: 'Apakah produk Vanillate gratis?',
+    a: 'Ya. Inti setiap produk kami bisa dipakai tanpa langganan wajib. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati bagian utamanya.',
   },
   {
-    q: 'Bagaimana cara mengundang bot ke server saya?',
-    a: 'Buka halaman bot yang kamu inginkan, tekan tombol `Undang ke Server`, pilih server tujuan, lalu setujui izin yang diminta. Kamu perlu izin `Manage Server` di server tersebut. Setelah itu bot langsung aktif dan bisa dipakai dengan slash command.',
+    q: 'Bagaimana cara mulai memakai produknya?',
+    a: 'Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk: ada yang diundang ke komunitasmu, ada yang diunduh sebagai aplikasi, ada pula yang langsung dibuka lewat web. Setiap halaman produk menjelaskan langkahnya.',
   },
   {
-    q: 'Izin apa saja yang dibutuhkan bot?',
-    a: 'Bot hanya meminta izin yang benar-benar diperlukan untuk berfungsi: mengirim pesan, menyematkan embed, membaca jawaban di channel permainan, dan mengelola komponen interaktif. Kami tidak meminta izin administrator dan tidak menyentuh channel di luar keperluan permainan.',
+    q: 'Izin atau akses apa yang dibutuhkan?',
+    a: 'Kami hanya meminta akses yang benar-benar diperlukan agar produk berfungsi, dan tidak pernah meminta hak administratif yang tidak perlu. Untuk produk komunitas seperti Sambung Kata di Discord, izinnya sebatas mengirim pesan, menyematkan embed, membaca jawaban di channel permainan, dan mengelola komponen interaktif.',
   },
   {
     q: 'Apakah progres dan data saya aman?',
-    a: 'Aman. Semua progres tersimpan otomatis di server kami, tidak ada wipe berkala, dan tidak ada data yang dijual ke pihak ketiga. Detail lengkapnya bisa kamu baca di halaman Kebijakan Privasi.',
+    a: 'Aman. Data tersimpan otomatis di infrastruktur kami, tidak ada penghapusan berkala, dan tidak ada data yang dijual ke pihak ketiga. Detail lengkapnya bisa kamu baca di halaman Kebijakan Privasi.',
   },
   {
-    q: 'Bisa main bot yang sama di beberapa server sekaligus?',
-    a: 'Bisa. Progres, statistik, dan leaderboard bersifat global per pemain, jadi capaianmu terbawa ke server mana pun kamu bermain. Kamu bisa mengundang bot ke sebanyak mungkin server tanpa biaya.',
+    q: 'Apakah progres saya terbawa antar komunitas atau perangkat?',
+    a: 'Ya. Progres, statistik, dan peringkat bersifat global per pengguna, jadi capaianmu terbawa ke mana pun kamu memakainya. Kamu juga bebas memakainya di sebanyak mungkin komunitas tanpa biaya.',
   },
   {
-    q: 'Bot tidak merespons command, kenapa?',
-    a: 'Coba beberapa hal ini dulu. Pastikan bot punya izin mengirim pesan di channel tersebut, ketik ulang slash command dari awal (mulai dengan `/`), dan tunggu beberapa detik jika Discord sedang lambat memuat command. Kalau masih bermasalah, laporkan di server Discord Support kami, dan orang yang menulis kodenya akan langsung membantu.',
+    q: 'Produknya tidak merespons, apa yang harus dilakukan?',
+    a: 'Coba beberapa hal ini dulu. Pastikan produk punya izin yang diperlukan di tempat kamu memakainya, ulangi aksinya dari awal, lalu tunggu beberapa detik bila platformnya sedang lambat. Kalau masih bermasalah, laporkan lewat kanal support kami, dan orang yang menulis kodenya akan langsung membantu.',
   },
   {
     q: 'Bagaimana cara memberi masukan atau melaporkan bug?',
-    a: 'Gunakan command `/masukan` langsung di dalam bot, atau gabung ke server Discord Support dan sampaikan di channel yang sesuai. Kami membaca semua laporan dan masukan, dan banyak fitur kami justru lahir dari usulan komunitas.',
+    a: 'Kirim lewat Support Center di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai. Khusus Sambung Kata, kamu juga bisa memakai command `/masukan` langsung di dalam produknya. Kami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.',
   },
   {
-    q: 'Seberapa sering bot diperbarui?',
-    a: 'Rutin. Kami merilis perbaikan bug, penyeimbangan gameplay, dan fitur baru secara berkala, sering kali setiap pekan. Bagi kami rilis adalah garis start, bukan garis finis, jadi bot terus dirawat setelah diluncurkan.',
+    q: 'Seberapa sering produknya diperbarui?',
+    a: 'Rutin. Kami merilis perbaikan bug, penyempurnaan pengalaman, dan fitur baru secara berkala, sering kali setiap pekan. Bagi kami rilis adalah garis start, bukan garis finis, jadi produk terus dirawat setelah diluncurkan.',
   },
 ];
 

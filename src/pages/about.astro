@@ -11,11 +11,11 @@ function formatNum(n: number): string {
 
 // Perjalanan singkat studio, ditampilkan sebagai timeline.
 const timeline = [
-  { year: '2026', title: 'Vanillate lahir', desc: 'Berawal dari satu pengamatan sederhana: komunitas Discord Indonesia butuh bot game yang benar-benar dirawat, bukan ditinggal setelah rilis.' },
+  { year: '2026', title: 'Vanillate lahir', desc: 'Berawal dari satu pengamatan sederhana: komunitas online Indonesia butuh produk yang benar-benar dirawat, bukan ditinggal setelah rilis.' },
   { year: '2026', title: 'Vanillate Sambung Kata rilis', desc: 'Game kata klasik dibawa ke Discord dengan sistem progresi mendalam, dari class, quest, dungeon, sampai ekonomi yang seimbang.' },
   { year: '2026', title: 'Progresi makin dalam', desc: 'Class System, Talent Tree, Boost, Quest harian dan mingguan, sampai Dungeon Mode terus ditambah dan diseimbangkan berdasarkan masukan pemain.' },
   { year: '2026', title: 'Cross-Server Matchmaking', desc: 'Pemain dari server berbeda bisa saling bertanding lewat antrean matchmaking global, memperluas lawan main tanpa terbatas satu komunitas.' },
-  { year: 'Kini', title: 'Terus dirawat', desc: 'Vanillate Sambung Kata terus dipoles dengan update rutin, sementara studio menyiapkan produk berikutnya dengan prinsip yang sama.' },
+  { year: 'Kini', title: 'Studio multi-produk', desc: 'Produk yang berjalan terus dipoles dengan update rutin, sementara studio memperluas cakupan ke aplikasi sosial, community tools, otomasi, dan AI.' },
 ];
 
 const values = [
@@ -33,7 +33,7 @@ const values = [
   },
   {
     title: 'Reliability',
-    desc: 'Bot yang bagus adalah bot yang ada saat dibutuhkan. Kami menjaga uptime, memantau performa, dan memastikan data pemain aman. Setiap hari, bukan hanya saat launching.',
+    desc: 'Produk yang baik adalah produk yang ada saat dibutuhkan. Kami menjaga uptime, memantau performa, dan memastikan data pengguna aman. Setiap hari, bukan hanya saat launching.',
   },
   {
     title: 'Community',
@@ -56,7 +56,7 @@ const reasons = [
   },
   {
     title: 'Desain modern',
-    desc: 'Dari embed di Discord sampai halaman web ini: tampilan yang rapi dan konsisten adalah bagian dari pengalaman, bukan hiasan.',
+    desc: 'Dari tampilan di dalam produk sampai halaman web ini: visual yang rapi dan konsisten adalah bagian dari pengalaman, bukan hiasan.',
   },
   {
     title: 'Pengalaman pengguna',
@@ -64,34 +64,38 @@ const reasons = [
   },
   {
     title: 'Update berkelanjutan',
-    desc: 'Produk kami berkembang tiap pekan: perbaikan bug, penyeimbangan gameplay, dan fitur baru yang lahir dari masukan komunitas.',
+    desc: 'Produk kami berkembang tiap pekan: perbaikan bug, penyempurnaan pengalaman, dan fitur baru yang lahir dari masukan komunitas.',
   },
   {
     title: 'Dukungan komunitas',
-    desc: 'Ada masalah? Server support kami aktif. Laporan direspons langsung oleh orang yang menulis kodenya, bukan bot balasan otomatis.',
+    desc: 'Ada masalah? Kanal support kami aktif. Laporan direspons langsung oleh orang yang menulis kodenya, bukan balasan otomatis.',
   },
 ];
 
 const roadmap = [
   {
-    title: 'Discord Bot',
-    desc: 'Memperluas portofolio bot lewat produk baru, utilitas komunitas, dan pendalaman fitur untuk Vanillate Sambung Kata.',
+    title: 'Community Tools',
+    desc: 'Produk yang menghidupkan komunitas online, mulai dari pengalaman bermain bersama sampai utilitas sehari-hari bagi pengelolanya.',
+  },
+  {
+    title: 'Social Apps',
+    desc: 'Aplikasi sosial yang membuat orang lebih mudah terhubung, berinteraksi, dan betah kembali setiap hari.',
   },
   {
     title: 'AI Tools',
-    desc: 'Menghadirkan kecerdasan buatan yang benar-benar berguna, dari lawan main yang lebih natural, moderasi yang lebih cerdas, sampai alat bantu kreator.',
+    desc: 'Menghadirkan kecerdasan buatan yang benar-benar berguna, dari interaksi yang lebih natural, moderasi yang lebih cerdas, sampai alat bantu kreator.',
   },
   {
     title: 'Automation Platform',
-    desc: 'Otomasi untuk pengelola server, dari workflow komunitas hingga tugas berulang yang seharusnya tidak dikerjakan manual.',
+    desc: 'Otomasi untuk pengelola komunitas, dari alur kerja rutin hingga tugas berulang yang seharusnya tidak dikerjakan manual.',
   },
   {
     title: 'Web Platform',
-    desc: 'Dashboard web untuk mengelola bot, melihat statistik, dan mengatur konfigurasi server tanpa meninggalkan browser.',
+    desc: 'Dashboard web untuk mengelola produk, melihat statistik, dan mengatur konfigurasi tanpa meninggalkan browser.',
   },
   {
     title: 'Mobile Application',
-    desc: 'Pendamping di genggaman untuk memantau progres, mengklaim reward, dan tetap terhubung dengan komunitas dari mana saja.',
+    desc: 'Pendamping di genggaman untuk memantau aktivitas dan tetap terhubung dengan komunitas dari mana saja.',
   },
   {
     title: 'Cloud Services',
@@ -102,7 +106,7 @@ const roadmap = [
 
 <BaseLayout
   title="Tentang"
-  description="Cerita, filosofi, dan arah Vanillate Studio, tim teknologi Indonesia di balik Vanillate Sambung Kata."
+  description="Cerita, filosofi, dan arah Vanillate Studio — studio produk digital Indonesia yang membangun aplikasi sosial dan community tools untuk komunitas online."
 >
   <!-- HERO -->
   <section class="container-page pt-20 pb-16 md:pt-28 grid gap-12 md:grid-cols-[1fr_auto] items-center">
@@ -112,7 +116,7 @@ const roadmap = [
         Studio kecil, <span class="italic text-amber-600 dark:text-amber-500">standar</span> yang tidak kecil.
       </h1>
       <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-        Vanillate Studio adalah studio teknologi independen asal Indonesia. Kami membangun Discord Bot yang dimainkan setiap hari, lalu merawatnya seperti produk yang layak dibanggakan, bukan proyek yang ditinggal setelah rilis.
+        Vanillate Studio adalah studio produk digital independen asal Indonesia. Kami membangun pengalaman sosial dan community tools yang dipakai setiap hari, lalu merawatnya seperti produk yang layak dibanggakan, bukan proyek yang ditinggal setelah rilis.
       </p>
     </div>
     <div class="hidden md:flex justify-end">
@@ -142,16 +146,16 @@ const roadmap = [
         <p class="eyebrow">01 / Cerita</p>
       </div>
       <div class="md:col-span-2 max-w-prose">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Berawal dari satu game sederhana</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Berawal dari satu produk sederhana</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
           <p>
-            Vanillate Studio lahir pada 2026 dari sebuah pengamatan yang sederhana. Komunitas Discord Indonesia penuh dengan orang-orang yang senang bermain bersama, tapi pilihan bot game berbahasa Indonesia yang benar-benar digarap serius bisa dihitung dengan jari. Banyak bot menjanjikan segalanya, lalu perlahan mati, tidak diupdate, penuh bug, dan akhirnya ditinggalkan pembuatnya.
+            Vanillate Studio lahir pada 2026 dari sebuah pengamatan yang sederhana. Komunitas online Indonesia penuh dengan orang-orang yang senang berkumpul dan bermain bersama, tapi produk berbahasa Indonesia yang benar-benar digarap serius bisa dihitung dengan jari. Banyak yang menjanjikan segalanya, lalu perlahan mati, tidak diupdate, penuh bug, dan akhirnya ditinggalkan pembuatnya.
           </p>
           <p>
-            Kami memulai dari satu game, yaitu Vanillate Sambung Kata. Permainan kata yang semua orang kenal sejak kecil, dibawa ke Discord dengan sistem progresi yang dalam, mulai dari class, quest, dungeon, sampai ekonomi yang seimbang. Responsnya membuat kami sadar bahwa pemain Indonesia tidak butuh bot yang banyak, mereka butuh bot yang digarap dengan sungguh-sungguh.
+            Kami memulai dari satu produk, yaitu Vanillate Sambung Kata. Permainan kata yang semua orang kenal sejak kecil, dibawa ke komunitas online dengan sistem progresi yang dalam. Responsnya membuat kami sadar bahwa pengguna Indonesia tidak butuh banyak pilihan, mereka butuh yang digarap dengan sungguh-sungguh.
           </p>
           <p>
-            Dari sana Vanillate tumbuh menjadi studio. Kami memilih fokus, merawat satu produk sampai matang sebelum melangkah ke berikutnya. Vanillate Sambung Kata terus diperdalam, dari sistem class dan quest sampai Cross-Server Matchmaking yang mempertemukan pemain lintas server. Satu prinsip tetap sama, yaitu rilis adalah garis start, bukan garis finis.
+            Dari sana Vanillate tumbuh menjadi studio. Kami memilih fokus, merawat satu produk sampai matang sebelum melangkah ke berikutnya, lalu memperluasnya ke pengalaman sosial dan community tools lain. Satu prinsip tetap sama, yaitu rilis adalah garis start, bukan garis finis.
           </p>
           <p>
             Hari ini kami masih tim kecil, dan itu disengaja. Skala kecil memberi kami kendali penuh atas kode, infrastruktur, dan kualitas, serta kecepatan untuk merespons komunitas tanpa birokrasi.
@@ -233,10 +237,10 @@ const roadmap = [
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Ke mana Vanillate menuju</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
           <p>
-            Visi kami sederhana untuk diucapkan dan panjang untuk dikerjakan, yaitu menjadi studio teknologi Indonesia yang produknya dipakai, dipercaya, dan dinantikan. Dimulai dari Discord, tapi tidak berhenti di sana.
+            Visi kami sederhana untuk diucapkan dan panjang untuk dikerjakan, yaitu menjadi studio produk digital Indonesia yang produknya dipakai, dipercaya, dan dinantikan. Dimulai dari satu platform komunitas, tapi tidak berhenti di sana.
           </p>
           <p>
-            Kami percaya game development di platform chat baru menyentuh permukaannya. Interaksi real-time, komunitas yang sudah terbentuk, dan teknologi AI yang semakin matang membuka ruang untuk pengalaman bermain yang belum pernah ada. Kami ingin berada di garis depan eksplorasi itu, bukan sekadar mengikuti tren, tapi ikut menentukan bentuknya.
+            Kami percaya pengalaman sosial digital baru menyentuh permukaannya. Interaksi real-time, komunitas yang sudah terbentuk, dan teknologi AI yang semakin matang membuka ruang untuk cara berkumpul yang belum pernah ada. Kami ingin berada di garis depan eksplorasi itu, bukan sekadar mengikuti tren, tapi ikut menentukan bentuknya.
           </p>
           <p>
             Dalam jangka panjang, produk-produk Vanillate akan saling terhubung menjadi satu ekosistem digital, mulai dari game yang bisa dipantau dari web, otomasi yang meringankan pengelola komunitas, layanan cloud yang menopang semuanya, sampai AI yang bekerja diam-diam membuat setiap interaksi terasa lebih hidup. Teknologi dan automation bagi kami adalah alat untuk satu tujuan, yaitu pengalaman pengguna yang lebih baik, bukan pajangan.
@@ -259,7 +263,7 @@ const roadmap = [
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">01</span>
             <div>
               <h3 class="font-display text-lg font-semibold mb-1">Membangun produk yang dirawat jangka panjang</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap bot yang kami rilis mendapat komitmen perawatan berupa update rutin, perbaikan cepat, dan pengembangan fitur yang tidak berhenti setelah minggu pertama.</p>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap produk yang kami rilis mendapat komitmen perawatan berupa update rutin, perbaikan cepat, dan pengembangan fitur yang tidak berhenti setelah minggu pertama.</p>
             </div>
           </li>
           <li class="flex gap-4">
@@ -280,7 +284,7 @@ const roadmap = [
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">04</span>
             <div>
               <h3 class="font-display text-lg font-semibold mb-1">Tumbuh bersama komunitas</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kami mendengarkan sebelum membangun. Fitur terbaik kami lahir dari percakapan di server support, dan kami ingin terus begitu.</p>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kami mendengarkan sebelum membangun. Fitur terbaik kami lahir dari percakapan bersama komunitas, dan kami ingin terus begitu.</p>
             </div>
           </li>
           <li class="flex gap-4">
@@ -365,7 +369,7 @@ const roadmap = [
         Ikut jadi bagian ceritanya
       </h2>
       <p class="text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed mb-8">
-        Cara terbaik mengenal Vanillate adalah mencoba produknya, lalu mampir ke server support dan bilang apa yang menurutmu bisa lebih baik. Kami benar-benar membaca semuanya.
+        Cara terbaik mengenal Vanillate adalah mencoba produknya, lalu mampir ke kanal komunitas kami dan bilang apa yang menurutmu bisa lebih baik. Kami benar-benar membaca semuanya.
       </p>
       <div class="flex flex-wrap gap-3">
         <Button href="/products" variant="primary" size="lg">Lihat Produk</Button>

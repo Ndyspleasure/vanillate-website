@@ -314,8 +314,18 @@ function urlBerkas(u, storagePath, bucket) {
 async function syncProducts() {
   let prodRaw;
   try {
-    prodRaw = await ambil(
-      'products?select=id,slug,name,short_name,tagline,description,platform,status,category,accent_color,icon,thumbnail_url,featured,verified,sort,features,long_intro,commands,discord_client_id,discord_permissions,discord_scopes,discord_integration_type,invite_url,package_name,min_android,install_note,cta_label,cta_url,docs_slug,seo_title,seo_description,og_image_url&enabled=is.true&order=sort.asc',
+    // Kolom konten CMS (badge, FAQ, langkah install, CTA penutup) ditandai
+    // opsional supaya database yang belum menjalankan schema terbaru tetap
+    // bisa menerbitkan katalognya, hanya tanpa field-field itu.
+    prodRaw = await ambilLonggar(
+      'products',
+      ['id', 'slug', 'name', 'short_name', 'tagline', 'description', 'platform', 'status', 'category',
+       'accent_color', 'icon', 'thumbnail_url', 'featured', 'verified', 'sort', 'features', 'long_intro',
+       'commands', 'discord_client_id', 'discord_permissions', 'discord_scopes', 'discord_integration_type',
+       'invite_url', 'package_name', 'min_android', 'install_note', 'cta_label', 'cta_url', 'docs_slug',
+       'seo_title', 'seo_description', 'og_image_url'],
+      ['badge', 'badge_tone', 'cta_heading', 'cta_text', 'cta_note', 'faq', 'install_steps'],
+      '&enabled=is.true&order=sort.asc',
     );
   } catch (err) {
     pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, err.message);
@@ -393,6 +403,20 @@ async function syncProducts() {
               installNote: String(p.install_note ?? '').trim(),
             }
           : null,
+        badge: String(p.badge ?? '').trim(),
+        badgeTone: ['accent', 'info', 'success', 'warn', 'neutral'].includes(p.badge_tone) ? p.badge_tone : 'accent',
+        // FAQ & langkah install: dibersihkan supaya entri setengah jadi dari CMS
+        // tidak pernah tampil sebagai pertanyaan tanpa jawaban.
+        faq: Array.isArray(p.faq)
+          ? p.faq
+              .map((f) => ({ q: String(f?.q ?? '').trim(), a: String(f?.a ?? '').trim() }))
+              .filter((f) => f.q && f.a)
+              .slice(0, 30)
+          : [],
+        installSteps: daftarTeks(p.install_steps, 10),
+        ctaHeading: String(p.cta_heading ?? '').trim(),
+        ctaText: String(p.cta_text ?? '').trim(),
+        ctaNote: String(p.cta_note ?? '').trim(),
         ctaLabel: String(p.cta_label ?? '').trim(),
         ctaUrl: urlAman(p.cta_url, `cta ${p.slug}`),
         docsSlug: String(p.docs_slug ?? '').trim(),

@@ -4,9 +4,9 @@
 
 export const t = {
   common: {
-    inviteBot: 'Undang Bot',
+    inviteBot: 'Pakai Produk',
     viewDocs: 'Lihat Dokumentasi',
-    joinDiscord: 'Gabung Discord Support',
+    joinDiscord: 'Gabung Komunitas',
     learnMore: 'Selengkapnya',
     getStarted: 'Mulai',
     backToTop: 'Kembali ke atas',
@@ -14,7 +14,7 @@ export const t = {
   nav: {
     home: 'Beranda',
     about: 'Tentang',
-    bots: 'Bot Kami',
+    bots: 'Produk',
     docs: 'Dokumentasi',
     support: 'Support',
     terms: 'Syarat Layanan',
