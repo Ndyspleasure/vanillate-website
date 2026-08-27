@@ -1,6 +1,6 @@
 ---
 import type { Bot } from '@data/bots';
-import { buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import { productPrimaryCta, latestRelease, formatBytes } from '@data/bots';
 import Icon from '@components/Icon.astro';
 import BotTag from '@components/BotTag.astro';
 import { url } from '@utils/url';
@@ -11,8 +11,9 @@ export interface Props {
 }
 
 const { bot, featured = false } = Astro.props;
-const inviteUrl = buildInviteUrl(bot);
-const inviteLabel = inviteCtaLabel(bot);
+// CTA utama sadar-platform: Discord → Undang, Android → Download APK, lainnya → Detail.
+const cta = productPrimaryCta(bot);
+const release = latestRelease(bot);
 
 const statusLabel = {
   live: 'Live',
@@ -98,26 +99,15 @@ const dotClass = {
   )}
 
   <div class="mt-auto flex flex-wrap items-center gap-2">
-    {inviteUrl ? (
-      <a
-        href={inviteUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2 text-sm font-medium hover:-translate-y-0.5 transition-transform"
-      >
-        {inviteLabel}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-      </a>
-    ) : (
-      <a
-        href={url(`/bots/${bot.slug}`)}
-        class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2 text-sm font-medium hover:-translate-y-0.5 transition-transform"
-      >
-        Intip {bot.shortName}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-      </a>
-    )}
-    {inviteUrl && (
+    <a
+      href={cta.external ? cta.href : url(cta.href)}
+      {...(cta.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+      class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2 text-sm font-medium hover:-translate-y-0.5 transition-transform"
+    >
+      {cta.label}
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+    </a>
+    {cta.external && (
       <a
         href={url(`/bots/${bot.slug}`)}
         class="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5"
@@ -132,6 +122,9 @@ const dotClass = {
       >
         Docs
       </a>
+    )}
+    {release && release.fileSize && (
+      <span class="font-mono text-[11px] text-ink-500 dark:text-cream-300/60">APK · {formatBytes(release.fileSize)}</span>
     )}
   </div>
 </article>

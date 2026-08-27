@@ -29,7 +29,7 @@ export const site = {
 export const nav = [
   { label: 'Beranda', href: '/' },
   { label: 'Tentang', href: '/about' },
-  { label: 'Bot Kami', href: '/bots' },
+  { label: 'Produk', href: '/bots' },
   { label: 'Dokumentasi', href: '/docs' },
   { label: 'Changelog', href: '/changelog' },
   { label: 'Partnership', href: '/partnership' },

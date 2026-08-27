@@ -1,36 +1,70 @@
-// Registry bot Vanillate Studio.
-// Tambah bot baru? Cukup tambahkan objek di array `bots` dan buat halaman docs jika perlu.
-// Halaman /bots dan /bots/[slug] akan otomatis menampilkannya.
+// Registry produk Vanillate Studio (dulu "bots").
+//
+// SUMBER DATA: src/data/synced/products.json — ditarik dari Supabase saat build
+// (scripts/sync-content.mjs). Jadi katalog dikelola dari /admin/produk, bukan
+// ditulis di sini. Modul ini tetap bernama `bots` dan mempertahankan API lama
+// (Bot, buildInviteUrl, getFeaturedBot, dst) supaya seluruh halaman yang sudah
+// ada tidak perlu diubah — sekaligus menambah dukungan produk non-Discord
+// (aplikasi Android dengan unduhan APK).
 
 import botInfo from './synced/bot-info.json';
+import productsData from './synced/products.json';
 import type { IconName } from './icons';
 
+export type Platform = 'discord' | 'android' | 'web';
+
+export type ProductMedia = {
+  kind: 'icon' | 'screenshot' | 'video' | 'banner';
+  url: string;
+  alt: string;
+};
+
+export type ProductRelease = {
+  version: string;
+  url: string;               // URL unduh publik (Supabase Storage)
+  fileSize: number | null;   // byte
+  sha256: string | null;     // checksum integritas
+  minAndroid: string;
+  releaseNotes: string;
+};
+
 export type Bot = {
-  slug: string;                 // URL segment: /bots/<slug>
-  name: string;                 // Nama lengkap
-  shortName: string;            // Nama pendek untuk tombol/badge
-  tagline: string;              // Kalimat singkat 1 baris
-  description: string;          // Paragraf pendek untuk halaman detail
+  slug: string;                 // URL segment: /products/<slug> (redirect /bots/<slug>)
+  name: string;
+  shortName: string;
+  tagline: string;
+  description: string;
   status: 'live' | 'beta' | 'preorder' | 'coming-soon';
-  featured: boolean;            // Highlight utama di beranda
-  verified?: boolean;           // Aplikasi Discord terverifikasi → tampilkan lencana "✓ APP" di samping nama
-  hidden?: boolean;             // Sembunyikan dari seluruh tampilan situs (data tetap ada)
-  category: string;             // ex: "Word Game", "Idle Simulation"
-  clientId?: string;            // Discord Application/Client ID (kosongkan jika belum rilis)
-  permissions: string;          // Bitwise permission integer
-  scopes: string[];             // OAuth2 scopes
-  integrationType?: string;     // Discord integration_type ('0' = guild install, '1' = user install). Kosongkan untuk memakai default Discord.
-  color: string;                // Aksen warna bot (hex)
-  icon: IconName;               // Nama ikon SVG (registry @data/icons) — fallback saat tak ada thumbnail
-  thumbnail?: string;           // Path thumbnail PNG persegi di /public
-  features: string[];           // 3-6 poin fitur utama
-  commands?: { name: string; description: string }[]; // sample command untuk halaman detail
-  docsSlug?: string;            // slug dokumentasi /docs/<docsSlug> (kosongkan jika belum ada)
-  longIntro?: string[];         // Paragraf narasi panjang untuk halaman detail (opsional)
-  ctaNote?: string;             // Catatan kecil di bawah tombol invite (mis. status preorder)
-  seoTitle?: string;            // <title> khusus SEO (fallback: name). Tanpa suffix brand.
-  seoDescription?: string;      // meta description khusus SEO (fallback: description)
-  founding?: {                  // Program Founding Members / early access (opsional)
+  featured: boolean;
+  verified?: boolean;
+  category: string;
+  platform: Platform;           // menentukan pola CTA (Undang vs Download)
+  // Discord
+  clientId?: string;
+  permissions: string;
+  scopes: string[];
+  integrationType?: string;
+  inviteUrlOverride?: string;
+  // Android
+  packageName?: string;
+  minAndroid?: string;
+  androidInstallNote?: string;
+  release?: ProductRelease | null;   // rilis APK terbaru
+  media: ProductMedia[];             // screenshot / video / banner
+  // Umum
+  color: string;
+  icon: IconName;
+  thumbnail?: string;
+  features: string[];
+  commands?: { name: string; description: string }[];
+  docsSlug?: string;
+  longIntro?: string[];
+  ctaLabel?: string;
+  ctaUrl?: string;
+  ctaNote?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  founding?: {
     title: string;
     intro: string;
     perks: string[];
@@ -39,83 +73,169 @@ export type Bot = {
   };
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bentuk baris products.json (keluaran sync). Dipisah dari tipe `Bot` supaya
+// perubahan sumber tidak diam-diam mengubah kontrak yang dipakai komponen.
+// ─────────────────────────────────────────────────────────────────────────────
+type RawProduct = {
+  slug: string;
+  name: string;
+  shortName?: string;
+  tagline?: string;
+  description?: string;
+  platform?: string;
+  status?: string;
+  category?: string;
+  color?: string;
+  icon?: string;
+  thumbnail?: string;
+  featured?: boolean;
+  verified?: boolean;
+  sort?: number;
+  features?: string[];
+  longIntro?: string[];
+  commands?: { name: string; description: string }[];
+  discord?: { clientId?: string; permissions?: string; scopes?: string[]; integrationType?: string; inviteUrl?: string };
+  android?: { packageName?: string; minAndroid?: string; installNote?: string } | null;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  docsSlug?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  media?: ProductMedia[];
+  release?: ProductRelease | null;
+};
+
+const STATUSES = ['live', 'beta', 'preorder', 'coming-soon'] as const;
+const PLATFORMS = ['discord', 'android', 'web'] as const;
+
+function toBot(p: RawProduct): Bot {
+  const isSambungKata = p.slug === 'sambung-kata';
+  // Untuk Sambung Kata, fitur & command tetap satu sumber kebenaran di repo bot
+  // (bot-info.json). Produk lain memakai nilai dari CMS.
+  const features = p.features && p.features.length ? p.features : (isSambungKata ? botInfo.features : []);
+  const commands = p.commands && p.commands.length ? p.commands : (isSambungKata ? botInfo.commands : []);
+
+  const status = (STATUSES as readonly string[]).includes(p.status ?? '') ? (p.status as Bot['status']) : 'live';
+  const platform = (PLATFORMS as readonly string[]).includes(p.platform ?? '') ? (p.platform as Platform) : 'discord';
+
+  return {
+    slug: p.slug,
+    name: p.name,
+    shortName: p.shortName || p.name,
+    tagline: p.tagline || '',
+    description: p.description || '',
+    status,
+    featured: Boolean(p.featured),
+    verified: p.verified,
+    category: p.category || '',
+    platform,
+    clientId: p.discord?.clientId || undefined,
+    permissions: p.discord?.permissions || '0',
+    scopes: p.discord?.scopes && p.discord.scopes.length ? p.discord.scopes : ['bot', 'applications.commands'],
+    integrationType: p.discord?.integrationType || undefined,
+    inviteUrlOverride: p.discord?.inviteUrl || undefined,
+    packageName: p.android?.packageName || undefined,
+    minAndroid: p.android?.minAndroid || undefined,
+    androidInstallNote: p.android?.installNote || undefined,
+    release: p.release ?? null,
+    media: Array.isArray(p.media) ? p.media : [],
+    color: p.color || '#E8B84A',
+    icon: (p.icon || 'sparkles') as IconName,
+    thumbnail: p.thumbnail || undefined,
+    features,
+    commands,
+    docsSlug: p.docsSlug || undefined,
+    longIntro: p.longIntro || [],
+    ctaLabel: p.ctaLabel || undefined,
+    ctaUrl: p.ctaUrl || undefined,
+    seoTitle: p.seoTitle || undefined,
+    seoDescription: p.seoDescription || undefined,
+  };
+}
+
+const allBots: Bot[] = ((productsData.products ?? []) as RawProduct[])
+  .filter((p) => p && p.slug && p.name)
+  .map(toBot);
+
+// Daftar publik. Sudah difilter `enabled` di sisi sync, jadi tinggal urut.
+export const bots: Bot[] = allBots.sort((a, b) => {
+  const sa = (productsData.products.find((x: any) => x.slug === a.slug)?.sort ?? 100) as number;
+  const sb = (productsData.products.find((x: any) => x.slug === b.slug)?.sort ?? 100) as number;
+  return sa - sb;
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Label CTA standar. Satu sumber kebenaran supaya tombol konsisten di seluruh
+// situs (kartu, halaman detail, docs, footer).
+// ─────────────────────────────────────────────────────────────────────────────
+export const CTA = {
+  invite: 'Undang ke Server',
+  download: 'Download APK',
+  preorder: 'Amankan Tempat',
+  notify: 'Ikuti Kabarnya',
+  docs: 'Lihat Panduan',
+  discord: 'Gabung Komunitas',
+} as const;
+
 /**
  * Bangun invite URL Discord dari clientId + permissions + scopes.
+ * Menghormati inviteUrlOverride bila diisi dari CMS. Hanya untuk platform Discord.
  */
 export function buildInviteUrl(bot: Bot): string | null {
+  if (bot.platform !== 'discord') return null;
+  if (bot.inviteUrlOverride) return bot.inviteUrlOverride;
   if (!bot.clientId || bot.status === 'coming-soon') return null; // preorder tetap boleh diundang
-  const params = new URLSearchParams({
-    client_id: bot.clientId,
-    permissions: bot.permissions,
-  });
+  const params = new URLSearchParams({ client_id: bot.clientId, permissions: bot.permissions });
   if (bot.integrationType) params.set('integration_type', bot.integrationType);
   params.set('scope', bot.scopes.join(' '));
   return `https://discord.com/oauth2/authorize?${params.toString()}`;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Label CTA standar. Satu sumber kebenaran supaya tombol konsisten di seluruh
-// situs (kartu, halaman detail, docs, footer). Ubah di sini = berubah di mana pun.
-// ─────────────────────────────────────────────────────────────────────────────
-export const CTA = {
-  invite: 'Undang ke Server',   // bot live: implikasi langsung dipakai
-  preorder: 'Amankan Tempat',   // bot preorder: implikasi keuntungan eksklusif
-  notify: 'Ikuti Kabarnya',     // coming soon: implikasi menunggu rilis
-  docs: 'Lihat Panduan',        // dokumentasi
-  discord: 'Gabung Komunitas',  // server Discord
-} as const;
+/** Rilis APK terbaru sebuah produk Android (atau null). */
+export function latestRelease(bot: Bot): ProductRelease | null {
+  return bot.platform === 'android' ? (bot.release ?? null) : null;
+}
 
-/** Label tombol invite/CTA utama sesuai status bot. */
+/** URL unduh langsung (APK terbaru) untuk produk Android, atau null. */
+export function downloadUrl(bot: Bot): string | null {
+  const rel = latestRelease(bot);
+  return rel?.url || null;
+}
+
+/** Label tombol invite/CTA utama sesuai status & platform bot. */
 export function inviteCtaLabel(bot: Bot): string {
+  if (bot.platform === 'android') return CTA.download;
   if (bot.status === 'preorder') return CTA.preorder;
   if (bot.status === 'coming-soon') return CTA.notify;
   return CTA.invite;
 }
 
-const allBots: Bot[] = [
-  {
-    slug: 'sambung-kata',
-    thumbnail: '/bots/sambung-kata.png',
-    name: 'Vanillate Sambung Kata',
-    shortName: 'Vanillate Sambung Kata',
-    tagline: 'Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.',
-    description:
-      'Permainan kata klasik Indonesia yang dibangun ulang untuk Discord. Sambung kata bareng teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 25.000+ kata memastikan setiap jawaban dinilai adil. Karena semua pemain ikut mengetik jawaban, satu ronde saja sudah cukup untuk membangunkan obrolan server yang mulai sepi.',
-    status: 'live',
-    featured: true,
-    verified: true,
-    category: 'Word Game',
-    seoTitle: 'Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord',
-    seoDescription:
-      'Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.',
-    clientId: '1513806760622817320',
-    permissions: '876173413440',
-    scopes: ['bot', 'applications.commands'],
-    integrationType: '0',
-    color: '#E8B84A',
-    icon: 'sparkles',
-    // Fitur & command ditarik dari data tersinkron (src/data/synced/bot-info.json)
-    // yang diambil otomatis dari repo bot. Satu sumber kebenaran — ubah di repo
-    // bot, website ikut berubah pada sinkronisasi berikutnya.
-    features: botInfo.features,
-    commands: botInfo.commands,
-    docsSlug: 'sambung-kata',
-  },
-];
+/**
+ * CTA utama produk untuk kartu & hero: label + href + apakah tautan eksternal.
+ * Discord → invite; Android → unduh APK; selain itu / belum siap → halaman detail.
+ */
+export function productPrimaryCta(bot: Bot): { label: string; href: string; external: boolean } {
+  const invite = buildInviteUrl(bot);
+  if (invite) return { label: inviteCtaLabel(bot), href: invite, external: true };
+  const dl = downloadUrl(bot);
+  if (dl) return { label: `${CTA.download}${latestRelease(bot)?.version ? ` v${latestRelease(bot)!.version}` : ''}`, href: dl, external: true };
+  return { label: bot.status === 'coming-soon' ? CTA.notify : `Lihat ${bot.shortName}`, href: `/bots/${bot.slug}`, external: false };
+}
 
-// Daftar publik: bot dengan `hidden: true` disaring dari seluruh tampilan
-// (footer, beranda, /bots, dan halaman detail).
-// Datanya tetap utuh di atas, jadi cukup ubah flag untuk menampilkannya lagi.
-export const bots: Bot[] = allBots.filter((b) => !b.hidden);
+/** Format ukuran byte ke bentuk ringkas (mis. 24 MB). */
+export function formatBytes(n: number | null | undefined): string {
+  if (n === null || n === undefined || !Number.isFinite(n)) return '';
+  if (n < 1024) return `${n} B`;
+  if (n < 1048576) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1048576).toFixed(1)} MB`;
+}
 
 export function getFeaturedBot(): Bot {
   return bots.find((b) => b.featured) ?? bots[0];
 }
 
-/**
- * Bot lain selain `slug` yang diberikan, untuk section cross-link
- * "bot lainnya" di halaman detail & dokumentasi.
- */
+/** Produk lain selain `slug`, untuk section cross-link di halaman detail & docs. */
 export function getOtherBots(slug: string, limit = 3): Bot[] {
   return bots.filter((b) => b.slug !== slug).slice(0, limit);
 }
