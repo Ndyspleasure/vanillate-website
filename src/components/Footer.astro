@@ -1,7 +1,11 @@
 ---
 import { site } from '@data/site';
 import { bots } from '@data/bots';
+import { pageContent } from '@data/pages';
 import { t } from '../i18n/id';
+
+// Deskripsi & teks footer dikelola dari /admin/halaman → tab "Global".
+const global = pageContent('global');
 import LogoPNG from './LogoPNG.astro';
 import Icon from './Icon.astro';
 import { buildDirectMailtoUrl, buildDirectWhatsappUrl } from '@data/support';
@@ -23,7 +27,7 @@ const channels = [
       <div class="inline-flex items-center mb-4">
         <LogoPNG variant="footer" alt={site.name} class="h-10" />
       </div>
-      <p class="text-sm text-ink-600 dark:text-cream-300 leading-relaxed">{site.description}</p>
+      <p class="text-sm text-ink-600 dark:text-cream-300 leading-relaxed">{global.description}</p>
       <div class="mt-6 flex items-center gap-2">
         {channels.map((c) => (
           <a
@@ -76,7 +80,7 @@ const channels = [
   <div class="hairline">
     <div class="container-page py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
       <p class="text-xs text-ink-500 dark:text-cream-300/60">&copy; {year} {site.name}. {t.footer.rights}</p>
-      <p class="text-xs text-ink-500 dark:text-cream-300/60 font-mono">{t.footer.tagline}</p>
+      <p class="text-xs text-ink-500 dark:text-cream-300/60 font-mono">{global.footerTagline}</p>
     </div>
   </div>
 </footer>

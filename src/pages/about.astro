@@ -3,6 +3,10 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import LogoPNG from '@components/LogoPNG.astro';
 import { site, homeStats } from '@data/site';
+import { pageContent } from '@data/pages';
+
+// Hero halaman ini dikelola dari /admin/halaman → tab "Tentang".
+const c = pageContent('about');
 
 // Format angka gaya Indonesia (pemisah ribuan titik).
 function formatNum(n: number): string {
@@ -111,12 +115,12 @@ const roadmap = [
   <!-- HERO -->
   <section class="container-page pt-20 pb-16 md:pt-28 grid gap-12 md:grid-cols-[1fr_auto] items-center">
     <div>
-      <p class="eyebrow mb-6">Tentang Kami</p>
+      <p class="eyebrow mb-6">{c.heroEyebrow}</p>
       <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-3xl">
-        Studio kecil, <span class="italic text-amber-600 dark:text-amber-500">standar</span> yang tidak kecil.
+        {c.heroTitle} <span class="italic text-amber-600 dark:text-amber-500">{c.heroTitleAccent}</span> {c.heroTitleEnd}
       </h1>
       <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-        Vanillate Studio adalah studio produk digital independen asal Indonesia. Kami membangun pengalaman sosial dan community tools yang dipakai setiap hari, lalu merawatnya seperti produk yang layak dibanggakan, bukan proyek yang ditinggal setelah rilis.
+        {c.heroLead}
       </p>
     </div>
     <div class="hidden md:flex justify-end">

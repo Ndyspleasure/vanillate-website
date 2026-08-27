@@ -1,5 +1,6 @@
 ---
 import { site } from '@data/site';
+import { pageContent } from '@data/pages';
 
 export interface Props {
   title?: string;
@@ -8,14 +9,17 @@ export interface Props {
   noindex?: boolean;
 }
 
+// Tagline & deskripsi default dapat diubah dari /admin/halaman → tab "Global".
+const global = pageContent('global');
+
 const {
   title,
-  description = site.description,
+  description = global.description,
   image = '/og-image.png',
   noindex = false,
 } = Astro.props;
 
-const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.tagline}`;
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${global.tagline}`;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).toString();
 const ogImage = new URL(image, Astro.site ?? site.url).toString();
 
@@ -31,7 +35,7 @@ const structuredData = {
       '@id': orgId,
       name: site.name,
       url: site.url,
-      description: site.tagline,
+      description: global.tagline,
       logo: new URL('/apple-touch-icon.png', site.url).toString(),
       sameAs: [site.links.discordSupport],
     },

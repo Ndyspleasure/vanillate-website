@@ -770,9 +770,83 @@ sengaja tetap bernama `bots` dan mempertahankan API lama supaya seluruh halaman
 yang ada tidak perlu diubah. Untuk **Sambung Kata**, `features` & `commands` tetap
 ditarik dari repo bot (`bot-info.json`) — satu sumber kebenaran.
 
+### Isi halaman produk yang bisa diedit
+
+Selain identitas produk (nama, tagline, deskripsi, kategori, status), panel juga
+mengelola: **badge + nada warnanya**, **ikon fallback** (dropdown dari registry
+situs), **logo/thumbnail** (unggah, ganti, hapus), **screenshot/video** beserta
+**alt text** dan urutannya, **fitur**, **FAQ produk**, **langkah pemasangan**,
+**CTA penutup** (judul, teks, catatan), tautan, dan **urutan produk**.
+
+> **Visual sepenuhnya opsional.** Menghapus gambar membuang berkasnya di Storage
+> sekaligus mengosongkan kolomnya, jadi tidak ada URL yatim. Produk tanpa gambar
+> memakai ikon aksen sebagai gantinya, dan gambar yang gagal dimuat membuang
+> dirinya sendiri — situs tidak pernah menampilkan gambar rusak atau ruang kosong.
+
 ### Menambah kolom produk baru
 
 Tambah kolom di `products` (schema.sql § 13a) → tambahkan namanya di query `select`
 dan pemetaan objek di `syncProducts()` (`scripts/sync-content.mjs`) → baca dari
 `products.json` di `src/data/bots.ts`. Field yang belum disebut di skrip **tidak
 ikut terbit** walau bisa diisi di panel.
+
+---
+
+## 16. Konten Halaman Publik
+
+Teks halaman publik dikelola dari **`/admin/halaman`** — tanpa menyentuh kode.
+
+### Cara kerja
+
+```
+   Admin edit di /admin/halaman
+              │
+              ▼
+   Supabase: page_content (key + content jsonb)
+              │  scripts/sync-content.mjs (syncPages), saat build
+              ▼
+   src/data/synced/pages.json
+              │
+              ▼
+   src/data/pages.ts  →  halaman publik
+```
+
+**Field kosong = pakai teks bawaan.** `pages.ts` menyimpan seluruh teks yang
+sedang tayang sebagai default, dan hanya menimpanya dengan nilai dari CMS yang
+benar-benar diisi. Jadi mengosongkan kolom di panel **tidak pernah** menghasilkan
+judul kosong atau section melayang — situs kembali ke teks aslinya. Tombol
+**Kosongkan halaman ini** memanfaatkan sifat itu untuk mengembalikan satu halaman
+ke keadaan bawaan.
+
+Di panel, teks bawaan tampil sebagai **placeholder abu-abu** pada tiap kolom,
+jadi kamu selalu tahu apa yang akan dipakai bila kolom dibiarkan kosong.
+
+### Halaman yang tersedia
+
+| Tab | Yang bisa diubah |
+|---|---|
+| **Beranda** | Hero (eyebrow, judul, kata beraksen, paragraf, label tombol), label statistik, section katalog, section studio, daftar prinsip, CTA penutup |
+| **Tentang** | Hero halaman Tentang |
+| **Katalog Produk** | Hero, section langkah mulai, section keunggulan, section FAQ, CTA penutup |
+| **Support** | Paragraf pengantar |
+| **Global** | Tagline, deskripsi SEO & footer, teks kecil footer |
+
+### Menambah field konten baru
+
+Cukup **satu tempat**: tambahkan entri di `pageSchemas` dan teks bawaannya di
+`pageDefaults` (keduanya di `src/data/pages.ts`), lalu pakai di halaman lewat
+`pageContent('<key>')`. Panel admin ikut menampilkan field itu secara otomatis,
+dan `scripts/sync-content.mjs` **tidak perlu diubah** karena `content` diteruskan
+apa adanya.
+
+Tipe field yang didukung: `text`, `textarea`, `list` (satu item per baris), dan
+`pairs` (satu per baris, format `Judul | Deskripsi`).
+
+### Struktur menu panel
+
+Sidebar admin dikelompokkan per bidang kerja supaya tetap terbaca saat halaman
+bertambah: **Ringkasan**, **Konten** (Konten Halaman, Pengumuman), **Produk**
+(Katalog Produk), **Operasional Bot** (Kontrol, Operasi, Monitor Game, Promo,
+Moderasi Kata), **Partnership**, dan **Data & Laporan** (Statistik, Log, Server,
+Pemain). Grup berisi halaman yang sedang dibuka otomatis terbuka; pilihan
+buka-tutup lainnya diingat per browser.

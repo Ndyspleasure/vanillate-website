@@ -36,6 +36,7 @@ const DIR_SYNCED = path.join(ROOT, 'src', 'data', 'synced');
 const FILE_KONTEN = path.join(DIR_SYNCED, 'site-content.json');
 const FILE_PARTNERSHIP = path.join(DIR_SYNCED, 'partnership.json');
 const FILE_PRODUCTS = path.join(DIR_SYNCED, 'products.json');
+const FILE_PAGES = path.join(DIR_SYNCED, 'pages.json');
 
 const URL_SUPABASE = (process.env.SUPABASE_URL || '').trim().replace(/\/$/, '');
 const SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
@@ -50,6 +51,7 @@ const KOSONG_PARTNERSHIP = {
   content: {},
 };
 const KOSONG_PRODUCTS = { products: [] };
+const KOSONG_PAGES = { pages: {} };
 
 // ─── Util berkas ────────────────────────────────────────────────────────────
 
@@ -443,6 +445,33 @@ async function syncProducts() {
   console.log(`  produk: ${products.length}`);
 }
 
+// ─── 4. Konten halaman publik (page_content) ────────────────────────────────
+//
+// Diteruskan apa adanya: pemetaan field ke tampilan dilakukan di
+// src/data/pages.ts, dan field kosong di sana jatuh ke teks bawaan. Jadi
+// menambah field konten baru TIDAK perlu mengubah skrip ini.
+
+async function syncPages() {
+  let baris;
+  try {
+    baris = await ambil('page_content?select=key,content&order=sort.asc');
+  } catch (err) {
+    pertahankanYangLama(FILE_PAGES, KOSONG_PAGES, err.message);
+    return;
+  }
+
+  const pages = {};
+  for (const b of baris) {
+    const key = String(b.key ?? '').trim();
+    if (!key) continue;
+    pages[key] = b.content && typeof b.content === 'object' && !Array.isArray(b.content) ? b.content : {};
+  }
+
+  tulis(FILE_PAGES, { pages });
+  console.log('✓ pages.json diperbarui.');
+  console.log(`  halaman: ${Object.keys(pages).length}`);
+}
+
 // ─── Jalan ──────────────────────────────────────────────────────────────────
 
 if (!URL_SUPABASE || !SERVICE_KEY) {
@@ -450,6 +479,7 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
   pertahankanYangLama(FILE_KONTEN, KOSONG_KONTEN, alasan);
   pertahankanYangLama(FILE_PARTNERSHIP, KOSONG_PARTNERSHIP, alasan);
   pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, alasan);
+  pertahankanYangLama(FILE_PAGES, KOSONG_PAGES, alasan);
   process.exit(0);
 }
 
@@ -459,4 +489,5 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
 await syncSiteContent();
 await syncPartnership();
 await syncProducts();
+await syncPages();
 process.exit(0);
