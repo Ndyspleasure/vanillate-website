@@ -220,7 +220,7 @@ export function productPrimaryCta(bot: Bot): { label: string; href: string; exte
   if (invite) return { label: inviteCtaLabel(bot), href: invite, external: true };
   const dl = downloadUrl(bot);
   if (dl) return { label: `${CTA.download}${latestRelease(bot)?.version ? ` v${latestRelease(bot)!.version}` : ''}`, href: dl, external: true };
-  return { label: bot.status === 'coming-soon' ? CTA.notify : `Lihat ${bot.shortName}`, href: `/bots/${bot.slug}`, external: false };
+  return { label: bot.status === 'coming-soon' ? CTA.notify : `Lihat ${bot.shortName}`, href: `/products/${bot.slug}`, external: false };
 }
 
 /** Format ukuran byte ke bentuk ringkas (mis. 24 MB). */

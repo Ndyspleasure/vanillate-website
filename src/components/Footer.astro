@@ -41,15 +41,20 @@ const channels = [
     </div>
 
     <div>
-      <p class="eyebrow mb-4">Bot Kami</p>
+      <p class="eyebrow mb-4">Produk</p>
       <ul class="space-y-2">
         {bots.map((bot) => (
           <li>
-            <a href={url(`/bots/${bot.slug}`)} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+            <a href={url(`/products/${bot.slug}`)} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
               {bot.shortName}
             </a>
           </li>
         ))}
+        <li>
+          <a href={url('/products')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+            Semua produk
+          </a>
+        </li>
       </ul>
     </div>
 
@@ -59,6 +64,7 @@ const channels = [
         <li><a href={url('/about')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Tentang</a></li>
         <li><a href={url('/docs')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Dokumentasi</a></li>
         <li><a href={url('/changelog')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Changelog</a></li>
+        <li><a href={url('/partnership')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Partnership</a></li>
         <li><a href={url('/support')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Support</a></li>
         <li><a href={url('/support#hubungi-support')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Hubungi Support</a></li>
         <li><a href={url('/terms')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{t.nav.terms}</a></li>

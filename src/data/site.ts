@@ -3,9 +3,9 @@
 export const site = {
   name: 'Vanillate Studio',
   shortName: 'Vanillate',
-  tagline: 'Studio teknologi Indonesia di balik Discord Bot yang dimainkan komunitas setiap hari.',
+  tagline: 'Studio produk digital Indonesia yang membangun pengalaman yang dinikmati banyak orang.',
   description:
-    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius, cepat, stabil, dan terus diperbarui. Bot kami, Vanillate Sambung Kata, dimainkan ratusan ribu orang tiap hari. Dirancang untuk menghidupkan obrolan server sekaligus mendukung sistem leveling komunitas Discord kamu.',
+    'Vanillate Studio membangun, merilis, dan merawat produk hiburan buatan Indonesia. Produk kami, Vanillate Sambung Kata, dimainkan ratusan ribu orang di Discord setiap hari — dan katalog kami terus bertambah.',
   url: 'https://vanillate.id',
   locale: 'id-ID',
 
@@ -26,13 +26,13 @@ export const site = {
   },
 } as const;
 
+// Nav studio yang ramping. Item level-produk (Dokumentasi, Changelog,
+// Partnership) sengaja diturunkan ke footer & halaman produk — nav utama
+// bicara atas nama studio, bukan satu produk.
 export const nav = [
   { label: 'Beranda', href: '/' },
+  { label: 'Produk', href: '/products' },
   { label: 'Tentang', href: '/about' },
-  { label: 'Produk', href: '/bots' },
-  { label: 'Dokumentasi', href: '/docs' },
-  { label: 'Changelog', href: '/changelog' },
-  { label: 'Partnership', href: '/partnership' },
   { label: 'Support', href: '/support' },
 ];
 
