@@ -13,6 +13,7 @@ export type Bot = {
   description: string;          // Paragraf pendek untuk halaman detail
   status: 'live' | 'beta' | 'preorder' | 'coming-soon';
   featured: boolean;            // Highlight utama di beranda
+  verified?: boolean;           // Aplikasi Discord terverifikasi → tampilkan lencana "✓ APP" di samping nama
   hidden?: boolean;             // Sembunyikan dari seluruh tampilan situs (data tetap ada)
   category: string;             // ex: "Word Game", "Idle Simulation"
   clientId?: string;            // Discord Application/Client ID (kosongkan jika belum rilis)
@@ -82,6 +83,7 @@ const allBots: Bot[] = [
       'Permainan kata klasik Indonesia yang dibangun ulang untuk Discord. Sambung kata bareng teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 25.000+ kata memastikan setiap jawaban dinilai adil. Karena semua pemain ikut mengetik jawaban, satu ronde saja sudah cukup untuk membangunkan obrolan server yang mulai sepi.',
     status: 'live',
     featured: true,
+    verified: true,
     category: 'Word Game',
     seoTitle: 'Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord',
     seoDescription:

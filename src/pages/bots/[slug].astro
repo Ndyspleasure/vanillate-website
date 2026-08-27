@@ -3,6 +3,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
+import BotTag from '@components/BotTag.astro';
 import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA } from '@data/bots';
 import { faqs } from '@data/faq';
 import { site } from '@data/site';
@@ -67,7 +68,10 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
               </span>
             )}
           </p>
-          <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-none">{bot.name}</h1>
+          <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-6xl leading-none flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span>{bot.name}</span>
+            {bot.verified && <BotTag verified size="lg" />}
+          </h1>
         </div>
       </div>
 
@@ -247,7 +251,10 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
               )}
               <div>
                 <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">{other.category}</p>
-                <h3 class="font-display text-lg font-semibold tracking-tightest group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{other.shortName}</h3>
+                <h3 class="font-display text-lg font-semibold tracking-tightest group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors inline-flex flex-wrap items-center gap-1.5">
+                  <span>{other.shortName}</span>
+                  {other.verified && <BotTag verified />}
+                </h3>
               </div>
             </div>
             <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{other.tagline}</p>
