@@ -718,3 +718,61 @@ kartu melayang. Jadi halaman bisa dibuat ringkas maupun lengkap tanpa ngoding.
 
 `scripts/sync-content.mjs` meneruskan `content` apa adanya, jadi **tidak perlu**
 diubah saat menambah bagian konten baru.
+
+---
+
+## 15. Katalog Produk (umbrella studio)
+
+Reposisi situs dari "situs Sambung Kata" menjadi **rumah & katalog seluruh produk
+Vanillate Studio**. Satu katalog menampung Discord bot, aplikasi Android (APK
+diunduh langsung dari situs), dan produk berikutnya — dikelola dari **`/admin/produk`**.
+
+### Tabel (schema.sql bagian 13)
+
+| Tabel | Peran |
+|---|---|
+| `products` | Baris = satu produk. `platform` (`discord`/`android`/`web`) menentukan pola CTA di halaman publik (Undang vs Download APK). |
+| `product_media` | Foto/video/ikon/banner per produk — file di bucket **`product-media`**. |
+| `product_releases` | Rilis **APK** per produk (versi, ukuran, **SHA-256**, catatan) — file di bucket **`product-apk`**; satu `is_latest` per produk. |
+
+RLS sama seperti Partnership: admin baca, `owner`/`admin` kelola. Halaman publik
+**tidak** membaca tabel ini — ditarik saat build (service_role).
+
+### Storage
+
+Dua bucket **publik** dibuat oleh schema: `product-media` (≤50 MB) & `product-apk`
+(≤250 MB). Siapa pun boleh **mengunduh** lewat URL publik; **menulis/menghapus**
+hanya editor (lewat panel, memakai JWT admin). File APK **tidak** disimpan di repo.
+
+> **Hosting APK — kuota.** Paket gratis Supabase Storage terbatas pada penyimpanan
+> & bandwidth/egress bulanan. Karena situs hanya menyimpan **URL**, file mudah
+> dipindah nanti ke **Cloudflare R2** (egress gratis) atau **GitHub Releases** bila
+> unduhan membesar — cukup ganti URL di metadata.
+
+### Alur edit → terbit
+
+```
+   Admin di /admin/produk  (CRUD + upload media/APK ke Storage)
+              │
+              ▼
+   Supabase: products / product_media / product_releases  (+ file di Storage)
+              │  scripts/sync-content.mjs (syncProducts), saat build
+              ▼
+   src/data/synced/products.json  ─── di-commit bila berubah
+              │
+              ▼
+   src/data/bots.ts membacanya → homepage, /bots (katalog), /bots/[slug]
+```
+
+Sama seperti Partnership: **perubahan tampil setelah build ulang** (Actions → Sync
+konten, ~2–3 menit), sedangkan file di Storage bisa diunduh seketika. `bots.ts`
+sengaja tetap bernama `bots` dan mempertahankan API lama supaya seluruh halaman
+yang ada tidak perlu diubah. Untuk **Sambung Kata**, `features` & `commands` tetap
+ditarik dari repo bot (`bot-info.json`) — satu sumber kebenaran.
+
+### Menambah kolom produk baru
+
+Tambah kolom di `products` (schema.sql § 13a) → tambahkan namanya di query `select`
+dan pemetaan objek di `syncProducts()` (`scripts/sync-content.mjs`) → baca dari
+`products.json` di `src/data/bots.ts`. Field yang belum disebut di skrip **tidak
+ikut terbit** walau bisa diisi di panel.

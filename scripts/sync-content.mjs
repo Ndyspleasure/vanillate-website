@@ -35,6 +35,7 @@ const DIR_SYNCED = path.join(ROOT, 'src', 'data', 'synced');
 
 const FILE_KONTEN = path.join(DIR_SYNCED, 'site-content.json');
 const FILE_PARTNERSHIP = path.join(DIR_SYNCED, 'partnership.json');
+const FILE_PRODUCTS = path.join(DIR_SYNCED, 'products.json');
 
 const URL_SUPABASE = (process.env.SUPABASE_URL || '').trim().replace(/\/$/, '');
 const SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
@@ -48,6 +49,7 @@ const KOSONG_PARTNERSHIP = {
   links: [],
   content: {},
 };
+const KOSONG_PRODUCTS = { products: [] };
 
 // ─── Util berkas ────────────────────────────────────────────────────────────
 
@@ -299,12 +301,131 @@ async function syncPartnership() {
   console.log(`  produk aktif: ${products.length} · kategori: ${categories.length} · custom link: ${hasil.links.length}`);
 }
 
+// ─── 3. Katalog produk (products / product_media / product_releases) ─────────
+
+/** URL berkas: pakai kolom `url` bila ada, jika kosong bangun dari path Storage publik. */
+function urlBerkas(u, storagePath, bucket) {
+  const url = String(u ?? '').trim();
+  if (url) return /^https?:\/\//i.test(url) || url.startsWith('/') ? url : '';
+  if (storagePath) return `${URL_SUPABASE}/storage/v1/object/public/${bucket}/${storagePath}`;
+  return '';
+}
+
+async function syncProducts() {
+  let prodRaw;
+  try {
+    prodRaw = await ambil(
+      'products?select=id,slug,name,short_name,tagline,description,platform,status,category,accent_color,icon,thumbnail_url,featured,verified,sort,features,long_intro,commands,discord_client_id,discord_permissions,discord_scopes,discord_integration_type,invite_url,package_name,min_android,install_note,cta_label,cta_url,docs_slug,seo_title,seo_description,og_image_url&enabled=is.true&order=sort.asc',
+    );
+  } catch (err) {
+    pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, err.message);
+    return;
+  }
+
+  // Media & rilis ditarik terpisah: bila tabelnya belum ada (schema lama),
+  // katalog tetap terbit tanpa media/rilis alih-alih gagal total.
+  let mediaRaw = [];
+  let releaseRaw = [];
+  try {
+    mediaRaw = await ambil('product_media?select=product_id,kind,url,storage_path,alt,sort&order=sort.asc');
+  } catch (err) {
+    console.warn(`  ! product_media dilewati: ${err.message}`);
+  }
+  try {
+    releaseRaw = await ambil('product_releases?select=product_id,version,url,storage_path,file_size,sha256,min_android,release_notes,is_latest,created_at&published=is.true&order=created_at.desc');
+  } catch (err) {
+    console.warn(`  ! product_releases dilewati: ${err.message}`);
+  }
+
+  const mediaByProduct = new Map();
+  for (const m of mediaRaw) {
+    const list = mediaByProduct.get(m.product_id) ?? [];
+    list.push({
+      kind: ['icon', 'screenshot', 'video', 'banner'].includes(m.kind) ? m.kind : 'screenshot',
+      url: urlBerkas(m.url, m.storage_path, 'product-media'),
+      alt: String(m.alt ?? '').trim(),
+    });
+    mediaByProduct.set(m.product_id, list);
+  }
+
+  // Rilis terbaru per produk: is_latest bila ada; jika tidak, yang paling baru
+  // (baris sudah urut created_at desc).
+  const latestByProduct = new Map();
+  for (const r of releaseRaw) {
+    const cur = latestByProduct.get(r.product_id);
+    if (!cur || (r.is_latest && !cur.is_latest)) latestByProduct.set(r.product_id, r);
+  }
+
+  const products = prodRaw
+    .map((p) => {
+      const rel = latestByProduct.get(p.id);
+      return {
+        slug: String(p.slug ?? ''),
+        name: String(p.name ?? '').trim(),
+        shortName: String(p.short_name ?? p.name ?? '').trim(),
+        tagline: String(p.tagline ?? '').trim(),
+        description: String(p.description ?? '').trim(),
+        platform: ['discord', 'android', 'web'].includes(p.platform) ? p.platform : 'discord',
+        status: ['live', 'beta', 'preorder', 'coming-soon'].includes(p.status) ? p.status : 'live',
+        category: String(p.category ?? '').trim(),
+        color: String(p.accent_color ?? '').trim() || '#E8B84A',
+        icon: String(p.icon ?? '').trim() || 'sparkles',
+        thumbnail: urlBerkas(p.thumbnail_url, '', 'product-media'),
+        featured: Boolean(p.featured),
+        verified: Boolean(p.verified),
+        sort: Number.isFinite(Number(p.sort)) ? Number(p.sort) : 100,
+        features: daftarTeks(p.features, 12),
+        longIntro: daftarTeks(p.long_intro, 12),
+        commands: Array.isArray(p.commands)
+          ? p.commands.filter((c) => c && c.name).map((c) => ({ name: String(c.name), description: String(c.description ?? '') })).slice(0, 60)
+          : [],
+        discord: {
+          clientId: String(p.discord_client_id ?? '').trim(),
+          permissions: String(p.discord_permissions ?? '').trim(),
+          scopes: Array.isArray(p.discord_scopes) ? p.discord_scopes.map(String) : ['bot', 'applications.commands'],
+          integrationType: String(p.discord_integration_type ?? '').trim(),
+          inviteUrl: urlAman(p.invite_url, `invite ${p.slug}`),
+        },
+        android: p.platform === 'android'
+          ? {
+              packageName: String(p.package_name ?? '').trim(),
+              minAndroid: String(p.min_android ?? '').trim(),
+              installNote: String(p.install_note ?? '').trim(),
+            }
+          : null,
+        ctaLabel: String(p.cta_label ?? '').trim(),
+        ctaUrl: urlAman(p.cta_url, `cta ${p.slug}`),
+        docsSlug: String(p.docs_slug ?? '').trim(),
+        seoTitle: String(p.seo_title ?? '').trim(),
+        seoDescription: String(p.seo_description ?? '').trim(),
+        ogImage: urlBerkas(p.og_image_url, '', 'product-media'),
+        media: mediaByProduct.get(p.id) ?? [],
+        release: rel
+          ? {
+              version: String(rel.version ?? '').trim(),
+              url: urlBerkas(rel.url, rel.storage_path, 'product-apk'),
+              fileSize: Number.isFinite(Number(rel.file_size)) ? Number(rel.file_size) : null,
+              sha256: String(rel.sha256 ?? '').trim() || null,
+              minAndroid: String(rel.min_android ?? '').trim(),
+              releaseNotes: String(rel.release_notes ?? '').trim(),
+            }
+          : null,
+      };
+    })
+    .filter((p) => p.slug && p.name);
+
+  tulis(FILE_PRODUCTS, { products });
+  console.log('✓ products.json diperbarui.');
+  console.log(`  produk: ${products.length}`);
+}
+
 // ─── Jalan ──────────────────────────────────────────────────────────────────
 
 if (!URL_SUPABASE || !SERVICE_KEY) {
   const alasan = 'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY belum diisi.';
   pertahankanYangLama(FILE_KONTEN, KOSONG_KONTEN, alasan);
   pertahankanYangLama(FILE_PARTNERSHIP, KOSONG_PARTNERSHIP, alasan);
+  pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, alasan);
   process.exit(0);
 }
 
@@ -313,4 +434,5 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
 // yang lain, dan build tetap lanjut.
 await syncSiteContent();
 await syncPartnership();
+await syncProducts();
 process.exit(0);

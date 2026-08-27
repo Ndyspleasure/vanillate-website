@@ -1176,4 +1176,186 @@ create policy "editor kelola kategori partnership" on public.partnership_categor
   for all to authenticated
   using (public.is_admin_editor())
   with check (public.is_admin_editor());
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 13. KATALOG PRODUK (umbrella studio)
+--
+-- Reposisi situs dari "situs Sambung Kata" menjadi rumah & katalog SELURUH
+-- produk Vanillate Studio. Model produk digeneralisasi supaya satu katalog bisa
+-- menampung Discord bot, aplikasi Android (APK unduh langsung), dan produk lain.
+-- Dikelola dari /admin/produk, ditarik saat build ke halaman publik /products —
+-- pola yang sama persis dengan Partnership (bagian 10 & 12).
+--
+-- Pembagian peran (konsisten dengan bagian lain file ini):
+--   • Website (panel /admin) → membuat & mengelola produk, media, rilis APK.
+--   • Build (service_role)   → menarik produk `enabled` ke src/data/synced.
+--   • Publik (anon)          → TIDAK membaca tabel ini; hanya menerima HTML
+--                              hasil build + mengunduh file dari bucket publik.
+--
+-- File APK & media (foto/video) disimpan di Supabase Storage (bucket publik),
+-- BUKAN di repo — supaya repo tidak membengkak dan unduhan lewat CDN.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 13a. Produk (satu baris = satu produk di katalog)
+create table if not exists public.products (
+  id            uuid primary key default gen_random_uuid(),
+  slug          text not null unique,               -- URL: /products/<slug>
+  name          text not null,
+  short_name    text,
+  tagline       text,
+  description   text,
+  -- Platform menentukan pola CTA di halaman publik:
+  --   discord → "Undang ke Server" (invite),  android → "Download APK".
+  platform      text not null default 'discord' check (platform in ('discord','android','web')),
+  status        text not null default 'live' check (status in ('live','beta','preorder','coming-soon')),
+  category      text,
+  accent_color  text,                               -- hex aksen "dunia" produk (mis. #E8B84A)
+  icon          text,                               -- nama ikon fallback (registry @data/icons)
+  thumbnail_url text,                               -- ikon/thumbnail (bucket product-media atau /public)
+  featured      boolean not null default false,     -- disorot di beranda
+  verified      boolean not null default false,     -- lencana "✓ APP"
+  enabled       boolean not null default true,      -- tampil di situs (false = sembunyi, data tetap ada)
+  sort          integer not null default 100,
+  features      jsonb   not null default '[]'::jsonb,-- array string (poin fitur)
+  long_intro    jsonb   not null default '[]'::jsonb,-- array paragraf narasi
+  commands      jsonb   not null default '[]'::jsonb,-- [{name,description}] untuk bot
+  -- Discord bot
+  discord_client_id        text,
+  discord_permissions      text,
+  discord_scopes           jsonb not null default '["bot","applications.commands"]'::jsonb,
+  discord_integration_type text,                    -- '0' guild install, '1' user install
+  invite_url               text,                    -- override; kosong = dibangun dari field di atas
+  -- Android app (file APK ada di product_releases)
+  package_name  text,
+  min_android   text,                               -- mis. 'Android 8.0'
+  install_note  text,                               -- catatan pasang (aktifkan sumber tak dikenal, dll)
+  -- CTA & tautan umum
+  cta_label     text,
+  cta_url       text,
+  docs_slug     text,
+  -- SEO khusus
+  seo_title       text,
+  seo_description text,
+  og_image_url    text,
+  -- Audit
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  updated_by    uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.products is
+  'Katalog produk Vanillate Studio. Dikelola dari /admin/produk, ditarik saat build ke halaman publik /products.';
+
+-- 13b. Media produk (screenshot / video / ikon / banner) — file di bucket product-media
+create table if not exists public.product_media (
+  id           uuid primary key default gen_random_uuid(),
+  product_id   uuid not null references public.products(id) on delete cascade,
+  kind         text not null default 'screenshot' check (kind in ('icon','screenshot','video','banner')),
+  storage_path text not null,                       -- path objek di bucket product-media
+  url          text,                                -- URL publik (cache saat upload)
+  alt          text,
+  sort         integer not null default 100,
+  created_at   timestamptz not null default now()
+);
+create index if not exists product_media_product_idx on public.product_media(product_id, sort);
+
+-- 13c. Rilis APK — file .apk di bucket product-apk (manajemen versi)
+create table if not exists public.product_releases (
+  id            uuid primary key default gen_random_uuid(),
+  product_id    uuid not null references public.products(id) on delete cascade,
+  version       text not null,                      -- '1.0.0'
+  version_code  integer,                            -- Android versionCode (opsional)
+  storage_path  text not null,                      -- path .apk di bucket product-apk
+  url           text,                               -- URL unduh publik (cache)
+  file_size     bigint,                             -- ukuran byte
+  sha256        text,                               -- checksum integritas (ditampilkan di halaman unduh)
+  release_notes text,
+  min_android   text,
+  is_latest     boolean not null default false,
+  published     boolean not null default true,
+  created_at    timestamptz not null default now(),
+  created_by    uuid references public.admin_users(id) on delete set null
+);
+create index if not exists product_releases_product_idx on public.product_releases(product_id, created_at desc);
+-- Hanya satu rilis "terbaru" per produk.
+create unique index if not exists product_releases_one_latest on public.product_releases(product_id) where is_latest;
+
+-- 13d. RLS — admin baca, editor kelola. Publik lewat build (service_role, bypass).
+alter table public.products         enable row level security;
+alter table public.product_media    enable row level security;
+alter table public.product_releases enable row level security;
+
+drop policy if exists "admin baca products" on public.products;
+create policy "admin baca products" on public.products
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola products" on public.products;
+create policy "editor kelola products" on public.products
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+drop policy if exists "admin baca product_media" on public.product_media;
+create policy "admin baca product_media" on public.product_media
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola product_media" on public.product_media;
+create policy "editor kelola product_media" on public.product_media
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+drop policy if exists "admin baca product_releases" on public.product_releases;
+create policy "admin baca product_releases" on public.product_releases
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola product_releases" on public.product_releases;
+create policy "editor kelola product_releases" on public.product_releases
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+-- 13e. Storage buckets (publik) + policies pada storage.objects
+--   product-media → foto/video/ikon (≤50 MB)
+--   product-apk   → berkas .apk (≤250 MB)
+-- Bucket publik: siapa pun boleh MENGUNDUH lewat URL publik. Menulis/menghapus
+-- hanya editor (owner/admin) lewat panel admin.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values
+  ('product-media', 'product-media', true, 52428800,
+   array['image/png','image/jpeg','image/webp','image/gif','image/svg+xml','video/mp4','video/webm']),
+  ('product-apk', 'product-apk', true, 262144000,
+   array['application/vnd.android.package-archive','application/octet-stream'])
+on conflict (id) do nothing;
+
+drop policy if exists "publik baca product files" on storage.objects;
+create policy "publik baca product files" on storage.objects
+  for select to public using (bucket_id in ('product-media','product-apk'));
+
+drop policy if exists "editor kelola product-media" on storage.objects;
+create policy "editor kelola product-media" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'product-media' and public.is_admin_editor())
+  with check (bucket_id = 'product-media' and public.is_admin_editor());
+
+drop policy if exists "editor kelola product-apk" on storage.objects;
+create policy "editor kelola product-apk" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'product-apk' and public.is_admin_editor())
+  with check (bucket_id = 'product-apk' and public.is_admin_editor());
+
+-- 13f. Seed produk pertama: Vanillate Sambung Kata (Discord bot).
+--      Fitur & command sengaja TIDAK di-seed di sini — untuk Sambung Kata
+--      keduanya tetap ditarik dari repo bot (src/data/synced/bot-info.json),
+--      satu sumber kebenaran. Produk lain mengisi lewat /admin/produk.
+insert into public.products
+  (slug, name, short_name, tagline, description, platform, status, category, accent_color, icon,
+   featured, verified, sort, discord_client_id, discord_permissions, discord_integration_type,
+   docs_slug, seo_title, seo_description)
+values
+  ('sambung-kata',
+   'Vanillate Sambung Kata',
+   'Vanillate Sambung Kata',
+   'Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.',
+   'Permainan kata klasik Indonesia yang dibangun ulang untuk Discord. Sambung kata bareng teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 25.000+ kata memastikan setiap jawaban dinilai adil. Karena semua pemain ikut mengetik jawaban, satu ronde saja sudah cukup untuk membangunkan obrolan server yang mulai sepi.',
+   'discord', 'live', 'Word Game', '#E8B84A', 'sparkles',
+   true, true, 10, '1513806760622817320', '876173413440', '0',
+   'sambung-kata',
+   'Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord',
+   'Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.')
+on conflict (slug) do nothing;
 -- ═══════════════════════════════════════════════════════════════════════════

@@ -17,7 +17,8 @@ export default defineConfig({
     // Halaman /admin dikeluarkan dari sitemap: itu area internal,
     // bukan halaman yang ingin ditemukan lewat pencarian.
     sitemap({
-      filter: (page) => !page.includes('/admin'),
+      // /admin internal; /bots hanya stub redirect ke /products.
+      filter: (page) => !page.includes('/admin') && !page.includes('/bots'),
     }),
   ],
   build: {
