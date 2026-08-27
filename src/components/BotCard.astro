@@ -2,6 +2,7 @@
 import type { Bot } from '@data/bots';
 import { buildInviteUrl, inviteCtaLabel } from '@data/bots';
 import Icon from '@components/Icon.astro';
+import BotTag from '@components/BotTag.astro';
 import { url } from '@utils/url';
 
 export interface Props {
@@ -69,8 +70,9 @@ const dotClass = {
       )}
       <div>
         <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">{bot.category}</p>
-        <h3 class:list={[featured ? 'text-2xl md:text-3xl' : 'text-xl', 'font-display font-semibold tracking-tightest']}>
-          {bot.name}
+        <h3 class:list={[featured ? 'text-2xl md:text-3xl' : 'text-xl', 'font-display font-semibold tracking-tightest inline-flex flex-wrap items-center gap-2']}>
+          <span>{bot.name}</span>
+          {bot.verified && <BotTag verified />}
         </h3>
       </div>
     </div>

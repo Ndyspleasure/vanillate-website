@@ -5,7 +5,7 @@ export const site = {
   shortName: 'Vanillate',
   tagline: 'Studio teknologi Indonesia di balik Discord Bot yang dimainkan komunitas setiap hari.',
   description:
-    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius, cepat, stabil, dan terus diperbarui. Bot kami, Vanillate Sambung Kata, dimainkan ribuan orang tiap hari. Dirancang untuk menghidupkan obrolan server sekaligus mendukung sistem leveling komunitas Discord kamu.',
+    'Vanillate Studio membangun Discord Bot berbahasa Indonesia yang digarap serius, cepat, stabil, dan terus diperbarui. Bot kami, Vanillate Sambung Kata, dimainkan ratusan ribu orang tiap hari. Dirancang untuk menghidupkan obrolan server sekaligus mendukung sistem leveling komunitas Discord kamu.',
   url: 'https://vanillate.id',
   locale: 'id-ID',
 
@@ -40,8 +40,8 @@ export const nav = [
 // Ini data nyata dari studio, update manual di sini saat berubah.
 // `hint` menjelaskan maksud tiap angka supaya pengunjung tidak bingung.
 export const homeStats = [
-  { num: 1500, prefix: '', suffix: '+', label: 'Pemain aktif', hint: 'Ikut bermain lintas server tiap hari' },
-  { num: 1000, prefix: '', suffix: '+', label: 'Server memakai bot', hint: 'Komunitas Discord dari berbagai daerah' },
+  { num: 150000, prefix: '', suffix: '+', label: 'Pemain aktif', hint: 'Ikut bermain lintas server tiap hari' },
+  { num: 100000, prefix: '', suffix: '+', label: 'Server memakai bot', hint: 'Komunitas Discord dari berbagai daerah' },
   { num: 300, prefix: '+', suffix: '%', label: 'Keaktifan chat', hint: 'Obrolan server jadi jauh lebih ramai' },
   { num: 500, prefix: '+', suffix: '', label: 'Chat per game', hint: 'Rata-rata pesan baru tiap sesi permainan' },
 ] as const;
