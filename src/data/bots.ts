@@ -159,7 +159,10 @@ function toBot(p: RawProduct): Bot {
     minAndroid: p.android?.minAndroid || undefined,
     androidInstallNote: p.android?.installNote || undefined,
     release: p.release ?? null,
-    media: Array.isArray(p.media) ? p.media : [],
+    // Media tanpa URL disaring di sini. Bila lolos, section galeri tetap
+    // dianggap berisi lalu merender <img> kosong — judul muncul di atas
+    // ruang yang tidak berisi apa-apa.
+    media: Array.isArray(p.media) ? p.media.filter((m) => m && m.url) : [],
     color: p.color || '#E8B84A',
     icon: (p.icon || 'sparkles') as IconName,
     // Kosong → undefined, supaya pemeriksaan `bot.thumbnail ?` di komponen
@@ -183,16 +186,20 @@ function toBot(p: RawProduct): Bot {
   };
 }
 
-const allBots: Bot[] = ((productsData.products ?? []) as RawProduct[])
-  .filter((p) => p && p.slug && p.name)
-  .map(toBot);
+const mentah = (productsData.products ?? []) as RawProduct[];
+
+// Urutan dibaca sekali ke dalam Map. Comparator yang memanggil find() akan
+// memindai ulang seluruh daftar pada setiap perbandingan.
+const urutan = new Map<string, number>(
+  mentah.map((p) => [p.slug, Number.isFinite(Number(p.sort)) ? Number(p.sort) : 100]),
+);
+
+const allBots: Bot[] = mentah.filter((p) => p && p.slug && p.name).map(toBot);
 
 // Daftar publik. Sudah difilter `enabled` di sisi sync, jadi tinggal urut.
-export const bots: Bot[] = allBots.sort((a, b) => {
-  const sa = (productsData.products.find((x: any) => x.slug === a.slug)?.sort ?? 100) as number;
-  const sb = (productsData.products.find((x: any) => x.slug === b.slug)?.sort ?? 100) as number;
-  return sa - sb;
-});
+export const bots: Bot[] = allBots.sort(
+  (a, b) => (urutan.get(a.slug) ?? 100) - (urutan.get(b.slug) ?? 100),
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Label CTA standar. Satu sumber kebenaran supaya tombol konsisten di seluruh

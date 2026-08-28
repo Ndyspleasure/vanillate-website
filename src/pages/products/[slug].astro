@@ -361,14 +361,16 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
         </a>
       </div>
       <div class="grid gap-4 sm:grid-cols-3">
-        {otherBots.map((other) => (
+        {otherBots.map((other) => {
+          const thumbLain = productImage(other.thumbnail, true);
+          return (
           <a href={url(`/products/${other.slug}`)} class="group relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 transition-colors hover:border-amber-500/40">
             <div class="absolute inset-x-0 top-0 h-0.5 opacity-70" style={`background: linear-gradient(90deg, ${other.color}00, ${other.color}, ${other.color}00);`} aria-hidden="true"></div>
             <div class="flex items-center gap-3 mb-3">
               <span class="relative flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-lg" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true">
                 <Icon name={other.icon} class="h-5 w-5" />
-                {productImage(other.thumbnail, true) && (
-                  <img src={productImage(other.thumbnail, true)} alt="" class="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" onerror="this.remove()" />
+                {thumbLain && (
+                  <img src={thumbLain} alt="" class="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" onerror="this.remove()" />
                 )}
               </span>
               <div>
@@ -385,7 +387,8 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
               {statusLabel[other.status]}
             </span>
           </a>
-        ))}
+          );
+        })}
       </div>
     </section>
   )}
