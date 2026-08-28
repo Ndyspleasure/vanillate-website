@@ -3,9 +3,9 @@
 export const site = {
   name: 'Vanillate Studio',
   shortName: 'Vanillate',
-  tagline: 'Studio produk digital Indonesia yang membangun pengalaman yang dinikmati banyak orang.',
+  tagline: 'Studio produk digital Indonesia untuk komunitas dan pengalaman sosial.',
   description:
-    'Vanillate Studio membangun, merilis, dan merawat produk hiburan buatan Indonesia. Produk kami, Vanillate Sambung Kata, dimainkan ratusan ribu orang di Discord setiap hari — dan katalog kami terus bertambah.',
+    'Vanillate Studio membangun, merilis, dan merawat produk digital untuk komunitas dan pengalaman sosial — dari aplikasi sosial, community tools, sampai otomasi dan AI. Produk kami dipakai ratusan ribu orang setiap hari, dan katalog kami terus bertambah.',
   url: 'https://vanillate.id',
   locale: 'id-ID',
 
@@ -40,45 +40,47 @@ export const nav = [
 // Ini data nyata dari studio, update manual di sini saat berubah.
 // `hint` menjelaskan maksud tiap angka supaya pengunjung tidak bingung.
 export const homeStats = [
-  { num: 150000, prefix: '', suffix: '+', label: 'Pemain aktif', hint: 'Ikut bermain lintas server tiap hari' },
-  { num: 100000, prefix: '', suffix: '+', label: 'Server memakai bot', hint: 'Komunitas Discord dari berbagai daerah' },
-  { num: 300, prefix: '+', suffix: '%', label: 'Keaktifan chat', hint: 'Obrolan server jadi jauh lebih ramai' },
-  { num: 500, prefix: '+', suffix: '', label: 'Chat per game', hint: 'Rata-rata pesan baru tiap sesi permainan' },
+  { num: 150000, prefix: '', suffix: '+', label: 'Pengguna aktif', hint: 'Memakai produk kami setiap hari' },
+  { num: 100000, prefix: '', suffix: '+', label: 'Komunitas terhubung', hint: 'Dari berbagai daerah di Indonesia' },
+  { num: 300, prefix: '+', suffix: '%', label: 'Keaktifan komunitas', hint: 'Obrolan jadi jauh lebih ramai' },
+  { num: 500, prefix: '+', suffix: '', label: 'Interaksi per sesi', hint: 'Rata-rata percakapan baru tiap sesi' },
 ] as const;
 
-// Langkah mengundang bot. Dipakai di /bots dan /docs.
+// Langkah memakai produk. Sengaja netral platform: tiap produk punya cara
+// pasang sendiri (undang ke komunitas, unduh aplikasi, buka di web), dan
+// detail teknisnya dijelaskan di halaman produk masing-masing.
 // `icon` berisi path SVG (stroke) yang dirender lewat set:html.
 export const inviteSteps = [
   {
     n: '01',
-    title: 'Pilih & undang bot',
-    desc: 'Tekan tombol Undang ke Server pada bot pilihanmu, pilih server tujuan, lalu setujui izin yang diminta. Butuh izin Manage Server di sisi kamu.',
-    icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>',
+    title: 'Pilih produknya',
+    desc: 'Buka katalog dan lihat produk yang paling cocok untuk komunitas atau kebutuhanmu, lengkap dengan fitur dan panduannya.',
+    icon: '<path d="M21 21l-4.35-4.35"/><circle cx="11" cy="11" r="8"/>',
   },
   {
     n: '02',
-    title: 'Jalankan slash command',
-    desc: 'Ketik "/" di channel mana pun untuk melihat semua command yang tersedia. Bot langsung merespons dengan menu interaktif, tanpa perlu setup tambahan.',
-    icon: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>',
+    title: 'Pasang atau undang',
+    desc: 'Satu klik dari halaman produk: undang ke komunitasmu, unduh aplikasinya, atau langsung buka versi webnya. Tanpa setup rumit.',
+    icon: '<path d="M12 5v14M5 12h14"/>',
   },
   {
     n: '03',
-    title: 'Main & undang teman',
-    desc: 'Ajak anggota server ikut bermain. Progres, statistik, dan leaderboard tersimpan otomatis dan bersifat global, jadi terbawa ke server mana pun.',
+    title: 'Pakai bareng komunitas',
+    desc: 'Ajak anggota ikut mencoba. Progres dan datamu tersimpan otomatis, jadi pengalamannya berlanjut di mana pun kamu memakainya.',
     icon: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
   },
 ] as const;
 
-// Keunggulan yang membedakan bot Vanillate. Dipakai di /bots.
+// Keunggulan yang membedakan produk Vanillate. Dipakai di /products.
 export const whyVanillate = [
   {
     title: 'Menghidupkan komunitas',
-    desc: 'Server yang mulai sepi bisa ramai lagi. Permainan kami memancing anggota untuk aktif mengetik, jadi sangat cocok buat server yang mengandalkan sistem leveling dari keaktifan chat.',
+    desc: 'Komunitas yang mulai sepi bisa ramai lagi. Produk kami memancing anggota untuk kembali berinteraksi, jadi sangat cocok buat komunitas yang hidup dari keaktifan anggotanya.',
     icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
   },
   {
     title: 'Dirawat, bukan ditinggal',
-    desc: 'Update rutin, perbaikan cepat, dan gameplay yang terus diseimbangkan. Setiap pembaruan jadi bukti bot tidak berhenti berkembang setelah rilis.',
+    desc: 'Update rutin, perbaikan cepat, dan pengalaman yang terus disempurnakan. Setiap pembaruan jadi bukti produk tidak berhenti berkembang setelah rilis.',
     icon: '<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>',
   },
   {

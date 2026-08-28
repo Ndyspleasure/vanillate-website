@@ -5,7 +5,11 @@ import FAQAccordion from '@components/FAQAccordion.astro';
 import { bots } from '@data/bots';
 import { site, inviteSteps, whyVanillate } from '@data/site';
 import { generalFaqs } from '@data/faq';
+import { pageContent } from '@data/pages';
 import { url } from '@utils/url';
+
+// Teks halaman ini dikelola dari /admin/halaman → tab "Katalog Produk".
+const c = pageContent('products');
 
 // Ringkasan status untuk strip angka di bawah hero.
 const liveCount = bots.filter((b) => b.status === 'live').length;
@@ -13,19 +17,19 @@ const totalCount = bots.length;
 const categories = [...new Set(bots.map((b) => b.category))];
 ---
 
-<BaseLayout title="Produk" description="Katalog produk Vanillate Studio — dari Vanillate Sambung Kata, bot game kata berantai berbahasa Indonesia yang dimainkan ratusan ribu orang, sampai produk berikutnya. Gratis, dirawat tiap hari.">
+<BaseLayout title="Produk" description="Katalog produk Vanillate Studio — aplikasi sosial dan community tools buatan Indonesia yang dipakai ratusan ribu orang. Gratis, dirawat tiap hari.">
   <!-- HERO -->
   <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
     <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
     <div class="aurora bg-teal-500/20 h-[360px] w-[360px] top-[40px] right-[0%]" style="animation-delay: -7s" aria-hidden="true"></div>
 
     <div class="container-page relative">
-      <p class="eyebrow mb-6 animate-fade-up">Katalog Produk</p>
+      <p class="eyebrow mb-6 animate-fade-up">{c.heroEyebrow}</p>
       <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl animate-fade-up">
-        Sedikit produk,<br /><span class="italic text-amber-600 dark:text-amber-500">perhatian</span> penuh.
+        {c.heroTitle}<br /><span class="italic text-amber-600 dark:text-amber-500">{c.heroTitleAccent}</span> {c.heroTitleEnd}
       </h1>
       <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
-        Kami sengaja tidak membuat banyak produk sekaligus. Setiap yang dirilis diperlakukan sebagai produk utama, dengan update rutin, penyempurnaan yang terus berjalan, dan telinga yang selalu terbuka untuk komunitasnya. Undang atau unduh langsung, atau intip dokumentasinya dulu.
+        {c.heroLead}
       </p>
 
       <!-- Ringkasan katalog -->
@@ -47,7 +51,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
     </div>
   </section>
 
-  <!-- KATALOG BOT -->
+  <!-- KATALOG PRODUK -->
   <section class="container-page pb-8">
     <div class="grid gap-6 reveal">
       {bots.map((bot) => <BotCard bot={bot} featured />)}
@@ -57,12 +61,12 @@ const categories = [...new Set(bots.map((b) => b.category))];
   <!-- CARA MENGUNDANG -->
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="max-w-3xl mb-12 reveal">
-      <p class="eyebrow mb-3">Cara Mengundang</p>
+      <p class="eyebrow mb-3">{c.stepsEyebrow}</p>
       <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest">
-        Tiga langkah, langsung main.
+        {c.stepsTitle}
       </h2>
       <p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-        Tanpa daftar akun, tanpa setup rumit. Untuk bot Discord, semuanya berjalan langsung memakai slash command.
+        {c.stepsLead}
       </p>
     </div>
 
@@ -86,12 +90,12 @@ const categories = [...new Set(bots.map((b) => b.category))];
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1 reveal">
-        <p class="eyebrow mb-3">Kenapa Vanillate</p>
+        <p class="eyebrow mb-3">{c.whyEyebrow}</p>
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
-          Kenapa produk kami dipilih.
+          {c.whyTitle}
         </h2>
         <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Ada ratusan produk sejenis di luar sana. Ini yang membuat komunitas memilih dan bertahan dengan buatan kami.
+          {c.whyLead}
         </p>
       </div>
       <div class="md:col-span-2 grid gap-4 sm:grid-cols-2">
@@ -112,12 +116,12 @@ const categories = [...new Set(bots.map((b) => b.category))];
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1 reveal">
-        <p class="eyebrow mb-3">FAQ</p>
+        <p class="eyebrow mb-3">{c.faqEyebrow}</p>
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
-          Pertanyaan yang sering muncul.
+          {c.faqTitle}
         </h2>
         <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Butuh detail spesifik? Tiap produk punya FAQ dan dokumentasi sendiri. Belum ketemu jawabannya? Tanya langsung di Discord.
+          {c.faqLead}
         </p>
       </div>
       <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
@@ -132,10 +136,10 @@ const categories = [...new Set(bots.map((b) => b.category))];
       <div class="aurora bg-amber-500/20 h-[300px] w-[300px] top-[-50px] right-[-50px]" aria-hidden="true"></div>
       <div class="relative max-w-2xl">
         <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest text-cream-50">
-          Masih ada pertanyaan?
+          {c.ctaTitle}
         </h2>
         <p class="mt-4 text-cream-100/80 text-lg leading-relaxed">
-          Cek dokumentasi lengkapnya, atau langsung tanya-tanya di server Discord kami.
+          {c.ctaText}
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
           <a href={url('/docs')} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">

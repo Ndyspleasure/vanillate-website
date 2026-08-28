@@ -36,6 +36,7 @@ const DIR_SYNCED = path.join(ROOT, 'src', 'data', 'synced');
 const FILE_KONTEN = path.join(DIR_SYNCED, 'site-content.json');
 const FILE_PARTNERSHIP = path.join(DIR_SYNCED, 'partnership.json');
 const FILE_PRODUCTS = path.join(DIR_SYNCED, 'products.json');
+const FILE_PAGES = path.join(DIR_SYNCED, 'pages.json');
 
 const URL_SUPABASE = (process.env.SUPABASE_URL || '').trim().replace(/\/$/, '');
 const SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
@@ -50,6 +51,7 @@ const KOSONG_PARTNERSHIP = {
   content: {},
 };
 const KOSONG_PRODUCTS = { products: [] };
+const KOSONG_PAGES = { pages: {} };
 
 // ─── Util berkas ────────────────────────────────────────────────────────────
 
@@ -314,8 +316,18 @@ function urlBerkas(u, storagePath, bucket) {
 async function syncProducts() {
   let prodRaw;
   try {
-    prodRaw = await ambil(
-      'products?select=id,slug,name,short_name,tagline,description,platform,status,category,accent_color,icon,thumbnail_url,featured,verified,sort,features,long_intro,commands,discord_client_id,discord_permissions,discord_scopes,discord_integration_type,invite_url,package_name,min_android,install_note,cta_label,cta_url,docs_slug,seo_title,seo_description,og_image_url&enabled=is.true&order=sort.asc',
+    // Kolom konten CMS (badge, FAQ, langkah install, CTA penutup) ditandai
+    // opsional supaya database yang belum menjalankan schema terbaru tetap
+    // bisa menerbitkan katalognya, hanya tanpa field-field itu.
+    prodRaw = await ambilLonggar(
+      'products',
+      ['id', 'slug', 'name', 'short_name', 'tagline', 'description', 'platform', 'status', 'category',
+       'accent_color', 'icon', 'thumbnail_url', 'featured', 'verified', 'sort', 'features', 'long_intro',
+       'commands', 'discord_client_id', 'discord_permissions', 'discord_scopes', 'discord_integration_type',
+       'invite_url', 'package_name', 'min_android', 'install_note', 'cta_label', 'cta_url', 'docs_slug',
+       'seo_title', 'seo_description', 'og_image_url'],
+      ['badge', 'badge_tone', 'cta_heading', 'cta_text', 'cta_note', 'faq', 'install_steps'],
+      '&enabled=is.true&order=sort.asc',
     );
   } catch (err) {
     pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, err.message);
@@ -393,6 +405,20 @@ async function syncProducts() {
               installNote: String(p.install_note ?? '').trim(),
             }
           : null,
+        badge: String(p.badge ?? '').trim(),
+        badgeTone: ['accent', 'info', 'success', 'warn', 'neutral'].includes(p.badge_tone) ? p.badge_tone : 'accent',
+        // FAQ & langkah install: dibersihkan supaya entri setengah jadi dari CMS
+        // tidak pernah tampil sebagai pertanyaan tanpa jawaban.
+        faq: Array.isArray(p.faq)
+          ? p.faq
+              .map((f) => ({ q: String(f?.q ?? '').trim(), a: String(f?.a ?? '').trim() }))
+              .filter((f) => f.q && f.a)
+              .slice(0, 30)
+          : [],
+        installSteps: daftarTeks(p.install_steps, 10),
+        ctaHeading: String(p.cta_heading ?? '').trim(),
+        ctaText: String(p.cta_text ?? '').trim(),
+        ctaNote: String(p.cta_note ?? '').trim(),
         ctaLabel: String(p.cta_label ?? '').trim(),
         ctaUrl: urlAman(p.cta_url, `cta ${p.slug}`),
         docsSlug: String(p.docs_slug ?? '').trim(),
@@ -419,6 +445,33 @@ async function syncProducts() {
   console.log(`  produk: ${products.length}`);
 }
 
+// ─── 4. Konten halaman publik (page_content) ────────────────────────────────
+//
+// Diteruskan apa adanya: pemetaan field ke tampilan dilakukan di
+// src/data/pages.ts, dan field kosong di sana jatuh ke teks bawaan. Jadi
+// menambah field konten baru TIDAK perlu mengubah skrip ini.
+
+async function syncPages() {
+  let baris;
+  try {
+    baris = await ambil('page_content?select=key,content&order=sort.asc');
+  } catch (err) {
+    pertahankanYangLama(FILE_PAGES, KOSONG_PAGES, err.message);
+    return;
+  }
+
+  const pages = {};
+  for (const b of baris) {
+    const key = String(b.key ?? '').trim();
+    if (!key) continue;
+    pages[key] = b.content && typeof b.content === 'object' && !Array.isArray(b.content) ? b.content : {};
+  }
+
+  tulis(FILE_PAGES, { pages });
+  console.log('✓ pages.json diperbarui.');
+  console.log(`  halaman: ${Object.keys(pages).length}`);
+}
+
 // ─── Jalan ──────────────────────────────────────────────────────────────────
 
 if (!URL_SUPABASE || !SERVICE_KEY) {
@@ -426,6 +479,7 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
   pertahankanYangLama(FILE_KONTEN, KOSONG_KONTEN, alasan);
   pertahankanYangLama(FILE_PARTNERSHIP, KOSONG_PARTNERSHIP, alasan);
   pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, alasan);
+  pertahankanYangLama(FILE_PAGES, KOSONG_PAGES, alasan);
   process.exit(0);
 }
 
@@ -435,4 +489,5 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
 await syncSiteContent();
 await syncPartnership();
 await syncProducts();
+await syncPages();
 process.exit(0);

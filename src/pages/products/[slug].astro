@@ -4,7 +4,7 @@ import Button from '@components/Button.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
 import BotTag from '@components/BotTag.astro';
-import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, latestRelease, formatBytes } from '@data/bots';
+import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, latestRelease, formatBytes, productImage, badgeClass } from '@data/bots';
 import { faqs } from '@data/faq';
 import { site } from '@data/site';
 import { url } from '@utils/url';
@@ -18,12 +18,33 @@ const inviteUrl = buildInviteUrl(bot);
 const comingSoon = bot.status === 'coming-soon';
 const isPreorder = bot.status === 'preorder';
 const heroInviteLabel = inviteCtaLabel(bot);
-const botFaqs = faqs[bot.slug];
+// FAQ produk berasal dari CMS. Bila belum diisi, halaman jatuh ke FAQ bawaan
+// yang masih ditulis di repo (mis. Sambung Kata) supaya konten lama tidak hilang.
+const botFaqs = bot.faq.length > 0 ? bot.faq.map((f) => ({ q: f.q, a: f.a })) : faqs[bot.slug];
 const otherBots = getOtherBots(bot.slug, 3);
 
 const isAndroid = bot.platform === 'android';
 const release = latestRelease(bot);
 const screenshots = bot.media.filter((m) => m.kind === 'screenshot' || m.kind === 'banner');
+const heroThumb = productImage(bot.thumbnail);
+
+// Langkah pemasangan: dari CMS bila diisi, selain itu memakai langkah bawaan.
+const defaultInstallSteps = [
+  'Unduh berkas APK di atas.',
+  'Buka berkasnya; bila diminta, izinkan "Install dari sumber tak dikenal" untuk peramban atau pengelola berkas yang kamu pakai.',
+  'Lanjutkan pemasangan. Android bisa menampilkan pemeriksaan Play Protect — pilih lanjutkan untuk aplikasi tepercaya ini.',
+];
+const installSteps = bot.installSteps.length > 0 ? bot.installSteps : defaultInstallSteps;
+
+// CTA penutup: judul & teks bisa ditulis dari CMS. Bila kosong, dipakai kalimat
+// bawaan yang menyesuaikan platform produk.
+const defaultCtaText = isAndroid
+  ? 'Unduh langsung dan pasang di perangkatmu. Gratis, tanpa syarat berlangganan.'
+  : bot.platform === 'discord'
+    ? 'Tambahkan ke server Discord kamu. Gratis, tanpa syarat berlangganan.'
+    : 'Mulai pakai sekarang. Gratis, tanpa syarat berlangganan.';
+const ctaHeading = bot.ctaHeading || `Coba ${bot.shortName} sekarang.`;
+const ctaText = bot.ctaText || defaultCtaText;
 
 const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-soon': 'Segera' } as const;
 ---
@@ -39,23 +60,25 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
       </a>
 
       <div class="flex items-start gap-4 mb-6">
-        {bot.thumbnail ? (
-          <img
-            src={url(bot.thumbnail)}
-            alt=""
-            class="h-16 w-16 rounded-2xl object-cover flex-none"
-            loading="eager"
-            decoding="async"
-          />
-        ) : (
-          <span
-            class="flex h-16 w-16 items-center justify-center rounded-2xl"
-            style={`background: ${bot.color}20; color: ${bot.color};`}
-            aria-hidden="true"
-          >
-            <Icon name={bot.icon} class="h-8 w-8" />
-          </span>
-        )}
+        <!-- Ikon jadi lapisan dasar; gambar menutupinya bila ada. Gambar yang
+             gagal dimuat membuang dirinya sendiri sehingga ikon kembali tampil. -->
+        <span
+          class="relative flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-2xl"
+          style={`background: ${bot.color}20; color: ${bot.color};`}
+          aria-hidden="true"
+        >
+          <Icon name={bot.icon} class="h-8 w-8" />
+          {heroThumb && (
+            <img
+              src={heroThumb}
+              alt=""
+              class="absolute inset-0 h-full w-full object-cover"
+              loading="eager"
+              decoding="async"
+              onerror="this.remove()"
+            />
+          )}
+        </span>
         <div>
           <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">
             {bot.category}
@@ -69,6 +92,11 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
               <span class="ml-2 inline-flex items-center gap-1.5 rounded-full bg-teal-500/10 px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-teal-600 dark:text-teal-400 align-middle">
                 <span class="h-1.5 w-1.5 rounded-full bg-teal-500 animate-pulse"></span>
                 Preorder Beta
+              </span>
+            )}
+            {bot.badge && (
+              <span class:list={['ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-wider align-middle', badgeClass(bot.badgeTone)]}>
+                {bot.badge}
               </span>
             )}
           </p>
@@ -155,9 +183,12 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
               <div>
                 <p class="eyebrow mb-3">Cara install</p>
                 <ol class="space-y-2 text-sm text-ink-700 dark:text-cream-200">
-                  <li class="flex gap-3"><span class="font-mono text-amber-600 dark:text-amber-500 flex-none">01</span><span>Unduh berkas APK di atas.</span></li>
-                  <li class="flex gap-3"><span class="font-mono text-amber-600 dark:text-amber-500 flex-none">02</span><span>Buka berkasnya; bila diminta, izinkan <strong>“Install dari sumber tak dikenal”</strong> untuk peramban atau pengelola berkas yang kamu pakai.</span></li>
-                  <li class="flex gap-3"><span class="font-mono text-amber-600 dark:text-amber-500 flex-none">03</span><span>Lanjutkan pemasangan. Android bisa menampilkan pemeriksaan Play Protect — pilih lanjutkan untuk aplikasi tepercaya ini.</span></li>
+                  {installSteps.map((langkah, i) => (
+                    <li class="flex gap-3">
+                      <span class="font-mono text-amber-600 dark:text-amber-500 flex-none">{String(i + 1).padStart(2, '0')}</span>
+                      <span>{langkah}</span>
+                    </li>
+                  ))}
                 </ol>
                 {bot.androidInstallNote && (
                   <p class="mt-3 text-sm text-ink-600 dark:text-cream-200/80">{bot.androidInstallNote}</p>
@@ -174,15 +205,24 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
     </section>
   )}
 
-  {isAndroid && screenshots.length > 0 && (
+  <!-- Galeri tampil untuk produk apa pun yang punya screenshot; bila tidak ada,
+       seluruh section hilang sehingga tidak meninggalkan ruang kosong. -->
+  {screenshots.length > 0 && (
     <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
       <div class="mb-8">
         <p class="eyebrow mb-3">Tampilan</p>
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Sekilas aplikasinya.</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Sekilas {bot.shortName}.</h2>
       </div>
       <div class="flex gap-4 overflow-x-auto pb-4 snap-x">
         {screenshots.map((m) => (
-          <img src={m.url} alt={m.alt} loading="lazy" decoding="async" class="h-[420px] w-auto flex-none rounded-2xl border border-ink-900/10 dark:border-cream-100/10 object-cover snap-start" />
+          <img
+            src={m.url}
+            alt={m.alt}
+            loading="lazy"
+            decoding="async"
+            class="h-[420px] w-auto flex-none rounded-2xl border border-ink-900/10 dark:border-cream-100/10 object-cover snap-start"
+            onerror="this.remove()"
+          />
         ))}
       </div>
     </section>
@@ -321,15 +361,18 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
         </a>
       </div>
       <div class="grid gap-4 sm:grid-cols-3">
-        {otherBots.map((other) => (
+        {otherBots.map((other) => {
+          const thumbLain = productImage(other.thumbnail, true);
+          return (
           <a href={url(`/products/${other.slug}`)} class="group relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 transition-colors hover:border-amber-500/40">
             <div class="absolute inset-x-0 top-0 h-0.5 opacity-70" style={`background: linear-gradient(90deg, ${other.color}00, ${other.color}, ${other.color}00);`} aria-hidden="true"></div>
             <div class="flex items-center gap-3 mb-3">
-              {other.thumbnail ? (
-                <img src={url(other.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
-              ) : (
-                <span class="flex h-10 w-10 items-center justify-center rounded-lg flex-none" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true"><Icon name={other.icon} class="h-5 w-5" /></span>
-              )}
+              <span class="relative flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-lg" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true">
+                <Icon name={other.icon} class="h-5 w-5" />
+                {thumbLain && (
+                  <img src={thumbLain} alt="" class="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" onerror="this.remove()" />
+                )}
+              </span>
               <div>
                 <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">{other.category}</p>
                 <h3 class="font-display text-lg font-semibold tracking-tightest group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors inline-flex flex-wrap items-center gap-1.5">
@@ -344,7 +387,8 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
               {statusLabel[other.status]}
             </span>
           </a>
-        ))}
+          );
+        })}
       </div>
     </section>
   )}
@@ -373,8 +417,8 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
           </>
         ) : (
           <>
-            <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">Coba {bot.shortName} sekarang.</h2>
-            <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">{isAndroid ? 'Unduh langsung dan pasang di HP-mu. Gratis, tanpa syarat berlangganan.' : 'Tambahkan ke server Discord kamu. Gratis, tanpa syarat berlangganan.'}</p>
+            <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">{ctaHeading}</h2>
+            <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">{ctaText}</p>
             <div class="flex flex-wrap gap-3">
               {(isAndroid && release) ? (
                 <Button href={release.url} variant="primary" size="lg" external>{CTA.download} v{release.version}</Button>
@@ -383,6 +427,9 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
               ) : null}
               <Button href="/support" variant="ghost" size="lg">Butuh bantuan?</Button>
             </div>
+            {bot.ctaNote && (
+              <p class="mt-4 text-sm text-ink-500 dark:text-cream-300/60">{bot.ctaNote}</p>
+            )}
           </>
         )}
       </div>

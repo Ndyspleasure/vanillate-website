@@ -1,0 +1,234 @@
+---
+// Admin — Konten Halaman.
+//
+// Form dibangun otomatis dari `pageSchemas` (src/data/pages.ts), jadi menambah
+// field konten baru cukup dilakukan di satu tempat: panel ini ikut bertambah
+// sendiri, tanpa mengubah halaman ini.
+//
+// Field yang dikosongkan admin TIDAK menghasilkan teks kosong di situs —
+// pages.ts mengembalikannya ke teks bawaan.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import { pageSchemas, pageDefaults } from '@data/pages';
+
+// Skema & default dikirim ke klien sebagai data, bukan di-import di <script>,
+// supaya keduanya tetap satu sumber kebenaran dengan yang dipakai halaman publik.
+const skemaJson = JSON.stringify(pageSchemas);
+const defaultJson = JSON.stringify(pageDefaults);
+---
+
+<AdminLayout title="Konten Halaman" active="halaman">
+  <AdminPageHeader
+    eyebrow="Konten"
+    title="Konten Halaman"
+    description="Ubah teks halaman publik tanpa menyentuh kode. Field yang dikosongkan otomatis kembali memakai teks bawaan."
+  />
+
+  <div class="px-6 lg:px-10 py-8 max-w-3xl">
+    <div class="mb-6 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Perubahan tersimpan ke database saat menekan Simpan, lalu tampil di situs setelah
+        build berikutnya (Actions → <strong>Sync konten dari Supabase</strong>, ±2–3 menit).
+        Placeholder abu-abu pada tiap kolom adalah teks bawaan yang dipakai bila kolom dikosongkan.
+      </p>
+    </div>
+
+    <div id="tab-halaman" class="mb-6 flex flex-wrap gap-2"></div>
+    <form id="form-halaman" class="space-y-6">
+      <div id="halaman-body" class="space-y-5"></div>
+      <div id="halaman-aksi" class="hidden flex-wrap items-center gap-3">
+        <button type="submit" id="btn-simpan"
+          class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+          Simpan perubahan
+        </button>
+        <button type="button" id="btn-reset"
+          class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+          Kosongkan halaman ini
+        </button>
+        <p id="halaman-pesan" class="text-sm" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </div>
+
+  <script type="application/json" id="data-skema" set:html={skemaJson}></script>
+  <script type="application/json" id="data-default" set:html={defaultJson}></script>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+
+  type Field = { key: string; label: string; type: 'text' | 'textarea' | 'list' | 'pairs'; help?: string };
+  type Skema = { key: string; label: string; description: string; fields: Field[] };
+
+  const skema: Skema[] = JSON.parse(document.getElementById('data-skema')!.textContent || '[]');
+  const bawaan: Record<string, Record<string, any>> = JSON.parse(document.getElementById('data-default')!.textContent || '{}');
+
+  let bolehEdit = false;
+  let aktif = skema[0]?.key ?? 'home';
+  let konten: Record<string, Record<string, any>> = {};
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    void muat();
+    document.getElementById('form-halaman')!.addEventListener('submit', onSimpan);
+    document.getElementById('btn-reset')!.addEventListener('click', onReset);
+    document.getElementById('tab-halaman')!.addEventListener('click', (ev) => {
+      const t = (ev.target as HTMLElement).closest('[data-tab]') as HTMLElement | null;
+      if (!t) return;
+      aktif = t.dataset.tab!;
+      render();
+    });
+  });
+
+  async function muat() {
+    const body = document.getElementById('halaman-body')!;
+    body.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+
+    const { data, error } = await supabase.from('page_content').select('key, content').order('sort', { ascending: true });
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+
+    konten = {};
+    for (const row of data ?? []) konten[row.key] = (row.content ?? {}) as Record<string, any>;
+    render();
+  }
+
+  /** Ubah nilai tersimpan menjadi teks yang enak diedit di textarea. */
+  function keTeks(field: Field, nilai: any): string {
+    if (nilai === null || nilai === undefined) return '';
+    if (field.type === 'list') return Array.isArray(nilai) ? nilai.join('\n') : String(nilai);
+    if (field.type === 'pairs') {
+      return Array.isArray(nilai)
+        ? nilai.map((p: any) => `${p?.title ?? ''} | ${p?.desc ?? ''}`).join('\n')
+        : '';
+    }
+    return String(nilai);
+  }
+
+  /** Kebalikannya: teks di form → bentuk tersimpan. */
+  function dariTeks(field: Field, teks: string): any {
+    const t = teks.trim();
+    if (field.type === 'list') return t ? t.split('\n').map((s) => s.trim()).filter(Boolean) : [];
+    if (field.type === 'pairs') {
+      if (!t) return [];
+      return t
+        .split('\n')
+        .map((baris) => {
+          const [title, ...sisa] = baris.split('|');
+          return { title: (title ?? '').trim(), desc: sisa.join('|').trim() };
+        })
+        .filter((p) => p.title || p.desc);
+    }
+    return t;
+  }
+
+  function render() {
+    // Tab pemilih halaman.
+    document.getElementById('tab-halaman')!.innerHTML = skema
+      .map(
+        (s) => `<button type="button" data-tab="${esc(s.key)}"
+          class="rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+            s.key === aktif
+              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+              : 'text-ink-600 dark:text-cream-200/70 hover:bg-ink-900/5 dark:hover:bg-cream-100/5'
+          }">${esc(s.label)}</button>`,
+      )
+      .join('');
+
+    const s = skema.find((x) => x.key === aktif);
+    const body = document.getElementById('halaman-body')!;
+    if (!s) { body.innerHTML = stateBlock('empty', 'Halaman tidak dikenal.'); return; }
+
+    const nilai = konten[s.key] ?? {};
+    const def = bawaan[s.key] ?? {};
+
+    body.innerHTML = `
+      <p class="text-sm text-ink-500 dark:text-cream-300/60">${esc(s.description)}</p>
+      ${s.fields
+        .map((f) => {
+          const isi = keTeks(f, nilai[f.key]);
+          const ph = keTeks(f, def[f.key]);
+          const kontrol =
+            f.type === 'text'
+              ? `<input id="f-${esc(f.key)}" data-field="${esc(f.key)}" value="${esc(isi)}" placeholder="${esc(ph)}" class="${INPUT}" />`
+              : `<textarea id="f-${esc(f.key)}" data-field="${esc(f.key)}" rows="${f.type === 'text' ? 2 : f.type === 'textarea' ? 3 : 4}" placeholder="${esc(ph)}" class="${INPUT}">${esc(isi)}</textarea>`;
+          return `
+            <div>
+              <label class="block text-sm font-medium mb-1.5" for="f-${esc(f.key)}">${esc(f.label)}</label>
+              ${kontrol}
+              ${f.help ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(f.help)}</p>` : ''}
+            </div>`;
+        })
+        .join('')}`;
+
+    document.getElementById('halaman-aksi')!.classList.remove('hidden');
+    document.getElementById('halaman-aksi')!.classList.add('flex');
+
+    if (!bolehEdit) {
+      body.querySelectorAll('input, textarea').forEach((n) => ((n as HTMLInputElement).disabled = true));
+      (document.getElementById('btn-simpan') as HTMLButtonElement).disabled = true;
+      (document.getElementById('btn-reset') as HTMLButtonElement).disabled = true;
+      document.getElementById('halaman-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
+    }
+  }
+
+  function kumpulkan(): Record<string, any> {
+    const s = skema.find((x) => x.key === aktif)!;
+    const hasil: Record<string, any> = {};
+    for (const f of s.fields) {
+      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-field="${CSS.escape(f.key)}"]`);
+      if (!el) continue;
+      const v = dariTeks(f, el.value);
+      // Field kosong sengaja TIDAK disimpan: halaman publik memakai teks
+      // bawaan, dan panel menampilkannya sebagai placeholder.
+      if (Array.isArray(v) ? v.length > 0 : String(v).length > 0) hasil[f.key] = v;
+    }
+    return hasil;
+  }
+
+  async function simpan(isi: Record<string, any>) {
+    const supabase = getSupabase();
+    if (!supabase || !bolehEdit) return;
+
+    const btn = document.getElementById('btn-simpan') as HTMLButtonElement;
+    const pesan = document.getElementById('halaman-pesan')!;
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan…';
+
+    const { data: sesi } = await supabase.auth.getSession();
+    const { error } = await supabase
+      .from('page_content')
+      .update({ content: isi, updated_at: new Date().toISOString(), updated_by: sesi.session?.user.id ?? null })
+      .eq('key', aktif);
+
+    btn.disabled = false;
+    btn.textContent = 'Simpan perubahan';
+
+    if (error) {
+      pesan.textContent = pesanError(error);
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+    konten[aktif] = isi;
+    pesan.textContent = 'Tersimpan. Tampil di situs setelah build berikutnya.';
+    pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+  }
+
+  async function onSimpan(e: Event) {
+    e.preventDefault();
+    await simpan(kumpulkan());
+  }
+
+  async function onReset() {
+    if (!bolehEdit) return;
+    if (!window.confirm('Kosongkan seluruh isi halaman ini? Situs akan kembali memakai teks bawaan.')) return;
+    await simpan({});
+    render();
+  }
+</script>

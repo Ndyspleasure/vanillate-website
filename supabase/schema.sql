@@ -1358,4 +1358,78 @@ values
    'Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord',
    'Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.')
 on conflict (slug) do nothing;
+
+-- 13g. Konten produk sepenuhnya dikelola CMS.
+--      Tujuannya: seluruh isi halaman produk (termasuk badge, FAQ, langkah
+--      pasang, dan CTA penutup) bisa diubah dari /admin/produk tanpa menyentuh
+--      source code. Aditif & backward-compatible — semua kolom nullable atau
+--      berdefault, jadi baris produk yang sudah ada tidak berubah.
+alter table public.products add column if not exists badge         text;
+alter table public.products add column if not exists badge_tone    text not null default 'accent';
+alter table public.products add column if not exists cta_heading   text;
+alter table public.products add column if not exists cta_text      text;
+alter table public.products add column if not exists cta_note      text;
+alter table public.products add column if not exists faq           jsonb not null default '[]'::jsonb;
+alter table public.products add column if not exists install_steps jsonb not null default '[]'::jsonb;
+
+-- Nada warna badge dibatasi ke daftar aman: nilainya dipetakan ke kelas CSS di
+-- situs, jadi DB tidak pernah menyimpan markup atau kelas mentah.
+alter table public.products drop constraint if exists products_badge_tone_check;
+alter table public.products add constraint products_badge_tone_check
+  check (badge_tone in ('accent', 'info', 'success', 'warn', 'neutral'));
+
+comment on column public.products.badge is
+  'Label kecil di kartu produk (mis. "Terpopuler"). Kosong = elemen badge tidak dirender sama sekali.';
+comment on column public.products.faq is
+  'FAQ khusus produk: array [{q, a}]. Kosong = section FAQ disembunyikan.';
+comment on column public.products.install_steps is
+  'Langkah pemasangan (array string). Kosong = memakai langkah bawaan sesuai platform.';
+comment on column public.products.thumbnail_url is
+  'Logo/cover produk. Kosong = halaman memakai ikon aksen sebagai fallback (bukan gambar rusak).';
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 14. KONTEN HALAMAN PUBLIK
+--
+-- Satu baris = satu halaman. `content` adalah jsonb bebas-bentuk yang dipetakan
+-- oleh skema di sisi website (src/data/pages.ts), mengikuti pola
+-- partnership_page. Field yang dikosongkan admin otomatis kembali ke teks
+-- bawaan di kode, jadi halaman publik tidak pernah tampil kosong.
+--
+-- Menambah field konten baru TIDAK perlu mengubah tabel maupun skrip sync:
+-- cukup tambahkan satu entri di `pageSchemas` (src/data/pages.ts).
+-- ═══════════════════════════════════════════════════════════════════════════
+
+create table if not exists public.page_content (
+  key         text primary key,
+  label       text not null,
+  description text,
+  content     jsonb not null default '{}'::jsonb,
+  sort        integer not null default 100,
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.page_content is
+  'Konten halaman publik yang dikelola dari /admin/halaman. Field kosong otomatis memakai teks bawaan di kode.';
+
+alter table public.page_content enable row level security;
+
+drop policy if exists "admin baca page_content" on public.page_content;
+create policy "admin baca page_content" on public.page_content
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor kelola page_content" on public.page_content;
+create policy "editor kelola page_content" on public.page_content
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+-- Baris halaman sengaja dibuat dengan konten kosong: seluruh teks awal tetap
+-- berasal dari kode, dan admin tinggal menimpanya lewat panel.
+insert into public.page_content (key, label, description, sort) values
+  ('home',     'Beranda',        'Hero, katalog, prinsip studio, dan CTA penutup di halaman depan.', 10),
+  ('about',    'Tentang',        'Hero halaman Tentang.',                                            20),
+  ('products', 'Katalog Produk', 'Hero katalog, langkah mulai, keunggulan, dan CTA.',                 30),
+  ('support',  'Support',        'Pengantar halaman bantuan.',                                       40),
+  ('global',   'Global',         'Tagline, deskripsi SEO, dan teks footer.',                          50)
+on conflict (key) do nothing;
 -- ═══════════════════════════════════════════════════════════════════════════

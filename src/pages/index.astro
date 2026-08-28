@@ -5,7 +5,12 @@ import BotCard from '@components/BotCard.astro';
 import LiveGameCounter from '@components/LiveGameCounter.astro';
 import { bots } from '@data/bots';
 import { homeStats } from '@data/site';
+import { pageContent, type Pair } from '@data/pages';
 import { url } from '@utils/url';
+
+// Seluruh teks halaman ini dapat diubah dari /admin/halaman. Field yang
+// dikosongkan otomatis kembali ke teks bawaan (lihat src/data/pages.ts).
+const c = pageContent('home');
 
 // Katalog produk studio. Produk unggulan disorot; sisanya menyusul di grid.
 const featured = bots.find((b) => b.featured) ?? bots[0];
@@ -16,29 +21,23 @@ function formatNum(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-// Prinsip studio (level studio, bukan satu produk).
-const principles = [
-  {
-    title: 'Dirawat, bukan ditinggal',
-    desc: 'Update rutin dan perbaikan cepat setelah rilis. Bagi kami, rilis adalah garis start, bukan finis.',
-    icon: '<path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>',
-  },
-  {
-    title: 'Konteks lokal Indonesia',
-    desc: 'Dibuat untuk pemain dan pengguna Indonesia, dari bahasa sampai budayanya — bukan sekadar hasil terjemahan.',
-    icon: '<path d="M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0z"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
-  },
-  {
-    title: 'Cepat & stabil',
-    desc: 'Respons terasa instan, uptime dijaga, dan data pengguna aman. Interaksi mulus adalah bagian dari desain.',
-    icon: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
-  },
+// Ikon prinsip tetap di kode (aset visual), sedangkan judul & deskripsinya
+// datang dari CMS. Ikon dipasangkan berurutan; prinsip tambahan memakai ikon
+// terakhir sebagai cadangan supaya menambah item di CMS tidak pernah error.
+const principleIcons = [
+  '<path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>',
+  '<path d="M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0z"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+  '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
 ];
+const principles = (c.principles as Pair[]).map((p, i) => ({
+  ...p,
+  icon: principleIcons[i] ?? principleIcons[principleIcons.length - 1],
+}));
 ---
 
 <BaseLayout
   title="Vanillate Studio, Studio Produk Digital Indonesia"
-  description="Vanillate Studio membangun produk hiburan & sosial buatan Indonesia — dari Discord bot yang dimainkan ratusan ribu orang tiap hari, dan produk berikutnya. Ini rumah & katalog resminya."
+  description="Vanillate Studio membangun aplikasi sosial dan community tools buatan Indonesia yang dipakai ratusan ribu orang setiap hari. Ini rumah & katalog resminya."
 >
   <!-- HERO -->
   <section class="relative overflow-hidden pt-20 pb-16 md:pt-28 md:pb-20">
@@ -46,23 +45,22 @@ const principles = [
     <div class="aurora bg-teal-500/20 h-[400px] w-[400px] top-[60px] right-[4%]" style="animation-delay: -6s" aria-hidden="true"></div>
 
     <div class="container-page relative">
-      <p class="eyebrow mb-6 animate-fade-up">Studio Produk Digital · Indonesia</p>
+      <p class="eyebrow mb-6 animate-fade-up">{c.heroEyebrow}</p>
       <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.4rem,6.4vw,5rem)] leading-[0.98] max-w-4xl animate-fade-up">
-        Kami membangun pengalaman digital yang <span class="italic text-amber-600 dark:text-amber-500">dinikmati</span> banyak orang.
+        {c.heroTitle} <span class="italic text-amber-600 dark:text-amber-500">{c.heroTitleAccent}</span> {c.heroTitleEnd}
       </h1>
       <p class="mt-7 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
-        Vanillate Studio adalah studio produk digital asal Indonesia. Kami membangun, merilis, dan
-        merawat produk hiburan yang dimainkan ratusan ribu orang setiap hari.
+        {c.heroLead}
       </p>
       <div class="mt-9 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
-        <Button href="/products" variant="primary" size="lg">Jelajahi Produk</Button>
-        <Button href="/about" variant="secondary" size="lg">Kenali Studio</Button>
+        <Button href="/products" variant="primary" size="lg">{c.heroCtaPrimary}</Button>
+        <Button href="/about" variant="secondary" size="lg">{c.heroCtaSecondary}</Button>
       </div>
 
       <!-- Rekam jejak: social proof + counter live (dipertahankan) -->
       <div class="mt-14 animate-fade-up" style="animation-delay: 0.3s">
         <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/50 mb-4">
-          Dipercaya komunitas Discord Indonesia
+          {c.proofEyebrow}
         </p>
         <div class="grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-ink-900/10 dark:bg-cream-100/10 md:grid-cols-4">
           {homeStats.map((s) => (
@@ -84,16 +82,16 @@ const principles = [
   <section class="container-page py-16 md:py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="mb-10 flex items-end justify-between gap-6 flex-wrap reveal">
       <div>
-        <p class="eyebrow mb-3">Produk</p>
+        <p class="eyebrow mb-3">{c.catalogEyebrow}</p>
         <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest max-w-xl">
-          Yang kami bangun.
+          {c.catalogTitle}
         </h2>
         <p class="mt-4 max-w-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Produk Vanillate Studio yang aktif dan dimainkan hari ini — kami rawat serta kembangkan terus, bukan proyek sekali rilis.
+          {c.catalogDesc}
         </p>
       </div>
       <a href={url('/products')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center gap-1.5">
-        Lihat semua produk
+        {c.catalogLinkLabel}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </a>
     </div>
@@ -114,16 +112,15 @@ const principles = [
   <section class="container-page py-16 md:py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-[1fr_1.5fr] items-start">
       <div class="reveal">
-        <p class="eyebrow mb-3">Tentang Studio</p>
+        <p class="eyebrow mb-3">{c.aboutEyebrow}</p>
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest max-w-md">
-          Kami membuat produk sendiri — dan merawatnya.
+          {c.aboutTitle}
         </h2>
         <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Vanillate bukan agency yang mengerjakan pesanan orang lain. Kami merancang, membangun, dan
-          merawat produk kami sendiri untuk pengguna Indonesia.
+          {c.aboutDesc}
         </p>
         <a href={url('/about')} class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
-          Selengkapnya tentang kami
+          {c.aboutLinkLabel}
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </a>
       </div>
@@ -147,18 +144,18 @@ const principles = [
       <div class="aurora bg-amber-500/20 h-[300px] w-[300px] top-[-50px] right-[-50px]" aria-hidden="true"></div>
       <div class="relative max-w-2xl">
         <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest text-cream-50">
-          Punya ide, masukan, atau mau berkolaborasi?
+          {c.ctaTitle}
         </h2>
         <p class="mt-4 text-cream-100/80 text-lg leading-relaxed">
-          Studio ini tumbuh bareng komunitasnya. Sapa kami di Discord, atau jelajahi produk yang sedang berjalan.
+          {c.ctaText}
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
           <a href={url('/products')} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
-            Jelajahi Produk
+            {c.ctaPrimaryLabel}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </a>
           <a href={url('/support')} class="inline-flex items-center rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
-            Hubungi Studio
+            {c.ctaSecondaryLabel}
           </a>
         </div>
       </div>

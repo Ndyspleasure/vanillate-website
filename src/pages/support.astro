@@ -6,6 +6,10 @@ import Icon from '@components/Icon.astro';
 import SupportWizard from '@components/SupportWizard.astro';
 import { site } from '@data/site';
 import { bots } from '@data/bots';
+import { pageContent } from '@data/pages';
+
+// Pengantar halaman ini dikelola dari /admin/halaman → tab "Support".
+const supportContent = pageContent('support');
 import { generalFaqs } from '@data/faq';
 import { url } from '@utils/url';
 import { inlineMarkdown } from '@utils/inline';
@@ -24,7 +28,7 @@ const channels = [
   },
   {
     title: 'Usul fitur',
-    desc: 'Punya ide yang bikin bot lebih seru? Banyak fitur kami lahir dari usulan komunitas. Suaramu benar-benar dipertimbangkan.',
+    desc: 'Punya ide yang bikin produk kami lebih seru? Banyak fitur kami lahir dari usulan komunitas. Suaramu benar-benar dipertimbangkan.',
     icon: '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.5.4.8 1 .8 1.6V17h6.4v-.7c0-.6.3-1.2.8-1.6A7 7 0 0 0 12 2z"/>',
   },
   {
@@ -37,13 +41,13 @@ const channels = [
 // Cara melaporkan bug yang baik.
 const bugSteps = [
   { title: 'Jelaskan apa yang terjadi', desc: 'Ceritakan langkah yang kamu lakukan dan hasil yang muncul. Semakin spesifik, semakin cepat kami menemukan penyebabnya.' },
-  { title: 'Sebutkan bot & command', desc: 'Bot mana dan command apa yang dipakai saat masalah muncul, misalnya `/sambungkata mode:dungeon`.' },
+  { title: 'Sebutkan produk & fiturnya', desc: 'Produk mana dan bagian apa yang dipakai saat masalah muncul, misalnya command `/sambungkata mode:dungeon` di Sambung Kata.' },
   { title: 'Lampirkan bukti', desc: 'Screenshot atau rekaman layar sangat membantu. Kalau ada pesan error, salin teksnya apa adanya.' },
   { title: 'Sertakan Player ID bila perlu', desc: 'Untuk masalah terkait progres atau akun, cek `/stats` untuk Player ID-mu supaya kami bisa mengecek datanya.' },
 ];
 ---
 
-<BaseLayout title="Support" description="Butuh bantuan, ingin melaporkan bug, atau punya ide fitur? Kirim kendalamu lewat Support Center Vanillate ke WhatsApp Business atau email, atau gabung ke server Discord yang dijawab langsung oleh tim.">
+<BaseLayout title="Support" description="Butuh bantuan, ingin melaporkan bug, atau punya ide fitur? Kirim kendalamu lewat Support Center Vanillate ke WhatsApp Business atau email, atau gabung ke komunitas kami yang dijawab langsung oleh tim.">
   <!-- HERO -->
   <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
     <div class="aurora bg-teal-500/20 h-[400px] w-[400px] top-[-100px] right-[5%]" aria-hidden="true"></div>
@@ -53,7 +57,7 @@ const bugSteps = [
         Kami di sini<br />untuk <span class="italic text-amber-600 dark:text-amber-500">membantu</span>.
       </h1>
       <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
-        Ceritakan kendalamu lewat formulir singkat, lalu lanjutkan ke WhatsApp atau email dengan pesan yang sudah tersusun rapi. Tidak perlu mengetik ulang. Atau gabung ke server Discord dan bertanya langsung ke orang yang menulis kodenya.
+        {supportContent.heroLead}
       </p>
       <div class="mt-8 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
         <a href="#hubungi-support" class="inline-flex items-center justify-center gap-2 rounded-full bg-ink-900 text-cream-50 px-7 py-3.5 text-base font-medium transition-all duration-200 hover:bg-ink-800 hover:-translate-y-0.5 dark:bg-amber-500 dark:text-ink-950 dark:hover:bg-amber-400">
@@ -83,7 +87,7 @@ const bugSteps = [
             Gabung Server Vanillate Studio
           </h2>
           <p class="text-cream-100/80 text-lg leading-relaxed mb-8">
-            Channel bantuan, pengumuman pembaruan bot, dan komunitas pemain aktif, semuanya ada di satu tempat.
+            Channel bantuan, pengumuman pembaruan produk, dan komunitas pengguna aktif, semuanya ada di satu tempat.
           </p>
           <a
             href={site.links.discordSupport}
@@ -121,12 +125,12 @@ const bugSteps = [
   <!-- APA YANG BISA DILAKUKAN -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="max-w-3xl mb-12 reveal">
-      <p class="eyebrow mb-3">Di dalam server</p>
+      <p class="eyebrow mb-3">Di dalam komunitas</p>
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
         Lebih dari sekadar tempat bertanya.
       </h2>
       <p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-        Server support adalah pusat komunitas Vanillate. Ini yang bisa kamu lakukan di sana.
+        Kanal komunitas adalah pusat pertemuan pengguna Vanillate. Ini yang bisa kamu lakukan di sana.
       </p>
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
@@ -151,7 +155,7 @@ const bugSteps = [
         <p class="eyebrow mb-3">Panduan</p>
         <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Cara melapor bug yang baik.</h2>
         <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
-          Laporan yang jelas membuat perbaikan jauh lebih cepat. Kamu juga bisa langsung memakai command <code class="font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">/masukan</code> di dalam bot.
+          Laporan yang jelas membuat perbaikan jauh lebih cepat. Khusus Sambung Kata, kamu juga bisa langsung memakai command <code class="font-mono text-[0.85em] text-amber-600 dark:text-amber-400 bg-cream-100 dark:bg-ink-900 px-1.5 py-0.5 rounded">/masukan</code> di dalam produknya.
         </p>
       </div>
       <div class="md:col-span-2">
@@ -179,7 +183,7 @@ const bugSteps = [
       </div>
       <div class="md:col-span-2">
         <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">
-          Banyak pertanyaan sudah terjawab di halaman dokumentasi masing-masing bot, lengkap dengan tabel harga dan strategi.
+          Banyak pertanyaan sudah terjawab di halaman dokumentasi masing-masing produk, lengkap dengan panduan dan strategi.
         </p>
         <div class="grid gap-3 sm:grid-cols-2">
           {bots.filter((b) => b.docsSlug).map((bot, i) => (

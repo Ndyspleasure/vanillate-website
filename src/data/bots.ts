@@ -10,8 +10,13 @@
 import botInfo from './synced/bot-info.json';
 import productsData from './synced/products.json';
 import type { IconName } from './icons';
+import { url } from '@utils/url';
 
 export type Platform = 'discord' | 'android' | 'web';
+
+export type BadgeTone = 'accent' | 'info' | 'success' | 'warn' | 'neutral';
+
+export type ProductFaq = { q: string; a: string };
 
 export type ProductMedia = {
   kind: 'icon' | 'screenshot' | 'video' | 'banner';
@@ -54,7 +59,14 @@ export type Bot = {
   // Umum
   color: string;
   icon: IconName;
+  /** Logo/cover. OPSIONAL — kosong berarti situs memakai ikon aksen. */
   thumbnail?: string;
+  badge?: string;
+  badgeTone: BadgeTone;
+  faq: ProductFaq[];
+  installSteps: string[];
+  ctaHeading?: string;
+  ctaText?: string;
   features: string[];
   commands?: { name: string; description: string }[];
   docsSlug?: string;
@@ -104,10 +116,18 @@ type RawProduct = {
   seoDescription?: string;
   media?: ProductMedia[];
   release?: ProductRelease | null;
+  badge?: string;
+  badgeTone?: string;
+  faq?: ProductFaq[];
+  installSteps?: string[];
+  ctaHeading?: string;
+  ctaText?: string;
+  ctaNote?: string;
 };
 
 const STATUSES = ['live', 'beta', 'preorder', 'coming-soon'] as const;
 const PLATFORMS = ['discord', 'android', 'web'] as const;
+const TONES = ['accent', 'info', 'success', 'warn', 'neutral'] as const;
 
 function toBot(p: RawProduct): Bot {
   const isSambungKata = p.slug === 'sambung-kata';
@@ -139,10 +159,22 @@ function toBot(p: RawProduct): Bot {
     minAndroid: p.android?.minAndroid || undefined,
     androidInstallNote: p.android?.installNote || undefined,
     release: p.release ?? null,
-    media: Array.isArray(p.media) ? p.media : [],
+    // Media tanpa URL disaring di sini. Bila lolos, section galeri tetap
+    // dianggap berisi lalu merender <img> kosong — judul muncul di atas
+    // ruang yang tidak berisi apa-apa.
+    media: Array.isArray(p.media) ? p.media.filter((m) => m && m.url) : [],
     color: p.color || '#E8B84A',
     icon: (p.icon || 'sparkles') as IconName,
+    // Kosong → undefined, supaya pemeriksaan `bot.thumbnail ?` di komponen
+    // langsung jatuh ke ikon aksen alih-alih mencoba memuat string kosong.
     thumbnail: p.thumbnail || undefined,
+    badge: p.badge || undefined,
+    badgeTone: (TONES as readonly string[]).includes(p.badgeTone ?? '') ? (p.badgeTone as BadgeTone) : 'accent',
+    faq: Array.isArray(p.faq) ? p.faq.filter((f) => f && f.q && f.a) : [],
+    installSteps: Array.isArray(p.installSteps) ? p.installSteps.filter(Boolean) : [],
+    ctaHeading: p.ctaHeading || undefined,
+    ctaText: p.ctaText || undefined,
+    ctaNote: p.ctaNote || undefined,
     features,
     commands,
     docsSlug: p.docsSlug || undefined,
@@ -154,16 +186,20 @@ function toBot(p: RawProduct): Bot {
   };
 }
 
-const allBots: Bot[] = ((productsData.products ?? []) as RawProduct[])
-  .filter((p) => p && p.slug && p.name)
-  .map(toBot);
+const mentah = (productsData.products ?? []) as RawProduct[];
+
+// Urutan dibaca sekali ke dalam Map. Comparator yang memanggil find() akan
+// memindai ulang seluruh daftar pada setiap perbandingan.
+const urutan = new Map<string, number>(
+  mentah.map((p) => [p.slug, Number.isFinite(Number(p.sort)) ? Number(p.sort) : 100]),
+);
+
+const allBots: Bot[] = mentah.filter((p) => p && p.slug && p.name).map(toBot);
 
 // Daftar publik. Sudah difilter `enabled` di sisi sync, jadi tinggal urut.
-export const bots: Bot[] = allBots.sort((a, b) => {
-  const sa = (productsData.products.find((x: any) => x.slug === a.slug)?.sort ?? 100) as number;
-  const sb = (productsData.products.find((x: any) => x.slug === b.slug)?.sort ?? 100) as number;
-  return sa - sb;
-});
+export const bots: Bot[] = allBots.sort(
+  (a, b) => (urutan.get(a.slug) ?? 100) - (urutan.get(b.slug) ?? 100),
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Label CTA standar. Satu sumber kebenaran supaya tombol konsisten di seluruh
@@ -221,6 +257,36 @@ export function productPrimaryCta(bot: Bot): { label: string; href: string; exte
   const dl = downloadUrl(bot);
   if (dl) return { label: `${CTA.download}${latestRelease(bot)?.version ? ` v${latestRelease(bot)!.version}` : ''}`, href: dl, external: true };
   return { label: bot.status === 'coming-soon' ? CTA.notify : `Lihat ${bot.shortName}`, href: `/products/${bot.slug}`, external: false };
+}
+
+/**
+ * Sumber gambar produk yang aman dipakai di <img src>.
+ *
+ * Ada dua jenis sumber dan keduanya TIDAK boleh diperlakukan sama:
+ *   • URL absolut (Supabase Storage / CDN) → dipakai apa adanya. Menempelkan
+ *     base atau menukar akhiran akan menghasilkan URL yang tidak pernah ada.
+ *   • Path lokal di /public → boleh memakai varian "-256" karena varian itu
+ *     memang kita sediakan sendiri di repo.
+ *
+ * Mengembalikan null bila produk tidak punya gambar, sehingga pemanggil
+ * merender ikon aksen alih-alih <img> kosong.
+ */
+export function productImage(src: string | undefined | null, small = false): string | null {
+  const s = String(src ?? '').trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) return s;
+  return url(small ? s.replace(/\.png$/, '-256.png') : s);
+}
+
+/** Kelas Tailwind untuk badge produk. Nada dipetakan di sini, bukan disimpan di DB. */
+export function badgeClass(tone: BadgeTone): string {
+  switch (tone) {
+    case 'info':    return 'bg-teal-500/15 text-teal-700 dark:text-teal-300';
+    case 'success': return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400';
+    case 'warn':    return 'bg-amber-500/15 text-amber-700 dark:text-amber-400';
+    case 'neutral': return 'bg-ink-900/10 dark:bg-cream-100/10 text-ink-600 dark:text-cream-200';
+    default:        return 'bg-amber-500/15 text-amber-700 dark:text-amber-400';
+  }
 }
 
 /** Format ukuran byte ke bentuk ringkas (mis. 24 MB). */

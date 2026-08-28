@@ -29,6 +29,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 <script>
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { icons } from '@data/icons';
 
   const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
   const BTN = 'rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
@@ -40,6 +41,14 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   const PLATFORMS = [['discord', 'Discord bot'], ['android', 'Aplikasi Android (APK)'], ['web', 'Web / lainnya']];
   const STATUSES = [['live', 'Live'], ['beta', 'Beta'], ['preorder', 'Preorder'], ['coming-soon', 'Coming soon']];
+  const TONES = [
+    ['accent', 'Aksen produk'], ['info', 'Info (biru)'], ['success', 'Sukses (hijau)'],
+    ['warn', 'Peringatan (kuning)'], ['neutral', 'Netral (abu)'],
+  ];
+  // Pilihan ikon fallback diambil dari registry situs, jadi daftarnya ikut
+  // bertambah otomatis saat registry diperbarui. Butuh ikon di luar daftar?
+  // Unggah logo sendiri sebagai thumbnail — tanpa mengubah source code.
+  const ICON_OPTIONS: string[][] = [['', '— tanpa ikon —'], ...Object.keys(icons).map((k) => [k, k])];
 
   let bolehEdit = false;
   let uid: string | null = null;
@@ -142,10 +151,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         id: null, slug: '', name: '', short_name: '', tagline: '', description: '',
         platform: 'discord', status: 'live', category: '', accent_color: '#E8B84A', icon: '',
         featured: false, verified: false, enabled: true, sort: 100,
-        features: [], long_intro: [],
+        features: [], long_intro: [], faq: [], install_steps: [],
+        badge: '', badge_tone: 'accent', thumbnail_url: '',
         discord_client_id: '', discord_permissions: '', discord_integration_type: '', invite_url: '',
         package_name: '', min_android: '', install_note: '',
-        cta_label: '', cta_url: '', docs_slug: '', seo_title: '', seo_description: '',
+        cta_label: '', cta_url: '', cta_heading: '', cta_text: '', cta_note: '',
+        docs_slug: '', seo_title: '', seo_description: '',
       };
     }
     listView().classList.add('hidden');
@@ -193,8 +204,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${field('f-description', 'Deskripsi', ta('f-description', p.description, 4, 'maxlength="800"'))}
         <div class="grid gap-4 sm:grid-cols-3">
           ${field('f-accent_color', 'Warna aksen', inp('f-accent_color', p.accent_color, 'maxlength="9" placeholder="#E8B84A"'))}
-          ${field('f-icon', 'Ikon fallback', inp('f-icon', p.icon, 'maxlength="40" placeholder="mis. sparkles"'))}
+          ${field('f-icon', 'Ikon fallback', sel('f-icon', p.icon || '', ICON_OPTIONS), 'Dipakai bila produk tanpa gambar. Butuh ikon lain? Unggah logo sendiri di bagian Logo/Thumbnail.')}
           ${field('f-sort', 'Urutan', inp('f-sort', p.sort ?? 100, 'inputmode="numeric"'), 'Kecil = atas.')}
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${field('f-badge', 'Badge / label', inp('f-badge', p.badge, 'maxlength="24" placeholder="mis. Terpopuler"'), 'Kosongkan bila tidak perlu — elemen badge tidak akan dirender sama sekali.')}
+          ${field('f-badge_tone', 'Warna badge', sel('f-badge_tone', p.badge_tone || 'accent', TONES))}
         </div>
         <div class="flex flex-wrap gap-6">
           <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" id="f-featured" ${p.featured ? 'checked' : ''} class="${CHK}" /> Unggulan (disorot di beranda)</label>
@@ -225,6 +241,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
             ${field('f-min_android', 'Minimum Android', inp('f-min_android', p.min_android, 'placeholder="Android 8.0"'))}
           </div>
           ${field('f-install_note', 'Catatan pemasangan', ta('f-install_note', p.install_note, 2, 'maxlength="400"'), 'Mis. langkah aktifkan "Install dari sumber tak dikenal".')}
+          ${field('f-install_steps', 'Langkah install (satu per baris)', ta('f-install_steps', (p.install_steps || []).join('\n'), 3), 'Kosongkan untuk memakai langkah bawaan (unduh → izinkan sumber tak dikenal → pasang).')}
         </div>
 
         <div class="grid gap-4 sm:grid-cols-3">
@@ -232,6 +249,19 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           ${field('f-cta_url', 'CTA URL (override)', inp('f-cta_url', p.cta_url, 'type="url"'))}
           ${field('f-docs_slug', 'Slug dokumentasi', inp('f-docs_slug', p.docs_slug, 'maxlength="60"'))}
         </div>
+        <!-- Konten halaman produk: dulu tertanam di kode, kini dari CMS. -->
+        <div class="space-y-4 rounded-xl bg-ink-900/[0.03] dark:bg-cream-100/[0.03] p-4">
+          <p class="font-mono text-xs uppercase tracking-wider text-ink-500 dark:text-cream-300/60">Isi halaman produk</p>
+          ${field('f-faq', 'FAQ (satu per baris: Pertanyaan | Jawaban)',
+            ta('f-faq', (p.faq || []).map((f: any) => `${f.q} | ${f.a}`).join('\n'), 4),
+            'Kosongkan untuk menyembunyikan section FAQ di halaman produk.')}
+          <div class="grid gap-4 sm:grid-cols-2">
+            ${field('f-cta_heading', 'Judul CTA penutup', inp('f-cta_heading', p.cta_heading, 'maxlength="120" placeholder="kosong = otomatis dari nama produk"'))}
+            ${field('f-cta_note', 'Catatan kecil di bawah tombol', inp('f-cta_note', p.cta_note, 'maxlength="160"'))}
+          </div>
+          ${field('f-cta_text', 'Teks CTA penutup', ta('f-cta_text', p.cta_text, 2, 'maxlength="400" placeholder="kosong = teks bawaan sesuai platform"'))}
+        </div>
+
         <div class="grid gap-4 sm:grid-cols-2">
           ${field('f-seo_title', 'SEO title', inp('f-seo_title', p.seo_title, 'maxlength="120"'))}
           ${field('f-seo_description', 'SEO description', ta('f-seo_description', p.seo_description, 2, 'maxlength="300"'))}
@@ -243,7 +273,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         </div>` : '<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat.</p>'}
       </div>
 
-      ${p.id ? renderMediaShell() + (p.platform === 'android' ? renderRilisShell() : '') : ''}
+      ${p.id ? renderThumbShell() + renderMediaShell() + (p.platform === 'android' ? renderRilisShell() : '') : ''}
     `;
     if (disabled) editorView().querySelectorAll('input,textarea,select').forEach((n) => ((n as any).disabled = true));
   }
@@ -261,6 +291,20 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       featured: c('f-featured'), verified: c('f-verified'), enabled: c('f-enabled'),
       sort: Number.isFinite(sortN) ? sortN : 100,
       features: lines('f-features'), long_intro: lines('f-long_intro'),
+      install_steps: lines('f-install_steps'),
+      // "Pertanyaan | Jawaban" per baris. Baris tanpa "|" dilewati supaya
+      // salah ketik tidak menghasilkan FAQ berisi jawaban kosong.
+      faq: lines('f-faq')
+        .map((baris) => {
+          const [q, ...sisa] = baris.split('|');
+          return { q: (q ?? '').trim(), a: sisa.join('|').trim() };
+        })
+        .filter((f) => f.q && f.a),
+      badge: v('f-badge') || null,
+      badge_tone: v('f-badge_tone') || 'accent',
+      cta_heading: v('f-cta_heading') || null,
+      cta_text: v('f-cta_text') || null,
+      cta_note: v('f-cta_note') || null,
       discord_client_id: v('f-discord_client_id') || null,
       discord_permissions: v('f-discord_permissions') || null,
       discord_integration_type: v('f-discord_integration_type') || null,
@@ -311,6 +355,95 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     void muatDaftar();
   }
 
+  // ─── Logo / thumbnail ───────────────────────────────────────────────────────
+  // Gambar bersifat OPSIONAL. Menghapusnya membuang berkas di Storage sekaligus
+  // mengosongkan kolom, sehingga tidak ada URL yatim yang tertinggal dan
+  // halaman publik otomatis kembali memakai ikon aksen.
+  function renderThumbShell() {
+    const t = String(current.thumbnail_url ?? '');
+    return `
+      <div class="mt-6 space-y-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+        <h3 class="font-display text-lg font-semibold tracking-tightest">Logo / thumbnail</h3>
+        <p class="text-sm text-ink-600 dark:text-cream-200/80">
+          Opsional. Bila kosong, situs memakai ikon aksen — bukan gambar rusak. Unggah logo sendiri
+          di sini bila ikon yang kamu mau tidak ada di daftar ikon bawaan.
+        </p>
+        <div class="flex flex-wrap items-center gap-4">
+          ${t
+            ? `<img src="${esc(t)}" alt="" class="h-16 w-16 rounded-xl object-cover border border-ink-900/10 dark:border-cream-100/10"
+                 onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'h-16 w-16 rounded-xl grid place-items-center text-[10px] text-center bg-red-500/10 text-red-600',textContent:'gambar tidak dapat dimuat'}))" />`
+            : `<div class="h-16 w-16 rounded-xl grid place-items-center border border-dashed border-ink-900/20 dark:border-cream-100/20 text-[10px] text-ink-500 dark:text-cream-300/60 text-center">tanpa gambar</div>`}
+          <div class="min-w-0 flex-1">
+            <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60 break-all">${t ? esc(t) : 'Belum ada gambar.'}</p>
+          </div>
+        </div>
+        ${bolehEdit ? `<div class="flex flex-wrap items-end gap-3">
+          <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium mb-1.5" for="t-file">${t ? 'Ganti gambar' : 'Unggah gambar'} (≤50 MB)</label>
+            <input id="t-file" type="file" accept="image/*" class="${INPUT}" />
+          </div>
+          <button type="button" class="${BTN}" data-action="upload-thumb">${t ? 'Ganti' : 'Unggah'}</button>
+          ${t ? `<button type="button" class="rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-2 text-sm font-medium hover:bg-red-500/10 transition-colors" data-action="hapus-thumb">Hapus gambar</button>` : ''}
+        </div>` : ''}
+      </div>`;
+  }
+
+  /** Path objek di bucket product-media bila URL memang berasal dari Storage kita. */
+  function pathDariUrl(u: string): string | null {
+    const tanda = '/storage/v1/object/public/' + MEDIA_BUCKET + '/';
+    const i = u.indexOf(tanda);
+    return i === -1 ? null : decodeURIComponent(u.slice(i + tanda.length));
+  }
+
+  async function uploadThumb() {
+    if (!bolehEdit) return;
+    const supabase = getSupabase()!;
+    const fileEl = document.getElementById('t-file') as HTMLInputElement;
+    const file = fileEl?.files?.[0];
+    if (!file) { toast('Pilih berkas dulu.', false); return; }
+    if (file.size > 52428800) { toast('Berkas melebihi 50 MB.', false); return; }
+
+    toast('Mengunggah…');
+    const lama = String(current.thumbnail_url ?? '');
+    const path = `${current.slug}/thumb-${Date.now()}-${safeName(file.name)}`;
+    const up = await supabase.storage.from(MEDIA_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+    if (up.error) { toast(up.error.message, false); return; }
+
+    const publik = publicUrl(MEDIA_BUCKET, path);
+    const { error } = await supabase.from('products')
+      .update({ thumbnail_url: publik, updated_at: new Date().toISOString(), updated_by: uid })
+      .eq('id', current.id);
+    if (error) { toast(pesanError(error), false); return; }
+
+    // Berkas lama dibuang setelah kolom menunjuk ke yang baru, supaya tidak ada
+    // jendela waktu ketika kolom menunjuk berkas yang sudah terhapus.
+    const pathLama = pathDariUrl(lama);
+    if (pathLama) await supabase.storage.from(MEDIA_BUCKET).remove([pathLama]);
+
+    current.thumbnail_url = publik;
+    toast('Gambar diperbarui.');
+    renderEditor(); void muatMedia(); if (current.platform === 'android') void muatRilis();
+  }
+
+  async function hapusThumb() {
+    if (!bolehEdit || !current?.id) return;
+    if (!window.confirm('Hapus logo/thumbnail produk ini? Situs akan memakai ikon aksen sebagai gantinya.')) return;
+    const supabase = getSupabase()!;
+    const lama = String(current.thumbnail_url ?? '');
+
+    const { error } = await supabase.from('products')
+      .update({ thumbnail_url: null, updated_at: new Date().toISOString(), updated_by: uid })
+      .eq('id', current.id);
+    if (error) { toast(pesanError(error), false); return; }
+
+    const pathLama = pathDariUrl(lama);
+    if (pathLama) await supabase.storage.from(MEDIA_BUCKET).remove([pathLama]);
+
+    current.thumbnail_url = '';
+    toast('Gambar dihapus.');
+    renderEditor(); void muatMedia(); if (current.platform === 'android') void muatRilis();
+  }
+
   // ─── Media ─────────────────────────────────────────────────────────────────
   function renderMediaShell() {
     return `
@@ -352,9 +485,16 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         : `<img src="${esc(m.url)}" alt="" class="h-14 w-14 flex-none rounded-lg object-cover bg-ink-900/10 dark:bg-cream-100/10" />`;
       return `<div class="flex items-center gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-2.5">
         ${preview}
-        <div class="min-w-0 flex-1">
+        <div class="min-w-0 flex-1 space-y-1.5">
           <p class="text-sm font-medium">${esc(m.kind)}</p>
-          <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60 truncate">${esc(m.storage_path)}</p>
+          <div class="flex flex-wrap gap-2">
+            <input value="${esc(m.alt ?? '')}" data-media-id="${esc(m.id)}" data-media-field="alt" maxlength="160"
+              placeholder="Alt text (deskripsi gambar)" ${bolehEdit ? '' : 'disabled'}
+              class="flex-1 min-w-[160px] rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-1.5 text-xs outline-none focus:border-amber-500" />
+            <input value="${esc(m.sort ?? 100)}" data-media-id="${esc(m.id)}" data-media-field="sort" inputmode="numeric"
+              title="Urutan" ${bolehEdit ? '' : 'disabled'}
+              class="w-20 rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-1.5 text-xs outline-none focus:border-amber-500" />
+          </div>
         </div>
         ${bolehEdit ? `<button type="button" class="text-sm text-red-600 dark:text-red-400 hover:underline" data-action="hapus-media" data-id="${esc(m.id)}" data-path="${esc(m.storage_path)}">Hapus</button>` : ''}
       </div>`;
@@ -501,6 +641,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (a === 'kembali') return void muatDaftar();
     if (a === 'simpan-core') return void simpanCore();
     if (a === 'hapus-produk') return void hapusProduk();
+    if (a === 'upload-thumb') return void uploadThumb();
+    if (a === 'hapus-thumb') return void hapusThumb();
     if (a === 'upload-media') return void uploadMedia();
     if (a === 'hapus-media') return void hapusMedia(btn.dataset.id!, btn.dataset.path!);
     if (a === 'upload-rilis') return void uploadRilis();
@@ -514,7 +656,28 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       const val = (el as HTMLSelectElement).value;
       document.getElementById('sec-discord')?.classList.toggle('hidden', val !== 'discord');
       document.getElementById('sec-android')?.classList.toggle('hidden', val !== 'android');
+      return;
     }
+    // Alt text & urutan media disimpan begitu selesai diubah — perubahan kecil
+    // seperti ini tidak perlu menunggu tombol Simpan produk.
+    const id = (el as HTMLElement).dataset?.mediaId;
+    const field = (el as HTMLElement).dataset?.mediaField;
+    if (id && field) void simpanMedia(id, field, (el as HTMLInputElement).value);
+  }
+
+  async function simpanMedia(id: string, field: string, raw: string) {
+    if (!bolehEdit) return;
+    const supabase = getSupabase()!;
+    const patch: Record<string, any> = {};
+    if (field === 'sort') {
+      const n = parseInt(raw, 10);
+      patch.sort = Number.isFinite(n) ? n : 100;
+    } else {
+      patch.alt = raw.trim();
+    }
+    const { error } = await supabase.from('product_media').update(patch).eq('id', id);
+    if (error) { toast(pesanError(error), false); return; }
+    toast('Tersimpan.');
   }
 
   // Ambil uid sesi untuk kolom updated_by/created_by.
