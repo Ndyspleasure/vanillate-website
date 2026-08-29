@@ -1,6 +1,6 @@
 # Vanillate Studio — Website
 
-Website resmi Vanillate Studio untuk showcase produk, dokumentasi lengkap, dan legal documents studio-wide. Situs statis dibangun dengan Astro + Tailwind CSS dan dideploy ke GitHub Pages dengan custom domain **vanillate.id**.
+Website resmi Vanillate Studio untuk showcase produk, FAQ & panduan terpusat, dan legal documents studio-wide. Situs statis dibangun dengan Astro + Tailwind CSS dan dideploy ke GitHub Pages dengan custom domain **vanillate.id**.
 
 **Live:** https://vanillate.id
 
@@ -38,7 +38,7 @@ vanillate-website/
 │   │   ├── bots.ts                 Registry semua bot + buildInviteUrl() helper
 │   │   ├── icons.ts                Registry ikon SVG (Lucide) — satu sumber kebenaran
 │   │   ├── support.ts              Konfigurasi kanal support + template pesan & Support ID
-│   │   └── docs.ts                 Konten dokumentasi (Sambung Kata)
+│   │   └── faq.ts                  Layer data FAQ terpusat + helper URL/deep link
 │   ├── i18n/id.ts                  Copy text ID (siap + EN nanti)
 │   ├── layouts/BaseLayout.astro    Base layout semua page (Header, Footer, SEO)
 │   ├── pages/                      File-based routing
@@ -50,8 +50,10 @@ vanillate-website/
 │   │   ├── bots/
 │   │   │   ├── index.astro         /bots (katalog)
 │   │   │   └── [slug].astro        /bots/[slug] (detail bot, dynamic dari bots.ts)
-│   │   ├── docs/
-│   │   │   └── [slug].astro        /docs/[slug] (dokumentasi per bot, dari docs.ts)
+│   │   ├── faq/
+│   │   │   ├── index.astro         /faq (pusat panduan + pencarian)
+│   │   │   └── [category]/         /faq/[kategori] & /faq/[kategori]/[slug]
+│   │   ├── docs/                   Stub redirect: /docs → /faq (URL lama)
 │   │   ├── changelog.astro         /changelog (riwayat versi, dari synced/changelog.json)
 │   │   ├── admin/                  Panel admin (butuh login, noindex) — lihat docs/ADMIN-CMS.md
 │   │   │   ├── index.astro         /admin (login username + password)
@@ -60,6 +62,7 @@ vanillate-website/
 │   │   │   ├── statistik.astro     /admin/statistik (angka & tren)
 │   │   │   ├── server.astro        /admin/server (daftar server Discord)
 │   │   │   ├── pemain.astro        /admin/pemain (daftar pemain)
+│   │   │   ├── faq/                /admin/faq (pertanyaan) & /admin/faq/categories
 │   │   │   └── konten.astro        /admin/konten (editor konten)
 │   │   └── 404.astro               /404 (custom error page)
 │   ├── lib/                        Kode khusus panel admin (jalan di browser)
@@ -105,7 +108,9 @@ npm run preview    # Preview hasil build
 
 ## Cara Menambah Bot Baru
 
-Edit `src/data/bots.ts` dan tambahkan objek `Bot` ke array `bots`. Halaman `/bots`, `/bots/[slug]`, dan `/docs/[slug]` otomatis terbuat dari routing dynamic.
+Produk dikelola dari panel `/admin/produk` (tabel `products` di Supabase), lalu ditarik
+saat build ke `src/data/synced/products.json`. Halaman `/products` dan `/products/[slug]`
+terbentuk otomatis dari data itu. Bentuk datanya:
 
 ```ts
 {
@@ -122,34 +127,59 @@ Edit `src/data/bots.ts` dan tambahkan objek `Bot` ke array `bots`. Halaman `/bot
     { name: '/cmd2', description: 'Deskripsi' },
   ],
   clientId: 'XXXXXXXXXXXXXXXXXX',  // ⚠️ Isi dengan Discord App ID
-  docsSlug: 'nama-bot',           // Referensi ke docs.ts
+  faqCategory: 'nama-bot',        // Slug kategori FAQ → tombol "Lihat Panduan"
 }
 ```
 
-## Cara Update Dokumentasi
+## Cara Update Panduan (FAQ Terpusat)
 
-Dokumentasi setiap bot di-manage via `src/data/docs.ts` — single source of truth.
+Sejak sistem dokumentasi per produk dihapus, **seluruh panduan hidup di FAQ** dan
+dikelola dari CMS — bukan dari source code. Satu FAQ = satu halaman publik dengan
+URL sendiri, jadi halaman mana pun bisa menautkannya langsung.
 
-**Untuk edit dokumentasi:**
-1. Buka `src/data/docs.ts`
-2. Cari bot di object `docs['slug-bot']`
-3. Edit `sections` array (judul, konten, tabel, tips)
-4. Halaman `/docs/[slug]` render otomatis dari data ini
-
-**Struktur subsection:**
-```ts
-{
-  title: '📌 Judul Kecil',
-  text: 'Paragraf biasa (support `backtick` → inline code)',
-  items: ['Bullet point 1', 'Bullet point 2'],
-  table: { headers: [...], rows: [[...], [...]] },
-  // (gunakan salah satu atau kombinasi sesuai kebutuhan)
-}
+```
+Supabase (faq_categories + faqs)
+  → scripts/sync-content.mjs
+  → src/data/synced/faq.json
+  → src/data/faq.ts → halaman /faq
 ```
 
-**Untuk bot baru tanpa dokumentasi:**
-- Tambah entry di `docs.ts` dengan struktur minimal, atau
-- Halaman otomatis tampil placeholder default jika bot tidak punya entry
+**Untuk menulis atau menyunting panduan:**
+1. Buka `/admin/faq/categories` untuk membuat kategori (mis. sebuah game atau "Umum").
+2. Buka `/admin/faq`, tekan **+ Tambah FAQ**, pilih kategorinya.
+3. Tulis pertanyaan & jawaban. Jawaban memakai Markdown ringan dengan pratinjau langsung.
+4. Atur Status (aktif/nonaktif) dan Urutan, lalu simpan.
+5. Halaman `/faq/<kategori>/<slug>` terbit setelah sinkronisasi & build berikutnya.
+
+**Menautkan panduan dari halaman lain** — selalu lewat helper, jangan menulis URL sendiri:
+
+```astro
+---
+import FAQLink from '@components/FAQLink.astro';
+---
+<FAQLink faq="cara-melakukan-order" />          <!-- deep link ke satu FAQ -->
+<FAQLink category="sambung-kata" variant="button" />  <!-- halaman kategori -->
+```
+
+Di dalam `.astro` frontmatter, tersedia juga `faqUrl()`, `faqCategoryUrl()`,
+`faqIndexUrl()`, dan `resolveFaqUrl()` dari `@data/faq`.
+
+**Menghubungkan produk ke panduannya:** buka `/admin/produk`, pilih produknya, lalu
+isi **Kategori FAQ**. Tombol "Lihat Panduan" dan section FAQ di halaman produk akan
+otomatis mengikuti kategori itu.
+
+**Sintaks jawaban yang didukung:** judul (`##`), paragraf, tebal, miring, `kode`,
+daftar berurutan & tidak, tautan, gambar, tabel, blok kode, dan kutipan. Token
+`{{shop-table}}` diganti tabel harga shop yang tersinkron otomatis dari repo bot.
+
+**Isi awal & migrasi:** konten hasil migrasi dokumentasi lama ada di
+`scripts/faq-seed-data.mjs`. Jalankan `node scripts/build-faq-seed.mjs` untuk
+menghasilkan `supabase/seed-faq.sql` (dijalankan sekali di Supabase) dan snapshot
+`src/data/synced/faq.json`.
+
+**URL lama tetap hidup:** `/docs` dan `/docs/<slug>` dibangun sebagai stub redirect
+ke FAQ, termasuk pemetaan anchor section lama. Mengganti slug FAQ di CMS otomatis
+menyimpan slug lamanya sebagai alias, dan alias itu ikut dibangun sebagai redirect.
 
 ## Konfigurasi (Sudah Live)
 
@@ -367,7 +397,7 @@ import Icon from '@components/Icon.astro';
 Warna ikut `currentColor`, ukuran dari class Tailwind (mis. `h-5 w-5`). Ikon default
 bersifat dekoratif (`aria-hidden`); beri prop `label` untuk ikon yang bermakna.
 
-**Pengecualian yang sengaja tetap emoji:** teks konten dokumentasi (`docs.ts`) & data
+**Pengecualian yang sengaja tetap emoji:** teks jawaban FAQ (dikelola CMS) & data
 tersinkron dari repo bot (`synced/*.json`, mis. nama item shop `🗝️ Golden Key`, skill
 `⚔️ Attack`) mencerminkan label asli di dalam Discord bot, jadi dibiarkan apa adanya
 agar dokumentasi tetap 1:1 dengan tampilan game. Aset gambar (avatar bot, banner,

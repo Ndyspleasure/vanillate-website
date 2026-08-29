@@ -6,8 +6,8 @@
 // Cara pakai di file .astro:
 //   import { url } from '@/utils/url';
 //   ...
-//   <a href={url('/bots')}>Bots</a>
-//   <a href={url('/docs/sambung-kata')}>Docs</a>
+//   <a href={url('/products')}>Produk</a>
+//   <a href={url('/faq')}>FAQ</a>
 //
 // External URL (http, https, mailto, #anchor) di-passthrough tanpa perubahan.
 //

@@ -1,15 +1,20 @@
 ---
+// Akordeon FAQ. Dipakai di halaman produk, support, dan katalog.
+//
+// Jawaban berasal dari CMS dan ditulis dalam Markdown ringan, jadi dirender
+// lewat @utils/markdown — bukan disisipkan mentah. Bila item membawa `href`,
+// akordeon menambahkan tautan ke halaman FAQ-nya supaya pembaca bisa membuka
+// versi lengkapnya (dan menyalin tautannya).
 import type { FaqItem } from '@data/faq';
-import { inlineMarkdown } from '@utils/inline';
+import { renderMarkdown } from '@utils/markdown';
 
 export interface Props {
   items: FaqItem[];
+  /** Teks tautan "buka FAQ" pada item yang punya href. */
+  linkLabel?: string;
 }
 
-const { items } = Astro.props;
-
-// Render inline-markdown (`kode`, **tebal**, *miring*) dari data internal (faq.ts).
-const fmt = inlineMarkdown;
+const { items, linkLabel = 'Buka halaman FAQ ini' } = Astro.props;
 ---
 
 <div class="divide-y divide-ink-900/10 dark:divide-cream-100/10 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
@@ -26,8 +31,17 @@ const fmt = inlineMarkdown;
           <path d="m6 9 6 6 6-6" />
         </svg>
       </summary>
-      <div class="px-5 pb-5 md:px-6 md:pb-6 -mt-1">
-        <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed max-w-2xl" set:html={fmt(item.a)} />
+      <div class="px-5 pb-5 md:px-6 md:pb-6 -mt-1 max-w-2xl faq-answer">
+        <div set:html={renderMarkdown(item.a)} />
+        {item.href && (
+          <a
+            href={item.href}
+            class="inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors"
+          >
+            {linkLabel}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+        )}
       </div>
     </details>
   ))}
@@ -37,5 +51,14 @@ const fmt = inlineMarkdown;
   /* Sembunyikan marker default <details> di semua browser */
   summary::-webkit-details-marker {
     display: none;
+  }
+
+  /* Di dalam akordeon, elemen terakhir tidak perlu jarak bawah ganda. */
+  .faq-answer :global(> div > *:last-child) {
+    margin-bottom: 0;
+  }
+  /* Heading pertama di dalam jawaban tidak perlu jarak atas sebesar di halaman detail. */
+  .faq-answer :global(> div > :first-child) {
+    margin-top: 0;
   }
 </style>

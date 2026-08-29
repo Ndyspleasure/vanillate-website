@@ -1,366 +1,73 @@
 ---
-import BaseLayout from '@layouts/BaseLayout.astro';
-import Button from '@components/Button.astro';
-import Icon from '@components/Icon.astro';
-import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots } from '@data/bots';
-import { docs } from '@data/docs';
-import { url } from '@utils/url';
-import { inlineMarkdown, codeClass } from '@utils/inline';
+// Redirect per produk: /docs/<slug> → /faq/<kategori FAQ produk itu>.
+//
+// Selain URL-nya, ANCHOR dokumentasi lama juga dipetakan. Tautan seperti
+// /docs/sambung-kata#event-spesial pernah dibagikan ke banyak tempat, dan
+// anchor tidak pernah sampai ke server — hanya browser yang melihatnya. Jadi
+// pemetaannya dijalankan di klien: anchor yang dikenali diarahkan ke FAQ yang
+// tepat, sisanya jatuh ke halaman kategori.
+//
+// Tabel di bawah adalah pemetaan URL WARISAN, bukan konten FAQ: ia menerjemahkan
+// alamat lama ke alamat baru. Boleh dihapus setelah tautan lama tidak lagi
+// dipakai, tanpa memengaruhi isi FAQ mana pun.
+import RedirectStub from '@components/RedirectStub.astro';
+import { bots } from '@data/bots';
+import { faqCategoryUrl, faqUrl, getFaq } from '@data/faq';
 
 export function getStaticPaths() {
-  return bots
-    .filter((bot) => bot.docsSlug)
-    .map((bot) => ({ params: { slug: bot.docsSlug }, props: { bot } }));
-}
+  // Ditulis di dalam fungsi karena Astro menjalankan getStaticPaths di scope
+  // terpisah: variabel frontmatter di luar sini tidak terlihat olehnya.
+  /** Anchor section dokumentasi lama → slug FAQ penggantinya. */
+  const ANCHOR: Record<string, Record<string, string>> = {
+    'sambung-kata': {
+      'cara-bermain': 'cara-bermain',
+      'mode-permainan': 'mode-permainan',
+      'boost-system': 'boost',
+      'progression': 'progression-exp-coin',
+      'quest-shop': 'quest',
+      'dungeon-events': 'dungeon',
+      'event-spesial': 'event-spesial',
+      'game-sampingan': 'game-sampingan',
+      'commands': 'daftar-command',
+      // Section bawaan pada produk yang dulu belum punya dokumentasi.
+      'pendahuluan': 'cara-mulai-bermain',
+      'cara-memulai': 'cara-mulai-bermain',
+    },
+  };
 
-const { bot } = Astro.props;
-const inviteUrl = buildInviteUrl(bot);
-const doc = docs[bot.docsSlug];
-// Bot lain yang punya dokumentasi, untuk cross-link di akhir halaman.
-const otherDocs = getOtherBots(bot.slug, 4).filter((b) => b.docsSlug);
+  // Satu stub per slug dokumentasi lama yang mungkin masih ditautkan. Dulu
+  // docs_slug hampir selalu sama dengan slug produk, jadi keduanya dibangun.
+  const dibuat = new Set<string>();
+  const halaman: any[] = [];
 
-// Hook opsional untuk mengelompokkan section per topik pada dokumentasi
-// multi-topik. Saat ini seluruh bot memakai dokumentasi satu topik, jadi
-// TOC tampil datar tanpa header grup (groupFor selalu null).
-function groupFor(_id: string): string | null {
-  return null;
-}
-// Judul di TOC dibuat ringkas dengan membuang awalan nama grup bila ada.
-function tocLabel(title: string, group: string | null): string {
-  return group && title.startsWith(group + ' · ') ? title.slice(group.length + 3) : title;
-}
+  for (const bot of bots) {
+    if (!bot.faqCategory) continue;
+    for (const slug of [bot.slug, bot.faqCategory]) {
+      if (!slug || dibuat.has(slug)) continue;
+      dibuat.add(slug);
 
-// Sidebar TOC: dari data docs, atau fallback default untuk bot tanpa docs
-const tocSections = doc
-  ? doc.sections.map((s) => ({ id: s.id, title: s.title, group: groupFor(s.id) }))
-  : [
-      { id: 'pendahuluan', title: 'Pendahuluan', group: null },
-      { id: 'cara-memulai', title: 'Cara Memulai', group: null },
-      { id: 'troubleshooting', title: 'Troubleshooting', group: null },
-    ];
+      const kategori = bot.faqCategory;
+      const peta = ANCHOR[kategori] ?? {};
+      // Hanya anchor yang FAQ tujuannya benar-benar ada yang ikut dikirim.
+      const anchor: Record<string, string> = {};
+      for (const [dari, ke] of Object.entries(peta)) {
+        if (getFaq(kategori, ke)) anchor[dari] = faqUrl(kategori, ke);
+      }
 
-// Susun section jadi grup berurutan untuk render TOC yang berkategori.
-type TocGroup = { group: string | null; items: { id: string; title: string }[] };
-const tocGroups: TocGroup[] = [];
-for (const s of tocSections) {
-  const last = tocGroups[tocGroups.length - 1];
-  if (!last || last.group !== s.group) {
-    tocGroups.push({ group: s.group, items: [{ id: s.id, title: tocLabel(s.title, s.group) }] });
-  } else {
-    last.items.push({ id: s.id, title: tocLabel(s.title, s.group) });
+      halaman.push({ params: { slug }, props: { to: faqCategoryUrl(kategori), anchor } });
+    }
   }
+
+  return halaman;
 }
 
-// Formatter inline (`kode`, **tebal**, *miring*) untuk konten dari data
-// internal (docs.ts), bukan input user. Lihat @utils/inline.
-const fmt = inlineMarkdown;
+const { to, anchor } = Astro.props as { to: string; anchor: Record<string, string> };
 ---
 
-<BaseLayout title={`Panduan ${bot.shortName}, Cara Main, Command & FAQ`} description={`Dokumentasi lengkap ${bot.name} yang memuat cara bermain, daftar command, tabel harga, strategi, dan pertanyaan yang sering ditanyakan.`}>
-  <div class="container-page pt-16 md:pt-24 pb-24">
-    <div class="grid gap-10 lg:grid-cols-[230px_1fr]">
-      <!-- Sidebar TOC -->
-      <aside class="lg:sticky lg:top-24 lg:self-start">
-        <a href={url('/docs')} class="inline-flex items-center gap-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 mb-6">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Semua dokumentasi
-        </a>
-
-        <!-- Mobile: TOC bisa dilipat supaya konten tidak terdorong jauh ke bawah -->
-        <details class="lg:hidden group rounded-xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
-          <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-mono text-xs uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
-            Di halaman ini
-            <svg class="flex-none transition-transform group-open:rotate-180" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-          </summary>
-          <nav class="border-t border-ink-900/10 dark:border-cream-100/10 px-2 py-2" aria-label="Daftar isi (mobile)">
-            {tocGroups.map((grp) => (
-              <div class="mt-2 first:mt-0">
-                {grp.group && (
-                  <p class="px-3 pt-2 pb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500 dark:text-cream-300/60">{grp.group}</p>
-                )}
-                <ul>
-                  {grp.items.map((s) => (
-                    <li>
-                      <a href={`#${s.id}`} class="toc-link block rounded-lg px-3 py-2.5 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
-                        {s.title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </nav>
-        </details>
-
-        <!-- Desktop: sidebar TOC statis -->
-        <div class="hidden lg:block">
-          <p class="eyebrow mb-3">Di halaman ini</p>
-          <nav aria-label="Table of contents">
-            {tocGroups.map((grp) => (
-              <div class="mb-4 last:mb-0">
-                {grp.group && (
-                  <p class="mb-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500 dark:text-cream-300/60">{grp.group}</p>
-                )}
-                <ul class="space-y-1">
-                  {grp.items.map((s) => (
-                    <li>
-                      <a href={`#${s.id}`} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
-                        {s.title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </nav>
-        </div>
-      </aside>
-
-      <!-- Content -->
-      <article class="max-w-3xl min-w-0">
-        <div class="flex items-center gap-3 mb-4">
-          <span
-            class="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={`background: ${bot.color}20; color: ${bot.color};`}
-            aria-hidden="true"
-          >
-            <Icon name={bot.icon} class="h-5 w-5" />
-          </span>
-          <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">Dokumentasi</p>
-        </div>
-        <h1 class="font-display font-semibold tracking-tightest text-4xl md:text-5xl leading-tight mb-4">
-          {bot.name}
-        </h1>
-        <p class="text-lg text-ink-600 dark:text-cream-200/80 mb-8">{doc ? doc.intro : bot.tagline}</p>
-
-        <div class="flex flex-wrap gap-3 mb-12 pb-8 border-b border-ink-900/10 dark:border-cream-100/10">
-          <Button href={inviteUrl} variant="primary" external>{inviteCtaLabel(bot)}</Button>
-          <Button href={`/products/${bot.slug}`} variant="ghost">Halaman Produk</Button>
-        </div>
-
-        {doc ? (
-          <>
-            {/* Quick Start */}
-            {doc.quickStart && (
-              <section class="mb-16">
-                <div class="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 md:p-8">
-                  <h2 class="font-display text-xl font-semibold tracking-tightest mb-4 flex items-center gap-2">
-                    <Icon name="zap" class="h-5 w-5 text-amber-600 dark:text-amber-500" /> Mulai Cepat
-                  </h2>
-                  <ol class="space-y-3">
-                    {doc.quickStart.map((step, i) => (
-                      <li class="flex gap-3 text-ink-700 dark:text-cream-200 leading-relaxed">
-                        <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">{String(i + 1).padStart(2, '0')}</span>
-                        <span set:html={fmt(step)} />
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </section>
-            )}
-
-            {/* Sections */}
-            {doc.sections.map((section, i) => {
-              const group = groupFor(section.id);
-              const prevGroup = i > 0 ? groupFor(doc.sections[i - 1].id) : null;
-              const showGroupHeader = group && group !== prevGroup;
-              return (
-              <Fragment>
-              {showGroupHeader && (
-                <div class="mb-8 mt-4 flex items-center gap-3 scroll-mt-24">
-                  <span class="font-mono text-xs uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">{group}</span>
-                  <span class="h-px flex-1 bg-ink-900/10 dark:bg-cream-100/10"></span>
-                </div>
-              )}
-              <section id={section.id} class="mb-16 scroll-mt-24">
-                <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">{section.title}</h2>
-
-                {section.intro && (
-                  <p class="text-ink-700 dark:text-cream-200 leading-relaxed mb-6" set:html={fmt(section.intro)} />
-                )}
-
-                {/* Kartu event highlight: dirender menonjol dengan aksen warna per event */}
-                {section.events && (
-                  <div class="grid gap-4 sm:grid-cols-2 mb-8">
-                    {section.events.map((ev) => (
-                      <div
-                        class="relative overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5 pl-6"
-                        style={`--ev: ${ev.accent}`}
-                      >
-                        <span class="absolute inset-y-0 left-0 w-1.5" style="background: var(--ev)" aria-hidden="true"></span>
-                        <div class="flex items-start gap-3">
-                          <span
-                            class="flex h-11 w-11 flex-none items-center justify-center rounded-xl"
-                            style="background: color-mix(in srgb, var(--ev) 18%, transparent); color: var(--ev)"
-                            aria-hidden="true"
-                          >
-                            <Icon name={ev.icon} class="h-6 w-6" />
-                          </span>
-                          <div class="min-w-0">
-                            <h3 class="font-display text-lg font-semibold tracking-tightest leading-tight" style="color: var(--ev)">{ev.name}</h3>
-                            <p class="mt-1 text-sm text-ink-600 dark:text-cream-200/80 leading-snug" set:html={fmt(ev.tagline)} />
-                          </div>
-                        </div>
-
-                        <div class="mt-4 flex flex-wrap gap-1.5">
-                          {ev.stats.map((s) => (
-                            <span class="inline-flex items-center gap-1 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/60 dark:bg-ink-950/40 px-2.5 py-1 text-xs">
-                              <span class="text-ink-500 dark:text-cream-300/60">{s.label}:</span>
-                              <span class="font-medium text-ink-800 dark:text-cream-100">{s.value}</span>
-                            </span>
-                          ))}
-                        </div>
-
-                        <dl class="mt-4 space-y-1.5 text-sm">
-                          <div class="flex gap-2">
-                            <dt class="flex-none mt-0.5"><Icon name="trophy" class="h-4 w-4 text-amber-500" /></dt>
-                            <dd class="text-ink-700 dark:text-cream-200"><span class="font-medium text-ink-900 dark:text-cream-50">Menang:</span> <span set:html={fmt(ev.reward)} /></dd>
-                          </div>
-                          <div class="flex gap-2">
-                            <dt class="flex-none mt-0.5"><Icon name="skull" class="h-4 w-4 text-ink-400 dark:text-cream-300/50" /></dt>
-                            <dd class="text-ink-600 dark:text-cream-200/70"><span class="font-medium text-ink-800 dark:text-cream-100">Gagal:</span> <span set:html={fmt(ev.fail)} /></dd>
-                          </div>
-                        </dl>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div class="space-y-6">
-                  {section.subsections.map((sub) => (
-                    <div>
-                      {sub.title && (
-                        <h3 class="font-display text-base font-semibold tracking-tightest mb-3 text-ink-900 dark:text-cream-50">
-                          {sub.title}
-                        </h3>
-                      )}
-
-                      {sub.text && (
-                        <p class="text-ink-700 dark:text-cream-200 leading-relaxed" set:html={fmt(sub.text)} />
-                      )}
-
-                      {sub.items && (
-                        <ul class="space-y-2">
-                          {sub.items.map((item) => (
-                            <li class="flex gap-3 text-ink-700 dark:text-cream-200 leading-relaxed">
-                              <span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1 flex-none">→</span>
-                              <span set:html={fmt(item)} />
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      {sub.table && (
-                        <div class="overflow-x-auto rounded-xl border border-ink-900/10 dark:border-cream-100/10">
-                          <table class="w-full text-sm">
-                            <thead>
-                              <tr class="bg-cream-100/60 dark:bg-ink-900/60 border-b border-ink-900/10 dark:border-cream-100/10">
-                                {sub.table.headers.map((h) => (
-                                  <th class="px-4 py-3 text-left font-semibold text-ink-900 dark:text-cream-50 whitespace-nowrap">{h}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sub.table.rows.map((row) => (
-                                <tr class="border-b border-ink-900/5 dark:border-cream-100/5 last:border-0">
-                                  {row.map((cell) => (
-                                    <td class="px-4 py-3 text-ink-700 dark:text-cream-200">{cell}</td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {section.note && (
-                  <div class="mt-6 flex gap-3 rounded-xl border-l-2 border-amber-500 bg-amber-500/5 px-5 py-4">
-                    <Icon name="lightbulb" class="h-5 w-5 text-amber-600 dark:text-amber-500 flex-none mt-0.5" />
-                    <p class="text-sm text-ink-700 dark:text-cream-200 leading-relaxed" set:html={fmt(section.note)} />
-                  </div>
-                )}
-              </section>
-              </Fragment>
-              );
-            })}
-
-            {/* Bantuan lanjutan */}
-            <section class="scroll-mt-24">
-              <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 md:p-8">
-                <h2 class="font-display text-xl font-semibold tracking-tightest mb-2">Masih ada pertanyaan?</h2>
-                <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">
-                  Tim kami siap membantu di server Discord Support, atau kirim langsung lewat command <code class={codeClass}>/masukan</code> di dalam bot.
-                </p>
-                <Button href="/support" variant="secondary">Buka Halaman Support</Button>
-              </div>
-            </section>
-          </>
-        ) : (
-          <>
-            {/* Fallback untuk bot yang belum punya entry di docs.ts */}
-            <section id="pendahuluan" class="mb-16 scroll-mt-24">
-              <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Pendahuluan</h2>
-              <p class="text-ink-700 dark:text-cream-200 leading-relaxed">{bot.description}</p>
-            </section>
-
-            <section id="cara-memulai" class="mb-16 scroll-mt-24">
-              <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Cara Memulai</h2>
-              <ol class="space-y-3 text-ink-700 dark:text-cream-200 leading-relaxed">
-                <li class="flex gap-3"><span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">01</span>Undang {bot.shortName} ke server Discord kamu melalui tombol undangan.</li>
-                <li class="flex gap-3"><span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">02</span>Berikan izin yang diminta agar bot dapat berfungsi dengan optimal.</li>
-                <li class="flex gap-3"><span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-0.5">03</span>Dokumentasi lengkap untuk bot ini akan segera tersedia.</li>
-              </ol>
-            </section>
-
-            <section id="troubleshooting" class="scroll-mt-24">
-              <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Troubleshooting</h2>
-              <p class="text-ink-700 dark:text-cream-200 leading-relaxed">Jika kamu mengalami masalah, silakan hubungi tim kami di server Discord Support.</p>
-              <div class="mt-6">
-                <Button href="/support" variant="secondary">Buka Halaman Support</Button>
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* Dokumentasi bot lain */}
-        {otherDocs.length > 0 && (
-          <section class="mt-16 pt-10 border-t border-ink-900/10 dark:border-cream-100/10">
-            <p class="eyebrow mb-4">Dokumentasi Lain</p>
-            <div class="grid gap-3 sm:grid-cols-2">
-              {otherDocs.map((other) => (
-                <a href={url(`/docs/${other.docsSlug}`)} class="group flex items-center gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 transition-colors">
-                  {other.thumbnail ? (
-                    <img src={url(other.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
-                  ) : (
-                    <span class="flex h-10 w-10 items-center justify-center rounded-lg flex-none" style={`background: ${other.color}20; color: ${other.color};`} aria-hidden="true"><Icon name={other.icon} class="h-5 w-5" /></span>
-                  )}
-                  <div class="flex-1">
-                    <p class="font-medium text-sm group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Panduan {other.shortName}</p>
-                    <p class="text-xs text-ink-500 dark:text-cream-300/60">{other.category}</p>
-                  </div>
-                  <svg class="text-ink-400 dark:text-cream-300/40 group-hover:text-amber-500 transition-colors flex-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-      </article>
-    </div>
-  </div>
-</BaseLayout>
-
-<script>
-  // Mobile: tutup TOC yang dilipat setelah salah satu link diklik,
-  // supaya setelah loncat ke section, daftar isi tidak menutupi konten.
-  const tocDetails = document.querySelector<HTMLDetailsElement>('aside details');
-  if (tocDetails) {
-    tocDetails.querySelectorAll('.toc-link').forEach((link) => {
-      link.addEventListener('click', () => {
-        tocDetails.open = false;
-      });
-    });
-  }
-</script>
+<RedirectStub
+  to={to}
+  title="Pindah ke FAQ"
+  text="Dokumentasi ini kini berada di"
+  linkLabel="FAQ"
+  anchorMap={anchor}
+/>

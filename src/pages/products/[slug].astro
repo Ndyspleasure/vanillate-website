@@ -5,7 +5,8 @@ import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
 import BotTag from '@components/BotTag.astro';
 import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, latestRelease, formatBytes, productImage, badgeClass } from '@data/bots';
-import { faqs } from '@data/faq';
+import FAQLink from '@components/FAQLink.astro';
+import { faqCategoryPath, faqCategoryUrl, faqCategoryFor, faqItems, faqsByCategory } from '@data/faq';
 import { site } from '@data/site';
 import { url } from '@utils/url';
 
@@ -18,9 +19,15 @@ const inviteUrl = buildInviteUrl(bot);
 const comingSoon = bot.status === 'coming-soon';
 const isPreorder = bot.status === 'preorder';
 const heroInviteLabel = inviteCtaLabel(bot);
-// FAQ produk berasal dari CMS. Bila belum diisi, halaman jatuh ke FAQ bawaan
-// yang masih ditulis di repo (mis. Sambung Kata) supaya konten lama tidak hilang.
-const botFaqs = bot.faq.length > 0 ? bot.faq.map((f) => ({ q: f.q, a: f.a })) : faqs[bot.slug];
+// FAQ halaman produk diambil dari kategori FAQ terpusat yang dipetakan ke
+// produk ini, jadi panduan hanya ditulis sekali dan tiap pertanyaan punya URL
+// sendiri yang bisa ditautkan dari mana saja. Kolom `faq` per produk di CMS
+// tetap dihormati sebagai penimpa untuk produk yang belum punya kategori.
+const faqKategori = faqCategoryFor(bot.faqCategory);
+const totalFaqKategori = faqKategori ? faqsByCategory(faqKategori.slug).length : 0;
+const botFaqs = faqKategori
+  ? faqItems(faqKategori.slug, 8)
+  : bot.faq.map((f) => ({ q: f.q, a: f.a }));
 const otherBots = getOtherBots(bot.slug, 3);
 
 const isAndroid = bot.platform === 'android';
@@ -137,9 +144,9 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
             {CTA.discord}
           </Button>
         )}
-        {bot.docsSlug && (
-          <Button href={`/docs/${bot.docsSlug}`} variant="secondary" size="lg">
-            {CTA.docs}
+        {faqKategori && (
+          <Button href={faqCategoryPath(faqKategori.slug)} variant="secondary" size="lg">
+            {CTA.guide}
           </Button>
         )}
       </div>
@@ -269,7 +276,15 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
         <div class="md:col-span-1">
           <p class="eyebrow mb-3">Perintah Utama</p>
           <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Sekilas command.</h2>
-          <p class="mt-4 text-ink-600 dark:text-cream-200/80">Daftar lengkap perintah dan opsi tersedia di halaman dokumentasi.</p>
+          <p class="mt-4 text-ink-600 dark:text-cream-200/80">Daftar lengkap perintah dan opsinya ada di FAQ produk ini.</p>
+          {bot.faqCategory && (
+            <FAQLink
+              faq={`${bot.faqCategory}/daftar-command`}
+              category={bot.faqCategory}
+              label="Lihat daftar command lengkap"
+              class="mt-4"
+            />
+          )}
         </div>
         <div class="md:col-span-2 space-y-2">
           {bot.commands.map((cmd) => (
@@ -339,6 +354,12 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
           <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
             Belum ketemu jawabannya? Tim kami siap membantu di server Discord.
           </p>
+          {faqKategori && (
+            <a href={faqCategoryUrl(faqKategori.slug)} class="mt-6 inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors">
+              {totalFaqKategori > botFaqs.length ? `Lihat semua ${totalFaqKategori} FAQ` : 'Buka halaman FAQ'}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </a>
+          )}
         </div>
         <div class="md:col-span-2">
           <FAQAccordion items={botFaqs} />

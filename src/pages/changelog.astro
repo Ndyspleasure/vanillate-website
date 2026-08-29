@@ -3,6 +3,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Icon from '@components/Icon.astro';
 import Button from '@components/Button.astro';
 import { getFeaturedBot, buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import { faqCategoryUrl, faqIndexUrl } from '@data/faq';
 import changelog from '@data/synced/changelog.json';
 import version from '@data/synced/version.json';
 import { inlineMarkdown } from '@utils/inline';
@@ -17,6 +18,9 @@ const entries = changelog as Entry[];
 
 const bot = getFeaturedBot();
 const inviteUrl = buildInviteUrl(bot);
+// Panduan produk ini ada di FAQ. URL-nya dibangun lewat helper, jadi tidak ada
+// alamat FAQ yang tertanam di halaman.
+const panduanUrl = bot.faqCategory ? faqCategoryUrl(bot.faqCategory) : faqIndexUrl();
 
 const fmt = inlineMarkdown;
 
@@ -161,8 +165,8 @@ const totalReleases = entries.length;
               <Icon name="arrow-up-right" class="h-4 w-4" strokeWidth={2.5} />
             </a>
           )}
-          <a href={url('/docs/sambung-kata')} class="inline-flex items-center gap-2 rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
-            Baca dokumentasi
+          <a href={panduanUrl} class="inline-flex items-center gap-2 rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
+            Baca panduan
             <Icon name="arrow-right" class="h-4 w-4" strokeWidth={2.5} />
           </a>
         </div>

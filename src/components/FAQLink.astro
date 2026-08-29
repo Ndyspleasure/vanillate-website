@@ -1,0 +1,58 @@
+---
+// Tautan panduan yang dipakai ulang di seluruh situs.
+//
+// Kenapa ini sebuah komponen, bukan <a href="/faq/..."> biasa: URL FAQ hanya
+// boleh dibangun di satu tempat (@data/faq). Dengan komponen ini, halaman yang
+// butuh panduan cukup menyebut FAQ atau kategorinya, dan tidak ada satu pun
+// URL FAQ yang tertanam manual di halaman.
+//
+//   <FAQLink faq="cara-melakukan-order" />           → deep link ke satu FAQ
+//   <FAQLink category="sambung-kata" />              → halaman kategori
+//   <FAQLink faq="sambung-kata/dungeon" variant="button" />
+//
+// Bila FAQ yang dirujuk tidak ada (mis. slug diganti admin), tautan jatuh ke
+// halaman kategori, lalu ke /faq — tidak pernah menghasilkan 404.
+import { faqCategoryUrl, faqIndexUrl, findFaq, getFaqCategory, resolveFaqUrl } from '@data/faq';
+
+export interface Props {
+  /** Slug FAQ, boleh "kategori/slug" atau slug saja. */
+  faq?: string;
+  /** Slug kategori. Dipakai bila `faq` tidak diisi, sekaligus jadi cadangan. */
+  category?: string;
+  /** Teks tautan. Kosong = memakai pertanyaan/nama kategori yang dituju. */
+  label?: string;
+  variant?: 'link' | 'button' | 'ghost';
+  class?: string;
+}
+
+const { faq, category, label, variant = 'link', class: extraClass = '' } = Astro.props;
+
+const entri = faq ? findFaq(faq) : undefined;
+const kategori = getFaqCategory(category ?? '');
+
+const href = faq
+  ? resolveFaqUrl(faq, category)
+  : kategori
+    ? faqCategoryUrl(kategori.slug)
+    : faqIndexUrl();
+
+// Label default menjelaskan tujuannya: pertanyaan yang dituju bila deep link,
+// nama kategori bila menuju kategori, dan teks netral bila keduanya kosong.
+const teks = label ?? entri?.question ?? (kategori ? `Panduan ${kategori.name}` : 'Lihat Panduan');
+
+const KELAS = {
+  button:
+    'inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-6 py-3 text-sm font-medium hover:-translate-y-0.5 transition-transform',
+  ghost:
+    'inline-flex items-center gap-1.5 rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm text-ink-700 dark:text-cream-200 hover:border-amber-500/50 transition-colors',
+  link:
+    'inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors',
+} as const;
+---
+
+<a href={href} class:list={[KELAS[variant], extraClass]}>
+  {teks}
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="flex-none">
+    <path d="M5 12h14M13 5l7 7-7 7" />
+  </svg>
+</a>

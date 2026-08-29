@@ -1,0 +1,259 @@
+---
+// HALAMAN UTAMA FAQ
+//
+// Menggantikan /docs sebagai pusat panduan. Isinya sepenuhnya dari CMS
+// (@data/faq), jadi tidak ada satu pun teks panduan yang ditulis di sini.
+//
+// Pencarian berjalan di browser di atas indeks yang ditanam saat build. Situs
+// ini statis, jadi tidak ada endpoint yang bisa ditanyai — dan indeks kecil
+// seperti ini jauh lebih cepat daripada permintaan jaringan.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Icon from '@components/Icon.astro';
+import { site } from '@data/site';
+import { url } from '@utils/url';
+import {
+  faqCategoryUrl,
+  faqSearchIndex,
+  faqUrl,
+  faqs,
+  faqsByCategory,
+  populatedFaqCategories,
+} from '@data/faq';
+import type { IconName } from '@data/icons';
+
+const kategori = populatedFaqCategories;
+
+// Indeks pencarian ditanam sebagai JSON di dalam <script>. `<` di-escape supaya
+// jawaban yang kebetulan memuat "</script>" tidak menutup tag lebih awal — isi
+// FAQ ditulis admin, jadi ini bukan kemungkinan teoretis belaka.
+const indeks = JSON.stringify(faqSearchIndex()).replace(/</g, '\\u003c');
+
+// Pertanyaan pembuka tiap kategori dipakai sebagai "topik populer": deep link
+// langsung ke jawabannya, bukan sekadar ke halaman kategori.
+const topikPopuler = kategori
+  .flatMap((c) => faqsByCategory(c.slug).slice(0, 2).map((f) => ({ faq: f, kategori: c })))
+  .slice(0, 6);
+---
+
+<BaseLayout
+  title="FAQ & Panduan"
+  description="Pusat panduan Vanillate: cara pakai, mekanik permainan, akun & data, sampai langkah saat ada kendala. Semua pertanyaan dikelompokkan per kategori."
+>
+  <!-- HERO -->
+  <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
+    <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
+
+    <div class="container-page relative">
+      <p class="eyebrow mb-6 animate-fade-up">FAQ</p>
+      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl animate-fade-up">
+        Semua panduan,<br />satu <span class="italic text-amber-600 dark:text-amber-500">tempat</span>.
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+        Cara pakai, mekanik permainan, akun dan data, sampai langkah pertama saat ada kendala. Cari pertanyaanmu, atau telusuri lewat kategori di bawah.
+      </p>
+
+      <!-- PENCARIAN -->
+      <div class="mt-8 max-w-xl animate-fade-up" style="animation-delay: 0.15s">
+        <label for="faq-cari" class="sr-only">Cari FAQ</label>
+        <div class="relative">
+          <svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-400 dark:text-cream-300/40" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            id="faq-cari"
+            type="search"
+            autocomplete="off"
+            placeholder="Cari FAQ… (mis. cara main, boost, data)"
+            class="w-full rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 pl-11 pr-4 py-3.5 text-sm outline-none focus:border-amber-500 transition-colors"
+          />
+        </div>
+        <p id="faq-hitung" class="mt-2 text-xs text-ink-500 dark:text-cream-300/60" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          {kategori.length} kategori
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          {faqs.length} pertanyaan terjawab
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          Selalu diperbarui
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- HASIL PENCARIAN (muncul hanya saat mengetik) -->
+  <section id="faq-hasil-wrap" class="container-page pb-8 hidden">
+    <div id="faq-hasil" class="grid gap-3"></div>
+  </section>
+
+  <!-- KATEGORI -->
+  <div id="faq-jelajah">
+    <section class="container-page pb-8">
+      {kategori.length === 0 ? (
+        <p class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-6 py-16 text-center text-ink-500 dark:text-cream-300/60">
+          Belum ada panduan tersedia.
+        </p>
+      ) : (
+        <div class="grid gap-4 md:grid-cols-2 reveal">
+          {kategori.map((c) => (
+            <a
+              href={faqCategoryUrl(c.slug)}
+              class="group flex items-start gap-4 p-6 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-colors"
+            >
+              <span class="flex h-12 w-12 items-center justify-center rounded-xl flex-none bg-amber-500/10 text-amber-600 dark:text-amber-400" aria-hidden="true">
+                <Icon name={c.icon as IconName} class="h-6 w-6" />
+              </span>
+              <div class="flex-1 min-w-0">
+                <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">
+                  {faqsByCategory(c.slug).length} pertanyaan
+                </p>
+                <h2 class="font-display text-xl font-semibold tracking-tightest mb-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {c.name}
+                </h2>
+                {c.description && <p class="text-sm text-ink-600 dark:text-cream-200/70">{c.description}</p>}
+              </div>
+              <svg class="text-ink-400 dark:text-cream-300/40 group-hover:text-amber-500 group-hover:translate-x-1 transition-all mt-1 flex-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </a>
+          ))}
+        </div>
+      )}
+    </section>
+
+    <!-- TOPIK POPULER -->
+    {topikPopuler.length > 0 && (
+      <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
+        <div class="grid gap-12 md:grid-cols-3">
+          <div class="md:col-span-1 reveal">
+            <p class="eyebrow mb-3">Langsung Loncat</p>
+            <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+              Topik yang paling sering dibuka.
+            </h2>
+            <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+              Sudah tahu yang kamu cari? Buka langsung jawabannya.
+            </p>
+          </div>
+          <div class="md:col-span-2 grid gap-3 sm:grid-cols-2">
+            {topikPopuler.map((t, i) => (
+              <a
+                href={faqUrl(t.faq.category, t.faq.slug)}
+                class="reveal group flex items-center gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 px-4 py-3.5 hover:border-amber-500/50 transition-colors"
+                style={`--reveal-delay: ${i * 60}ms`}
+              >
+                <span class="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10M7 17 17 7"/></svg>
+                </span>
+                <span class="flex-1 min-w-0">
+                  <span class="block text-sm font-medium text-ink-800 dark:text-cream-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{t.faq.question}</span>
+                  <span class="block font-mono text-[10px] uppercase tracking-wider text-ink-500 dark:text-cream-300/60">{t.kategori.name}</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- CTA -->
+    <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10 pb-24">
+      <div class="rounded-3xl border border-ink-900/10 dark:border-cream-100/10 p-10 md:p-12 reveal">
+        <div class="max-w-2xl">
+          <h2 class="font-display text-2xl md:text-4xl font-semibold tracking-tightest mb-4">
+            Masih ada yang mengganjal?
+          </h2>
+          <p class="text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed mb-8">
+            Kalau FAQ belum menjawab pertanyaanmu, tim kami siap membantu langsung. Ceritakan kendalamu lewat Support Center, atau sapa kami di server Discord.
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <a href={url('/support')} class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-6 py-3 text-sm font-medium hover:-translate-y-0.5 transition-transform">
+              Buka Support Center
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </a>
+            <a href={site.links.discordSupport} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+              Gabung Discord Support
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script is:inline type="application/json" id="faq-index" set:html={indeks}></script>
+</BaseLayout>
+
+<script>
+  // Pencarian FAQ di sisi klien.
+  //
+  // Indeksnya ditanam sebagai JSON saat build, jadi mengetik tidak memicu satu
+  // pun permintaan jaringan. Tanpa JS, halaman tetap berguna: daftar kategori
+  // dan topik populer sudah dirender dari server.
+  type Row = { q: string; c: string; cs: string; s: string; t: string; u: string };
+
+  const input = document.getElementById('faq-cari') as HTMLInputElement | null;
+  const hasilWrap = document.getElementById('faq-hasil-wrap');
+  const hasil = document.getElementById('faq-hasil');
+  const jelajah = document.getElementById('faq-jelajah');
+  const hitung = document.getElementById('faq-hitung');
+  const sumber = document.getElementById('faq-index');
+
+  let rows: Row[] = [];
+  try {
+    rows = JSON.parse(sumber?.textContent || '[]');
+  } catch {
+    rows = [];
+  }
+
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function kartu(r: Row): string {
+    return `<a href="${esc(r.u)}" class="group rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4 hover:border-amber-500/50 transition-colors block">
+      <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">${esc(r.c)}</p>
+      <p class="font-display font-semibold tracking-tightest group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">${esc(r.q)}</p>
+      <p class="mt-1 text-sm text-ink-600 dark:text-cream-200/70 leading-relaxed">${esc(r.s)}</p>
+    </a>`;
+  }
+
+  function cari(qRaw: string) {
+    const q = qRaw.trim().toLowerCase();
+    if (!input || !hasil || !hasilWrap || !jelajah) return;
+
+    if (!q) {
+      hasilWrap.classList.add('hidden');
+      jelajah.classList.remove('hidden');
+      if (hitung) hitung.textContent = '';
+      return;
+    }
+
+    // Semua kata kunci harus ada — pencarian "cara order" tidak boleh
+    // mengembalikan segala hal yang sekadar memuat kata "cara".
+    const kata = q.split(/\s+/).filter(Boolean);
+    const cocok = rows.filter((r) => kata.every((k) => r.t.includes(k)));
+
+    jelajah.classList.add('hidden');
+    hasilWrap.classList.remove('hidden');
+
+    if (cocok.length === 0) {
+      hasil.innerHTML = `<div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-6 py-12 text-center">
+        <p class="font-display text-lg font-semibold tracking-tightest">FAQ tidak ditemukan.</p>
+        <p class="mt-2 text-sm text-ink-500 dark:text-cream-300/60">Coba gunakan kata kunci lainnya.</p>
+      </div>`;
+      if (hitung) hitung.textContent = `Tidak ada hasil untuk "${qRaw.trim()}".`;
+      return;
+    }
+
+    hasil.innerHTML = cocok.slice(0, 24).map(kartu).join('');
+    if (hitung) hitung.textContent = `${cocok.length} hasil untuk "${qRaw.trim()}".`;
+  }
+
+  if (input) {
+    input.addEventListener('input', () => cari(input.value));
+    // Query bisa datang dari halaman lain, mis. /faq?q=boost.
+    const awal = new URLSearchParams(window.location.search).get('q');
+    if (awal) {
+      input.value = awal;
+      cari(awal);
+    }
+  }
+</script>

@@ -1433,3 +1433,181 @@ insert into public.page_content (key, label, description, sort) values
   ('global',   'Global',         'Tagline, deskripsi SEO, dan teks footer.',                          50)
 on conflict (key) do nothing;
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 15. FAQ TERPUSAT
+--
+-- Menggantikan dokumentasi terpisah per produk (dulu src/data/docs.ts +
+-- halaman /docs/<slug>) dengan SATU sistem FAQ berkategori yang dikelola
+-- sepenuhnya dari /admin/faq. Sejak perubahan ini, FAQ adalah sumber tunggal
+-- seluruh panduan: halaman produk, support, dan tombol "Lihat Panduan" di mana
+-- pun semuanya menunjuk ke FAQ yang relevan.
+--
+-- Pembagian peran (konsisten dengan bagian 13 & 14):
+--   • Website (panel /admin) → membuat & mengelola kategori dan pertanyaan.
+--   • Build (service_role)   → menarik FAQ `active` ke src/data/synced/faq.json.
+--   • Publik (anon)          → TIDAK membaca tabel ini; hanya menerima HTML.
+--
+-- Struktur sengaja tidak terikat nama game tertentu: kategori adalah entitas
+-- biasa, dan produk menunjuk kategorinya lewat relasi (products.faq_category_id),
+-- bukan lewat pencocokan nama di frontend.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 15a. Kategori FAQ (satu baris = satu kelompok, mis. sebuah game atau "Umum")
+create table if not exists public.faq_categories (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  slug        text not null unique,                 -- URL: /faq/<slug>
+  description text,
+  icon        text,                                 -- nama ikon registry (@data/icons)
+  status      text not null default 'active' check (status in ('active', 'inactive')),
+  sort_order  integer not null default 100,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references public.admin_users(id) on delete set null
+);
+
+comment on table public.faq_categories is
+  'Kategori FAQ. Dikelola dari /admin/faq/categories, ditarik saat build ke /faq.';
+comment on column public.faq_categories.slug is
+  'Segmen URL kategori. Stabil: dipakai sebagai target tautan dari halaman lain.';
+
+-- 15b. Pertanyaan FAQ
+create table if not exists public.faqs (
+  id          uuid primary key default gen_random_uuid(),
+  -- restrict, bukan cascade: menghapus kategori tidak boleh diam-diam
+  -- membuang seluruh panduan di dalamnya. CMS menampilkan jumlah FAQ dan
+  -- meminta admin memindahkan/menghapusnya lebih dulu.
+  category_id uuid not null references public.faq_categories(id) on delete restrict,
+  question    text not null,
+  slug        text not null,                        -- URL: /faq/<kategori>/<slug>
+  answer      text not null default '',             -- rich text (Markdown, lihat src/utils/markdown.ts)
+  status      text not null default 'active' check (status in ('active', 'inactive')),
+  sort_order  integer not null default 100,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references public.admin_users(id) on delete set null,
+  -- Slug unik PER KATEGORI: URL sudah memuat kategori, jadi dua kategori boleh
+  -- sama-sama punya "cara-melakukan-order" tanpa saling bertabrakan.
+  unique (category_id, slug)
+);
+
+create index if not exists faqs_category_idx on public.faqs(category_id, sort_order);
+create index if not exists faqs_status_idx   on public.faqs(status);
+
+comment on table public.faqs is
+  'Pertanyaan & jawaban FAQ. Jawaban ditulis dalam Markdown ringan dan dirender jadi HTML saat build.';
+comment on column public.faqs.slug is
+  'Segmen URL pertanyaan. Ubah seperlunya saja — tautan lama akan patah kecuali slug lama didaftarkan di faq_slug_aliases.';
+
+-- 15c. Alias slug — menjaga tautan lama tetap hidup
+--
+-- Judul FAQ boleh berubah tanpa harus mengubah URL. Bila slug memang perlu
+-- diganti, slug lama disimpan di sini dan halaman /faq/<kategori>/<slug lama>
+-- tetap dibangun sebagai redirect ke slug baru. Tanpa ini, setiap penyuntingan
+-- judul berisiko mematikan tautan yang sudah tersebar di halaman lain.
+create table if not exists public.faq_slug_aliases (
+  id          uuid primary key default gen_random_uuid(),
+  faq_id      uuid not null references public.faqs(id) on delete cascade,
+  slug        text not null,
+  created_at  timestamptz not null default now(),
+  unique (faq_id, slug)
+);
+
+create index if not exists faq_slug_aliases_faq_idx on public.faq_slug_aliases(faq_id);
+
+comment on table public.faq_slug_aliases is
+  'Slug lama sebuah FAQ. Dipakai membangun halaman redirect supaya tautan yang sudah tersebar tidak menghasilkan 404.';
+
+-- 15d. Pemetaan produk → kategori FAQ
+--
+-- Inilah pengganti products.docs_slug. Halaman produk mengambil FAQ lewat
+-- relasi ini, bukan dengan mencocokkan nama produk di frontend, sehingga satu
+-- kategori bisa dipakai ulang oleh produk/fitur mana pun.
+alter table public.products
+  add column if not exists faq_category_id uuid references public.faq_categories(id) on delete set null;
+
+comment on column public.products.faq_category_id is
+  'Kategori FAQ yang ditampilkan di halaman produk & tombol "Lihat Panduan".';
+comment on column public.products.docs_slug is
+  'USANG sejak FAQ terpusat. Tidak lagi dibaca situs — dipertahankan sementara agar data lama tidak hilang. Pakai faq_category_id.';
+
+-- 15e. Jaga `updated_at` selalu benar walau baris disunting dari mana pun.
+create or replace function public.touch_faq_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists faq_categories_touch on public.faq_categories;
+create trigger faq_categories_touch before update on public.faq_categories
+  for each row execute function public.touch_faq_updated_at();
+
+drop trigger if exists faqs_touch on public.faqs;
+create trigger faqs_touch before update on public.faqs
+  for each row execute function public.touch_faq_updated_at();
+
+-- 15f. Simpan slug lama secara otomatis saat slug FAQ diubah.
+-- Admin tidak perlu mengingat langkah tambahan: mengganti slug di CMS langsung
+-- meninggalkan jejak redirect.
+create or replace function public.remember_faq_slug()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.slug is distinct from old.slug then
+    insert into public.faq_slug_aliases (faq_id, slug)
+    values (old.id, old.slug)
+    on conflict (faq_id, slug) do nothing;
+    -- Slug yang dipakai ulang tidak boleh sekaligus jadi alias ke dirinya.
+    delete from public.faq_slug_aliases where faq_id = old.id and slug = new.slug;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists faqs_remember_slug on public.faqs;
+create trigger faqs_remember_slug before update of slug on public.faqs
+  for each row execute function public.remember_faq_slug();
+
+-- 15g. RLS — admin baca, editor kelola. Publik lewat build (service_role).
+alter table public.faq_categories   enable row level security;
+alter table public.faqs             enable row level security;
+alter table public.faq_slug_aliases enable row level security;
+
+drop policy if exists "admin baca faq_categories" on public.faq_categories;
+create policy "admin baca faq_categories" on public.faq_categories
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola faq_categories" on public.faq_categories;
+create policy "editor kelola faq_categories" on public.faq_categories
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+drop policy if exists "admin baca faqs" on public.faqs;
+create policy "admin baca faqs" on public.faqs
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola faqs" on public.faqs;
+create policy "editor kelola faqs" on public.faqs
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+drop policy if exists "admin baca faq alias" on public.faq_slug_aliases;
+create policy "admin baca faq alias" on public.faq_slug_aliases
+  for select to authenticated using (public.is_admin());
+drop policy if exists "editor kelola faq alias" on public.faq_slug_aliases;
+create policy "editor kelola faq alias" on public.faq_slug_aliases
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+-- 15h. Isi awal FAQ ada di berkas terpisah: supabase/seed-faq.sql.
+--      Berkas itu memuat hasil migrasi dokumentasi lama (dulu src/data/docs.ts
+--      dan daftar FAQ di src/data/faq.ts) dan dihasilkan oleh
+--      scripts/build-faq-seed.mjs. Jalankan SETELAH file ini.
+-- ═══════════════════════════════════════════════════════════════════════════

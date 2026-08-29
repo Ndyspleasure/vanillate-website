@@ -1,0 +1,433 @@
+---
+// Admin — FAQ (pertanyaan).
+//
+// Sejak dokumentasi per produk dihapus, halaman inilah tempat seluruh panduan
+// ditulis: satu FAQ = satu halaman publik dengan URL sendiri yang bisa
+// ditautkan dari mana saja (/faq/<kategori>/<slug>).
+//
+// Jawaban ditulis dalam Markdown ringan dan dirender memakai renderer yang
+// sama persis dengan situs publik (@utils/markdown), jadi pratinjau di sini
+// bukan perkiraan — ia hasil yang sama.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import FaqTabs from '@components/FaqTabs.astro';
+---
+
+<AdminLayout title="FAQ" active="faq">
+  <AdminPageHeader
+    eyebrow="FAQ"
+    title="Pertanyaan"
+    description="Seluruh panduan Vanillate. Setiap pertanyaan punya URL sendiri, jadi halaman atau produk mana pun bisa menautkannya langsung. Perubahan tampil di /faq setelah build berikutnya."
+  />
+  <FaqTabs active="faqs" />
+
+  <div id="faq-root" class="px-6 lg:px-10 py-8 max-w-4xl">
+    <div id="list-view"></div>
+    <div id="editor-view" class="hidden"></div>
+    <p id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 hidden rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg z-50" role="status" aria-live="polite"></p>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+  import { renderMarkdown } from '@utils/markdown';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+  const BTN = 'rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
+  const BTN2 = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors';
+  const CHIP = 'rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-2.5 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors';
+
+  type Kategori = { id: string; name: string; slug: string; status: string; sort_order: number };
+  type Faq = {
+    id: string | null;
+    category_id: string;
+    question: string;
+    slug: string;
+    answer: string;
+    status: string;
+    sort_order: number;
+    updated_at?: string;
+  };
+
+  let bolehEdit = false;
+  let uid: string | null = null;
+  let kategori: Kategori[] = [];
+  let semua: Faq[] = [];
+  let current: Faq | null = null;
+  let filterKategori = '';
+  let filterCari = '';
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const listView = () => $('list-view');
+  const editorView = () => $('editor-view');
+  const namaKategori = (id: string) => kategori.find((k) => k.id === id)?.name ?? '—';
+  const slugKategori = (id: string) => kategori.find((k) => k.id === id)?.slug ?? '';
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    uid = profile?.id ?? null;
+    void muatDaftar();
+    $('faq-root').addEventListener('click', onClick);
+    $('faq-root').addEventListener('input', onInput);
+    $('faq-root').addEventListener('change', onChange);
+  });
+
+  function toast(pesan: string, ok = true) {
+    const t = $('toast');
+    t.textContent = pesan;
+    t.className = `fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg z-50 ${
+      ok ? 'bg-teal-600 text-white' : 'bg-red-600 text-white'
+    }`;
+    window.clearTimeout((toast as any)._t);
+    (toast as any)._t = window.setTimeout(() => t.classList.add('hidden'), 4000);
+  }
+
+  /** Slug aman dari teks bebas. Dipakai saat membuat FAQ baru. */
+  function keSlug(teks: string): string {
+    return teks.trim().toLowerCase().normalize('NFKD')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70);
+  }
+
+  // ─── Daftar ────────────────────────────────────────────────────────────────
+  async function muatDaftar() {
+    current = null;
+    editorView().classList.add('hidden');
+    const box = listView();
+    box.classList.remove('hidden');
+    box.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) { box.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+
+    const [kat, faq] = await Promise.all([
+      supabase.from('faq_categories').select('id, name, slug, status, sort_order').order('sort_order', { ascending: true }),
+      supabase.from('faqs').select('id, category_id, question, slug, answer, status, sort_order, updated_at').order('sort_order', { ascending: true }),
+    ]);
+
+    if (kat.error) { box.innerHTML = stateBlock('error', pesanError(kat.error)); return; }
+    if (faq.error) { box.innerHTML = stateBlock('error', pesanError(faq.error)); return; }
+
+    kategori = (kat.data ?? []) as Kategori[];
+    semua = (faq.data ?? []) as Faq[];
+    renderDaftar();
+  }
+
+  function renderDaftar() {
+    const box = listView();
+
+    if (kategori.length === 0) {
+      box.innerHTML = `<div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-6 py-12 text-center">
+        <p class="font-display text-lg font-semibold tracking-tightest">Belum ada kategori FAQ.</p>
+        <p class="mt-2 text-sm text-ink-500 dark:text-cream-300/60">FAQ selalu berada di dalam sebuah kategori. Buat kategorinya lebih dulu di tab Kategori.</p>
+      </div>`;
+      return;
+    }
+
+    const cari = filterCari.trim().toLowerCase();
+    const baris = semua.filter((f) => {
+      if (filterKategori && f.category_id !== filterKategori) return false;
+      if (!cari) return true;
+      return `${f.question} ${f.slug} ${f.answer} ${namaKategori(f.category_id)}`.toLowerCase().includes(cari);
+    });
+
+    const kartu = (f: Faq) => {
+      const aktif = f.status !== 'inactive';
+      return `
+        <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4">
+          <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60 w-8 flex-none text-right">${f.sort_order ?? 100}</span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="font-display font-semibold tracking-tightest truncate">${esc(f.question)}</p>
+              ${aktif ? '' : '<span class="rounded-full bg-ink-500/15 text-ink-500 dark:text-cream-300/60 px-2 py-0.5 text-[0.65rem] font-mono uppercase tracking-wider">nonaktif</span>'}
+            </div>
+            <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60 truncate">
+              /faq/${esc(slugKategori(f.category_id))}/${esc(f.slug)} · ${esc(namaKategori(f.category_id))} · ${esc(fmtWaktu(f.updated_at))}
+            </p>
+          </div>
+          <button type="button" class="${BTN2}" data-action="edit" data-id="${esc(f.id ?? '')}">Edit</button>
+        </div>`;
+    };
+
+    const opsi = [`<option value="">Semua kategori</option>`]
+      .concat(kategori.map((k) => `<option value="${esc(k.id)}" ${filterKategori === k.id ? 'selected' : ''}>${esc(k.name)}${k.status === 'inactive' ? ' (nonaktif)' : ''}</option>`))
+      .join('');
+
+    box.innerHTML = `
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-ink-600 dark:text-cream-200/80">${semua.length} FAQ dalam ${kategori.length} kategori.</p>
+        ${bolehEdit ? `<button type="button" class="${BTN}" data-action="tambah">+ Tambah FAQ</button>` : '<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat.</p>'}
+      </div>
+
+      <div class="mb-5 grid gap-3 sm:grid-cols-[1fr_16rem]">
+        <input id="f-cari" type="search" value="${esc(filterCari)}" placeholder="Cari pertanyaan, slug, atau isi jawaban…" class="${INPUT}" />
+        <select id="f-kategori" class="${INPUT}">${opsi}</select>
+      </div>
+
+      <div class="space-y-3">
+        ${baris.length
+          ? baris.map(kartu).join('')
+          : stateBlock('empty', semua.length ? 'Tidak ada FAQ yang cocok dengan filter ini.' : 'Belum ada FAQ. Tambahkan pertanyaan pertama.')}
+      </div>`;
+  }
+
+  // ─── Editor ────────────────────────────────────────────────────────────────
+  function bukaEditor(id: string | null) {
+    if (id) {
+      const f = semua.find((x) => x.id === id);
+      if (!f) { toast('FAQ tidak ditemukan. Muat ulang halaman.', false); return; }
+      current = { ...f };
+    } else {
+      current = {
+        id: null,
+        category_id: filterKategori || kategori[0]?.id || '',
+        question: '',
+        slug: '',
+        answer: '',
+        status: 'active',
+        sort_order: 100,
+      };
+    }
+    listView().classList.add('hidden');
+    editorView().classList.remove('hidden');
+    renderEditor();
+    window.scrollTo({ top: 0 });
+  }
+
+  function field(id: string, label: string, inner: string, hint = '') {
+    return `<div>
+      <label class="block text-sm font-medium mb-1.5" for="${id}">${esc(label)}</label>
+      ${inner}
+      ${hint ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(hint)}</p>` : ''}
+    </div>`;
+  }
+
+  function renderEditor() {
+    const f = current!;
+    const baru = !f.id;
+    const opsi = kategori
+      .map((k) => `<option value="${esc(k.id)}" ${f.category_id === k.id ? 'selected' : ''}>${esc(k.name)}${k.status === 'inactive' ? ' (nonaktif)' : ''}</option>`)
+      .join('');
+
+    editorView().innerHTML = `
+      <div class="mb-6 flex items-center justify-between gap-3">
+        <button type="button" class="${BTN2}" data-action="kembali">← Daftar FAQ</button>
+        ${!baru && bolehEdit ? `<button type="button" class="rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-2 text-sm font-medium hover:bg-red-500/10 transition-colors" data-action="hapus">Hapus FAQ</button>` : ''}
+      </div>
+
+      <h2 class="font-display text-2xl font-semibold tracking-tightest mb-6">${baru ? 'Tambah FAQ' : esc(f.question)}</h2>
+
+      <div class="space-y-5 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+        ${field('e-category', 'Kategori', `<select id="e-category" class="${INPUT}">${opsi}</select>`, 'FAQ selalu berada di dalam satu kategori. Kategori menentukan bagian pertama URL-nya.')}
+
+        ${field('e-question', 'Pertanyaan', `<input id="e-question" value="${esc(f.question)}" maxlength="200" class="${INPUT}" />`)}
+
+        ${field('e-slug', 'Slug (URL)', `<input id="e-slug" value="${esc(f.slug)}" maxlength="70" class="${INPUT}" />`,
+          baru
+            ? 'Terisi otomatis dari pertanyaan; boleh diubah. Huruf kecil, angka, dan tanda hubung.'
+            : 'Mengubah slug memindahkan alamat FAQ ini. Slug lama otomatis disimpan sebagai alias, jadi tautan yang sudah tersebar tetap sampai.')}
+
+        <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60">URL: <span id="e-url">—</span></p>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5" for="e-answer">Jawaban</label>
+          <div class="mb-2 flex flex-wrap gap-1.5">
+            <button type="button" class="${CHIP}" data-sisip="## " title="Judul bagian">Judul</button>
+            <button type="button" class="${CHIP}" data-bungkus="**" title="Tebal">Tebal</button>
+            <button type="button" class="${CHIP}" data-bungkus="*" title="Miring">Miring</button>
+            <button type="button" class="${CHIP}" data-bungkus="\`" title="Kode">Kode</button>
+            <button type="button" class="${CHIP}" data-sisip="- " title="Daftar">Daftar</button>
+            <button type="button" class="${CHIP}" data-sisip="1. " title="Daftar berurutan">Daftar 1,2,3</button>
+            <button type="button" class="${CHIP}" data-sisip="[teks](https://) " title="Tautan">Tautan</button>
+            <button type="button" class="${CHIP}" data-sisip="![keterangan](https://) " title="Gambar">Gambar</button>
+            <button type="button" class="${CHIP}" data-sisip="| Kolom | Kolom |\\n| --- | --- |\\n| Isi | Isi |\\n" title="Tabel">Tabel</button>
+            <button type="button" class="${CHIP}" data-sisip="&gt; " title="Kutipan">Kutipan</button>
+            <button type="button" class="${CHIP}" data-sisip="{{shop-table}}\\n" title="Tabel harga shop yang tersinkron otomatis">Tabel Shop</button>
+          </div>
+          <textarea id="e-answer" rows="16" class="${INPUT} font-mono leading-relaxed">${esc(f.answer)}</textarea>
+          <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">
+            Markdown ringan: judul, tebal, miring, daftar, tautan, gambar, tabel, dan blok kode.
+            <code class="font-mono">{{shop-table}}</code> diganti tabel harga shop yang tersinkron otomatis dari bot.
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm font-medium mb-1.5">Pratinjau</p>
+          <div id="e-preview" class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-5 max-w-2xl"></div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-[10rem_8rem]">
+          ${field('e-status', 'Status',
+            `<select id="e-status" class="${INPUT}">
+               <option value="active" ${f.status !== 'inactive' ? 'selected' : ''}>Aktif</option>
+               <option value="inactive" ${f.status === 'inactive' ? 'selected' : ''}>Nonaktif</option>
+             </select>`,
+            'Nonaktif = tidak terbit.')}
+          ${field('e-sort', 'Urutan', `<input id="e-sort" value="${esc(f.sort_order ?? 100)}" inputmode="numeric" class="${INPUT}" />`, 'Kecil = atas.')}
+        </div>
+
+        ${bolehEdit
+          ? `<div class="pt-2"><button type="button" class="${BTN}" data-action="simpan">${baru ? 'Buat FAQ' : 'Simpan perubahan'}</button></div>`
+          : '<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat.</p>'}
+      </div>`;
+
+    if (!bolehEdit) editorView().querySelectorAll('input,textarea,select,button[data-sisip],button[data-bungkus]').forEach((n) => ((n as any).disabled = true));
+    perbaruiPratinjau();
+    perbaruiUrl();
+  }
+
+  function perbaruiPratinjau() {
+    const ta = document.getElementById('e-answer') as HTMLTextAreaElement | null;
+    const kotak = document.getElementById('e-preview');
+    if (!ta || !kotak) return;
+    kotak.innerHTML = ta.value.trim()
+      ? renderMarkdown(ta.value)
+      : '<p class="text-sm text-ink-500 dark:text-cream-300/60">Jawaban masih kosong.</p>';
+  }
+
+  function perbaruiUrl() {
+    const el = document.getElementById('e-url');
+    if (!el) return;
+    const kat = (document.getElementById('e-category') as HTMLSelectElement)?.value ?? '';
+    const slug = (document.getElementById('e-slug') as HTMLInputElement)?.value.trim() ?? '';
+    el.textContent = slug ? `/faq/${slugKategori(kat)}/${slug}` : '—';
+  }
+
+  /** Sisipkan teks di posisi kursor textarea jawaban. */
+  function sisip(teks: string) {
+    const ta = document.getElementById('e-answer') as HTMLTextAreaElement | null;
+    if (!ta) return;
+    const awal = ta.selectionStart;
+    const akhir = ta.selectionEnd;
+    ta.value = ta.value.slice(0, awal) + teks + ta.value.slice(akhir);
+    ta.selectionStart = ta.selectionEnd = awal + teks.length;
+    ta.focus();
+    perbaruiPratinjau();
+  }
+
+  /** Bungkus teks terpilih, mis. **tebal**. */
+  function bungkus(tanda: string) {
+    const ta = document.getElementById('e-answer') as HTMLTextAreaElement | null;
+    if (!ta) return;
+    const awal = ta.selectionStart;
+    const akhir = ta.selectionEnd;
+    const pilih = ta.value.slice(awal, akhir) || 'teks';
+    ta.value = ta.value.slice(0, awal) + tanda + pilih + tanda + ta.value.slice(akhir);
+    ta.selectionStart = awal + tanda.length;
+    ta.selectionEnd = awal + tanda.length + pilih.length;
+    ta.focus();
+    perbaruiPratinjau();
+  }
+
+  function kumpulkan(): Faq | null {
+    const v = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value?.trim() ?? '';
+    const sort = Number.parseInt(v('e-sort'), 10);
+    const data: Faq = {
+      id: current?.id ?? null,
+      category_id: v('e-category'),
+      question: v('e-question'),
+      slug: v('e-slug'),
+      answer: (document.getElementById('e-answer') as HTMLTextAreaElement)?.value ?? '',
+      status: v('e-status') === 'inactive' ? 'inactive' : 'active',
+      sort_order: Number.isFinite(sort) ? sort : 100,
+    };
+
+    // Validasi. Semua wajib: FAQ tanpa kategori tidak punya URL, dan FAQ tanpa
+    // jawaban hanya akan tampil sebagai pertanyaan kosong di halaman publik.
+    if (!data.category_id) { toast('Kategori wajib dipilih.', false); return null; }
+    if (!data.question) { toast('Pertanyaan wajib diisi.', false); return null; }
+    if (!data.answer.trim()) { toast('Jawaban wajib diisi.', false); return null; }
+    if (!data.slug) { toast('Slug wajib diisi.', false); return null; }
+    if (!/^[a-z0-9-]+$/.test(data.slug)) { toast('Slug hanya boleh huruf kecil, angka, dan tanda hubung.', false); return null; }
+    return data;
+  }
+
+  async function simpan() {
+    if (!bolehEdit) return;
+    const data = kumpulkan();
+    if (!data) return;
+
+    const supabase = getSupabase()!;
+    const isi = {
+      category_id: data.category_id,
+      question: data.question,
+      slug: data.slug,
+      answer: data.answer,
+      status: data.status,
+      sort_order: data.sort_order,
+      updated_by: uid,
+    };
+
+    if (data.id) {
+      const { error } = await supabase.from('faqs').update(isi).eq('id', data.id);
+      if (error) { toast(pesanDuplikat(error), false); return; }
+      toast('Tersimpan.');
+    } else {
+      const { error } = await supabase.from('faqs').insert(isi);
+      if (error) { toast(pesanDuplikat(error), false); return; }
+      toast('FAQ dibuat.');
+    }
+    await muatDaftar();
+  }
+
+  /** Slug ganda punya pesan sendiri: itu kesalahan isi, bukan kesalahan sistem. */
+  function pesanDuplikat(error: any): string {
+    return error?.code === '23505'
+      ? 'Slug itu sudah dipakai FAQ lain di kategori yang sama. Pakai slug berbeda.'
+      : pesanError(error);
+  }
+
+  async function hapus() {
+    if (!bolehEdit || !current?.id) return;
+    if (!window.confirm(`Hapus FAQ "${current.question}"? Halaman /faq/${slugKategori(current.category_id)}/${current.slug} akan hilang, termasuk tautan yang mengarah ke sana.`)) return;
+    const supabase = getSupabase()!;
+    const { error } = await supabase.from('faqs').delete().eq('id', current.id);
+    if (error) { toast(pesanError(error), false); return; }
+    toast('FAQ dihapus.');
+    await muatDaftar();
+  }
+
+  // ─── Event ─────────────────────────────────────────────────────────────────
+  function onClick(e: Event) {
+    const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
+    if (!el) return;
+
+    if (el.dataset.sisip) { sisip(el.dataset.sisip.replace(/\\n/g, '\n')); return; }
+    if (el.dataset.bungkus) { bungkus(el.dataset.bungkus); return; }
+
+    switch (el.dataset.action) {
+      case 'tambah': bukaEditor(null); break;
+      case 'edit': bukaEditor(el.dataset.id ?? null); break;
+      case 'kembali': void muatDaftar(); break;
+      case 'simpan': void simpan(); break;
+      case 'hapus': void hapus(); break;
+    }
+  }
+
+  function onInput(e: Event) {
+    const el = e.target as HTMLElement;
+    if (el.id === 'e-answer') { perbaruiPratinjau(); return; }
+    if (el.id === 'e-slug') { perbaruiUrl(); return; }
+    // Slug FAQ baru mengikuti pertanyaan sampai admin mengetiknya sendiri.
+    // Pada FAQ yang sudah ada, slug TIDAK pernah diubah otomatis: URL-nya
+    // sudah beredar dan tidak boleh berpindah hanya karena judul disunting.
+    if (el.id === 'e-question' && current && !current.id) {
+      const slugEl = document.getElementById('e-slug') as HTMLInputElement;
+      if (slugEl && !slugEl.dataset.disentuh) {
+        slugEl.value = keSlug((el as HTMLInputElement).value);
+        perbaruiUrl();
+      }
+      return;
+    }
+    if (el.id === 'f-cari') { filterCari = (el as HTMLInputElement).value; renderDaftar(); }
+  }
+
+  function onChange(e: Event) {
+    const el = e.target as HTMLElement;
+    if (el.id === 'f-kategori') { filterKategori = (el as HTMLSelectElement).value; renderDaftar(); return; }
+    if (el.id === 'e-category') { perbaruiUrl(); return; }
+    if (el.id === 'e-slug') { (el as HTMLInputElement).dataset.disentuh = '1'; perbaruiUrl(); }
+  }
+</script>

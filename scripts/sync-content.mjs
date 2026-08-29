@@ -9,6 +9,9 @@
 //   • site-content.json  ← tabel `site_content`      (banner pengumuman)
 //   • partnership.json   ← tabel `partnership_*`     (konten & HARGA halaman
 //                                                     publik /partnership)
+//   • products.json      ← tabel `products` + media & rilis
+//   • pages.json         ← tabel `page_content`
+//   • faq.json           ← tabel `faq_categories` + `faqs` (seluruh panduan)
 //
 // Kenapa lewat build, bukan dibaca langsung di browser pengunjung?
 //   Website ini statis dan tabel-tabel itu dijaga RLS — hanya admin yang boleh
@@ -37,6 +40,7 @@ const FILE_KONTEN = path.join(DIR_SYNCED, 'site-content.json');
 const FILE_PARTNERSHIP = path.join(DIR_SYNCED, 'partnership.json');
 const FILE_PRODUCTS = path.join(DIR_SYNCED, 'products.json');
 const FILE_PAGES = path.join(DIR_SYNCED, 'pages.json');
+const FILE_FAQ = path.join(DIR_SYNCED, 'faq.json');
 
 const URL_SUPABASE = (process.env.SUPABASE_URL || '').trim().replace(/\/$/, '');
 const SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
@@ -52,6 +56,7 @@ const KOSONG_PARTNERSHIP = {
 };
 const KOSONG_PRODUCTS = { products: [] };
 const KOSONG_PAGES = { pages: {} };
+const KOSONG_FAQ = { categories: [], faqs: [] };
 
 // ─── Util berkas ────────────────────────────────────────────────────────────
 
@@ -313,6 +318,23 @@ function urlBerkas(u, storagePath, bucket) {
   return '';
 }
 
+/**
+ * Peta id → slug kategori FAQ.
+ *
+ * Produk menyimpan `faq_category_id` (uuid), sementara situs butuh slug-nya
+ * untuk membangun URL. Ditarik terpisah dan boleh gagal: pada database yang
+ * belum menjalankan schema FAQ, katalog tetap terbit, hanya tanpa pemetaan.
+ */
+async function petaKategoriFaq() {
+  try {
+    const baris = await ambil('faq_categories?select=id,slug');
+    return new Map(baris.map((c) => [c.id, String(c.slug ?? '').trim()]));
+  } catch (err) {
+    console.warn(`  ! pemetaan kategori FAQ dilewati: ${err.message}`);
+    return new Map();
+  }
+}
+
 async function syncProducts() {
   let prodRaw;
   try {
@@ -324,15 +346,17 @@ async function syncProducts() {
       ['id', 'slug', 'name', 'short_name', 'tagline', 'description', 'platform', 'status', 'category',
        'accent_color', 'icon', 'thumbnail_url', 'featured', 'verified', 'sort', 'features', 'long_intro',
        'commands', 'discord_client_id', 'discord_permissions', 'discord_scopes', 'discord_integration_type',
-       'invite_url', 'package_name', 'min_android', 'install_note', 'cta_label', 'cta_url', 'docs_slug',
+       'invite_url', 'package_name', 'min_android', 'install_note', 'cta_label', 'cta_url',
        'seo_title', 'seo_description', 'og_image_url'],
-      ['badge', 'badge_tone', 'cta_heading', 'cta_text', 'cta_note', 'faq', 'install_steps'],
+      ['badge', 'badge_tone', 'cta_heading', 'cta_text', 'cta_note', 'faq', 'install_steps', 'faq_category_id'],
       '&enabled=is.true&order=sort.asc',
     );
   } catch (err) {
     pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, err.message);
     return;
   }
+
+  const kategoriFaq = await petaKategoriFaq();
 
   // Media & rilis ditarik terpisah: bila tabelnya belum ada (schema lama),
   // katalog tetap terbit tanpa media/rilis alih-alih gagal total.
@@ -421,7 +445,9 @@ async function syncProducts() {
         ctaNote: String(p.cta_note ?? '').trim(),
         ctaLabel: String(p.cta_label ?? '').trim(),
         ctaUrl: urlAman(p.cta_url, `cta ${p.slug}`),
-        docsSlug: String(p.docs_slug ?? '').trim(),
+        // Kategori FAQ produk ini — pengganti docs_slug. Situs memakai slug-nya
+        // untuk menaut ke panduan yang relevan.
+        faqCategory: kategoriFaq.get(p.faq_category_id) ?? '',
         seoTitle: String(p.seo_title ?? '').trim(),
         seoDescription: String(p.seo_description ?? '').trim(),
         ogImage: urlBerkas(p.og_image_url, '', 'product-media'),
@@ -472,6 +498,75 @@ async function syncPages() {
   console.log(`  halaman: ${Object.keys(pages).length}`);
 }
 
+// ─── 5. FAQ terpusat (faq_categories / faqs / faq_slug_aliases) ─────────────
+//
+// Menggantikan dokumentasi per produk. Hanya baris berstatus `active` yang
+// ditarik: FAQ nonaktif memang tidak boleh tampil di situs, dan cara paling
+// aman memastikannya adalah tidak pernah menerbitkannya sama sekali.
+
+async function syncFaq() {
+  let kategoriRaw, faqRaw;
+  try {
+    [kategoriRaw, faqRaw] = await Promise.all([
+      ambil('faq_categories?select=id,name,slug,description,icon,sort_order&status=eq.active&order=sort_order.asc'),
+      ambil('faqs?select=id,category_id,question,slug,answer,sort_order,updated_at&status=eq.active&order=sort_order.asc'),
+    ]);
+  } catch (err) {
+    pertahankanYangLama(FILE_FAQ, KOSONG_FAQ, err.message);
+    return;
+  }
+
+  // Alias slug ditarik terpisah: tabelnya baru ada setelah schema FAQ
+  // dijalankan, dan ketiadaannya tidak boleh menjatuhkan seluruh FAQ.
+  let aliasRaw = [];
+  try {
+    aliasRaw = await ambil('faq_slug_aliases?select=faq_id,slug');
+  } catch (err) {
+    console.warn(`  ! alias slug FAQ dilewati: ${err.message}`);
+  }
+
+  const categories = kategoriRaw
+    .map((c) => ({
+      slug: String(c.slug ?? '').trim(),
+      name: String(c.name ?? '').trim(),
+      description: String(c.description ?? '').trim(),
+      icon: String(c.icon ?? '').trim(),
+      sortOrder: Number.isFinite(Number(c.sort_order)) ? Number(c.sort_order) : 100,
+    }))
+    .filter((c) => c.slug && c.name);
+
+  const slugKategori = new Map(kategoriRaw.map((c) => [c.id, String(c.slug ?? '').trim()]));
+
+  const aliasPerFaq = new Map();
+  for (const a of aliasRaw) {
+    const slug = String(a.slug ?? '').trim();
+    if (!slug) continue;
+    const daftar = aliasPerFaq.get(a.faq_id) ?? [];
+    daftar.push(slug);
+    aliasPerFaq.set(a.faq_id, daftar);
+  }
+
+  const faqs = faqRaw
+    .map((f) => ({
+      category: slugKategori.get(f.category_id) ?? '',
+      slug: String(f.slug ?? '').trim(),
+      question: String(f.question ?? '').trim(),
+      answer: String(f.answer ?? ''),
+      sortOrder: Number.isFinite(Number(f.sort_order)) ? Number(f.sort_order) : 100,
+      updatedAt: String(f.updated_at ?? ''),
+      // Alias yang kebetulan sama dengan slug aktif dibuang: kalau tidak,
+      // build akan mencoba membuat dua halaman dengan alamat yang sama.
+      aliases: (aliasPerFaq.get(f.id) ?? []).filter((a) => a !== String(f.slug ?? '').trim()),
+    }))
+    // FAQ pada kategori nonaktif ikut hilang: kategorinya tidak ada di
+    // `categories`, jadi menerbitkannya hanya akan menghasilkan halaman yatim.
+    .filter((f) => f.category && f.slug && f.question && f.answer.trim());
+
+  tulis(FILE_FAQ, { categories, faqs });
+  console.log('✓ faq.json diperbarui.');
+  console.log(`  kategori aktif: ${categories.length} · FAQ aktif: ${faqs.length}`);
+}
+
 // ─── Jalan ──────────────────────────────────────────────────────────────────
 
 if (!URL_SUPABASE || !SERVICE_KEY) {
@@ -480,6 +575,7 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
   pertahankanYangLama(FILE_PARTNERSHIP, KOSONG_PARTNERSHIP, alasan);
   pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, alasan);
   pertahankanYangLama(FILE_PAGES, KOSONG_PAGES, alasan);
+  pertahankanYangLama(FILE_FAQ, KOSONG_FAQ, alasan);
   process.exit(0);
 }
 
@@ -490,4 +586,5 @@ await syncSiteContent();
 await syncPartnership();
 await syncProducts();
 await syncPages();
+await syncFaq();
 process.exit(0);

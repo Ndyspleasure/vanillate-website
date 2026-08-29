@@ -1,0 +1,44 @@
+---
+// Halaman redirect untuk situs statis.
+//
+// GitHub Pages tidak bisa mengirim 301, jadi URL lama tetap dibangun sebagai
+// halaman kecil berisi meta-refresh + canonical + `location.replace`. Mesin
+// pencari membaca canonical-nya, pengunjung berpindah seketika.
+//
+// `anchorMap` menangani hal yang tidak bisa dilakukan meta-refresh: anchor
+// (#bagian) tidak pernah dikirim ke server, hanya browser yang melihatnya.
+// Jadi pemetaan anchor lama → URL baru dijalankan di klien.
+export interface Props {
+  /** Tujuan akhir. */
+  to: string;
+  /** Kalimat pada halaman, untuk pengunjung tanpa JS yang meta-refresh-nya lambat. */
+  text?: string;
+  /** Teks tautan manual. */
+  linkLabel?: string;
+  title?: string;
+  /** Anchor lama → URL tujuan yang lebih spesifik. */
+  anchorMap?: Record<string, string>;
+}
+
+const { to, text = 'Halaman ini telah dipindahkan ke', linkLabel = 'alamat barunya', title = 'Halaman dipindahkan', anchorMap } = Astro.props;
+
+const skrip = anchorMap && Object.keys(anchorMap).length > 0
+  ? `(function(){var a=${JSON.stringify(anchorMap)};var h=location.hash.replace(/^#/,'');location.replace(a[h]||${JSON.stringify(to)});})();`
+  : `location.replace(${JSON.stringify(to)});`;
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="refresh" content={`0; url=${to}`} />
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href={to} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <p>{text} <a href={to}>{linkLabel}</a>.</p>
+    <script is:inline set:html={skrip}></script>
+  </body>
+</html>

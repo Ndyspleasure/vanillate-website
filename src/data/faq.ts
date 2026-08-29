@@ -1,111 +1,237 @@
-// Pertanyaan yang sering ditanyakan, per produk.
-// Dipakai oleh komponen <FAQAccordion> di halaman /products/[slug].
-// Jawaban ditulis mengikuti konten dokumentasi (docs.ts) supaya selalu akurat.
-// Sintaks `kode` di dalam jawaban akan dirender sebagai <code> (lihat FAQAccordion).
+// ─────────────────────────────────────────────────────────────────────────────
+// FAQ TERPUSAT — SUMBER TUNGGAL SELURUH PANDUAN
+//
+// Dulu panduan tersebar di dua tempat: dokumentasi per produk (src/data/docs.ts
+// + halaman /docs/<slug>) dan daftar FAQ yang ditulis ulang di berkas ini.
+// Keduanya saling menyalin dan pelan-pelan berbeda isi. Sekarang keduanya
+// dilebur jadi satu sistem FAQ berkategori yang dikelola dari /admin/faq.
+//
+//   Supabase faq_categories + faqs
+//     → scripts/sync-content.mjs → src/data/synced/faq.json → modul ini
+//
+// TIDAK ADA isi FAQ yang ditulis di source code. Modul ini hanya membaca data
+// tersinkron dan menyediakan helper URL supaya halaman mana pun bisa menaut ke
+// FAQ yang relevan tanpa menuliskan URL-nya sendiri.
+// ─────────────────────────────────────────────────────────────────────────────
 
-export type FaqItem = { q: string; a: string };
+import faqData from './synced/faq.json';
+import { url } from '@utils/url';
+import { ringkas } from '@utils/markdown';
 
-// ═══════════════════════════════════════════════════════════════════
-// FAQ UMUM — level studio, berlaku untuk seluruh produk.
-// Dipakai di halaman /products, /docs, dan /support lewat <FAQAccordion>.
-// Pertanyaannya sengaja netral platform; contoh spesifik (mis. Discord)
-// hanya muncul di JAWABAN saat memang perlu supaya tetap akurat.
-// ═══════════════════════════════════════════════════════════════════
-export const generalFaqs: FaqItem[] = [
-  {
-    q: 'Apakah produk Vanillate bisa membantu menghidupkan komunitas yang sepi?',
-    a: 'Bisa, dan itu memang salah satu kekuatannya. Produk kami dirancang mengajak banyak anggota ikut berinteraksi sekaligus, sehingga obrolan yang tadinya sepi cepat kembali ramai. Contohnya satu sesi Vanillate Sambung Kata di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.',
-  },
-  {
-    q: 'Apakah produk Vanillate gratis?',
-    a: 'Ya. Inti setiap produk kami bisa dipakai tanpa langganan wajib. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati bagian utamanya.',
-  },
-  {
-    q: 'Bagaimana cara mulai memakai produknya?',
-    a: 'Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk: ada yang diundang ke komunitasmu, ada yang diunduh sebagai aplikasi, ada pula yang langsung dibuka lewat web. Setiap halaman produk menjelaskan langkahnya.',
-  },
-  {
-    q: 'Izin atau akses apa yang dibutuhkan?',
-    a: 'Kami hanya meminta akses yang benar-benar diperlukan agar produk berfungsi, dan tidak pernah meminta hak administratif yang tidak perlu. Untuk produk komunitas seperti Sambung Kata di Discord, izinnya sebatas mengirim pesan, menyematkan embed, membaca jawaban di channel permainan, dan mengelola komponen interaktif.',
-  },
-  {
-    q: 'Apakah progres dan data saya aman?',
-    a: 'Aman. Data tersimpan otomatis di infrastruktur kami, tidak ada penghapusan berkala, dan tidak ada data yang dijual ke pihak ketiga. Detail lengkapnya bisa kamu baca di halaman Kebijakan Privasi.',
-  },
-  {
-    q: 'Apakah progres saya terbawa antar komunitas atau perangkat?',
-    a: 'Ya. Progres, statistik, dan peringkat bersifat global per pengguna, jadi capaianmu terbawa ke mana pun kamu memakainya. Kamu juga bebas memakainya di sebanyak mungkin komunitas tanpa biaya.',
-  },
-  {
-    q: 'Produknya tidak merespons, apa yang harus dilakukan?',
-    a: 'Coba beberapa hal ini dulu. Pastikan produk punya izin yang diperlukan di tempat kamu memakainya, ulangi aksinya dari awal, lalu tunggu beberapa detik bila platformnya sedang lambat. Kalau masih bermasalah, laporkan lewat kanal support kami, dan orang yang menulis kodenya akan langsung membantu.',
-  },
-  {
-    q: 'Bagaimana cara memberi masukan atau melaporkan bug?',
-    a: 'Kirim lewat Support Center di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai. Khusus Sambung Kata, kamu juga bisa memakai command `/masukan` langsung di dalam produknya. Kami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.',
-  },
-  {
-    q: 'Seberapa sering produknya diperbarui?',
-    a: 'Rutin. Kami merilis perbaikan bug, penyempurnaan pengalaman, dan fitur baru secara berkala, sering kali setiap pekan. Bagi kami rilis adalah garis start, bukan garis finis, jadi produk terus dirawat setelah diluncurkan.',
-  },
-];
-
-export const faqs: Record<string, FaqItem[]> = {
-  // ═══════════════════════════════════════════════════════════════════
-  // SAMBUNG KATA
-  // ═══════════════════════════════════════════════════════════════════
-  'sambung-kata': [
-    {
-      q: 'Bagaimana cara mulai bermain?',
-      a: 'Undang bot ke server, lalu jalankan `/sambungkata mode:pvp` untuk buka lobby bersama teman, atau `mode:pvb` untuk melawan bot AI. Sambung kata dari huruf yang ditentukan, dan pastikan katanya ada di kamus.',
-    },
-    {
-      q: 'Bagaimana cara mendapatkan EXP?',
-      a: 'Kamu dapat +1 EXP tiap kata valid, +10 EXP menyelesaikan pertandingan, +15 EXP saat menang, dan +5 EXP jika jadi MVP. EXP masuk ke Account Level dan Class yang sedang aktif. Quest harian & mingguan juga memberi EXP tambahan.',
-    },
-    {
-      q: 'Kapan Class terbuka dan apa gunanya?',
-      a: 'Class System terbuka di Account Level 3 (butuh 500 EXP per level). Ada 9 Class yang masing-masing punya passive nyata: bonus reward, boost harian ekstra, peluang selamat dari eliminasi, damage ekstra di Dungeon, dan lainnya. Cek daftarnya dengan `/class list`.',
-    },
-    {
-      q: 'Apakah class bisa diganti?',
-      a: 'Bisa. Pemilihan class pertama gratis, dan ganti class berikutnya seharga 750 Coin lewat `/class`. Setiap class juga punya Talent Tree eksklusif yang bisa dibeli dengan Coin untuk bonus pasif tambahan.',
-    },
-    {
-      q: 'Apa itu Dungeon dan bagaimana cara masuknya?',
-      a: 'Dungeon adalah mode solo paling menantang: kamu melawan Dungeon Guardian selama 5 wave. Untuk masuk kamu butuh 🗝️ Golden Key. Jika tamat, semua reward digandakan (x2) plus drop pasti berupa Extra Life, boost acak, dan Dungeon Trophy.',
-    },
-    {
-      q: 'Bagaimana cara mendapatkan Golden Key?',
-      a: 'Ada 3 cara: beli langsung 350 Coin di `/shop`, selesaikan weekly quest ⚡ Kilat Kata (20 jawaban ≤5 detik), atau beli dengan harga diskon (250 Coin) saat Traveling Merchant muncul. Kamu maksimal memegang 1 kunci.',
-    },
-    {
-      q: 'Apa itu Boost dan bagaimana mendapatkannya?',
-      a: 'Boost adalah item bantu main. Pre-Match Boost (Extra Life, Shield, Extra Time) diaktifkan sebelum game; In-Game Boost (Hint, Reroll) dipakai saat bermain. Dapatkan dari `/claim` (gratis tiap 24 jam), `/shop`, Mystery Box, atau reward quest.',
-    },
-    {
-      q: 'Event spesial apa saja yang bisa muncul saat main PvP?',
-      a: 'Ada 4 event yang muncul acak di ronde 20 sampai 30 pada mode PvP, yaitu 🤖 AI Challenger (boss bersama, kalahkan untuk reward ×2), 📡 Lost Signal (kumpulkan 5 fragmen), 🧳 Traveling Merchant (toko dadakan item langka, aktif 5 menit), dan 🗡️ Penjajah atau Invader (boss event Hari Kemerdekaan 17 Agustus). Saat intro event timer dibekukan, jadi kamu sempat menyusun strategi. Detail tiap event ada di dokumentasi Vanillate Sambung Kata bagian Event Spesial PvP.',
-    },
-    {
-      q: 'Apa itu event Penjajah (Invader)?',
-      a: 'Penjajah adalah event spesial musiman untuk memperingati Hari Kemerdekaan Indonesia (17 Agustus). Boss "Penjajah" menekan pemain lewat 3 mekanik paralel: Steal (merampas kata), Block (menahan input ~10 detik), dan Challenge (soal kuis kemerdekaan pilihan ganda). Jawab benar ≥3 kali untuk mengusirnya dan dapat reward ×2. Kalau salah ≥2 kali, event gagal (hard-fail) dan match berakhir tanpa reward.',
-    },
-    {
-      q: 'Seberapa besar kamusnya, dan bagaimana kata dinilai?',
-      a: 'Kamusnya berisi 25.000+ kata Bahasa Indonesia dengan validasi otomatis. Kata harus diawali huruf yang ditentukan, ada di kamus, minimal 2 huruf, dan belum pernah dipakai di ronde itu. Kamu bisa mengecek sebuah kata dengan `/kamus [kata]`.',
-    },
-    {
-      q: 'Bisa main di berapa server?',
-      a: 'Tidak terbatas. Progress, statistik, dan leaderboard bersifat global per pemain, jadi capaianmu terbawa ke server mana pun kamu bermain.',
-    },
-    {
-      q: 'Apakah quest reset? Kapan?',
-      a: 'Ya. Ada 4 Daily Quest yang reset tiap tengah malam dan 6 Weekly Quest yang reset setiap Senin. Menyelesaikan semuanya memberi Bonus Chest berisi Coin dan Mystery Box.',
-    },
-    {
-      q: 'Apakah progresku bisa hilang?',
-      a: 'Tidak. Semua progres tersimpan otomatis di server dan tidak ada wipe berkala. Statistikmu, Class, dan inventory tetap aman.',
-    },
-  ],
+export type FaqCategory = {
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  sortOrder: number;
 };
+
+export type FaqEntry = {
+  category: string;      // slug kategori
+  slug: string;
+  question: string;
+  answer: string;        // Markdown, dirender lewat @utils/markdown
+  sortOrder: number;
+  updatedAt: string;
+  /** Slug lama yang masih dipakai tautan di luar sana. */
+  aliases: string[];
+};
+
+/** Bentuk item untuk <FAQAccordion>. Dipertahankan supaya pemanggil lama utuh. */
+export type FaqItem = { q: string; a: string; href?: string };
+
+type RawData = { categories?: unknown[]; faqs?: unknown[] };
+
+const mentah = faqData as RawData;
+
+function teks(v: unknown): string {
+  return typeof v === 'string' ? v.trim() : '';
+}
+function angka(v: unknown, bawaan = 100): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : bawaan;
+}
+
+// ─── Kategori ────────────────────────────────────────────────────────────────
+export const faqCategories: FaqCategory[] = (mentah.categories ?? [])
+  .map((c: any) => ({
+    slug: teks(c?.slug),
+    name: teks(c?.name) || teks(c?.slug),
+    description: teks(c?.description),
+    icon: teks(c?.icon) || 'circle-help',
+    sortOrder: angka(c?.sortOrder),
+  }))
+  .filter((c) => c.slug)
+  .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'id'));
+
+const kategoriPerSlug = new Map(faqCategories.map((c) => [c.slug, c]));
+
+// ─── Pertanyaan ──────────────────────────────────────────────────────────────
+// FAQ yang menunjuk kategori tidak dikenal dibuang: kategori nonaktif tidak
+// ikut tersinkron, dan menampilkan pertanyaannya berarti membocorkan konten
+// yang sengaja disembunyikan admin.
+export const faqs: FaqEntry[] = (mentah.faqs ?? [])
+  .map((f: any) => ({
+    category: teks(f?.category),
+    slug: teks(f?.slug),
+    question: teks(f?.question),
+    answer: typeof f?.answer === 'string' ? f.answer : '',
+    sortOrder: angka(f?.sortOrder),
+    updatedAt: teks(f?.updatedAt),
+    aliases: Array.isArray(f?.aliases) ? f.aliases.map(teks).filter(Boolean) : [],
+  }))
+  .filter((f) => f.slug && f.question && f.answer && kategoriPerSlug.has(f.category))
+  .sort((a, b) => a.sortOrder - b.sortOrder || a.question.localeCompare(b.question, 'id'));
+
+const faqPerKunci = new Map(faqs.map((f) => [`${f.category}/${f.slug}`, f]));
+
+// ─── Query ───────────────────────────────────────────────────────────────────
+
+/** FAQ dalam satu kategori, sudah terurut. */
+export function faqsByCategory(categorySlug: string): FaqEntry[] {
+  return faqs.filter((f) => f.category === categorySlug);
+}
+
+/** Jumlah FAQ per kategori — dipakai daftar kategori di halaman /faq. */
+export function faqCount(categorySlug: string): number {
+  return faqsByCategory(categorySlug).length;
+}
+
+export function getFaqCategory(slug: string): FaqCategory | undefined {
+  return kategoriPerSlug.get(slug);
+}
+
+/** Satu FAQ berdasarkan kategori + slug. */
+export function getFaq(categorySlug: string, faqSlug: string): FaqEntry | undefined {
+  return faqPerKunci.get(`${categorySlug}/${faqSlug}`);
+}
+
+/**
+ * Cari FAQ dari referensi bebas. Menerima "kategori/slug" atau slug saja
+ * (dipakai <FAQLink faq="cara-melakukan-order" />). Slug tanpa kategori dicari
+ * di seluruh FAQ, jadi halaman pemanggil tidak perlu tahu kategorinya.
+ */
+export function findFaq(ref: string): FaqEntry | undefined {
+  const r = teks(ref).replace(/^\/+|\/+$/g, '');
+  if (!r) return undefined;
+  if (r.includes('/')) return faqPerKunci.get(r);
+  return faqs.find((f) => f.slug === r);
+}
+
+/** Kategori yang dipetakan ke sebuah produk (products.faq_category_id). */
+export function faqCategoryFor(categorySlug: string | undefined | null): FaqCategory | undefined {
+  const s = teks(categorySlug);
+  return s ? kategoriPerSlug.get(s) : undefined;
+}
+
+/** Kategori yang berisi FAQ. Kategori kosong tidak perlu ditawarkan ke pembaca. */
+export const populatedFaqCategories: FaqCategory[] = faqCategories.filter((c) => faqCount(c.slug) > 0);
+
+// ─── URL ─────────────────────────────────────────────────────────────────────
+//
+// SATU tempat yang tahu bentuk URL FAQ. Halaman lain memanggil helper ini,
+// bukan menyusun string sendiri, supaya struktur rute bisa berubah tanpa
+// berburu URL yang tertanam di seluruh situs.
+
+// Ada DUA bentuk untuk tiap tautan, dan itu disengaja:
+//   • …Path() → path apa adanya, untuk komponen yang sudah memanggil url()
+//     sendiri (mis. <Button>). Memberi URL ber-base ke sana akan menempelkan
+//     base dua kali begitu situs kembali dipasang di sub-path.
+//   • …Url()  → sudah lewat url(), untuk <a href> biasa.
+
+/** Path halaman utama FAQ (tanpa base). */
+export function faqIndexPath(): string {
+  return '/faq';
+}
+
+/** Path sebuah kategori (tanpa base). */
+export function faqCategoryPath(categorySlug: string): string {
+  return `/faq/${categorySlug}`;
+}
+
+/** Path sebuah FAQ (tanpa base). */
+export function faqPath(categorySlug: string, faqSlug: string): string {
+  return `/faq/${categorySlug}/${faqSlug}`;
+}
+
+/** URL halaman utama FAQ. */
+export function faqIndexUrl(): string {
+  return url(faqIndexPath());
+}
+
+/** URL sebuah kategori: /faq/<kategori>. */
+export function faqCategoryUrl(categorySlug: string): string {
+  return url(faqCategoryPath(categorySlug));
+}
+
+/** URL sebuah FAQ: /faq/<kategori>/<slug>. */
+export function faqUrl(categorySlug: string, faqSlug: string): string {
+  return url(faqPath(categorySlug, faqSlug));
+}
+
+/**
+ * URL dari referensi bebas, dengan jaring pengaman.
+ *
+ * Bila FAQ yang dituju tidak ada (mis. slug-nya diganti admin dan alias belum
+ * dibuat), pemanggil TIDAK dibiarkan menghasilkan tautan mati: fungsi ini
+ * jatuh ke halaman kategori, lalu ke /faq. Lebih baik mendarat satu tingkat
+ * lebih umum daripada mendarat di 404.
+ */
+export function resolveFaqUrl(ref: string, fallbackCategory?: string): string {
+  const faq = findFaq(ref);
+  if (faq) return faqUrl(faq.category, faq.slug);
+  const kategori = teks(fallbackCategory) || (ref.includes('/') ? ref.split('/')[0] : '');
+  if (kategori && kategoriPerSlug.has(kategori)) return faqCategoryUrl(kategori);
+  return faqIndexUrl();
+}
+
+// ─── Bentuk turunan ──────────────────────────────────────────────────────────
+
+/** FAQ satu kategori sebagai item akordeon (dipakai halaman produk & support). */
+export function faqItems(categorySlug: string, limit?: number): FaqItem[] {
+  const daftar = faqsByCategory(categorySlug);
+  return (limit ? daftar.slice(0, limit) : daftar).map((f) => ({
+    q: f.question,
+    a: f.answer,
+    href: faqUrl(f.category, f.slug),
+  }));
+}
+
+/**
+ * FAQ dari beberapa kategori sekaligus, dalam bentuk item akordeon.
+ *
+ * Dipakai halaman yang menampilkan FAQ umum (katalog produk, support): mereka
+ * menyebut kategori mana yang relevan, bukan menulis ulang pertanyaannya.
+ */
+export function faqItemsFrom(categorySlugs: string[], limit?: number): FaqItem[] {
+  const daftar = categorySlugs.flatMap((slug) => faqItems(slug));
+  return limit ? daftar.slice(0, limit) : daftar;
+}
+
+/**
+ * Indeks pencarian yang ditanam ke halaman /faq. Dibuat saat build supaya
+ * pencarian berjalan tanpa permintaan jaringan sama sekali — situsnya statis.
+ */
+export type FaqSearchRow = {
+  q: string;      // pertanyaan
+  c: string;      // nama kategori
+  cs: string;     // slug kategori
+  s: string;      // ringkasan jawaban
+  t: string;      // teks pencarian (huruf kecil)
+  u: string;      // URL
+};
+
+export function faqSearchIndex(): FaqSearchRow[] {
+  return faqs.map((f) => {
+    const kategori = kategoriPerSlug.get(f.category);
+    const ringkasan = ringkas(f.answer, 150);
+    return {
+      q: f.question,
+      c: kategori?.name ?? f.category,
+      cs: f.category,
+      s: ringkasan,
+      t: `${f.question} ${kategori?.name ?? ''} ${ringkas(f.answer, 600)}`.toLowerCase(),
+      u: faqUrl(f.category, f.slug),
+    };
+  });
+}

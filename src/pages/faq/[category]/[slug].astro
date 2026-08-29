@@ -1,0 +1,172 @@
+---
+// HALAMAN DETAIL FAQ — /faq/<kategori>/<slug>
+//
+// Inilah URL stabil yang ditautkan dari halaman lain. Selain jawaban lengkap,
+// halaman ini menyediakan breadcrumb, FAQ lain di kategori yang sama, dan jalan
+// kembali ke kategori — supaya pembaca yang mendarat langsung dari deep link
+// tidak merasa terdampar.
+//
+// Slug lama sebuah FAQ (kolom faq_slug_aliases di database) ikut dibangun di
+// sini sebagai halaman redirect, jadi tautan yang sudah tersebar tidak mati
+// hanya karena admin mengganti slug.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Icon from '@components/Icon.astro';
+import RedirectStub from '@components/RedirectStub.astro';
+import { site } from '@data/site';
+import { faqCategories, faqCategoryUrl, faqIndexUrl, faqUrl, faqs, faqsByCategory, getFaqCategory } from '@data/faq';
+import type { FaqCategory, FaqEntry } from '@data/faq';
+import type { IconName } from '@data/icons';
+import { renderMarkdown, ringkas } from '@utils/markdown';
+import { url } from '@utils/url';
+
+export function getStaticPaths() {
+  const halaman: any[] = [];
+
+  for (const f of faqs) {
+    const kategori = getFaqCategory(f.category)!;
+    halaman.push({
+      params: { category: f.category, slug: f.slug },
+      props: {
+        faq: f,
+        kategori,
+        terkait: faqsByCategory(f.category).filter((x) => x.slug !== f.slug).slice(0, 5),
+        redirectTo: null,
+      },
+    });
+
+    // Slug lama → redirect ke slug yang berlaku sekarang.
+    for (const alias of f.aliases) {
+      if (alias === f.slug) continue;
+      halaman.push({
+        params: { category: f.category, slug: alias },
+        props: { faq: f, kategori, terkait: [], redirectTo: faqUrl(f.category, f.slug) },
+      });
+    }
+  }
+
+  return halaman;
+}
+
+interface Props {
+  faq: FaqEntry;
+  kategori: FaqCategory;
+  terkait: FaqEntry[];
+  redirectTo: string | null;
+}
+
+const { faq, kategori, terkait, redirectTo } = Astro.props as Props;
+
+const isi = renderMarkdown(faq.answer);
+const deskripsi = ringkas(faq.answer, 155);
+
+// Kategori lain, untuk pembaca yang ternyata salah kamar.
+const kategoriLain = faqCategories.filter((c) => c.slug !== kategori.slug).slice(0, 4);
+
+const diperbarui = faq.updatedAt
+  ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeZone: 'Asia/Jakarta' }).format(new Date(faq.updatedAt))
+  : '';
+---
+
+{redirectTo ? (
+  <RedirectStub
+    to={redirectTo}
+    title="Pindah ke FAQ"
+    text="FAQ ini kini berada di"
+    linkLabel={faq.question}
+  />
+) : (
+  <BaseLayout title={faq.question} description={deskripsi}>
+    <div class="container-page pt-16 md:pt-24 pb-24">
+      <div class="grid gap-10 lg:grid-cols-[1fr_260px]">
+        <article class="max-w-3xl min-w-0">
+          <!-- Breadcrumb -->
+          <nav aria-label="Breadcrumb" class="mb-8 flex flex-wrap items-center gap-2 text-sm text-ink-500 dark:text-cream-300/60">
+            <a href={faqIndexUrl()} class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">FAQ</a>
+            <span aria-hidden="true">/</span>
+            <a href={faqCategoryUrl(kategori.slug)} class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{kategori.name}</a>
+          </nav>
+
+          <div class="flex items-center gap-3 mb-4">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400" aria-hidden="true">
+              <Icon name={kategori.icon as IconName} class="h-5 w-5" />
+            </span>
+            <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">{kategori.name}</p>
+          </div>
+
+          <h1 class="font-display font-semibold tracking-tightest text-3xl md:text-4xl leading-tight mb-8">
+            {faq.question}
+          </h1>
+
+          <div class="faq-isi" set:html={isi} />
+
+          {diperbarui && (
+            <p class="mt-10 pt-6 border-t border-ink-900/10 dark:border-cream-100/10 font-mono text-xs text-ink-500 dark:text-cream-300/60">
+              Diperbarui {diperbarui}
+            </p>
+          )}
+
+          <!-- Bantuan lanjutan -->
+          <section class="mt-10">
+            <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-6 md:p-8">
+              <h2 class="font-display text-xl font-semibold tracking-tightest mb-2">Belum terjawab?</h2>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">
+                Ceritakan kendalamu lewat Support Center, atau tanya langsung ke orang yang menulis kodenya di server Discord kami.
+              </p>
+              <div class="flex flex-wrap gap-3">
+                <a href={url('/support')} class="inline-flex items-center gap-2 rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-5 py-2.5 text-sm font-medium hover:-translate-y-0.5 transition-transform">
+                  Buka Support Center
+                </a>
+                <a href={site.links.discordSupport} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm text-ink-700 dark:text-cream-200 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+                  Gabung Discord Support
+                </a>
+              </div>
+            </div>
+          </section>
+        </article>
+
+        <!-- FAQ lainnya di kategori yang sama -->
+        <aside class="lg:sticky lg:top-24 lg:self-start">
+          <a href={faqCategoryUrl(kategori.slug)} class="inline-flex items-center gap-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 mb-6 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Semua FAQ {kategori.name}
+          </a>
+
+          {terkait.length > 0 && (
+            <div class="mb-8">
+              <p class="eyebrow mb-3">FAQ Lainnya</p>
+              <ul class="space-y-1">
+                {terkait.map((t) => (
+                  <li>
+                    <a href={faqUrl(t.category, t.slug)} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                      {t.question}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {kategoriLain.length > 0 && (
+            <div>
+              <p class="eyebrow mb-3">Kategori Lain</p>
+              <ul class="space-y-1">
+                {kategoriLain.map((c) => (
+                  <li>
+                    <a href={faqCategoryUrl(c.slug)} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                      {c.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <a href={faqIndexUrl()} class="mt-8 inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors">
+            Cari FAQ lain
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+        </aside>
+      </div>
+    </div>
+  </BaseLayout>
+)}

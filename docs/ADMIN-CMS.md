@@ -369,6 +369,8 @@ pemeriksaan jalan ada di tab Actions.
 |---|---|
 | `supabase/schema.sql` | Skema tabel, fungsi, dan seluruh aturan RLS |
 | `supabase/seed-demo.sql` | Data contoh untuk mencoba panel sebelum bot tersambung |
+| `supabase/seed-faq.sql` | Isi awal FAQ (hasil migrasi dokumentasi lama) — **digenerate** |
+| `scripts/faq-seed-data.mjs` | Sumber isi awal FAQ; `scripts/build-faq-seed.mjs` yang menuliskannya |
 | `src/lib/supabase.ts` | Inisialisasi klien Supabase |
 | `src/lib/admin-auth.ts` | Login, guard sesi, profil admin |
 | `src/lib/admin-ui.ts` | Escaping & blok status tampilan |
@@ -380,6 +382,9 @@ pemeriksaan jalan ada di tab Actions.
 | `src/pages/admin/games.astro` | **Monitor game** live (akhiri game mode klasik) |
 | `src/pages/admin/promo.astro` | **Manajemen promo** (daftar + analitik + nyalakan/matikan) |
 | `src/pages/admin/kata.astro` | **Moderasi kata** (terima/tolak usulan Word Collection) |
+| `src/pages/admin/faq/index.astro` | **FAQ** — tulis & kelola seluruh panduan |
+| `src/pages/admin/faq/categories.astro` | **Kategori FAQ** — struktur panduan |
+| `src/utils/markdown.ts` | Renderer jawaban FAQ (dipakai situs publik & pratinjau CMS) |
 | `scripts/sync-content.mjs` | Menarik konten Supabase saat build |
 | `.github/workflows/sync-content.yml` | Penjadwalan sync konten |
 
@@ -845,8 +850,153 @@ Tipe field yang didukung: `text`, `textarea`, `list` (satu item per baris), dan
 ### Struktur menu panel
 
 Sidebar admin dikelompokkan per bidang kerja supaya tetap terbaca saat halaman
-bertambah: **Ringkasan**, **Konten** (Konten Halaman, Pengumuman), **Produk**
-(Katalog Produk), **Operasional Bot** (Kontrol, Operasi, Monitor Game, Promo,
-Moderasi Kata), **Partnership**, dan **Data & Laporan** (Statistik, Log, Server,
-Pemain). Grup berisi halaman yang sedang dibuka otomatis terbuka; pilihan
+bertambah: **Ringkasan**, **Konten** (Konten Halaman, Pengumuman), **FAQ & Panduan**
+(Pertanyaan, Kategori), **Produk** (Katalog Produk), **Operasional Bot** (Kontrol,
+Operasi, Monitor Game, Promo, Moderasi Kata), **Partnership**, dan **Data & Laporan**
+(Statistik, Log, Server, Pemain). Grup berisi halaman yang sedang dibuka otomatis terbuka; pilihan
 buka-tutup lainnya diingat per browser.
+
+---
+
+## 17. FAQ Terpusat (panduan seluruh produk)
+
+Sebelumnya setiap produk punya dokumentasinya sendiri: konten ditulis di
+`src/data/docs.ts` dan tampil di `/docs/<slug>`, sementara daftar FAQ ditulis
+lagi di `src/data/faq.ts`. Dua tempat, konten saling menyalin, dan pelan-pelan
+isinya berbeda — angka EXP di dokumentasi sempat tidak cocok dengan angka di
+FAQ-nya sendiri.
+
+Sekarang keduanya dilebur menjadi **satu sistem FAQ berkategori yang dikelola
+dari CMS**. Tidak ada lagi panduan yang ditulis di source code.
+
+### Bentuknya
+
+```
+FAQ
+├── Vanillate Sambung Kata      ← kategori yang dipetakan ke produk
+│   ├── Bagaimana cara bermain?
+│   ├── Apa itu Dungeon Mode?
+│   └── …
+├── Umum & Produk               ← kategori umum, tidak terikat produk
+├── Akun & Data
+└── Bantuan & Troubleshooting
+```
+
+Satu FAQ = satu halaman publik dengan URL sendiri:
+
+```
+/faq                                    pusat panduan + pencarian
+/faq/sambung-kata                       daftar FAQ satu kategori
+/faq/sambung-kata/cara-bermain          jawaban lengkap (target deep link)
+```
+
+### Alur data
+
+```
+   Admin menulis di /admin/faq
+              │
+              ▼
+   Supabase: faq_categories + faqs (+ faq_slug_aliases)
+              │
+              │  GitHub Actions (sync-content.yml), tiap 15 menit + manual
+              ▼
+   src/data/synced/faq.json  ─── di-commit bila berubah
+              │
+              ▼
+   Build: halaman /faq, /faq/<kategori>, /faq/<kategori>/<slug>
+```
+
+Sama seperti konten lain, perubahan **tidak langsung tampil** — lihat bagian 6
+untuk perkiraan waktu dan cara menerbitkan segera.
+
+### Tabel (bagian 15 schema)
+
+| Tabel | Isi |
+|---|---|
+| `faq_categories` | `name`, `slug`, `description`, `icon`, `status`, `sort_order` |
+| `faqs` | `category_id`, `question`, `slug`, `answer`, `status`, `sort_order` |
+| `faq_slug_aliases` | Slug lama sebuah FAQ, untuk menjaga tautan yang sudah tersebar |
+
+Relasi `faqs.category_id` memakai **`on delete restrict`**: menghapus kategori
+tidak boleh diam-diam membuang seluruh panduan di dalamnya. Panel menampilkan
+jumlah FAQ per kategori dan meminta isinya dipindahkan/dihapus lebih dulu.
+
+Produk menunjuk kategorinya lewat `products.faq_category_id` (diisi dari
+**/admin/produk** → *Kategori FAQ*). Kolom lama `products.docs_slug` **tidak
+lagi dibaca situs**; ia dipertahankan sementara agar data lama tidak hilang.
+
+### Menulis jawaban
+
+Jawaban memakai **Markdown ringan** dengan pratinjau langsung di panel — dan
+pratinjaunya memakai renderer yang sama persis dengan situs publik
+(`src/utils/markdown.ts`), jadi yang terlihat memang yang akan terbit.
+
+Didukung: judul (`##`, `###`), paragraf, **tebal**, *miring*, `kode`, daftar
+berurutan & tidak berurutan, tautan, gambar, tabel, blok kode, dan kutipan.
+HTML mentah **tidak** diizinkan: seluruh masukan di-escape lebih dulu, dan hanya
+tautan `http(s)`, path internal, serta `mailto:` yang boleh menjadi `href`.
+
+Satu token khusus tersedia:
+
+```
+{{shop-table}}     → tabel harga shop yang tersinkron otomatis dari repo bot
+```
+
+Token ini ada supaya harga tidak perlu disalin ulang setiap kali berubah di
+dalam game — angkanya tetap mengikuti `src/data/synced/shop.json`.
+
+### Status, urutan, dan validasi
+
+* **Status** `active`/`inactive`. FAQ nonaktif tidak ikut ditarik saat sync,
+  jadi ia tidak pernah sampai ke situs publik — bukan sekadar disembunyikan CSS.
+  Kategori nonaktif menyembunyikan seluruh isinya.
+* **Urutan** (`sort_order`, kecil = atas) menentukan urutan tampil, jadi tidak
+  bergantung pada tanggal atau ID.
+* **Wajib diisi**: kategori, pertanyaan, jawaban, dan slug. Slug harus unik
+  **per kategori** (URL sudah memuat kategori, jadi dua kategori boleh punya
+  slug yang sama).
+
+### URL tetap hidup
+
+Tiga lapis penjagaan supaya tautan panduan tidak berujung 404:
+
+1. **Slug diganti di CMS** → slug lama otomatis tersimpan sebagai alias
+   (trigger `faqs_remember_slug`), dan alias itu dibangun sebagai halaman
+   redirect ke slug baru.
+2. **URL dokumentasi lama** → `/docs` dan `/docs/<slug>` tetap dibangun sebagai
+   stub redirect ke FAQ, lengkap dengan pemetaan anchor section lama
+   (mis. `/docs/sambung-kata#event-spesial`).
+3. **Tautan dari halaman lain** → dibangun lewat helper (`<FAQLink>`,
+   `faqUrl()`, `resolveFaqUrl()`), yang jatuh ke halaman kategori lalu ke `/faq`
+   bila FAQ yang dirujuk tidak ditemukan.
+
+### Menautkan panduan dari halaman mana pun
+
+```astro
+<FAQLink faq="cara-melakukan-order" />                 <!-- deep link -->
+<FAQLink category="sambung-kata" variant="button" />   <!-- halaman kategori -->
+```
+
+Jangan menulis URL FAQ langsung di halaman: satu-satunya tempat yang tahu bentuk
+URL FAQ adalah `src/data/faq.ts`, supaya struktur rute bisa berubah tanpa
+berburu alamat yang tertanam di seluruh situs.
+
+### Isi awal & migrasi
+
+Konten hasil migrasi dokumentasi lama tersimpan di `scripts/faq-seed-data.mjs`.
+Jalankan sekali:
+
+```bash
+node scripts/build-faq-seed.mjs   # menulis supabase/seed-faq.sql + snapshot faq.json
+```
+
+lalu jalankan `supabase/seed-faq.sql` di Supabase SQL Editor **setelah**
+`supabase/schema.sql`. Seed-nya idempoten dan tidak menimpa baris yang slug-nya
+sudah ada, jadi penyuntingan yang sudah dilakukan admin tetap aman.
+
+### Izin
+
+Mengikuti pola modul CMS lain: **owner/admin** boleh membuat, mengubah, dan
+menghapus; **viewer** hanya melihat (form dinonaktifkan di panel, dan RLS yang
+menolak di database). Setiap perubahan mencatat `updated_by` dan `updated_at`,
+sama seperti tabel konten lainnya.
