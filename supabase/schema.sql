@@ -1232,7 +1232,6 @@ create table if not exists public.products (
   -- CTA & tautan umum
   cta_label     text,
   cta_url       text,
-  docs_slug     text,
   -- SEO khusus
   seo_title       text,
   seo_description text,
@@ -1345,7 +1344,7 @@ create policy "editor kelola product-apk" on storage.objects
 insert into public.products
   (slug, name, short_name, tagline, description, platform, status, category, accent_color, icon,
    featured, verified, sort, discord_client_id, discord_permissions, discord_integration_type,
-   docs_slug, seo_title, seo_description)
+   seo_title, seo_description)
 values
   ('sambung-kata',
    'Vanillate Sambung Kata',
@@ -1354,7 +1353,6 @@ values
    'Permainan kata klasik Indonesia yang dibangun ulang untuk Discord. Sambung kata bareng teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 25.000+ kata memastikan setiap jawaban dinilai adil. Karena semua pemain ikut mengetik jawaban, satu ronde saja sudah cukup untuk membangunkan obrolan server yang mulai sepi.',
    'discord', 'live', 'Word Game', '#E8B84A', 'sparkles',
    true, true, 10, '1513806760622817320', '876173413440', '0',
-   'sambung-kata',
    'Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord',
    'Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.')
 on conflict (slug) do nothing;
@@ -1541,8 +1539,11 @@ comment on column public.products.faq_category_id is
 create index if not exists products_faq_category_idx
   on public.products(faq_category_id)
   where faq_category_id is not null;
-comment on column public.products.docs_slug is
-  'USANG sejak FAQ terpusat. Tidak lagi dibaca situs — dipertahankan sementara agar data lama tidak hilang. Pakai faq_category_id.';
+-- Peninggalan sistem dokumentasi per produk. Sudah digantikan sepenuhnya oleh
+-- faq_category_id, dan dihapus setelah dipastikan tidak ada view, constraint,
+-- index, fungsi, maupun repo bot yang membacanya. `if exists` membuat baris ini
+-- aman dijalankan di database yang memang belum pernah punya kolom itu.
+alter table public.products drop column if exists docs_slug;
 
 -- 15e. Jaga `updated_at` selalu benar walau baris disunting dari mana pun.
 create or replace function public.touch_faq_updated_at()
