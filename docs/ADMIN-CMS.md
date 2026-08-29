@@ -922,8 +922,9 @@ tidak boleh diam-diam membuang seluruh panduan di dalamnya. Panel menampilkan
 jumlah FAQ per kategori dan meminta isinya dipindahkan/dihapus lebih dulu.
 
 Produk menunjuk kategorinya lewat `products.faq_category_id` (diisi dari
-**/admin/produk** → *Kategori FAQ*). Kolom lama `products.docs_slug` **tidak
-lagi dibaca situs**; ia dipertahankan sementara agar data lama tidak hilang.
+**/admin/produk** → *Kategori FAQ*). Kolom lama `products.docs_slug` sudah
+**dihapus** (migration `drop_products_docs_slug`) setelah dipastikan tidak ada
+view, constraint, index, fungsi, maupun repo bot yang membacanya.
 
 ### Menulis jawaban
 
