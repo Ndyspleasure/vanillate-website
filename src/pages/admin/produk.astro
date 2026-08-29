@@ -55,7 +55,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   let current: any = null; // produk yang sedang diedit (null di tampilan daftar)
   // Kategori FAQ untuk dropdown "Panduan produk". Sejak dokumentasi per produk
   // dihapus, inilah yang menentukan ke mana tombol "Lihat Panduan" mengarah.
-  let kategoriFaq: { id: string; name: string; status: string }[] = [];
+  let kategoriFaq: { id: string; name: string; enabled: boolean }[] = [];
 
   const $ = (id: string) => document.getElementById(id)!;
   const listView = () => $('list-view');
@@ -113,7 +113,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     // Kategori FAQ ditarik terpisah dan boleh gagal: pada database yang belum
     // menjalankan schema FAQ, katalog produk tetap bisa dikelola.
-    const kat = await supabase.from('faq_categories').select('id, name, status').order('sort_order', { ascending: true });
+    const kat = await supabase.from('faq_categories').select('id, name, enabled').order('sort', { ascending: true });
     kategoriFaq = kat.error ? [] : ((kat.data ?? []) as any[]);
 
     const rows = data ?? [];
@@ -258,7 +258,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           ${field('f-faq_category_id', 'Kategori FAQ (panduan)',
             sel('f-faq_category_id', p.faq_category_id || '', [
               ['', kategoriFaq.length ? '— tanpa panduan —' : '— belum ada kategori FAQ —'],
-              ...kategoriFaq.map((k) => [k.id, k.status === 'inactive' ? `${k.name} (nonaktif)` : k.name]),
+              ...kategoriFaq.map((k) => [k.id, k.enabled === false ? `${k.name} (nonaktif)` : k.name]),
             ]),
             'Menentukan tujuan tombol "Lihat Panduan" dan FAQ yang tampil di halaman produk. Kelola isinya di menu FAQ.')}
         </div>

@@ -500,16 +500,16 @@ async function syncPages() {
 
 // ─── 5. FAQ terpusat (faq_categories / faqs / faq_slug_aliases) ─────────────
 //
-// Menggantikan dokumentasi per produk. Hanya baris berstatus `active` yang
-// ditarik: FAQ nonaktif memang tidak boleh tampil di situs, dan cara paling
-// aman memastikannya adalah tidak pernah menerbitkannya sama sekali.
+// Menggantikan dokumentasi per produk. Hanya baris `enabled` yang ditarik:
+// FAQ nonaktif memang tidak boleh tampil di situs, dan cara paling aman
+// memastikannya adalah tidak pernah menerbitkannya sama sekali.
 
 async function syncFaq() {
   let kategoriRaw, faqRaw;
   try {
     [kategoriRaw, faqRaw] = await Promise.all([
-      ambil('faq_categories?select=id,name,slug,description,icon,sort_order&status=eq.active&order=sort_order.asc'),
-      ambil('faqs?select=id,category_id,question,slug,answer,sort_order,updated_at&status=eq.active&order=sort_order.asc'),
+      ambil('faq_categories?select=id,name,slug,description,icon,sort&enabled=is.true&order=sort.asc'),
+      ambil('faqs?select=id,category_id,question,slug,answer,sort,updated_at&enabled=is.true&order=sort.asc'),
     ]);
   } catch (err) {
     pertahankanYangLama(FILE_FAQ, KOSONG_FAQ, err.message);
@@ -531,7 +531,7 @@ async function syncFaq() {
       name: String(c.name ?? '').trim(),
       description: String(c.description ?? '').trim(),
       icon: String(c.icon ?? '').trim(),
-      sortOrder: Number.isFinite(Number(c.sort_order)) ? Number(c.sort_order) : 100,
+      sortOrder: Number.isFinite(Number(c.sort)) ? Number(c.sort) : 100,
     }))
     .filter((c) => c.slug && c.name);
 
@@ -552,7 +552,7 @@ async function syncFaq() {
       slug: String(f.slug ?? '').trim(),
       question: String(f.question ?? '').trim(),
       answer: String(f.answer ?? ''),
-      sortOrder: Number.isFinite(Number(f.sort_order)) ? Number(f.sort_order) : 100,
+      sortOrder: Number.isFinite(Number(f.sort)) ? Number(f.sort) : 100,
       updatedAt: String(f.updated_at ?? ''),
       // Alias yang kebetulan sama dengan slug aktif dibuang: kalau tidak,
       // build akan mencoba membuat dua halaman dengan alamat yang sama.

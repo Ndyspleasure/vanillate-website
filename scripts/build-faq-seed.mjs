@@ -48,11 +48,11 @@ for (const f of faqs) {
 
 // ─── 1. SQL ─────────────────────────────────────────────────────────────────
 const barisKategori = categories
-  .map((c) => `  (${q(c.name)}, ${q(c.slug)}, ${q(c.description)}, ${q(c.icon)}, 'active', ${Number(c.sortOrder) || 100})`)
+  .map((c) => `  (${q(c.name)}, ${q(c.slug)}, ${q(c.description)}, ${q(c.icon)}, true, ${Number(c.sortOrder) || 100})`)
   .join(',\n');
 
 const barisFaq = faqs
-  .map((f) => `  (${q(f.category)}, ${q(f.question)}, ${q(f.slug)}, ${q(f.answer)}, 'active', ${Number(f.sortOrder) || 100})`)
+  .map((f) => `  (${q(f.category)}, ${q(f.question)}, ${q(f.slug)}, ${q(f.answer)}, true, ${Number(f.sortOrder) || 100})`)
   .join(',\n');
 
 // Kategori yang dipetakan ke produk. Pemetaan inilah pengganti docs_slug.
@@ -73,18 +73,18 @@ const sql = `-- ═════════════════════�
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. Kategori
-insert into public.faq_categories (name, slug, description, icon, status, sort_order)
+insert into public.faq_categories (name, slug, description, icon, enabled, sort)
 values
 ${barisKategori}
 on conflict (slug) do nothing;
 
 -- 2. Pertanyaan. category_id dicari dari slug kategori supaya seed tidak perlu
 --    tahu UUID apa pun.
-insert into public.faqs (category_id, question, slug, answer, status, sort_order)
-select c.id, v.question, v.slug, v.answer, v.status, v.sort_order
+insert into public.faqs (category_id, question, slug, answer, enabled, sort)
+select c.id, v.question, v.slug, v.answer, v.enabled, v.sort
 from (values
 ${barisFaq}
-) as v(category_slug, question, slug, answer, status, sort_order)
+) as v(category_slug, question, slug, answer, enabled, sort)
 join public.faq_categories c on c.slug = v.category_slug
 on conflict (category_id, slug) do nothing;
 

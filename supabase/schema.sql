@@ -1461,8 +1461,12 @@ create table if not exists public.faq_categories (
   slug        text not null unique,                 -- URL: /faq/<slug>
   description text,
   icon        text,                                 -- nama ikon registry (@data/icons)
-  status      text not null default 'active' check (status in ('active', 'inactive')),
-  sort_order  integer not null default 100,
+  -- `enabled` + `sort`, bukan `status` + `sort_order`: di database ini `status`
+  -- sudah punya arti lain (siklus hidup — products.status = live/beta/preorder),
+  -- sementara visibilitas konten SELALU `enabled boolean` dan urutan `sort`
+  -- (partnership_categories, partnership_products, products, page_content).
+  enabled     boolean not null default true,
+  sort        integer not null default 100,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
   updated_by  uuid references public.admin_users(id) on delete set null
@@ -1483,8 +1487,8 @@ create table if not exists public.faqs (
   question    text not null,
   slug        text not null,                        -- URL: /faq/<kategori>/<slug>
   answer      text not null default '',             -- rich text (Markdown, lihat src/utils/markdown.ts)
-  status      text not null default 'active' check (status in ('active', 'inactive')),
-  sort_order  integer not null default 100,
+  enabled     boolean not null default true,         -- false = tidak terbit (lihat catatan di faq_categories)
+  sort        integer not null default 100,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
   updated_by  uuid references public.admin_users(id) on delete set null,
@@ -1493,8 +1497,8 @@ create table if not exists public.faqs (
   unique (category_id, slug)
 );
 
-create index if not exists faqs_category_idx on public.faqs(category_id, sort_order);
-create index if not exists faqs_status_idx   on public.faqs(status);
+create index if not exists faqs_category_idx on public.faqs(category_id, sort);
+create index if not exists faqs_enabled_idx  on public.faqs(enabled);
 
 comment on table public.faqs is
   'Pertanyaan & jawaban FAQ. Jawaban ditulis dalam Markdown ringan dan dirender jadi HTML saat build.';
@@ -1530,6 +1534,13 @@ alter table public.products
 
 comment on column public.products.faq_category_id is
   'Kategori FAQ yang ditampilkan di halaman produk & tombol "Lihat Panduan".';
+
+-- FK ini dipakai dua jalur panas: CMS kategori FAQ ("produk mana yang memakai
+-- kategori ini" sebelum menghapus), dan Postgres sendiri saat kategori dihapus
+-- (on delete set null harus memindai products). Tanpa index, keduanya seq scan.
+create index if not exists products_faq_category_idx
+  on public.products(faq_category_id)
+  where faq_category_id is not null;
 comment on column public.products.docs_slug is
   'USANG sejak FAQ terpusat. Tidak lagi dibaca situs — dipertahankan sementara agar data lama tidak hilang. Pakai faq_category_id.';
 
@@ -1555,11 +1566,12 @@ create trigger faqs_touch before update on public.faqs
 -- 15f. Simpan slug lama secara otomatis saat slug FAQ diubah.
 -- Admin tidak perlu mengingat langkah tambahan: mengganti slug di CMS langsung
 -- meninggalkan jejak redirect.
+-- Sengaja BUKAN security definer: editor yang menyunting FAQ sudah punya policy
+-- "editor kelola faq alias", jadi hak pemanggil sendiri sudah cukup. Menambah
+-- security definer di sini hanya memperluas permukaan tanpa manfaat.
 create or replace function public.remember_faq_slug()
 returns trigger
 language plpgsql
-security definer
-set search_path = ''
 as $$
 begin
   if new.slug is distinct from old.slug then

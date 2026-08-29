@@ -58,8 +58,8 @@ import FaqTabs from '@components/FaqTabs.astro';
     slug: string;
     description: string | null;
     icon: string | null;
-    status: string;
-    sort_order: number;
+    enabled: boolean;
+    sort: number;
   };
 
   let bolehEdit = false;
@@ -124,8 +124,8 @@ import FaqTabs from '@components/FaqTabs.astro';
 
     const [{ data, error }, jumlahFaq, produk] = await Promise.all([
       supabase.from('faq_categories')
-        .select('id, name, slug, description, icon, status, sort_order')
-        .order('sort_order', { ascending: true }),
+        .select('id, name, slug, description, icon, enabled, sort')
+        .order('sort', { ascending: true }),
       hitungFaq(),
       hitungProduk(),
     ]);
@@ -157,7 +157,7 @@ import FaqTabs from '@components/FaqTabs.astro';
     const teks = (nama: string, nilai: any, extra = '') =>
       `<input id="k-${esc(c.id)}-${esc(nama)}" data-id="${esc(c.id)}" data-field="${esc(nama)}" value="${esc(nilai ?? '')}" ${extra} class="${INPUT}" />`;
 
-    const aktif = c.status !== 'inactive';
+    const aktif = c.enabled !== false;
     const dipakai = produk.length
       ? `Dipakai produk: ${produk.join(', ')}`
       : 'Belum dipakai produk mana pun.';
@@ -172,7 +172,7 @@ import FaqTabs from '@components/FaqTabs.astro';
           </div>
           <div class="flex items-center gap-3">
             <label class="flex items-center gap-2 text-sm font-medium">
-              <input type="checkbox" data-id="${esc(c.id)}" data-field="status" ${aktif ? 'checked' : ''}
+              <input type="checkbox" data-id="${esc(c.id)}" data-field="enabled" ${aktif ? 'checked' : ''}
                 class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
               Aktif
             </label>
@@ -186,7 +186,7 @@ import FaqTabs from '@components/FaqTabs.astro';
         <div class="grid gap-4 sm:grid-cols-[1fr_1fr_6rem]">
           ${f('name', 'Nama kategori', teks('name', c.name, 'maxlength="60"'))}
           ${f('slug', 'Slug (URL)', teks('slug', c.slug, 'maxlength="60"'), 'Huruf kecil, tanpa spasi.')}
-          ${f('sort_order', 'Urutan', teks('sort_order', c.sort_order ?? 100, 'inputmode="numeric"'))}
+          ${f('sort', 'Urutan', teks('sort', c.sort ?? 100, 'inputmode="numeric"'))}
         </div>
 
         ${f('description', 'Deskripsi',
@@ -213,8 +213,8 @@ import FaqTabs from '@components/FaqTabs.astro';
     const { error } = await supabase.from('faq_categories').insert({
       name: nama.trim(),
       slug,
-      status: 'active',
-      sort_order: 100,
+      enabled: true,
+      sort: 100,
       icon: 'circle-help',
       updated_by: uid,
     });
@@ -263,8 +263,8 @@ import FaqTabs from '@components/FaqTabs.astro';
     const patch: Record<string, any> = {};
     document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[data-id="${CSS.escape(id)}"][data-field]`).forEach((n) => {
       const field = n.dataset.field!;
-      if (field === 'status') patch.status = (n as HTMLInputElement).checked ? 'active' : 'inactive';
-      else if (field === 'sort_order') patch.sort_order = Number.parseInt(n.value.trim(), 10) || 100;
+      if (field === 'enabled') patch.enabled = (n as HTMLInputElement).checked;
+      else if (field === 'sort') patch.sort = Number.parseInt(n.value.trim(), 10) || 100;
       else patch[field] = n.value.trim() || null;
     });
 

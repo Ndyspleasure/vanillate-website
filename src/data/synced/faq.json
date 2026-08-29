@@ -36,7 +36,7 @@
       "question": "Bagaimana cara mulai bermain Sambung Kata?",
       "answer": "Vanillate Sambung Kata adalah bot game kata berantai Bahasa Indonesia dengan progresi mendalam: Class, Quest, Boost, sampai Dungeon Mode. Lima langkah untuk mulai:\n\n1. Undang bot ke server Discord kamu.\n2. Ketik `/sambungkata` untuk membuka dashboard, lalu pilih mode: PvP, PvB, Player vs Server, atau Dungeon.\n3. Jawab dengan kata yang diawali huruf yang ditentukan. Kata harus ada di kamus.\n4. Kumpulkan EXP & Coin, buka Class di Level 3, dan taklukkan Dungeon.\n5. Ingin variasi? Ketik `/game` untuk game sampingan Werewolf & Pengacara.\n\nTidak perlu menghafal apa pun sebelum mulai. Semua mode dibuka dari satu command lewat tombol di dashboard.",
       "sortOrder": 10,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -45,7 +45,7 @@
       "question": "Apa aturan dasar permainan Sambung Kata?",
       "answer": "Sambung Kata adalah permainan kata berantai. Setiap pemain menyebut kata yang diawali huruf terakhir dari kata sebelumnya. Contoh: dari kata `MAKAN` huruf berikutnya adalah `N`, jadi jawaban yang valid antara lain `NASI`, `NAMA`, atau `NILAI`.\n\n### Aturan dasar\n\n- Kata harus diawali dari huruf yang ditentukan.\n- Kata harus ada di kamus Bahasa Indonesia (25.000+ kata).\n- Kata yang sudah pernah dipakai tidak boleh diulang.\n- Hanya 1 kata per giliran (tanpa spasi).\n- Kata minimum 2 huruf.\n\n### Waktu per giliran\n\n- Setiap pemain punya waktu terbatas untuk menjawab.\n- Waktu habis berarti kehilangan 1 nyawa dan giliran pindah.\n- Jawab dalam ≤5 detik untuk dihitung ke quest **Kilat Kata**.\n- Gunakan boost **Extra Time** untuk menambah waktu giliran.\n\n### Sistem nyawa\n\n- Setiap pemain mulai dengan 5 nyawa.\n- Jawaban salah atau waktu habis mengurangi 1 kesempatan.\n- Setelah 5 kesempatan gagal, kamu kehilangan 1 nyawa dan giliran pindah.\n- Nyawa habis berarti eliminasi dari permainan.\n\n### Cara menang\n\n- **PvP/PvB:** jadilah pemain terakhir yang bertahan.\n- **Dungeon:** tumbangkan Guardian sampai wave 5.\n- Jika skor seri saat voting stop, Balapan Ayam menentukan pemenang.\n\n### Voting perhentian\n\nPemain bisa mengajukan voting untuk menghentikan game. Semua pemain aktif punya 30 detik untuk vote. Mayoritas memilih Hentikan berarti game berakhir lebih awal; mayoritas Lanjutkan atau seri berarti game diteruskan.\n\n### Kata istimewa\n\n- Kata ≥8 huruf memberi bonus EXP dan damage besar di Dungeon.\n- Kata berakhiran huruf langka (X, Q, Z, V) memberi bonus Coin dan damage tertinggi.",
       "sortOrder": 20,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -54,7 +54,7 @@
       "question": "Mode permainan apa saja yang tersedia?",
       "answer": "Semua mode dimulai dari satu command `/sambungkata` yang membuka dashboard interaktif. Pilih mode lewat tombol, tanpa perlu menghafal opsi. Dashboard aktif 2 menit dan me-reset timer setiap interaksi.\n\n### Player vs Player (PvP)\n\n- Minimal 2 pemain manusia, maksimal 10 pemain per room.\n- `/sambungkata` → **Player vs Player**.\n- Host membuka lobby, pemain bergabung, lalu host memulai.\n- Lobby otomatis tutup dalam 2 menit jika tidak dimulai.\n\n### Player vs Bot — Mode Lanjutan (Battle Skill)\n\n- Duel strategis satu tim melawan Bot dengan HP, Mana, dan Skill (bisa solo).\n- `/sambungkata` → **Player vs Bot** → **Mode Lanjutan** → lobby (pemain lain bisa bergabung).\n- HP Bot menyesuaikan jumlah pemain; serangan Bot mengenai semua anggota tim.\n- Mana penuh (100) membuka Skill: Attack, Recovery, Defense, Mana, Buff, Debuff, Cleanse.\n- Belum ada pemenang di ronde 100 berarti Overtime (damage 2×). Boost tidak berlaku di mode ini, hanya Skill.\n\n### Player vs Bot — Mode Normal (Klasik)\n\nSambung kata biasa melawan Bot dengan tingkat kesulitan pilihan — duel solo 1v1, dan boost tetap berlaku. Buka lewat `/sambungkata` → **Player vs Bot** → **Mode Normal**, lalu pilih kesulitan:\n\n| Kesulitan | Perilaku bot |\n| --- | --- |\n| Mudah | Memilih kata acak |\n| Normal | Menghindari huruf sulit |\n| Sulit | Menjebak dengan huruf sulit |\n| Impossible | Memilih kata terburuk untukmu |\n\n### Player vs Server (Global)\n\n- Bertanding melawan pemain dari server lain.\n- `/sambungkata` → **Player vs Server**.\n- Buka lobby, pemain server yang sama bergabung, lalu bot mempertemukan dengan lobby server lain secara otomatis.\n- 2–10 pemain gabungan, dengan rating global terpisah (lihat `/stats`).\n- Lobby otomatis bubar jika tidak mendapat lawan dalam 6 jam.\n\n### Dungeon Mode\n\nMode solo menantang: kamu melawan Dungeon Guardian selama 5 wave, dan butuh Golden Key untuk masuk.\n\n### Fase Pre-Match (30 detik)\n\nSebelum game ada 30 detik fase persiapan. Di sinilah boost Pre-Match diaktifkan: **Extra Life** (+1 nyawa), **Shield** (proteksi 1 kesalahan), dan **Extra Time** (tambah waktu per giliran). Beli boost di `/shop` atau klaim di `/claim`.\n\n### Win Streak\n\nMenang berturut-turut membangun Win Streak. Milestone tertentu memberi bonus Coin dan reward. Streak hilang jika kalah atau tidak menang. Cek streak kamu di `/stats`.",
       "sortOrder": 30,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -63,7 +63,7 @@
       "question": "Apa itu Boost dan bagaimana cara mendapatkannya?",
       "answer": "Boost adalah item spesial yang membantu kamu dalam permainan. Ada dua jenis berdasarkan waktu pemakaiannya.\n\n### Pre-Match Boost\n\n- **Extra Life** (Legendary): tambah 1 nyawa ekstra sebelum game.\n- **Shield** (Epic): proteksi dari 1 kesalahan dalam game.\n- **Extra Time** (Common): tambah +5 detik per giliran.\n\n### In-Game Boost\n\n- **Hint** (Common): tampilkan 1 kata valid sebagai jawaban.\n- **Reroll** (Rare): ganti huruf awalan dengan huruf lain.\n\n### Rarity\n\n| Rarity | Boost | Peluang |\n| --- | --- | --- |\n| Common | Hint, Extra Time | Tertinggi |\n| Rare | Reroll | Sedang |\n| Epic | Shield | Rendah |\n| Legendary | Extra Life | Terendah |\n\n### Cara mendapatkan boost\n\n- `/claim` — boost gratis setiap 24 jam (class tertentu mendapat bonus).\n- `/claim` — reward member Server Support (reset 24 jam).\n- `/claim` — redeem Promo Code jika ada kode aktif.\n- `/shop` — beli boost dengan Coin.\n- **Mystery Box** — boost acak dari shop (500 Coin).\n- **Quest** — reward dari daily & weekly quest.\n\nLihat semua boost yang kamu miliki dengan `/inventory`. Boost otomatis muncul di tombol pre-match setelah kamu klaim atau beli.",
       "sortOrder": 40,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -72,7 +72,7 @@
       "question": "Bagaimana sistem level, EXP, dan Coin bekerja?",
       "answer": "### Account Level\n\nSemua pemain mendapat Account EXP dari setiap match dan quest. Satu level butuh 300 EXP, dan Level 3 membuka Class System. Cek progres kamu di `/stats`.\n\n### EXP per match\n\n- +2 EXP per kata valid.\n- +15 EXP menyelesaikan pertandingan.\n- +25 EXP menang, +10 EXP MVP.\n\nEXP masuk ke Account (semua pemain) dan ke Class aktif jika kamu sudah memilih class.\n\n### Coin\n\n- +5 Coin selesai pertandingan.\n- +10 Coin menang pertandingan, +5 Coin MVP.\n- +1 Coin per 10 kata valid.\n- +1 Coin untuk kata ≥8 huruf.\n- +2 Coin untuk kata berakhiran huruf langka (X/Q/Z/V).\n- Bonus tambahan dari quest, win streak, dan passive class.",
       "sortOrder": 50,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -81,7 +81,7 @@
       "question": "Apa itu Class, kapan terbuka, dan bisakah diganti?",
       "answer": "Class System terbuka di Account Level 3. Tersedia 9 class, dan masing-masing punya passive nyata: bonus reward, boost harian ekstra, peluang selamat dari eliminasi, damage ekstra di Dungeon, dan lainnya.\n\n- Tersedia dari Level 3: Scholar, Speedster, Guardian, Lucky, Hunter.\n- Terbuka bertahap di Level 8, 12, 16, dan 20: Gambler, Alchemist, Linguist, Berserker.\n- Pilihan class pertama **gratis**; ganti class berikutnya seharga 750 Coin.\n- Lihat daftar lengkapnya dengan `/class list`.\n\n### Talent Tree\n\nSetiap class punya talent eksklusif yang memberi bonus pasif saat bermain. Talent dibeli dengan Coin lewat `/class` → tombol talent. Cek talent yang tersedia dengan `/class info [nama_class]`.",
       "sortOrder": 60,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -90,7 +90,7 @@
       "question": "Bagaimana sistem Quest harian dan mingguan?",
       "answer": "Buka dashboard quest dengan `/quest`. Ada dua jenis quest yang berjalan bersamaan:\n\n- **4 Daily Quest** — reset tengah malam.\n- **6 Weekly Quest** — reset setiap Senin.\n\nSalah satu weekly quest, **Kilat Kata**, meminta 20 jawaban dalam ≤5 detik dan hadiahnya sebuah Golden Key. Menyelesaikan semua quest memberi Bonus Chest berisi Coin dan Mystery Box.\n\nQuest yang selesai diumumkan di akhir match — jangan lupa diklaim.",
       "sortOrder": 70,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -99,7 +99,7 @@
       "question": "Apa saja yang dijual di Shop dan berapa harganya?",
       "answer": "Buka toko dengan `/shop` dan bayar memakai Coin yang kamu kumpulkan dari bermain.\n\n{{shop-table}}\n\nHarga di tabel ini mengikuti data shop yang berlaku di bot, jadi ikut berubah sendiri saat harga di dalam game diperbarui.",
       "sortOrder": 80,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -108,7 +108,7 @@
       "question": "Bagaimana cara menukarkan Promo Code?",
       "answer": "Jalankan `/claim`, lalu tekan tombol **Redeem Promo Code**.\n\n- Kode promo dibagikan lewat pengumuman resmi.\n- Setiap kode hanya bisa diklaim satu kali per pemain.\n- Reward bervariasi: Coin, EXP, atau Boost.",
       "sortOrder": 90,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -117,7 +117,7 @@
       "question": "Apa itu Dungeon Mode dan bagaimana cara masuknya?",
       "answer": "Dungeon adalah mode solo paling menantang: kamu melawan Dungeon Guardian sepanjang 5 wave. Masuk lewat `/sambungkata` → **Dungeon Mode**, dan butuh satu Golden Key yang habis dipakai setiap kali masuk.\n\n### Aturan Dungeon\n\n- Solo: kamu melawan Dungeon Guardian, total 5 wave.\n- Damage kata: dasar 2, kata ≥6 huruf +1, kata ≥8 huruf +1, akhiran langka +2.\n- Guardian membalas 4–8 kata per giliran, dan bertambah tiap wave.\n- Waktu berpikir menyusut tiap wave. Nyawa habis berarti Game Over.\n- Perk class aktif di sini: Guardian mendapat +1 nyawa, Hunter dan Berserker mendapat damage ekstra.\n\n### Reward\n\n- Semua reward match digandakan (×2).\n- Bonus tamat: +100 Coin, plus 30 Coin per wave (tamat 5 wave berarti +250 Coin).\n- Tamat memberi drop pasti: Extra Life, boost acak, dan Dungeon Trophy.",
       "sortOrder": 100,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -126,7 +126,7 @@
       "question": "Bagaimana cara mendapatkan Golden Key?",
       "answer": "Ada tiga cara mendapatkan Golden Key:\n\n1. **Shop** — beli langsung seharga 350 Coin lewat `/shop`.\n2. **Weekly quest Kilat Kata** — 20 jawaban dalam ≤5 detik memberi kunci gratis.\n3. **Traveling Merchant** — sering menjualnya dengan harga diskon (250 Coin).\n\nKunci habis dipakai setiap kali masuk Dungeon, dan kamu maksimal memegang 1 kunci.",
       "sortOrder": 110,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -135,7 +135,7 @@
       "question": "Event spesial apa saja yang bisa muncul saat main PvP?",
       "answer": "Di ronde 20–30 mode PvP, ada peluang salah satu dari **4 event spesial** muncul secara acak dan mengubah jalannya pertandingan. Saat intro event, timer dibekukan — manfaatkan untuk membaca lore dan menyusun strategi.\n\n| Event | Peluang | Kesulitan | Reward sukses | Jika gagal |\n| --- | --- | --- | --- | --- |\n| AI Challenger | Sering | Sedang | ×2 coin/exp | Tidak ada |\n| Lost Signal | Cukup | Mudah–Sedang | ×2 coin/exp | Tidak ada |\n| Traveling Merchant | Sering | Mudah | Item / multiplier | Zonk / rugi |\n| Penjajah (Invader) | Jarang–Cukup | Sulit | ×2 coin/exp | ×0 (hard-fail) |\n\nUntuk AI Challenger dan Lost Signal, kata panjang atau berakhiran langka mempercepat progres. Untuk Penjajah, tetap tenang dan fokus menjawab Challenge dengan benar.\n\nDetail tiap event ada di FAQ terpisah pada kategori ini.",
       "sortOrder": 120,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -144,7 +144,7 @@
       "question": "Bagaimana cara mengalahkan AI Challenger?",
       "answer": "Boss AI muncul di tengah match untuk menantang semua pemain sekaligus. Tidak ada kompetisi antarpemain di sini — semua bekerja sama menghajar boss sebelum match berakhir.\n\n- Intro 15 detik: game dijeda dan embed dramatis mengumumkan kedatangan boss.\n- HP boss: `200 + (jumlah pemain × 20)`. Contoh, 3 pemain berarti boss punya 260 HP.\n- Setiap kata valid melukai boss. Kamu menang jika HP boss habis sebelum match berakhir.\n- Match berakhir tanpa boss tumbang berarti tidak ada reward, tapi juga tanpa penalti.\n- Embed penutup menampilkan leaderboard kontribusi damage tiap pemain.\n\n### Sistem damage\n\nSemakin panjang dan langka katamu, semakin sakit untuk boss. Contoh: `KOMPLEKS` (panjang, akhiran S) menghasilkan 2 damage.\n\n| Jenis kata | Damage |\n| --- | --- |\n| Kata biasa (3–7 huruf) | 1 |\n| Kata panjang (≥8 huruf) | 2 |\n| Berakhir huruf langka (X / Z / Q / V) | +1 tambahan |",
       "sortOrder": 130,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -153,7 +153,7 @@
       "question": "Bagaimana cara menyelesaikan event Lost Signal?",
       "answer": "Language Core tidak stabil dan sinyalnya pecah menjadi 5 fragmen (A–E). Kumpulkan kelimanya sebelum match berakhir untuk memulihkan sistem dan mendapat reward.\n\n- Intro 15 detik dengan embed sistematis: \"Language Core tidak stabil, fragmen terpecah\".\n- Setiap kata valid punya peluang menjatuhkan fragmen — tidak dijamin setiap kata.\n- Kata panjang (≥6 huruf) menaikkan peluang drop.\n- Sistem memprioritaskan fragmen yang belum terkumpul, jadi tidak ada yang mubazir.\n- Menang bila semua 5 fragmen terkumpul. Kurang dari 5 saat match usai berarti gagal, tanpa penalti.\n- Embed mencatat progres tiap fragmen: siapa mendapat apa, dari kata apa.",
       "sortOrder": 140,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -162,7 +162,7 @@
       "question": "Apa yang dijual Traveling Merchant?",
       "answer": "Merchant musafir membuka toko pop-up berisi item langka dengan harga spesial. Toko hanya aktif 5 menit lalu merchant pergi. Kamu membayar dengan Coin milikmu sendiri, bukan pool match, dan ini bukan musuh sehingga tidak ada menang atau kalah.\n\n- Klik tombol item di embed toko; Coin langsung dipotong dari akunmu.\n- Item \"unknown\" baru di-roll saat dibeli.\n- Toko tutup otomatis setelah 5 menit atau saat match berakhir, mana yang lebih dulu.\n\n### Barang merchant (4–5 item acak per kunjungan)\n\n| Item | Harga | Efek | Rarity |\n| --- | --- | --- | --- |\n| Unknown Package | 100 Coin | Drop acak: Hint, Reroll, Extra Time, atau ZONK | Common |\n| Merchant Box | 300 Coin | Drop pasti: Shield, Extra Life, Reroll, atau Hint | Rare |\n| Contract | 500 Coin | HIGH RISK 50/50: reward akhir ×2 atau ×0 | Epic |\n| Rewind Ticket | 400 Coin | Pulihkan 1 nyawa. Maks 1× per match per pemain | Rare |\n| Golden Key | 250 Coin | Buka Dungeon Mode (muncul sesekali, langka) | Epic |\n\n### Strategi belanja\n\n- **Unknown Package:** judi murah. Bagus kalau hoki dapat boost, apes kalau zonk.\n- **Merchant Box:** lebih pasti daripada Package, tapi lebih mahal.\n- **Contract:** taruhan tinggi, beli hanya kalau yakin menang. Hanya pembeli yang terpengaruh; pemain lain tetap normal.\n- **Rewind Ticket:** asuransi, beli saat nyawa tinggal 1 dan kamu khawatir gugur.\n- **Golden Key:** jalur alternatif kalau ingin akses Dungeon Mode sekarang.",
       "sortOrder": 150,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -171,7 +171,7 @@
       "question": "Apa itu event Penjajah (Invader)?",
       "answer": "Penjajah adalah event paling kompleks sekaligus event musiman untuk memperingati Hari Kemerdekaan Indonesia (17 Agustus). Boss \"Penjajah\" hadir dengan tiga mekanik gangguan yang berjalan paralel dan terus menekan pemain. Intro berlangsung sekitar 50 detik dengan monolog Penjajah; game dijeda dan timer dibekukan.\n\n- **Menang:** menangkan cukup banyak Challenge (≥3 jawaban benar). Penjajah diusir dan match berlanjut.\n- **Kalah:** terlalu banyak Challenge salah (≥2 salah). Penjajah menang dan match berakhir.\n- Steal dan Block bukan hard-fail, hanya membuang waktu. Skor, giliran, nyawa, dan huruf target tetap utuh.\n\n### Tiga mekanik gangguan\n\n| Mekanik | Efek | Catatan |\n| --- | --- | --- |\n| Steal | Kata valid dirampas, tidak dihitung | Skor/giliran/nyawa utuh, timer tetap jalan |\n| Block | Tidak bisa input sekitar 10 detik | Timer terus jalan, bisa timeout kalau habis |\n| Challenge | Soal kuis kemerdekaan (pilihan ganda) sekitar 30 detik | Game dijeda; benar +1, salah/timeout -1 |\n\n### Kemenangan & \"Pengkhianat Perjuangan\"\n\n- Challenge benar ≥3 kali berarti event **sukses**: reward ×2 Coin & EXP plus embed lore penutup.\n- Challenge salah ≥2 kali berarti event **gagal** (hard-fail): Penjajah menang, tanpa Coin & EXP.\n- Survival tunggal (dari ≥2 pemain manusia, tersisa 1) memberi gelar \"Pengkhianat Perjuangan\" dengan lore dramatis. Reward pemenang tetap ×2.",
       "sortOrder": 160,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -180,7 +180,7 @@
       "question": "Game sampingan apa saja yang bisa dimainkan?",
       "answer": "Selain Sambung Kata, Vanillate punya game sampingan yang bisa dimainkan bareng teman se-channel lewat `/game`. Game sampingan bersifat santai: tidak menyimpan progres, Coin, EXP, maupun inventory.\n\n### Werewolf Klasik\n\n- Deduksi sosial warga melawan serigala, dalam mode ringkas dan cepat.\n- 4 peran: Serigala, Peramal, Tabib, Warga.\n- 4–30 pemain per sesi.\n\n### Werewolf Lanjutan\n\n- Mode lengkap dengan 54 peran (Warga, Serigala, dan Netral).\n- Investigasi, proteksi, konversi, pembunuh solo, sampai kekacauan.\n- Hingga 100 pemain.\n\n### Pengacara (Persidangan)\n\n- Persidangan roleplay untuk mengungkap siapa yang bersalah.\n- Hakim manusia memimpin sidang: bukti, saksi, keberatan, dan vonis.\n- Sistem bukti dinamis dengan puluhan skenario kasus unik.\n- 8–25 pemain dengan peran Hakim, Jaksa, Pengacara, Tersangka, dan Saksi.\n\n### UNO\n\nKartu klasik adu warna dan angka — sedang dikembangkan, segera hadir.\n\nBuka dashboard game sampingan dengan `/game`, pilih game, lalu lobby dibuka di channel untuk mengajak yang lain bermain.",
       "sortOrder": 170,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -189,7 +189,7 @@
       "question": "Apa saja command yang tersedia?",
       "answer": "### Bermain\n\n- `/sambungkata` — buka dashboard untuk semua mode: PvP, PvB (Battle Skill/Klasik), Player vs Server, dan Dungeon.\n- `/game` — buka dashboard game sampingan: Werewolf & Pengacara.\n\n### Progress & info\n\n- `/stats` — statistik lengkap dan Player ID.\n- `/leaderboard` — papan peringkat global.\n- `/class` — pilih class dan beli talent.\n- `/quest` — dashboard quest harian & mingguan.\n- `/kamus [kata]` — cek apakah sebuah kata ada di kamus.\n\n### Ekonomi\n\n- `/claim` — klaim boost harian, server reward, dan promo.\n- `/shop` — beli boost dan Golden Key.\n- `/inventory` — lihat boost yang kamu miliki.\n\n### Lainnya\n\n- `/help` — panduan lengkap di dalam Discord.\n- `/masukan` — kirim saran atau laporan bug.",
       "sortOrder": 180,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -198,7 +198,7 @@
       "question": "Seberapa besar kamusnya, dan bagaimana kata dinilai?",
       "answer": "Kamusnya berisi 25.000+ kata Bahasa Indonesia dengan validasi otomatis. Sebuah kata dianggap valid bila:\n\n- diawali huruf yang ditentukan,\n- ada di kamus,\n- minimal 2 huruf, dan\n- belum pernah dipakai di ronde itu.\n\nKamu bisa mengecek sebuah kata kapan saja dengan `/kamus [kata]`.",
       "sortOrder": 190,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -207,7 +207,7 @@
       "question": "Bisa main di berapa server?",
       "answer": "Tidak terbatas. Progres, statistik, dan leaderboard bersifat global per pemain, jadi capaianmu terbawa ke server mana pun kamu bermain. Tidak ada biaya tambahan untuk memakainya di banyak server.",
       "sortOrder": 200,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -216,7 +216,7 @@
       "question": "Apakah produk Vanillate bisa membantu menghidupkan komunitas yang sepi?",
       "answer": "Bisa, dan itu memang salah satu kekuatannya. Produk kami dirancang mengajak banyak anggota ikut berinteraksi sekaligus, sehingga obrolan yang tadinya sepi cepat kembali ramai.\n\nContohnya, satu sesi Vanillate Sambung Kata di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.",
       "sortOrder": 10,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -225,7 +225,7 @@
       "question": "Apakah produk Vanillate gratis?",
       "answer": "Ya. Inti setiap produk kami bisa dipakai tanpa langganan wajib. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati bagian utamanya.",
       "sortOrder": 20,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -234,7 +234,7 @@
       "question": "Bagaimana cara mulai memakai produknya?",
       "answer": "Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk: ada yang diundang ke komunitasmu, ada yang diunduh sebagai aplikasi, ada pula yang langsung dibuka lewat web. Setiap halaman produk menjelaskan langkahnya.",
       "sortOrder": 30,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -243,7 +243,7 @@
       "question": "Seberapa sering produknya diperbarui?",
       "answer": "Rutin. Kami merilis perbaikan bug, penyempurnaan pengalaman, dan fitur baru secara berkala, sering kali setiap pekan.\n\nBagi kami rilis adalah garis start, bukan garis finis, jadi produk terus dirawat setelah diluncurkan.",
       "sortOrder": 40,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -252,7 +252,7 @@
       "question": "Izin atau akses apa yang dibutuhkan?",
       "answer": "Kami hanya meminta akses yang benar-benar diperlukan agar produk berfungsi, dan tidak pernah meminta hak administratif yang tidak perlu.\n\nUntuk produk komunitas seperti Sambung Kata di Discord, izinnya sebatas mengirim pesan, menyematkan embed, membaca jawaban di channel permainan, dan mengelola komponen interaktif.",
       "sortOrder": 10,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -261,7 +261,7 @@
       "question": "Apakah progres dan data saya aman?",
       "answer": "Aman. Data tersimpan otomatis di infrastruktur kami, tidak ada penghapusan berkala, dan tidak ada data yang dijual ke pihak ketiga.\n\nDetail lengkapnya bisa kamu baca di halaman [Kebijakan Privasi](/privacy).",
       "sortOrder": 20,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -270,7 +270,7 @@
       "question": "Apakah progres saya terbawa antar komunitas atau perangkat?",
       "answer": "Ya. Progres, statistik, dan peringkat bersifat global per pengguna, jadi capaianmu terbawa ke mana pun kamu memakainya. Kamu juga bebas memakainya di sebanyak mungkin komunitas tanpa biaya.",
       "sortOrder": 30,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -279,7 +279,7 @@
       "question": "Apakah progres saya bisa hilang?",
       "answer": "Tidak. Semua progres tersimpan otomatis di server dan tidak ada wipe berkala. Statistik, Class, dan inventory kamu tetap aman.",
       "sortOrder": 40,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -288,7 +288,7 @@
       "question": "Produknya tidak merespons, apa yang harus dilakukan?",
       "answer": "Coba beberapa hal ini dulu:\n\n1. Pastikan produk punya izin yang diperlukan di tempat kamu memakainya.\n2. Ulangi aksinya dari awal.\n3. Tunggu beberapa detik bila platformnya sedang lambat.\n\nKalau masih bermasalah, laporkan lewat [Support Center](/support) kami, dan orang yang menulis kodenya akan langsung membantu.",
       "sortOrder": 10,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     },
     {
@@ -297,7 +297,7 @@
       "question": "Bagaimana cara memberi masukan atau melaporkan bug?",
       "answer": "Kirim lewat [Support Center](/support) di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai.\n\nKhusus Sambung Kata, kamu juga bisa memakai command `/masukan` langsung di dalam produknya, lalu pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.\n\nKami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.",
       "sortOrder": 20,
-      "updatedAt": "2026-08-29T20:38:00.861Z",
+      "updatedAt": "2026-08-29T21:40:50.213Z",
       "aliases": []
     }
   ]

@@ -913,8 +913,8 @@ untuk perkiraan waktu dan cara menerbitkan segera.
 
 | Tabel | Isi |
 |---|---|
-| `faq_categories` | `name`, `slug`, `description`, `icon`, `status`, `sort_order` |
-| `faqs` | `category_id`, `question`, `slug`, `answer`, `status`, `sort_order` |
+| `faq_categories` | `name`, `slug`, `description`, `icon`, `enabled`, `sort` |
+| `faqs` | `category_id`, `question`, `slug`, `answer`, `enabled`, `sort` |
 | `faq_slug_aliases` | Slug lama sebuah FAQ, untuk menjaga tautan yang sudah tersebar |
 
 Relasi `faqs.category_id` memakai **`on delete restrict`**: menghapus kategori
@@ -947,10 +947,14 @@ dalam game — angkanya tetap mengikuti `src/data/synced/shop.json`.
 
 ### Status, urutan, dan validasi
 
-* **Status** `active`/`inactive`. FAQ nonaktif tidak ikut ditarik saat sync,
-  jadi ia tidak pernah sampai ke situs publik — bukan sekadar disembunyikan CSS.
-  Kategori nonaktif menyembunyikan seluruh isinya.
-* **Urutan** (`sort_order`, kecil = atas) menentukan urutan tampil, jadi tidak
+* **Status** memakai `enabled boolean`, mengikuti seluruh tabel konten lain di
+  database ini (`products`, `partnership_*`). Perlu diperhatikan: di project ini
+  `status` punya arti berbeda — siklus hidup, seperti `products.status` =
+  live/beta/preorder — jadi visibilitas tidak boleh memakai nama itu.
+  FAQ nonaktif tidak ikut ditarik saat sync, jadi ia tidak pernah sampai ke
+  situs publik — bukan sekadar disembunyikan CSS. Kategori nonaktif
+  menyembunyikan seluruh isinya.
+* **Urutan** (`sort`, kecil = atas) menentukan urutan tampil, jadi tidak
   bergantung pada tanggal atau ID.
 * **Wajib diisi**: kategori, pertanyaan, jawaban, dan slug. Slug harus unik
   **per kategori** (URL sudah memuat kategori, jadi dua kategori boleh punya
@@ -993,6 +997,12 @@ node scripts/build-faq-seed.mjs   # menulis supabase/seed-faq.sql + snapshot faq
 lalu jalankan `supabase/seed-faq.sql` di Supabase SQL Editor **setelah**
 `supabase/schema.sql`. Seed-nya idempoten dan tidak menimpa baris yang slug-nya
 sudah ada, jadi penyuntingan yang sudah dilakukan admin tetap aman.
+
+> **Sudah dijalankan di project CMS | VANILLATE.** Tabel FAQ, trigger, RLS, dan
+> 30 FAQ hasil migrasi sudah ada di database (migration `add_centralized_faq`,
+> `seed_faq_*`, `index_products_faq_category`), dan `products.faq_category_id`
+> untuk Sambung Kata sudah terisi. Langkah di atas hanya diperlukan saat
+> menyiapkan project Supabase baru — mis. lingkungan staging.
 
 ### Izin
 

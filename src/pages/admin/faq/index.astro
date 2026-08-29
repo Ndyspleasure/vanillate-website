@@ -39,15 +39,15 @@ import FaqTabs from '@components/FaqTabs.astro';
   const BTN2 = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors';
   const CHIP = 'rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-2.5 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors';
 
-  type Kategori = { id: string; name: string; slug: string; status: string; sort_order: number };
+  type Kategori = { id: string; name: string; slug: string; enabled: boolean; sort: number };
   type Faq = {
     id: string | null;
     category_id: string;
     question: string;
     slug: string;
     answer: string;
-    status: string;
-    sort_order: number;
+    enabled: boolean;
+    sort: number;
     updated_at?: string;
   };
 
@@ -103,8 +103,8 @@ import FaqTabs from '@components/FaqTabs.astro';
     if (!supabase) { box.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
 
     const [kat, faq] = await Promise.all([
-      supabase.from('faq_categories').select('id, name, slug, status, sort_order').order('sort_order', { ascending: true }),
-      supabase.from('faqs').select('id, category_id, question, slug, answer, status, sort_order, updated_at').order('sort_order', { ascending: true }),
+      supabase.from('faq_categories').select('id, name, slug, enabled, sort').order('sort', { ascending: true }),
+      supabase.from('faqs').select('id, category_id, question, slug, answer, enabled, sort, updated_at').order('sort', { ascending: true }),
     ]);
 
     if (kat.error) { box.innerHTML = stateBlock('error', pesanError(kat.error)); return; }
@@ -134,10 +134,10 @@ import FaqTabs from '@components/FaqTabs.astro';
     });
 
     const kartu = (f: Faq) => {
-      const aktif = f.status !== 'inactive';
+      const aktif = f.enabled !== false;
       return `
         <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4">
-          <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60 w-8 flex-none text-right">${f.sort_order ?? 100}</span>
+          <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60 w-8 flex-none text-right">${f.sort ?? 100}</span>
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
               <p class="font-display font-semibold tracking-tightest truncate">${esc(f.question)}</p>
@@ -152,7 +152,7 @@ import FaqTabs from '@components/FaqTabs.astro';
     };
 
     const opsi = [`<option value="">Semua kategori</option>`]
-      .concat(kategori.map((k) => `<option value="${esc(k.id)}" ${filterKategori === k.id ? 'selected' : ''}>${esc(k.name)}${k.status === 'inactive' ? ' (nonaktif)' : ''}</option>`))
+      .concat(kategori.map((k) => `<option value="${esc(k.id)}" ${filterKategori === k.id ? 'selected' : ''}>${esc(k.name)}${k.enabled === false ? ' (nonaktif)' : ''}</option>`))
       .join('');
 
     box.innerHTML = `
@@ -186,8 +186,8 @@ import FaqTabs from '@components/FaqTabs.astro';
         question: '',
         slug: '',
         answer: '',
-        status: 'active',
-        sort_order: 100,
+        enabled: true,
+        sort: 100,
       };
     }
     listView().classList.add('hidden');
@@ -208,7 +208,7 @@ import FaqTabs from '@components/FaqTabs.astro';
     const f = current!;
     const baru = !f.id;
     const opsi = kategori
-      .map((k) => `<option value="${esc(k.id)}" ${f.category_id === k.id ? 'selected' : ''}>${esc(k.name)}${k.status === 'inactive' ? ' (nonaktif)' : ''}</option>`)
+      .map((k) => `<option value="${esc(k.id)}" ${f.category_id === k.id ? 'selected' : ''}>${esc(k.name)}${k.enabled === false ? ' (nonaktif)' : ''}</option>`)
       .join('');
 
     editorView().innerHTML = `
@@ -259,13 +259,13 @@ import FaqTabs from '@components/FaqTabs.astro';
         </div>
 
         <div class="grid gap-4 sm:grid-cols-[10rem_8rem]">
-          ${field('e-status', 'Status',
-            `<select id="e-status" class="${INPUT}">
-               <option value="active" ${f.status !== 'inactive' ? 'selected' : ''}>Aktif</option>
-               <option value="inactive" ${f.status === 'inactive' ? 'selected' : ''}>Nonaktif</option>
+          ${field('e-enabled', 'Status',
+            `<select id="e-enabled" class="${INPUT}">
+               <option value="1" ${f.enabled !== false ? 'selected' : ''}>Aktif</option>
+               <option value="0" ${f.enabled === false ? 'selected' : ''}>Nonaktif</option>
              </select>`,
             'Nonaktif = tidak terbit.')}
-          ${field('e-sort', 'Urutan', `<input id="e-sort" value="${esc(f.sort_order ?? 100)}" inputmode="numeric" class="${INPUT}" />`, 'Kecil = atas.')}
+          ${field('e-sort', 'Urutan', `<input id="e-sort" value="${esc(f.sort ?? 100)}" inputmode="numeric" class="${INPUT}" />`, 'Kecil = atas.')}
         </div>
 
         ${bolehEdit
@@ -330,8 +330,8 @@ import FaqTabs from '@components/FaqTabs.astro';
       question: v('e-question'),
       slug: v('e-slug'),
       answer: (document.getElementById('e-answer') as HTMLTextAreaElement)?.value ?? '',
-      status: v('e-status') === 'inactive' ? 'inactive' : 'active',
-      sort_order: Number.isFinite(sort) ? sort : 100,
+      enabled: v('e-enabled') !== '0',
+      sort: Number.isFinite(sort) ? sort : 100,
     };
 
     // Validasi. Semua wajib: FAQ tanpa kategori tidak punya URL, dan FAQ tanpa
@@ -355,8 +355,8 @@ import FaqTabs from '@components/FaqTabs.astro';
       question: data.question,
       slug: data.slug,
       answer: data.answer,
-      status: data.status,
-      sort_order: data.sort_order,
+      enabled: data.enabled,
+      sort: data.sort,
       updated_by: uid,
     };
 
