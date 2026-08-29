@@ -157,7 +157,7 @@ export const pageDefaults: Record<string, Record<string, any>> = {
     heroTitleAccent: 'perhatian',
     heroTitleEnd: 'penuh.',
     heroLead:
-      'Kami sengaja tidak membuat banyak produk sekaligus. Setiap yang dirilis diperlakukan sebagai produk utama, dengan update rutin, penyempurnaan yang terus berjalan, dan telinga yang selalu terbuka untuk komunitasnya. Pakai langsung, atau intip dokumentasinya dulu.',
+      'Kami sengaja tidak membuat banyak produk sekaligus. Setiap yang dirilis diperlakukan sebagai produk utama, dengan update rutin, penyempurnaan yang terus berjalan, dan telinga yang selalu terbuka untuk komunitasnya. Pakai langsung, atau intip panduannya dulu di FAQ.',
     stepsEyebrow: 'Cara Mulai',
     stepsTitle: 'Tiga langkah, langsung jalan.',
     stepsLead:
@@ -168,9 +168,9 @@ export const pageDefaults: Record<string, Record<string, any>> = {
     faqEyebrow: 'FAQ',
     faqTitle: 'Pertanyaan yang sering muncul.',
     faqLead:
-      'Butuh detail spesifik? Tiap produk punya FAQ dan dokumentasi sendiri. Belum ketemu jawabannya? Tanya langsung di komunitas kami.',
+      'Butuh detail spesifik? Semua panduan kami terkumpul di FAQ, dikelompokkan per kategori. Belum ketemu jawabannya? Tanya langsung di komunitas kami.',
     ctaTitle: 'Masih ada pertanyaan?',
-    ctaText: 'Cek dokumentasi lengkapnya, atau langsung tanya-tanya di komunitas kami.',
+    ctaText: 'Cek FAQ lengkapnya, atau langsung tanya-tanya di komunitas kami.',
   },
   about: {
     heroEyebrow: 'Tentang Kami',

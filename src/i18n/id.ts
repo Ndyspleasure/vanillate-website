@@ -5,7 +5,7 @@
 export const t = {
   common: {
     inviteBot: 'Pakai Produk',
-    viewDocs: 'Lihat Dokumentasi',
+    viewFaq: 'Lihat Panduan',
     joinDiscord: 'Gabung Komunitas',
     learnMore: 'Selengkapnya',
     getStarted: 'Mulai',
@@ -15,7 +15,7 @@ export const t = {
     home: 'Beranda',
     about: 'Tentang',
     bots: 'Produk',
-    docs: 'Dokumentasi',
+    faq: 'FAQ & Panduan',
     support: 'Support',
     terms: 'Syarat Layanan',
     privacy: 'Kebijakan Privasi',

@@ -7,12 +7,20 @@ import SupportWizard from '@components/SupportWizard.astro';
 import { site } from '@data/site';
 import { bots } from '@data/bots';
 import { pageContent } from '@data/pages';
+import { faqCategoryUrl, faqIndexUrl, faqItemsFrom, faqsByCategory, populatedFaqCategories } from '@data/faq';
+import { url } from '@utils/url';
+import { inlineMarkdown } from '@utils/inline';
+import type { IconName } from '@data/icons';
 
 // Pengantar halaman ini dikelola dari /admin/halaman → tab "Support".
 const supportContent = pageContent('support');
-import { generalFaqs } from '@data/faq';
-import { url } from '@utils/url';
-import { inlineMarkdown } from '@utils/inline';
+
+// Panduan sekarang terpusat di FAQ. Halaman ini menawarkan seluruh kategori
+// yang berisi, lalu menampilkan FAQ dari kategori umum (yang tidak terikat ke
+// satu produk) sebagai jawaban cepat.
+const kategoriProdukSupport = new Set(bots.map((b) => b.faqCategory).filter(Boolean));
+const kategoriUmumSupport = populatedFaqCategories.filter((k) => !kategoriProdukSupport.has(k.slug));
+const faqCepat = faqItemsFrom(kategoriUmumSupport.map((k) => k.slug), 8);
 
 // Apa yang bisa kamu lakukan di server support.
 const channels = [
@@ -174,42 +182,47 @@ const bugSteps = [
     </div>
   </section>
 
-  <!-- CEK DOKUMENTASI DULU -->
+  <!-- CEK FAQ DULU -->
+  {populatedFaqCategories.length > 0 && (
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1 reveal">
         <p class="eyebrow mb-3">Sebelum bertanya</p>
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Cek dokumentasi dulu.</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Cek FAQ dulu.</h2>
       </div>
       <div class="md:col-span-2">
         <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed mb-6">
-          Banyak pertanyaan sudah terjawab di halaman dokumentasi masing-masing produk, lengkap dengan panduan dan strategi.
+          Seluruh panduan kami terkumpul di FAQ, dikelompokkan per kategori dan lengkap dengan langkah serta strategi.
         </p>
         <div class="grid gap-3 sm:grid-cols-2">
-          {bots.filter((b) => b.docsSlug).map((bot, i) => (
+          {populatedFaqCategories.map((kategori, i) => (
             <a
-              href={url(`/docs/${bot.docsSlug}`)}
+              href={faqCategoryUrl(kategori.slug)}
               class="reveal group flex items-center gap-3 p-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 hover:border-amber-500/50 transition-colors"
               style={`--reveal-delay: ${i * 70}ms`}
             >
-              {bot.thumbnail ? (
-                <img src={url(bot.thumbnail.replace(/\.png$/, '-256.png'))} alt="" class="h-10 w-10 rounded-lg object-cover flex-none" loading="lazy" decoding="async" />
-              ) : (
-                <span class="flex h-10 w-10 items-center justify-center rounded-lg flex-none" style={`background: ${bot.color}20; color: ${bot.color};`} aria-hidden="true"><Icon name={bot.icon} class="h-5 w-5" /></span>
-              )}
-              <div class="flex-1">
-                <p class="font-medium text-sm">Dokumentasi {bot.shortName}</p>
-                <p class="text-xs text-ink-500 dark:text-cream-300/60">Panduan lengkap</p>
+              <span class="flex h-10 w-10 items-center justify-center rounded-lg flex-none bg-amber-500/10 text-amber-600 dark:text-amber-400" aria-hidden="true">
+                <Icon name={kategori.icon as IconName} class="h-5 w-5" />
+              </span>
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-sm">{kategori.name}</p>
+                <p class="text-xs text-ink-500 dark:text-cream-300/60">{faqsByCategory(kategori.slug).length} pertanyaan</p>
               </div>
               <svg class="text-ink-400 dark:text-cream-300/40 group-hover:text-amber-500 transition-colors" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
             </a>
           ))}
         </div>
+        <a href={faqIndexUrl()} class="mt-6 inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors">
+          Cari di seluruh FAQ
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
       </div>
     </div>
   </section>
+  )}
 
   <!-- FAQ -->
+  {faqCepat.length > 0 && (
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1 reveal">
@@ -220,10 +233,11 @@ const bugSteps = [
         </p>
       </div>
       <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
-        <FAQAccordion items={generalFaqs} />
+        <FAQAccordion items={faqCepat} />
       </div>
     </div>
   </section>
+  )}
 
   <!-- LEGAL -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">

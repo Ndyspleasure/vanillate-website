@@ -4,12 +4,19 @@ import BotCard from '@components/BotCard.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
 import { bots } from '@data/bots';
 import { site, inviteSteps, whyVanillate } from '@data/site';
-import { generalFaqs } from '@data/faq';
+import { faqIndexUrl, faqItemsFrom, populatedFaqCategories } from '@data/faq';
 import { pageContent } from '@data/pages';
 import { url } from '@utils/url';
 
 // Teks halaman ini dikelola dari /admin/halaman → tab "Katalog Produk".
 const c = pageContent('products');
+
+// FAQ umum: kategori yang TIDAK terikat ke satu produk. Halaman ini menyebut
+// kategorinya saja — pertanyaannya sendiri dikelola di /admin/faq, jadi tidak
+// ada isi FAQ yang ditulis di halaman.
+const kategoriProduk = new Set(bots.map((b) => b.faqCategory).filter(Boolean));
+const kategoriUmum = populatedFaqCategories.filter((k) => !kategoriProduk.has(k.slug));
+const faqUmum = faqItemsFrom(kategoriUmum.map((k) => k.slug), 8);
 
 // Ringkasan status untuk strip angka di bawah hero.
 const liveCount = bots.filter((b) => b.status === 'live').length;
@@ -113,6 +120,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
   </section>
 
   <!-- FAQ UMUM -->
+  {faqUmum.length > 0 && (
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1 reveal">
@@ -125,10 +133,11 @@ const categories = [...new Set(bots.map((b) => b.category))];
         </p>
       </div>
       <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
-        <FAQAccordion items={generalFaqs} />
+        <FAQAccordion items={faqUmum} />
       </div>
     </div>
   </section>
+  )}
 
   <!-- CTA -->
   <section class="container-page pb-24">
@@ -142,8 +151,8 @@ const categories = [...new Set(bots.map((b) => b.category))];
           {c.ctaText}
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
-          <a href={url('/docs')} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
-            Lihat Dokumentasi
+          <a href={faqIndexUrl()} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
+            Lihat FAQ & Panduan
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </a>
           <a href={site.links.discordSupport} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">

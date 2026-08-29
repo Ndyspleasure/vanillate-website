@@ -93,7 +93,7 @@ export const supportProducts: SupportOption[] = [
   {
     id: 'website',
     label: 'Website',
-    desc: 'vanillate.id, dokumentasi, atau halaman lainnya.',
+    desc: 'vanillate.id, FAQ, atau halaman lainnya.',
     icon: 'globe',
   },
   {

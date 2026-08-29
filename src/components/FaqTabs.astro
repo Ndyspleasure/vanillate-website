@@ -1,0 +1,39 @@
+---
+// Sub-navigasi area FAQ di panel admin.
+//
+// Sidebar sudah menampilkan kedua halaman, tapi tab ini membuat perpindahan
+// antara daftar pertanyaan dan kategorinya terasa satu tempat — polanya sama
+// dengan PartnershipTabs.
+import { url } from '@utils/url';
+
+export interface Props {
+  active: string;
+}
+
+const { active } = Astro.props;
+
+const tabs = [
+  { key: 'faqs', label: 'Pertanyaan', href: '/admin/faq' },
+  { key: 'categories', label: 'Kategori', href: '/admin/faq/categories' },
+];
+---
+
+<nav class="px-6 lg:px-10 border-b border-ink-900/10 dark:border-cream-100/10 overflow-x-auto">
+  <ul class="flex gap-1 -mb-px">
+    {tabs.map((t) => (
+      <li>
+        <a
+          href={url(t.href)}
+          class={`inline-block whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
+            active === t.key
+              ? 'border-amber-500 text-amber-700 dark:text-amber-400'
+              : 'border-transparent text-ink-600 dark:text-cream-200/70 hover:text-ink-900 dark:hover:text-cream-100'
+          }`}
+          aria-current={active === t.key ? 'page' : undefined}
+        >
+          {t.label}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

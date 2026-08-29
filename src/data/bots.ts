@@ -69,7 +69,8 @@ export type Bot = {
   ctaText?: string;
   features: string[];
   commands?: { name: string; description: string }[];
-  docsSlug?: string;
+  /** Slug kategori FAQ produk ini (pengganti dokumentasi per produk). */
+  faqCategory?: string;
   longIntro?: string[];
   ctaLabel?: string;
   ctaUrl?: string;
@@ -111,7 +112,7 @@ type RawProduct = {
   android?: { packageName?: string; minAndroid?: string; installNote?: string } | null;
   ctaLabel?: string;
   ctaUrl?: string;
-  docsSlug?: string;
+  faqCategory?: string;
   seoTitle?: string;
   seoDescription?: string;
   media?: ProductMedia[];
@@ -177,7 +178,7 @@ function toBot(p: RawProduct): Bot {
     ctaNote: p.ctaNote || undefined,
     features,
     commands,
-    docsSlug: p.docsSlug || undefined,
+    faqCategory: p.faqCategory || undefined,
     longIntro: p.longIntro || [],
     ctaLabel: p.ctaLabel || undefined,
     ctaUrl: p.ctaUrl || undefined,
@@ -203,14 +204,14 @@ export const bots: Bot[] = allBots.sort(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Label CTA standar. Satu sumber kebenaran supaya tombol konsisten di seluruh
-// situs (kartu, halaman detail, docs, footer).
+// situs (kartu, halaman detail, FAQ, footer).
 // ─────────────────────────────────────────────────────────────────────────────
 export const CTA = {
   invite: 'Undang ke Server',
   download: 'Download APK',
   preorder: 'Amankan Tempat',
   notify: 'Ikuti Kabarnya',
-  docs: 'Lihat Panduan',
+  guide: 'Lihat Panduan',
   discord: 'Gabung Komunitas',
 } as const;
 
@@ -301,7 +302,7 @@ export function getFeaturedBot(): Bot {
   return bots.find((b) => b.featured) ?? bots[0];
 }
 
-/** Produk lain selain `slug`, untuk section cross-link di halaman detail & docs. */
+/** Produk lain selain `slug`, untuk section cross-link di halaman detail & FAQ. */
 export function getOtherBots(slug: string, limit = 3): Bot[] {
   return bots.filter((b) => b.slug !== slug).slice(0, limit);
 }

@@ -33,7 +33,7 @@ segera dibahas terpisah di [`PIPELINE-TERBIT.md`](./PIPELINE-TERBIT.md).
 
 | Sumber (repo bot) | Tujuan (website) | Dipakai di |
 |---|---|---|
-| `config-data/shop.json` | `src/data/synced/shop.json` | Tabel harga shop di `/docs/sambung-kata` |
+| `config-data/shop.json` | `src/data/synced/shop.json` | Tabel harga shop (token `{{shop-table}}` di jawaban FAQ) |
 | `config-data/bot-info.json` | `src/data/synced/bot-info.json` | Fitur & command di katalog/detail bot |
 | `version.json` | `src/data/synced/version.json` | Versi bot di halaman `/status` |
 | `CHANGELOG.json` | `src/data/synced/changelog.json` | Changelog di `/status` |

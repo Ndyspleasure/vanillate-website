@@ -53,6 +53,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   let bolehEdit = false;
   let uid: string | null = null;
   let current: any = null; // produk yang sedang diedit (null di tampilan daftar)
+  // Kategori FAQ untuk dropdown "Panduan produk". Sejak dokumentasi per produk
+  // dihapus, inilah yang menentukan ke mana tombol "Lihat Panduan" mengarah.
+  let kategoriFaq: { id: string; name: string; enabled: boolean }[] = [];
 
   const $ = (id: string) => document.getElementById(id)!;
   const listView = () => $('list-view');
@@ -108,6 +111,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       .order('sort', { ascending: true });
     if (error) { box.innerHTML = stateBlock('error', pesanError(error)); return; }
 
+    // Kategori FAQ ditarik terpisah dan boleh gagal: pada database yang belum
+    // menjalankan schema FAQ, katalog produk tetap bisa dikelola.
+    const kat = await supabase.from('faq_categories').select('id, name, enabled').order('sort', { ascending: true });
+    kategoriFaq = kat.error ? [] : ((kat.data ?? []) as any[]);
+
     const rows = data ?? [];
     const kartu = (p: any) => {
       const dot = p.accent_color ? `background:${esc(p.accent_color)}` : 'background:#E8B84A';
@@ -156,7 +164,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         discord_client_id: '', discord_permissions: '', discord_integration_type: '', invite_url: '',
         package_name: '', min_android: '', install_note: '',
         cta_label: '', cta_url: '', cta_heading: '', cta_text: '', cta_note: '',
-        docs_slug: '', seo_title: '', seo_description: '',
+        faq_category_id: '', seo_title: '', seo_description: '',
       };
     }
     listView().classList.add('hidden');
@@ -247,14 +255,19 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         <div class="grid gap-4 sm:grid-cols-3">
           ${field('f-cta_label', 'Label CTA (override)', inp('f-cta_label', p.cta_label, 'maxlength="40"'))}
           ${field('f-cta_url', 'CTA URL (override)', inp('f-cta_url', p.cta_url, 'type="url"'))}
-          ${field('f-docs_slug', 'Slug dokumentasi', inp('f-docs_slug', p.docs_slug, 'maxlength="60"'))}
+          ${field('f-faq_category_id', 'Kategori FAQ (panduan)',
+            sel('f-faq_category_id', p.faq_category_id || '', [
+              ['', kategoriFaq.length ? '— tanpa panduan —' : '— belum ada kategori FAQ —'],
+              ...kategoriFaq.map((k) => [k.id, k.enabled === false ? `${k.name} (nonaktif)` : k.name]),
+            ]),
+            'Menentukan tujuan tombol "Lihat Panduan" dan FAQ yang tampil di halaman produk. Kelola isinya di menu FAQ.')}
         </div>
         <!-- Konten halaman produk: dulu tertanam di kode, kini dari CMS. -->
         <div class="space-y-4 rounded-xl bg-ink-900/[0.03] dark:bg-cream-100/[0.03] p-4">
           <p class="font-mono text-xs uppercase tracking-wider text-ink-500 dark:text-cream-300/60">Isi halaman produk</p>
-          ${field('f-faq', 'FAQ (satu per baris: Pertanyaan | Jawaban)',
+          ${field('f-faq', 'FAQ cadangan (satu per baris: Pertanyaan | Jawaban)',
             ta('f-faq', (p.faq || []).map((f: any) => `${f.q} | ${f.a}`).join('\n'), 4),
-            'Kosongkan untuk menyembunyikan section FAQ di halaman produk.')}
+            'Hanya dipakai bila produk ini belum punya Kategori FAQ. Begitu kategorinya diisi, halaman produk memakai FAQ terpusat.')}
           <div class="grid gap-4 sm:grid-cols-2">
             ${field('f-cta_heading', 'Judul CTA penutup', inp('f-cta_heading', p.cta_heading, 'maxlength="120" placeholder="kosong = otomatis dari nama produk"'))}
             ${field('f-cta_note', 'Catatan kecil di bawah tombol', inp('f-cta_note', p.cta_note, 'maxlength="160"'))}
@@ -312,7 +325,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       package_name: v('f-package_name') || null, min_android: v('f-min_android') || null,
       install_note: v('f-install_note') || null,
       cta_label: v('f-cta_label') || null, cta_url: v('f-cta_url') || null,
-      docs_slug: v('f-docs_slug') || null,
+      faq_category_id: v('f-faq_category_id') || null,
       seo_title: v('f-seo_title') || null, seo_description: v('f-seo_description') || null,
     };
   }

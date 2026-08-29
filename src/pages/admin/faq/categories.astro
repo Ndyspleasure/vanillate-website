@@ -1,0 +1,288 @@
+---
+// Admin — Kategori FAQ.
+//
+// Kategori adalah tulang punggung FAQ terpusat: ia yang menentukan struktur
+// /faq, dan produk menunjuk ke kategori (bukan sebaliknya) lewat kolom
+// faq_category_id di /admin/produk. Slug kategori masuk ke URL publik, jadi
+// mengubahnya sama dengan memindahkan alamat — halaman ini mengingatkan itu.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import FaqTabs from '@components/FaqTabs.astro';
+---
+
+<AdminLayout title="Kategori FAQ" active="faq-kategori">
+  <AdminPageHeader
+    eyebrow="FAQ"
+    title="Kategori"
+    description="Kelompok panduan di halaman /faq. Produk menunjuk kategorinya lewat halaman Katalog Produk, jadi satu kategori bisa dipakai ulang oleh produk atau fitur mana pun."
+  />
+  <FaqTabs active="categories" />
+
+  <div id="kat-root" class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
+    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Urutan kategori di halaman publik mengikuti kolom <strong>Urutan</strong> (kecil = atas).
+        Kategori <strong>nonaktif</strong> beserta seluruh FAQ di dalamnya tidak ikut terbit.
+        <strong>Slug</strong> menjadi bagian URL (<code class="font-mono text-xs">/faq/&lt;slug&gt;</code>),
+        jadi mengubahnya akan mematikan tautan lama ke kategori itu.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Daftar kategori</h2>
+      <button type="button" id="btn-tambah"
+        class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">
+        + Tambah kategori
+      </button>
+    </div>
+
+    <div id="kat-body" class="space-y-5"></div>
+    <p id="kat-pesan" class="text-sm" role="status" aria-live="polite"></p>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { icons } from '@data/icons';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+
+  // Pilihan ikon diambil dari registry situs, jadi daftarnya ikut bertambah
+  // sendiri saat registry diperbarui.
+  const IKON = Object.keys(icons);
+
+  type Kategori = {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    icon: string | null;
+    enabled: boolean;
+    sort: number;
+  };
+
+  let bolehEdit = false;
+  let uid: string | null = null;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    uid = profile?.id ?? null;
+    void muat();
+    document.getElementById('btn-tambah')!.addEventListener('click', onTambah);
+    document.getElementById('kat-body')!.addEventListener('click', onAksi);
+  });
+
+  function lapor(teks: string, sukses = false) {
+    const pesan = document.getElementById('kat-pesan')!;
+    pesan.textContent = teks;
+    pesan.className = sukses
+      ? 'text-sm text-teal-700 dark:text-teal-300'
+      : 'text-sm text-red-600 dark:text-red-400';
+  }
+
+  /** Slug aman dari teks bebas: huruf kecil, angka, dan tanda hubung. */
+  function keSlug(teks: string): string {
+    return teks.trim().toLowerCase().normalize('NFKD')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+  }
+
+  /** Jumlah FAQ per kategori — supaya admin tahu dampaknya sebelum menghapus. */
+  async function hitungFaq(): Promise<Map<string, number>> {
+    const supabase = getSupabase();
+    const peta = new Map<string, number>();
+    if (!supabase) return peta;
+    const { data } = await supabase.from('faqs').select('category_id');
+    for (const r of (data ?? []) as any[]) {
+      peta.set(r.category_id, (peta.get(r.category_id) ?? 0) + 1);
+    }
+    return peta;
+  }
+
+  /** Produk yang memakai kategori — dependency yang harus dilihat sebelum hapus. */
+  async function hitungProduk(): Promise<Map<string, string[]>> {
+    const supabase = getSupabase();
+    const peta = new Map<string, string[]>();
+    if (!supabase) return peta;
+    const { data } = await supabase.from('products').select('name, faq_category_id');
+    for (const r of (data ?? []) as any[]) {
+      if (!r.faq_category_id) continue;
+      const daftar = peta.get(r.faq_category_id) ?? [];
+      daftar.push(String(r.name ?? ''));
+      peta.set(r.faq_category_id, daftar);
+    }
+    return peta;
+  }
+
+  async function muat() {
+    const body = document.getElementById('kat-body')!;
+    body.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+
+    const [{ data, error }, jumlahFaq, produk] = await Promise.all([
+      supabase.from('faq_categories')
+        .select('id, name, slug, description, icon, enabled, sort')
+        .order('sort', { ascending: true }),
+      hitungFaq(),
+      hitungProduk(),
+    ]);
+
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || data.length === 0) {
+      body.innerHTML = stateBlock('empty', 'Belum ada kategori FAQ. Tambahkan satu untuk mulai menulis panduan.');
+      return;
+    }
+
+    body.innerHTML = (data as Kategori[])
+      .map((c) => kartu(c, jumlahFaq.get(c.id) ?? 0, produk.get(c.id) ?? []))
+      .join('');
+
+    if (!bolehEdit) {
+      body.querySelectorAll('input, textarea, select, button').forEach((n) => ((n as HTMLInputElement).disabled = true));
+      (document.getElementById('btn-tambah') as HTMLButtonElement).disabled = true;
+      lapor('Peran kamu hanya bisa melihat.');
+    }
+  }
+
+  function kartu(c: Kategori, jumlah: number, produk: string[]): string {
+    const f = (nama: string, label: string, isi: string, bantuan = '') => `
+      <div>
+        <label class="block text-sm font-medium mb-1.5" for="k-${esc(c.id)}-${esc(nama)}">${esc(label)}</label>
+        ${isi}
+        ${bantuan ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(bantuan)}</p>` : ''}
+      </div>`;
+    const teks = (nama: string, nilai: any, extra = '') =>
+      `<input id="k-${esc(c.id)}-${esc(nama)}" data-id="${esc(c.id)}" data-field="${esc(nama)}" value="${esc(nilai ?? '')}" ${extra} class="${INPUT}" />`;
+
+    const aktif = c.enabled !== false;
+    const dipakai = produk.length
+      ? `Dipakai produk: ${produk.join(', ')}`
+      : 'Belum dipakai produk mana pun.';
+
+    return `
+      <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="font-display text-base font-semibold tracking-tightest">${esc(c.name)}</h3>
+            <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60">/faq/${esc(c.slug)} · ${jumlah} FAQ</p>
+            <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(dipakai)}</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" data-id="${esc(c.id)}" data-field="enabled" ${aktif ? 'checked' : ''}
+                class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+              Aktif
+            </label>
+            <button type="button" data-simpan="${esc(c.id)}"
+              class="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-amber-400 transition-colors">Simpan</button>
+            <button type="button" data-hapus="${esc(c.id)}" data-jumlah="${jumlah}" data-produk="${esc(produk.join(', '))}" data-nama="${esc(c.name)}"
+              class="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">Hapus</button>
+          </div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-[1fr_1fr_6rem]">
+          ${f('name', 'Nama kategori', teks('name', c.name, 'maxlength="60"'))}
+          ${f('slug', 'Slug (URL)', teks('slug', c.slug, 'maxlength="60"'), 'Huruf kecil, tanpa spasi.')}
+          ${f('sort', 'Urutan', teks('sort', c.sort ?? 100, 'inputmode="numeric"'))}
+        </div>
+
+        ${f('description', 'Deskripsi',
+          `<textarea id="k-${esc(c.id)}-description" data-id="${esc(c.id)}" data-field="description" rows="2" maxlength="300" class="${INPUT}">${esc(c.description ?? '')}</textarea>`,
+          'Tampil di bawah judul kategori pada halaman publik.')}
+
+        ${f('icon', 'Ikon',
+          `<select id="k-${esc(c.id)}-icon" data-id="${esc(c.id)}" data-field="icon" class="${INPUT}">
+             ${IKON.map((i) => `<option value="${esc(i)}" ${c.icon === i ? 'selected' : ''}>${esc(i)}</option>`).join('')}
+           </select>`)}
+      </section>`;
+  }
+
+  async function onTambah() {
+    if (!bolehEdit) return;
+    const nama = window.prompt('Nama kategori baru (mis. "Mobile Legends"):');
+    if (!nama || !nama.trim()) { return; }
+
+    const slug = keSlug(nama);
+    if (!slug) { lapor('Nama kategori harus mengandung huruf atau angka.'); return; }
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { error } = await supabase.from('faq_categories').insert({
+      name: nama.trim(),
+      slug,
+      enabled: true,
+      sort: 100,
+      icon: 'circle-help',
+      updated_by: uid,
+    });
+
+    if (error) {
+      lapor(error.code === '23505' ? `Slug "${slug}" sudah dipakai kategori lain.` : pesanError(error));
+      return;
+    }
+    lapor(`Kategori "${nama.trim()}" ditambahkan. Lengkapi deskripsi & ikonnya.`, true);
+    void muat();
+  }
+
+  async function onAksi(e: Event) {
+    const el = (e.target as HTMLElement).closest('button[data-simpan], button[data-hapus]') as HTMLButtonElement | null;
+    if (!el || !bolehEdit) return;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    // ── Hapus ──
+    // Dependency diperiksa lebih dulu. Kategori yang masih berisi FAQ ditolak
+    // di database (foreign key restrict), jadi lebih baik dijelaskan di sini
+    // daripada memunculkan galat teknis yang tidak bisa ditindaklanjuti.
+    if (el.hasAttribute('data-hapus')) {
+      const id = el.dataset.hapus!;
+      const jumlah = Number(el.dataset.jumlah ?? 0);
+      const produk = el.dataset.produk ?? '';
+      if (jumlah > 0) {
+        lapor(`Kategori ini masih berisi ${jumlah} FAQ. Pindahkan atau hapus FAQ-nya dulu lewat halaman Pertanyaan.`);
+        return;
+      }
+      const peringatan = produk
+        ? `Produk berikut masih menunjuk kategori ini: ${produk}. Setelah dihapus, produk itu kehilangan tombol panduannya. Lanjutkan?`
+        : `Hapus kategori "${el.dataset.nama}"?`;
+      if (!window.confirm(peringatan)) return;
+
+      const { error } = await supabase.from('faq_categories').delete().eq('id', id);
+      if (error) { lapor(pesanError(error)); return; }
+      lapor('Kategori dihapus.', true);
+      void muat();
+      return;
+    }
+
+    // ── Simpan ──
+    const id = el.dataset.simpan!;
+    const patch: Record<string, any> = {};
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[data-id="${CSS.escape(id)}"][data-field]`).forEach((n) => {
+      const field = n.dataset.field!;
+      if (field === 'enabled') patch.enabled = (n as HTMLInputElement).checked;
+      else if (field === 'sort') patch.sort = Number.parseInt(n.value.trim(), 10) || 100;
+      else patch[field] = n.value.trim() || null;
+    });
+
+    if (!patch.name) { lapor('Nama kategori wajib diisi.'); return; }
+    if (!patch.slug) { lapor('Slug wajib diisi.'); return; }
+    if (!/^[a-z0-9-]+$/.test(patch.slug)) { lapor('Slug hanya boleh huruf kecil, angka, dan tanda hubung.'); return; }
+
+    el.disabled = true;
+    const { error } = await supabase.from('faq_categories')
+      .update({ ...patch, updated_by: uid })
+      .eq('id', id);
+    el.disabled = false;
+
+    if (error) {
+      lapor(error.code === '23505' ? `Slug "${patch.slug}" sudah dipakai kategori lain.` : pesanError(error));
+      return;
+    }
+    lapor('Kategori tersimpan. Tampil di situs setelah build berikutnya.', true);
+    void muat();
+  }
+</script>

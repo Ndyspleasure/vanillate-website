@@ -42,6 +42,7 @@ build.
 |---|---|---|---|
 | Banner pengumuman (`/admin/konten`) | `sync-content.yml` | tiap 15 menit | ~5–45 menit |
 | Konten & harga Partnership (`/admin/partnership/*`) | `sync-content.yml` | tiap 15 menit | ~5–45 menit |
+| FAQ & panduan (`/admin/faq`) | `sync-content.yml` | tiap 15 menit | ~5–45 menit |
 | Versi, changelog, shop, fitur/command (repo bot) | `sync-data.yml` | tiap jam | ~1–2 jam |
 | Setting bot (`/admin/kontrol`) | — | polling bot | **≤ 60 detik** |
 | Aksi bot (`/admin/operasi`) | — | polling bot | **≤ 20 detik** |
@@ -192,7 +193,7 @@ kalau frekuensi edit CMS sudah tinggi.
 
 | File | Perannya |
 |---|---|
-| `.github/workflows/sync-content.yml` | Supabase → `site-content.json` + `partnership.json` → build & deploy |
+| `.github/workflows/sync-content.yml` | Supabase → `site-content.json`, `partnership.json`, `products.json`, `pages.json`, `faq.json` → build & deploy |
 | `.github/workflows/sync-data.yml` | Repo bot → `shop/bot-info/version/changelog.json` → build & deploy |
 | `.github/workflows/deploy.yml` | Build & deploy tiap push ke `main` |
 | `scripts/sync-content.mjs` | Query Supabase + sanitasi nilai dari CMS |
