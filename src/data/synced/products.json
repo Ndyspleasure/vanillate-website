@@ -21,7 +21,10 @@
       "discord": {
         "clientId": "1513806760622817320",
         "permissions": "876173413440",
-        "scopes": ["bot", "applications.commands"],
+        "scopes": [
+          "bot",
+          "applications.commands"
+        ],
         "integrationType": "0",
         "inviteUrl": ""
       },
