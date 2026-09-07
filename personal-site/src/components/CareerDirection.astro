@@ -1,0 +1,88 @@
+---
+import Icon from './Icon.astro';
+import { content, type Locale } from '../data/content.ts';
+interface Props { locale?: Locale }
+const { locale = 'id' } = Astro.props;
+const t = content[locale];
+const steps = [t.career.now, t.career.focus, t.career.next];
+---
+<section class="career" aria-labelledby="career-h">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{t.career.eyebrow}</p>
+      <h2 class="h2" id="career-h">{t.career.title}</h2>
+    </div>
+
+    <ol class="career__flow">
+      {steps.map((s, i) => (
+        <>
+          <li class="career__step" data-reveal style={`--reveal-delay:${i * 100}ms`}>
+            <span class="career__label mono">{s.label}</span>
+            <ul class="career__items">
+              {s.items.map((it) => <li class={i === steps.length - 1 ? 'is-next' : ''}>{it}</li>)}
+            </ul>
+          </li>
+          {i < steps.length - 1 && (
+            <li class="career__arrow" aria-hidden="true" data-reveal>
+              <Icon name="arrowDown" size={20} />
+            </li>
+          )}
+        </>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .career__flow {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-width: 620px;
+  }
+  .career__step {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .career__label {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+    color: var(--accent-ink);
+    min-width: 80px;
+  }
+  .career__items {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0;
+    margin: 0;
+  }
+  .career__items li {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+  .career__items li:not(:last-child)::after { content: ','; color: var(--text-2); }
+  .career__items li.is-next {
+    color: var(--accent-ink);
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 0.95rem;
+  }
+  .career__items li.is-next::after { content: ''; }
+  .career__arrow {
+    display: flex;
+    justify-content: center;
+    color: var(--text-2);
+    padding: 10px 0;
+  }
+</style>

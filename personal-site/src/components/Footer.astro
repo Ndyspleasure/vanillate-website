@@ -1,0 +1,67 @@
+---
+import Icon from './Icon.astro';
+import { content, site, altUrl, type Locale } from '../data/content.ts';
+interface Props { locale?: Locale; path?: string }
+const { locale = 'id', path = '/' } = Astro.props;
+const t = content[locale];
+const year = new Date().getFullYear();
+const other: Locale = locale === 'en' ? 'id' : 'en';
+---
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__brand">
+      <span class="mono">{site.initials}</span>
+      <p class="footer__tag">{t.footer.tagline}</p>
+    </div>
+
+    <nav class="footer__nav" aria-label="Footer">
+      <a href={site.linkedin} target="_blank" rel="me noopener">LinkedIn</a>
+      <a href={site.studioUrl} target="_blank" rel="noopener">{site.studioName}</a>
+      <a href={altUrl(other, path)} hreflang={other}>{locale === 'en' ? 'Bahasa Indonesia' : 'English'}</a>
+    </nav>
+
+    <div class="footer__bar">
+      <p class="footer__rights">© {year} {site.author}. {t.footer.rights}</p>
+      <a class="footer__top" href="#top">
+        {t.footer.backTop}
+        <Icon name="arrowUp" size={15} />
+      </a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--border);
+    padding-block: clamp(48px, 8vh, 88px) 40px;
+  }
+  .footer__inner { display: flex; flex-direction: column; gap: 32px; }
+  .footer__brand { display: flex; gap: 18px; align-items: baseline; }
+  .footer__brand .mono { font-family: var(--font-mono); color: var(--accent-ink); }
+  .footer__tag { max-width: 30ch; color: var(--text-2); font-size: 0.95rem; }
+  .footer__nav { display: flex; flex-wrap: wrap; gap: 22px; }
+  .footer__nav a { font-size: 0.9rem; color: var(--text-2); transition: color 0.25s var(--ease); }
+  .footer__nav a:hover { color: var(--text); }
+  .footer__bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-top: 26px;
+    border-top: 1px solid var(--border);
+  }
+  .footer__rights { font-size: 0.82rem; color: var(--text-2); }
+  .footer__top {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    transition: color 0.25s var(--ease);
+  }
+  .footer__top:hover { color: var(--accent-ink); }
+</style>

@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Hero from '../../components/Hero.astro';
+import About from '../../components/About.astro';
+import LocationGlobe from '../../components/LocationGlobe.astro';
+import Expertise from '../../components/Expertise.astro';
+import Skills from '../../components/Skills.astro';
+import DigitalBuild from '../../components/DigitalBuild.astro';
+import Vanillate from '../../components/Vanillate.astro';
+import Work from '../../components/Work.astro';
+import BeyondWork from '../../components/BeyondWork.astro';
+import Values from '../../components/Values.astro';
+import CareerDirection from '../../components/CareerDirection.astro';
+import Contact from '../../components/Contact.astro';
+import Footer from '../../components/Footer.astro';
+
+const locale = 'en' as const;
+const path = '/';
+---
+<BaseLayout locale={locale} path={path} type="profile">
+  <Nav locale={locale} path={path} />
+  <main id="main">
+    <Hero locale={locale} />
+    <About locale={locale} />
+    <LocationGlobe locale={locale} />
+    <Expertise locale={locale} />
+    <Skills locale={locale} />
+    <DigitalBuild locale={locale} />
+    <Vanillate locale={locale} />
+    <Work locale={locale} />
+    <BeyondWork locale={locale} />
+    <Values locale={locale} />
+    <CareerDirection locale={locale} />
+    <Contact locale={locale} />
+  </main>
+  <Footer locale={locale} path={path} />
+</BaseLayout>

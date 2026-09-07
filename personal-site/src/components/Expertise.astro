@@ -1,0 +1,85 @@
+---
+import { content, expertise, type Locale } from '../data/content.ts';
+interface Props { locale?: Locale }
+const { locale = 'id' } = Astro.props;
+const t = content[locale];
+const num = (n: number) => String(n + 1).padStart(2, '0');
+---
+<section class="exp" aria-labelledby="exp-h">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{t.expertise.eyebrow}</p>
+      <h2 class="h2" id="exp-h">{t.expertise.title}</h2>
+      <p class="lead" style="margin-top:16px">{t.expertise.lead}</p>
+    </div>
+
+    <div class="exp__grid">
+      {expertise.map((cat, i) => (
+        <article class="exp__card" data-reveal style={`--reveal-delay:${i * 80}ms`}>
+          <span class="exp__num mono">{num(i)}</span>
+          <h3 class="h3 exp__title">{cat.title}</h3>
+          <ul class="exp__list">
+            {cat.items.map((it) => <li>{it}</li>)}
+          </ul>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .exp__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .exp__card {
+    background: var(--bg-elev);
+    padding: 30px 26px 34px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    transition: background 0.4s var(--ease);
+  }
+  .exp__card:hover { background: var(--bg); }
+  .exp__num {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--accent-ink);
+  }
+  .exp__title { margin: 18px 0 16px; }
+  .exp__list {
+    list-style: none;
+    padding: 0;
+    margin: auto 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .exp__list li {
+    font-size: 0.92rem;
+    color: var(--text-2);
+    padding-left: 16px;
+    position: relative;
+  }
+  .exp__list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 6px;
+    height: 1px;
+    background: var(--accent);
+  }
+  @media (max-width: 900px) {
+    .exp__grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .exp__grid { grid-template-columns: 1fr; }
+    .exp__card { min-height: 0; }
+  }
+</style>

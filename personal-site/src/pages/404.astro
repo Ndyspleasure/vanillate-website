@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+const locale = 'id' as const;
+---
+<BaseLayout locale={locale} path="/" title="404 — Halaman tidak ditemukan | Andi Kurniawan" noindex={true}>
+  <Nav locale={locale} path="/" />
+  <main id="main" class="nf">
+    <div class="container">
+      <p class="eyebrow">Error 404</p>
+      <h1 class="display nf__title">Tersesat.</h1>
+      <p class="lead">Halaman yang kamu cari tidak ada atau sudah dipindahkan.</p>
+      <a class="btn btn--primary" href="/">Kembali ke beranda</a>
+    </div>
+  </main>
+  <Footer locale={locale} path="/" />
+</BaseLayout>
+
+<style>
+  .nf { min-height: 66svh; display: grid; place-items: center; text-align: center; }
+  .nf__title { margin: 16px 0; font-size: clamp(3rem, 16vw, 9rem); }
+  .nf .btn { margin-top: 26px; }
+</style>

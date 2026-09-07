@@ -1,0 +1,86 @@
+---
+import { content, type Locale } from '../data/content.ts';
+interface Props { locale?: Locale }
+const { locale = 'id' } = Astro.props;
+const t = content[locale];
+---
+<section class="about" id="about" aria-labelledby="about-h">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{t.about.eyebrow}</p>
+      <h2 class="h2" id="about-h">{t.about.title}</h2>
+    </div>
+
+    <div class="about__grid">
+      <div class="about__body" data-reveal>
+        <p class="lead">{t.about.body}</p>
+        <ul class="about__identity">
+          {t.about.identity.map((i) => <li>{i}</li>)}
+        </ul>
+      </div>
+
+      <dl class="about__stats" data-reveal style="--reveal-delay:120ms">
+        {t.about.stats.map((s) => (
+          <div class="stat">
+            <dt class="stat__v">{s.value}</dt>
+            <dd class="stat__l">{s.label}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </div>
+</section>
+
+<style>
+  .about__grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: clamp(28px, 5vw, 72px);
+    align-items: start;
+  }
+  .about__body .lead { max-width: 40ch; }
+  .about__identity {
+    list-style: none;
+    padding: 0;
+    margin: 28px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .about__identity li {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-2);
+  }
+  .about__stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 0;
+  }
+  .stat {
+    background: var(--bg-elev);
+    padding: 26px 22px;
+  }
+  .stat__v {
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .stat__l {
+    margin: 6px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-2);
+  }
+  @media (max-width: 780px) {
+    .about__grid { grid-template-columns: 1fr; }
+  }
+</style>

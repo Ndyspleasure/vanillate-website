@@ -1,0 +1,148 @@
+---
+import Icon from './Icon.astro';
+import { content, type Locale } from '../data/content.ts';
+import type { Project } from '../data/projects.ts';
+interface Props { locale: Locale; project: Project }
+const { locale, project } = Astro.props;
+const t = content[locale];
+const base = locale === 'en' ? '/en' : '';
+const workHref = `${base}/#work`;
+const homeHref = base || '/';
+---
+<main id="main" class="detail">
+  <div class="container">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href={homeHref}>{locale === 'en' ? 'Home' : 'Beranda'}</a>
+      <span aria-hidden="true">/</span>
+      <a href={workHref}>{t.nav.work}</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{project.name}</span>
+    </nav>
+
+    <article class="detail__article">
+      <header class="detail__head">
+        <p class="eyebrow">{project.category}</p>
+        <h1 class="display detail__title">{project.name}</h1>
+        <p class="lead detail__summary">{project.summary[locale]}</p>
+      </header>
+
+      <figure class="detail__figure">
+        <img
+          src={project.image}
+          alt={project.alt[locale]}
+          width="1200"
+          height="750"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </figure>
+
+      <div class="detail__grid">
+        <div class="detail__body">
+          {project.body[locale].map((p) => <p>{p}</p>)}
+          <a class="btn btn--primary detail__live" href={project.liveUrl} target="_blank" rel="noopener">
+            {project.liveLabel[locale]}
+            <span class="arrow"><Icon name="arrowUpRight" size={16} /></span>
+          </a>
+        </div>
+
+        <aside class="detail__meta">
+          <div class="metablock">
+            <h2 class="metablock__h">{locale === 'en' ? 'Role' : 'Peran'}</h2>
+            <p>{project.role[locale]}</p>
+          </div>
+          <div class="metablock">
+            <h2 class="metablock__h">{locale === 'en' ? 'Year' : 'Tahun'}</h2>
+            <p>{project.year}</p>
+          </div>
+          <div class="metablock">
+            <h2 class="metablock__h">{locale === 'en' ? 'Technology' : 'Teknologi'}</h2>
+            <ul class="techlist">
+              {project.tech.map((x) => <li>{x}</li>)}
+            </ul>
+          </div>
+        </aside>
+      </div>
+
+      <a class="detail__back" href={workHref}>
+        <Icon name="arrowRight" size={16} class="flip" />
+        {locale === 'en' ? 'Back to all work' : 'Kembali ke semua karya'}
+      </a>
+    </article>
+  </div>
+</main>
+
+<style>
+  .detail { padding-top: clamp(28px, 6vh, 56px); padding-bottom: 0; }
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-2);
+    margin-bottom: clamp(28px, 6vh, 56px);
+  }
+  .crumbs a:hover { color: var(--accent-ink); }
+  .crumbs [aria-current] { color: var(--text); }
+  .detail__head { max-width: 800px; }
+  .detail__title { margin: 16px 0 0; font-size: clamp(2.4rem, 8vw, 5.5rem); text-transform: none; letter-spacing: -0.03em; }
+  .detail__summary { margin-top: 22px; max-width: 46ch; }
+  .detail__figure {
+    margin: clamp(32px, 6vh, 64px) 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg-elev);
+  }
+  .detail__figure img { width: 100%; height: auto; aspect-ratio: 16/10; object-fit: cover; }
+  .detail__grid {
+    display: grid;
+    grid-template-columns: 1.6fr 0.9fr;
+    gap: clamp(28px, 5vw, 72px);
+    align-items: start;
+  }
+  .detail__body p { color: var(--text-2); margin-bottom: 18px; max-width: 60ch; }
+  .detail__live { margin-top: 12px; }
+  .detail__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    border-top: 2px solid var(--text);
+    padding-top: 24px;
+  }
+  .metablock__h {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .metablock p { font-family: var(--font-display); font-size: 1.05rem; }
+  .techlist { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .techlist li {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-2);
+  }
+  .detail__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: clamp(48px, 8vh, 88px) 0;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-2);
+  }
+  .detail__back:hover { color: var(--accent-ink); }
+  .detail__back :global(.flip) { transform: rotate(180deg); }
+  @media (max-width: 780px) {
+    .detail__grid { grid-template-columns: 1fr; }
+  }
+</style>

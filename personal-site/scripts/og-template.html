@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html { background: #0A0A0A; }
+  html, body { width: 1200px; }
+  body {
+    width: 1200px; height: 630px;
+    font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
+    background: #0A0A0A; color: #F5F5F5;
+    position: relative; overflow: hidden;
+  }
+  .bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(60% 90% at 88% 15%, rgba(255,59,59,0.22), transparent 60%),
+      radial-gradient(50% 80% at 8% 105%, rgba(255,59,59,0.10), transparent 55%);
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(80% 80% at 30% 40%, #000 30%, transparent 82%);
+  }
+  .ak { position: absolute; right: 78px; top: 183px; width: 264px; height: 264px; opacity: 0.85; z-index: 1; }
+
+  .wrap { position: relative; z-index: 2; height: 630px; padding: 56px 80px; }
+  .mono { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; }
+  .top { position: absolute; top: 56px; left: 80px; font-size: 22px; letter-spacing: 2px; }
+  .mid { position: absolute; top: 196px; left: 80px; }
+  .name {
+    max-width: 780px;
+    font-size: 106px; font-weight: 800; letter-spacing: -4px; line-height: 0.9;
+    text-transform: uppercase;
+  }
+  .roles { margin-top: 24px; font-size: 29px; color: #BBB; }
+  .roles b { color: #F5F5F5; font-weight: 600; }
+  .dotsep { color: #FF3B3B; }
+  .foot { position: absolute; left: 80px; right: 80px; bottom: 52px; display: flex; align-items: baseline; justify-content: space-between; gap: 24px; }
+  .loc { font-size: 23px; color: #AAAAAA; }
+  .loc b { color: #F5F5F5; font-weight: 600; }
+  .url { font-size: 19px; color: #FF6B6B; letter-spacing: 1px; white-space: nowrap; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="grid"></div>
+  <svg class="ak" viewBox="0 0 200 200" fill="none">
+    <circle cx="100" cy="100" r="94" stroke="#242424" stroke-width="1.5"/>
+    <circle cx="100" cy="100" r="94" stroke="#FF3B3B" stroke-width="1.5" stroke-dasharray="80 500" stroke-linecap="round"/>
+    <path d="M58 148 L86 52 L114 148 M67 116 H105" stroke="#FF3B3B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M126 52 V148 M126 104 L160 52 M132 100 L162 148" stroke="#F5F5F5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="160" cy="52" r="4" fill="#FF3B3B"/>
+  </svg>
+
+  <div class="wrap">
+    <div class="top mono">
+      <span style="color:#FF6B6B">AK</span>
+      <span style="color:#666"> // </span>
+      <span style="color:#999">PERSONAL</span>
+    </div>
+    <div class="mid">
+      <div class="name">Andi<br>Kurniawan</div>
+      <div class="roles mono">Mahasiswa <span class="dotsep">·</span> Profesional <span class="dotsep">·</span> <b>Founder</b> <span class="dotsep">·</span> <b>Developer</b></div>
+    </div>
+    <div class="foot">
+      <div class="loc">Founder <b>Vanillate Studio</b> &nbsp;·&nbsp; Bekasi, Indonesia</div>
+      <div class="url mono">personal.andikurniawan.vanillate.id</div>
+    </div>
+  </div>
+</body>
+</html>
