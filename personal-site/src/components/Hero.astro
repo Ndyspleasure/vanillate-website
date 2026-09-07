@@ -1,0 +1,149 @@
+---
+import Icon from './Icon.astro';
+import { content, site, type Locale } from '../data/content.ts';
+
+interface Props { locale?: Locale }
+const { locale = 'id' } = Astro.props;
+const t = content[locale];
+const workHref = locale === 'en' ? '/en/#work' : '/#work';
+---
+<section class="hero" id="top" aria-label={t.about.eyebrow}>
+  <div class="container hero__grid">
+    <div class="hero__text">
+      <p class="eyebrow hero__anim" style="--d:.05s">{site.locality}, {site.country}</p>
+
+      <!-- H1 utama & satu-satunya untuk homepage (§9, §37). Teks nyata di DOM. -->
+      <h1 class="display hero__title">
+        <span class="hero__anim" style="--d:.12s">Andi</span>
+        <span class="hero__anim" style="--d:.20s">Kurniawan</span>
+      </h1>
+
+      <p class="hero__roles hero__anim" style="--d:.30s">
+        {t.hero.roles.map((r, i) => (
+          <>
+            {i > 0 && <span class="dot" aria-hidden="true">·</span>}
+            <span>{r}</span>
+          </>
+        ))}
+      </p>
+
+      <p class="lead hero__lead hero__anim" style="--d:.38s">{t.hero.lead}</p>
+
+      <div class="hero__cta hero__anim" style="--d:.46s">
+        <a class="btn btn--primary" href={workHref}>
+          {t.hero.ctaPrimary}
+          <span class="arrow"><Icon name="arrowRight" size={17} /></span>
+        </a>
+        <a class="btn btn--ghost" href={site.linkedin} target="_blank" rel="noopener me">
+          {t.hero.ctaSecondary}
+          <span class="arrow"><Icon name="arrowUpRight" size={16} /></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Visual: AK monogram. Layout menyisakan tempat untuk foto asli nanti (§8). -->
+    <div class="hero__visual hero__anim" style="--d:.35s" aria-hidden="true">
+      <svg class="monogram" viewBox="0 0 200 200" fill="none" role="presentation">
+        <defs>
+          <linearGradient id="akg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="var(--accent)" />
+            <stop offset="1" stop-color="var(--text)" />
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="100" r="94" stroke="var(--border)" stroke-width="1" />
+        <circle class="ring" cx="100" cy="100" r="94" stroke="var(--accent)" stroke-width="1.5" pathLength="1" />
+        <path class="draw" d="M58 148 L86 52 L114 148 M67 116 H105" stroke="url(#akg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" />
+        <path class="draw" d="M126 52 V148 M126 104 L160 52 M132 100 L162 148" stroke="url(#akg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" style="--dd:.35s" />
+        <circle cx="160" cy="52" r="3" fill="var(--accent)" class="pulse" />
+      </svg>
+    </div>
+  </div>
+
+  <a class="hero__scroll hero__anim" href={locale === 'en' ? '/en/#about' : '/#about'} style="--d:.7s">
+    <span>{t.hero.scroll}</span>
+    <Icon name="arrowDown" size={16} />
+  </a>
+</section>
+
+<style>
+  .hero {
+    min-height: min(100svh, 900px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: clamp(90px, 14vh, 150px) 60px;
+    position: relative;
+  }
+  .hero__grid {
+    display: grid;
+    grid-template-columns: 1.3fr 0.7fr;
+    align-items: center;
+    gap: clamp(24px, 5vw, 64px);
+  }
+  .hero__title {
+    margin: 18px 0 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .hero__title span { display: block; }
+  .hero__roles {
+    margin-top: 20px;
+    font-family: var(--font-mono);
+    font-size: clamp(0.82rem, 1.6vw, 1rem);
+    letter-spacing: 0.02em;
+    color: var(--text-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .hero__roles .dot { color: var(--accent); }
+  .hero__lead { margin-top: 26px; max-width: 46ch; }
+  .hero__cta { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 12px; }
+
+  .hero__visual { display: grid; place-items: center; }
+  .monogram { width: min(340px, 78%); height: auto; }
+  .hero__scroll {
+    position: absolute;
+    left: 50%;
+    bottom: 26px;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+  .hero__scroll :global(.icon) { animation: bob 2.4s var(--ease-in-out) infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+  /* Draw / pulse */
+  .ring { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawRing 2.6s var(--ease) 0.5s forwards; }
+  .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawRing 1.3s var(--ease) calc(0.7s + var(--dd, 0s)) forwards; }
+  @keyframes drawRing { to { stroke-dashoffset: 0; } }
+  .pulse { animation: pulse 2.2s ease-in-out 1.8s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  /* On-load stagger (§10) */
+  .hero__anim {
+    opacity: 0;
+    transform: translateY(18px);
+    animation: heroIn 0.85s var(--ease) forwards;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes heroIn { to { opacity: 1; transform: none; } }
+
+  @media (max-width: 780px) {
+    .hero__grid { grid-template-columns: 1fr; }
+    .hero__visual { order: -1; justify-content: start; }
+    .monogram { width: 150px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__anim { opacity: 1; transform: none; animation: none; }
+    .ring, .draw { stroke-dashoffset: 0; animation: none; }
+    .pulse, .hero__scroll :global(.icon) { animation: none; }
+  }
+</style>

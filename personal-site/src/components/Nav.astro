@@ -1,0 +1,258 @@
+---
+import Icon from './Icon.astro';
+import { content, altUrl, type Locale } from '../data/content.ts';
+
+interface Props {
+  locale?: Locale;
+  path?: string;
+}
+const { locale = 'id', path = '/' } = Astro.props;
+const t = content[locale];
+const homeHref = locale === 'en' ? '/en' : '/';
+const other: Locale = locale === 'en' ? 'id' : 'en';
+const altHref = altUrl(other, path);
+const secHref = (id: string) => `${homeHref === '/' ? '' : homeHref}/#${id}`;
+
+const links = [
+  { label: t.nav.about, id: 'about' },
+  { label: t.nav.work, id: 'work' },
+  { label: t.nav.vanillate, id: 'vanillate' },
+  { label: t.nav.contact, id: 'contact' },
+];
+---
+<header class="nav" data-nav>
+  <div class="container nav__inner">
+    <a class="nav__brand" href={homeHref} aria-label={`${'Andi Kurniawan'} — beranda`}>
+      <span class="mono">AK</span>
+      <span class="nav__name">Andi Kurniawan</span>
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      {links.map((l) => <a href={secHref(l.id)} data-navlink={l.id}>{l.label}</a>)}
+    </nav>
+
+    <div class="nav__ctrls">
+      <button type="button" class="iconbtn" data-theme-toggle aria-label={t.a11y.theme}>
+        <span class="only-light"><Icon name="moon" size={18} /></span>
+        <span class="only-dark"><Icon name="sun" size={18} /></span>
+      </button>
+      <a class="iconbtn langbtn" href={altHref} aria-label={t.a11y.lang} hreflang={other}>
+        <span class="mono">{locale === 'en' ? 'ID' : 'EN'}</span>
+      </a>
+      <button type="button" class="iconbtn nav__burger" data-menu-toggle aria-label={t.a11y.menu} aria-expanded="false" aria-controls="mobile-nav">
+        <span data-burger-open><Icon name="menu" size={20} /></span>
+        <span data-burger-close hidden><Icon name="close" size={20} /></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav__mobile" id="mobile-nav" hidden>
+    <nav aria-label="Mobile">
+      {links.map((l) => <a href={secHref(l.id)} data-menu-link>{l.label}</a>)}
+      <a href={altHref} class="mono" hreflang={other}>{locale === 'en' ? 'Bahasa Indonesia' : 'English'}</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid transparent;
+    transition: background 0.35s var(--ease), border-color 0.35s var(--ease);
+  }
+  .nav[data-scrolled] {
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: saturate(160%) blur(12px);
+    border-bottom-color: var(--border);
+  }
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 68px;
+    gap: 20px;
+  }
+  .nav__brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .nav__brand .mono {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--accent-ink);
+  }
+  .nav__name {
+    font-family: var(--font-display);
+    font-size: 0.98rem;
+  }
+  .nav__links {
+    display: flex;
+    gap: 28px;
+    margin-left: auto;
+    margin-right: 26px;
+  }
+  .nav__links a {
+    font-size: 0.92rem;
+    color: var(--text-2);
+    position: relative;
+    padding: 4px 0;
+    transition: color 0.25s var(--ease);
+  }
+  .nav__links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 0;
+    height: 1px;
+    background: var(--accent);
+    transition: width 0.3s var(--ease);
+  }
+  .nav__links a:hover,
+  .nav__links a[aria-current='true'] {
+    color: var(--text);
+  }
+  .nav__links a[aria-current='true']::after {
+    width: 100%;
+  }
+  .nav__ctrls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .iconbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
+    color: var(--text);
+    transition: border-color 0.25s var(--ease), transform 0.2s var(--ease), background 0.25s var(--ease);
+  }
+  .iconbtn:hover {
+    border-color: var(--text);
+    transform: translateY(-1px);
+  }
+  .langbtn .mono {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .only-dark { display: none; }
+  :global([data-theme='dark']) .only-dark { display: inline-flex; }
+  :global([data-theme='dark']) .only-light { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .only-dark { display: inline-flex; }
+    :global(:root:not([data-theme='light'])) .only-light { display: none; }
+  }
+
+  .nav__burger { display: none; }
+  .nav__mobile {
+    border-top: 1px solid var(--border);
+    background: var(--bg-elev);
+  }
+  .nav__mobile nav {
+    display: flex;
+    flex-direction: column;
+    padding: 12px var(--gutter) 22px;
+    gap: 4px;
+  }
+  .nav__mobile a {
+    padding: 14px 4px;
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav__mobile a:last-child {
+    border-bottom: 0;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-2);
+    margin-top: 8px;
+  }
+
+  @media (max-width: 780px) {
+    .nav__links,
+    .nav__name {
+      display: none;
+    }
+    .nav__burger {
+      display: inline-flex;
+    }
+  }
+</style>
+
+<script>
+  // Theme toggle — persist choice; default follows system.
+  const root = document.documentElement;
+  function currentTheme() {
+    const explicit = root.getAttribute('data-theme');
+    if (explicit) return explicit;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = currentTheme() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+    });
+  });
+
+  // Sticky nav background after scroll.
+  const nav = document.querySelector('[data-nav]');
+  const onScroll = () => {
+    if (window.scrollY > 12) nav?.setAttribute('data-scrolled', '');
+    else nav?.removeAttribute('data-scrolled');
+  };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Mobile menu.
+  const menu = document.getElementById('mobile-nav');
+  const openIcon = document.querySelector('[data-burger-open]');
+  const closeIcon = document.querySelector('[data-burger-close]');
+  function setMenu(open: boolean) {
+    if (!menu) return;
+    menu.hidden = !open;
+    openIcon && ((openIcon as HTMLElement).hidden = open);
+    closeIcon && ((closeIcon as HTMLElement).hidden = !open);
+    document.querySelectorAll('[data-menu-toggle]').forEach((b) =>
+      b.setAttribute('aria-expanded', String(open))
+    );
+  }
+  document.querySelectorAll('[data-menu-toggle]').forEach((b) =>
+    b.addEventListener('click', () => setMenu(menu?.hidden ?? true))
+  );
+  document.querySelectorAll('[data-menu-link]').forEach((a) =>
+    a.addEventListener('click', () => setMenu(false))
+  );
+
+  // Active-section highlight in nav.
+  const navlinks = new Map<string, Element>();
+  document.querySelectorAll('[data-navlink]').forEach((a) =>
+    navlinks.set(a.getAttribute('data-navlink') || '', a)
+  );
+  const sections = document.querySelectorAll('section[id]');
+  if ('IntersectionObserver' in window && navlinks.size && sections.length) {
+    const so = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            navlinks.forEach((el) => el.removeAttribute('aria-current'));
+            navlinks.get((e.target as HTMLElement).id)?.setAttribute('aria-current', 'true');
+          }
+        }
+      },
+      { rootMargin: '-45% 0px -50% 0px' }
+    );
+    sections.forEach((s) => so.observe(s));
+  }
+</script>

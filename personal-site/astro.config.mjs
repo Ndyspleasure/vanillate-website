@@ -19,7 +19,15 @@ export default defineConfig({
   site: SITE_URL,
   // Output statis murni (default). Vercel mendeteksi Astro secara otomatis dan
   // menayangkan folder `dist/` sebagai situs statis — tanpa adapter tambahan.
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // hreflang alternates di sitemap: ID default (root), EN di /en/.
+      i18n: {
+        defaultLocale: 'id',
+        locales: { id: 'id-ID', en: 'en-US' },
+      },
+    }),
+  ],
   build: {
     inlineStylesheets: 'auto',
   },

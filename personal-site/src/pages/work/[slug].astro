@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import ProjectDetail from '../../components/ProjectDetail.astro';
+import { projects } from '../../data/projects.ts';
+import { site } from '../../data/content.ts';
+
+export function getStaticPaths() {
+  return projects.map((project) => ({ params: { slug: project.slug }, props: { project } }));
+}
+
+const { project } = Astro.props;
+const locale = 'id' as const;
+const path = `/work/${project.slug}`;
+const SITE = Astro.site ?? new URL(site.url);
+const pageUrl = new URL(path, SITE).href;
+const imgUrl = new URL(project.image, SITE).href;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: project.name,
+    headline: project.name,
+    description: project.metaDescription[locale],
+    url: pageUrl,
+    image: imgUrl,
+    inLanguage: 'id',
+    dateCreated: project.year,
+    keywords: project.tech.join(', '),
+    author: { '@type': 'Person', name: site.author, url: SITE.origin + '/' },
+    producer: { '@type': 'Organization', name: site.studioName, url: site.studioUrl },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Beranda', item: SITE.origin + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Karya', item: SITE.origin + '/#work' },
+      { '@type': 'ListItem', position: 3, name: project.name, item: pageUrl },
+    ],
+  },
+];
+---
+<BaseLayout
+  locale={locale}
+  path={path}
+  type="article"
+  title={project.metaTitle[locale]}
+  description={project.metaDescription[locale]}
+  image={project.image}
+  jsonLd={jsonLd}
+>
+  <Nav locale={locale} path={path} />
+  <ProjectDetail locale={locale} project={project} />
+  <Footer locale={locale} path={path} />
+</BaseLayout>

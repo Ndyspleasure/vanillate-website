@@ -1,40 +1,79 @@
-# Situs Personal — `personal.andikurniawan.vanillate.id`
+# Situs Personal — Andi Kurniawan
 
-Situs personal (halaman **data diri**) untuk tim Vanillate. Dibangun dengan
-**Astro** (output statis), di-deploy ke **Vercel**, dengan domain produksi
-**`https://personal.andikurniawan.vanillate.id`** sebagai satu-satunya origin
-canonical.
+Situs personal premium (halaman **data diri** / personal brand) untuk
+`https://personal.andikurniawan.vanillate.id`. Dibangun dengan **Astro**
+(output statis, SEO-first), di-deploy ke **Vercel**, dengan domain produksi
+sebagai satu-satunya origin canonical.
 
-Proyek ini berdiri sendiri di dalam subfolder `personal-site/` dan **tidak
-mengganggu** situs utama studio (`vanillate.id`, yang tetap di GitHub Pages).
-Punya `package.json`, `node_modules`, dan pipeline build sendiri.
+Proyek ini berdiri sendiri di subfolder `personal-site/` dan **tidak
+mengganggu** situs studio (`vanillate.id`, tetap di GitHub Pages). Punya
+`package.json`, build, dan `node_modules` sendiri.
+
+**Live (setelah deploy):** https://personal.andikurniawan.vanillate.id
 
 ---
+
+## Fitur
+
+- **Bilingual** — Indonesia (canonical, `/`) + English (`/en/`), dengan
+  `hreflang`, language toggle, dan sitemap alternates.
+- **Dark / light** mengikuti sistem, dengan toggle manual (tersimpan).
+- **Dua signature experience** (scroll-driven, ringan, aksesibel):
+  SPACE → BEKASI (globe) dan CODE → AK → SYSTEM CORE → PRODUCT.
+- **SEO menyeluruh** — satu H1, semantic HTML, canonical, Open Graph + Twitter,
+  JSON-LD (`Person`, `CreativeWork`, `BreadcrumbList`), `robots.txt`, sitemap,
+  gambar OG 1200×630. Konten inti selalu ada di HTML (tidak bergantung JS/WebGL).
+- **Aksesibel** — `prefers-reduced-motion`, skip link, focus states, alt text,
+  keyboard-friendly. Animasi tidak pernah wajib untuk memahami halaman.
+- **Cepat** — statis, ~6KB JS, tanpa library berat (tanpa Three.js).
 
 ## Struktur
 
 ```
 personal-site/
-├── astro.config.mjs      site = https://personal.andikurniawan.vanillate.id
-├── vercel.json           framework + security headers
+├── astro.config.mjs         site = https://personal.andikurniawan.vanillate.id + sitemap i18n
+├── vercel.json              framework + security headers
 ├── src/
-│   ├── data/profile.ts   ← DATA DIRI ada di sini (satu-satunya yang perlu diedit)
-│   ├── components/SEO.astro   canonical + Open Graph + JSON-LD Person
+│   ├── data/
+│   │   ├── content.ts        ← SEMUA TEKS (ID + EN) ada di sini
+│   │   ├── projects.ts       ← data proyek (kartu + halaman detail)
+│   │   └── icons.ts          SVG brand & UI (tanpa emoji)
+│   ├── components/           Nav, Hero, About, LocationGlobe, Expertise, Skills,
+│   │                         DigitalBuild, Vanillate, Work, BeyondWork, Values,
+│   │                         CareerDirection, Contact, Footer, SEO, Icon, ProjectDetail
 │   ├── layouts/BaseLayout.astro
-│   ├── pages/index.astro
-│   └── styles/global.css
-└── public/               robots.txt, favicon.svg
+│   ├── pages/
+│   │   ├── index.astro           /            (ID)
+│   │   ├── en/index.astro        /en/         (EN)
+│   │   ├── work/[slug].astro     /work/…      (detail proyek, ID)
+│   │   ├── en/work/[slug].astro  /en/work/…   (detail proyek, EN)
+│   │   └── 404.astro
+│   └── styles/global.css     design system (tokens, tipografi, motion)
+└── public/                   og-image.png, favicon.svg, robots.txt, work/
 ```
 
 ## Edit isi
 
-Semua teks halaman ada di **`src/data/profile.ts`** — nama, peran, bio, data
-diri, fokus, dan tautan kontak. Tidak perlu menyentuh markup.
+Semua teks ada di **`src/data/content.ts`** (objek `content.id` & `content.en`)
+dan **`src/data/projects.ts`**. Tidak perlu menyentuh markup komponen.
 
-> **Catatan email:** `profile.ts` memakai placeholder
-> `halo@andikurniawan.vanillate.id`. Ganti ke alamat yang memang ingin
-> ditampilkan publik. Email pribadi hanya ditayangkan bila kamu sendiri yang
-> mengisinya.
+> **Catatan email:** memakai placeholder `halo@andikurniawan.vanillate.id`
+> (di `content.ts`). Ganti ke alamat yang ingin ditampilkan publik. Email
+> pribadi hanya ditayangkan bila kamu sendiri yang mengisinya.
+
+> **Foto:** hero dan OG memakai monogram AK. Untuk memasang foto asli, taruh
+> file di `public/` lalu tambahkan `<img>` di `src/components/Hero.astro`
+> (layout sudah menyediakan ruang di sisi visual).
+
+## Regenerasi gambar OG
+
+`public/og-image.png` (1200×630) di-render dari `scripts/og-template.html`.
+Untuk membuat ulang (butuh Chromium):
+
+```bash
+node scripts/render-og.mjs
+# atau: CHROME_BIN=/path/ke/chromium node scripts/render-og.mjs
+```
 
 ## Jalankan lokal
 
@@ -43,7 +82,6 @@ cd personal-site
 npm install
 npm run dev        # http://localhost:4321
 npm run build      # output ke dist/
-npm run preview    # pratinjau hasil build
 ```
 
 ---
@@ -52,18 +90,16 @@ npm run preview    # pratinjau hasil build
 
 1. **Import project** di https://vercel.com/new → pilih repo
    `Ndyspleasure/vanillate-website`.
-2. **Root Directory:** set ke **`personal-site`** (penting — bukan root repo).
-   Vercel otomatis mendeteksi Astro; build `npm run build`, output `dist/`.
+2. **Root Directory:** set ke **`personal-site`**. Vercel mendeteksi Astro
+   otomatis (build `npm run build`, output `dist/`).
 3. Deploy. Situs sementara tayang di URL `*.vercel.app`.
 
 ### Pasang domain nested + HTTPS
 
-4. Di project Vercel → **Settings → Domains** → tambah
-   **`personal.andikurniawan.vanillate.id`**. Jadikan sebagai **Production
-   domain (primary)** agar semua domain lain (termasuk `*.vercel.app`)
-   di-redirect ke sini.
-5. Vercel menampilkan record DNS yang diminta. Tambahkan di **penyedia DNS
-   `vanillate.id`** (README studio menyebut **Domosquare Free DNS**):
+4. Project Vercel → **Settings → Domains** → tambah
+   **`personal.andikurniawan.vanillate.id`** dan jadikan **Production domain
+   (primary)** agar domain lain (termasuk `*.vercel.app`) di-redirect ke sini.
+5. Di penyedia DNS `vanillate.id` (**Domosquare Free DNS**) tambahkan record:
 
    ```
    Type:  CNAME
@@ -71,42 +107,31 @@ npm run preview    # pratinjau hasil build
    Value: cname.vercel-dns.com
    ```
 
-   > DNS mendukung subdomain nested (bertingkat) tanpa batas, jadi
-   > `personal.andikurniawan.vanillate.id` valid. Bila panel DNS meminta nama
-   > lengkap (FQDN), isi `personal.andikurniawan.vanillate.id`. Ikuti
-   > nilai persis yang ditunjukkan Vercel bila berbeda.
+   > DNS mendukung subdomain nested tanpa batas, jadi
+   > `personal.andikurniawan.vanillate.id` valid. Ikuti nilai persis yang
+   > ditunjukkan Vercel bila berbeda.
 
-6. Tunggu verifikasi DNS. **HTTPS otomatis** disediakan Vercel (sertifikat
-   Let's Encrypt) begitu DNS terverifikasi — termasuk untuk subdomain
-   bertingkat ini, yang justru sulit dilakukan di GitHub Pages. Tidak perlu
-   konfigurasi sertifikat manual.
-
----
+6. Tunggu verifikasi DNS. **HTTPS otomatis** dari Vercel (Let's Encrypt) —
+   termasuk untuk subdomain bertingkat ini, yang sulit dilakukan di GitHub Pages.
 
 ## Kenapa Vercel, bukan GitHub Pages?
 
-Situs studio (`vanillate.id`) memakai GitHub Pages, tetapi GitHub Pages hanya
-melayani **satu** custom domain per repo dan **tidak menyediakan HTTPS otomatis
-yang andal untuk subdomain bertingkat** seperti
-`personal.andikurniawan.vanillate.id`. Vercel bisa memasang domain bertingkat
-apa pun ke satu project berikut sertifikat HTTPS otomatis, sehingga cocok untuk
-pola `personal.<nama>.vanillate.id` per anggota tim.
+Situs studio (`vanillate.id`) memakai GitHub Pages, yang hanya melayani **satu**
+custom domain per repo dan tidak menyediakan HTTPS otomatis yang andal untuk
+subdomain bertingkat seperti `personal.andikurniawan.vanillate.id`. Vercel
+memasang domain bertingkat apa pun + sertifikat HTTPS otomatis.
 
 ## Canonical / SEO
 
-- `site` di `astro.config.mjs` = `https://personal.andikurniawan.vanillate.id`.
-- `SEO.astro` membangun `<link rel="canonical">`, `og:url`, `og:image`, dan
-  JSON-LD `Person` dari `Astro.site` — jadi **selalu** domain produksi, tidak
-  pernah URL `*.vercel.app`.
-- `sitemap` (integrasi `@astrojs/sitemap`) dan `robots.txt` menunjuk ke domain
-  produksi.
+- `site` di `astro.config.mjs` = domain produksi.
+- `SEO.astro` membangun canonical, `hreflang`, Open Graph, Twitter, dan JSON-LD
+  dari `Astro.site` — **selalu** domain produksi, tidak pernah `*.vercel.app`.
 - Jadikan domain produksi sebagai **primary** di Vercel agar `*.vercel.app`
-  di-redirect (bukan sekadar duplikat konten).
+  di-redirect (bukan duplikat konten).
 
 ## Template untuk anggota tim lain
 
-Untuk anggota lain: salin folder `personal-site/`, ubah `SITE_URL` di
-`astro.config.mjs` ke subdomain-nya (mis.
-`https://personal.budi.vanillate.id`), sesuaikan `robots.txt` dan
-`src/data/profile.ts`, lalu deploy sebagai project Vercel tersendiri dengan
-record DNS-nya sendiri.
+Salin folder `personal-site/`, ubah `SITE_URL` di `astro.config.mjs`,
+sesuaikan `content.ts`, `projects.ts`, `robots.txt`, dan gambar OG, lalu deploy
+sebagai project Vercel tersendiri dengan record DNS-nya sendiri
+(mis. `personal.<nama>.vanillate.id`).

@@ -1,100 +1,38 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { profile } from '../data/profile.ts';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import About from '../components/About.astro';
+import LocationGlobe from '../components/LocationGlobe.astro';
+import Expertise from '../components/Expertise.astro';
+import Skills from '../components/Skills.astro';
+import DigitalBuild from '../components/DigitalBuild.astro';
+import Vanillate from '../components/Vanillate.astro';
+import Work from '../components/Work.astro';
+import BeyondWork from '../components/BeyondWork.astro';
+import Values from '../components/Values.astro';
+import CareerDirection from '../components/CareerDirection.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
 
-const year = new Date().getFullYear();
-const primaryLink = profile.links.find((l) => l.primary) ?? profile.links[0];
-const otherLinks = profile.links.filter((l) => l !== primaryLink);
+const locale = 'id' as const;
+const path = '/';
 ---
-
-<BaseLayout>
-  <header class="site-header">
-    <div class="wrap">
-      <a class="brand" href="/">{profile.name}</a>
-      <a class="back-link" href={profile.orgUrl}>← {profile.org}</a>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <!-- Hero -->
-    <div class="hero">
-      <div class="avatar" aria-hidden={profile.avatar ? undefined : 'true'}>
-        {profile.avatar ? <img src={profile.avatar} alt={profile.name} /> : profile.initials}
-      </div>
-      <div>
-        <h1>{profile.name}</h1>
-        <p class="role">
-          {profile.role} <span class="org">· {profile.org}</span>
-        </p>
-        <p class="meta">
-          {profile.location}
-          {profile.pronounHint && <> · {profile.pronounHint}</>}
-        </p>
-      </div>
-    </div>
-
-    <p class="tagline">{profile.tagline}</p>
-
-    <div class="actions">
-      {primaryLink && (
-        <a class="btn primary" href={primaryLink.href}>{primaryLink.label}</a>
-      )}
-      {otherLinks.map((l) => (
-        <a class="btn" href={l.href}>{l.label}</a>
-      ))}
-    </div>
-
-    <!-- Tentang -->
-    <section aria-labelledby="tentang">
-      <p class="eyebrow" id="tentang">Tentang</p>
-      <div class="prose">
-        {profile.about.map((p) => <p>{p}</p>)}
-      </div>
-    </section>
-
-    <!-- Data diri -->
-    <section aria-labelledby="data-diri">
-      <p class="eyebrow" id="data-diri">Data diri</p>
-      <ul class="facts">
-        {profile.facts.map((f) => (
-          <li>
-            <div class="k">{f.label}</div>
-            <div class="v">{f.value}</div>
-          </li>
-        ))}
-      </ul>
-    </section>
-
-    <!-- Fokus -->
-    {profile.focus.length > 0 && (
-      <section aria-labelledby="fokus">
-        <p class="eyebrow" id="fokus">Fokus & keahlian</p>
-        <ul class="chips">
-          {profile.focus.map((f) => <li>{f}</li>)}
-        </ul>
-      </section>
-    )}
-
-    <!-- Kontak -->
-    <section aria-labelledby="kontak">
-      <p class="eyebrow" id="kontak">Kontak</p>
-      <ul class="links">
-        {profile.links.map((l) => (
-          <li>
-            <a href={l.href}>
-              <span>{l.label}</span>
-              <span class="arrow" aria-hidden="true">→</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
+<BaseLayout locale={locale} path={path} type="profile">
+  <Nav locale={locale} path={path} />
+  <main id="main">
+    <Hero locale={locale} />
+    <About locale={locale} />
+    <LocationGlobe locale={locale} />
+    <Expertise locale={locale} />
+    <Skills locale={locale} />
+    <DigitalBuild locale={locale} />
+    <Vanillate locale={locale} />
+    <Work locale={locale} />
+    <BeyondWork locale={locale} />
+    <Values locale={locale} />
+    <CareerDirection locale={locale} />
+    <Contact locale={locale} />
   </main>
-
-  <footer class="site-footer wrap">
-    <span>© {year} {profile.name}</span>
-    <span>
-      Bagian dari <a href={profile.orgUrl}>{profile.org}</a>
-    </span>
-  </footer>
+  <Footer locale={locale} path={path} />
 </BaseLayout>

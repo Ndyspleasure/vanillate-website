@@ -1,75 +1,108 @@
 ---
 // ─────────────────────────────────────────────────────────────────────────────
-// SEO — canonical, Open Graph, Twitter card, dan JSON-LD Person.
-//
-// Semua URL absolut dibangun dari `Astro.site` (= domain produksi di
-// astro.config.mjs). Jadi canonical, og:url, dan og:image SELALU memakai
-// https://personal.andikurniawan.vanillate.id, tidak pernah URL *.vercel.app,
-// di mana pun situs ini di-deploy.
+// SEO — title, description, canonical, hreflang, Open Graph, Twitter, JSON-LD.
+// Semua URL absolut dibangun dari `Astro.site` (domain produksi), tidak pernah
+// URL *.vercel.app. Master brief §36–48.
 // ─────────────────────────────────────────────────────────────────────────────
-import { profile } from '../data/profile.ts';
+import { site, content, altUrl, type Locale } from '../data/content.ts';
 
 interface Props {
+  locale?: Locale;
+  path?: string; // path canonical bahasa Indonesia, mis. '/' atau '/work/xxx'
   title?: string;
   description?: string;
+  type?: 'website' | 'profile' | 'article';
   image?: string;
+  noindex?: boolean;
+  jsonLd?: Record<string, any>[];
 }
 
 const {
-  title = profile.seo.title || `${profile.name} · ${profile.role}`,
-  description = profile.seo.description,
-  image = profile.seo.ogImage,
+  locale = 'id',
+  path = '/',
+  title,
+  description,
+  type = 'website',
+  image = '/og-image.png',
+  noindex = false,
+  jsonLd,
 } = Astro.props;
 
-// `Astro.site` wajib ada (di-set di astro.config.mjs). Fallback defensif agar
-// build tidak pecah bila konfigurasi hilang.
-const SITE = Astro.site ?? new URL('https://personal.andikurniawan.vanillate.id');
+const t = content[locale];
+const SITE = Astro.site ?? new URL(site.url);
 
-const canonical = new URL(Astro.url.pathname, SITE).href;
-const ogImage = image ? new URL(image, SITE).href : '';
+const idPath = altUrl('id', path);
+const enPath = altUrl('en', path);
+const selfPath = locale === 'en' ? enPath : idPath;
 
-// JSON-LD: schema.org/Person — bentuk terbaik untuk halaman data diri.
-const sameAs = profile.links
-  .map((l) => l.href)
-  .filter((h) => /^https?:\/\//.test(h)); // hanya URL http(s), bukan mailto:
+const canonical = new URL(selfPath, SITE).href;
+const ogImage = new URL(image, SITE).href;
+const finalTitle = title ?? t.metaTitle;
+const finalDesc = description ?? t.metaDescription;
 
+const alternates = [
+  { hreflang: 'id', href: new URL(idPath, SITE).href },
+  { hreflang: 'en', href: new URL(enPath, SITE).href },
+  { hreflang: 'x-default', href: new URL(idPath, SITE).href },
+];
+
+// JSON-LD Person default (homepage). Halaman lain dapat menambah via prop.
 const personLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
-  name: profile.name,
-  url: SITE.origin,
-  jobTitle: profile.role,
+  name: site.author,
+  alternateName: site.nickname,
+  url: SITE.origin + '/',
+  jobTitle: 'Founder & Developer',
   worksFor: {
     '@type': 'Organization',
-    name: profile.org,
-    url: profile.orgUrl,
+    name: site.studioName,
+    url: site.studioUrl,
   },
-  ...(profile.location ? { address: { '@type': 'PostalAddress', addressCountry: profile.location } } : {}),
-  ...(ogImage ? { image: ogImage } : {}),
-  ...(sameAs.length ? { sameAs } : {}),
-  description,
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: site.locality,
+    addressRegion: site.region,
+    addressCountry: site.countryCode,
+  },
+  knowsAbout: [...site.knowsAbout],
+  sameAs: [site.linkedin],
+  image: ogImage,
+  description: t.metaDescription,
 };
----
 
-<!-- Primary meta -->
-<title>{title}</title>
-<meta name="description" content={description} />
+const graphs = jsonLd ?? [personLd];
+---
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{finalTitle}</title>
+<meta name="description" content={finalDesc} />
+<meta name="author" content={site.author} />
 <link rel="canonical" href={canonical} />
+{noindex
+  ? <meta name="robots" content="noindex, nofollow" />
+  : <meta name="robots" content="index, follow, max-image-preview:large" />}
+
+{alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
 
 <!-- Open Graph -->
-<meta property="og:type" content="profile" />
-<meta property="og:title" content={title} />
-<meta property="og:description" content={description} />
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={site.author} />
+<meta property="og:locale" content={locale === 'en' ? 'en_US' : 'id_ID'} />
+<meta property="og:locale:alternate" content={locale === 'en' ? 'id_ID' : 'en_US'} />
+<meta property="og:title" content={finalTitle} />
+<meta property="og:description" content={finalDesc} />
 <meta property="og:url" content={canonical} />
-<meta property="og:site_name" content={profile.name} />
-<meta property="og:locale" content="id_ID" />
-{ogImage && <meta property="og:image" content={ogImage} />}
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={`${site.author} — ${locale === 'en' ? 'Student, Professional, Founder & Developer' : 'Mahasiswa, Profesional, Founder & Developer'}`} />
 
 <!-- Twitter -->
-<meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
-<meta name="twitter:title" content={title} />
-<meta name="twitter:description" content={description} />
-{ogImage && <meta name="twitter:image" content={ogImage} />}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={finalTitle} />
+<meta name="twitter:description" content={finalDesc} />
+<meta name="twitter:image" content={ogImage} />
 
-<!-- JSON-LD Person -->
-<script type="application/ld+json" set:html={JSON.stringify(personLd)} />
+<!-- Structured data -->
+{graphs.map((g) => <script type="application/ld+json" set:html={JSON.stringify(g)} />)}

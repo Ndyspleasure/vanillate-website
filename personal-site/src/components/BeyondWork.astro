@@ -1,0 +1,65 @@
+---
+import { content, type Locale } from '../data/content.ts';
+interface Props { locale?: Locale }
+const { locale = 'id' } = Astro.props;
+const t = content[locale];
+
+// Ikon SVG kecil per grup (monokrom, currentColor) — tanpa emoji (§6, §32).
+const groupIcon: Record<string, string> = {
+  Games: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="15.5" cy="11" r=".6" fill="currentColor"/><circle cx="17.5" cy="13" r=".6" fill="currentColor"/></svg>',
+  Platform: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
+  Minuman: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11a3 3 0 0 1 0 6h-1M6 8l1 9a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l.5-4.5M8 3v2M11 3v2M14 3v2"/></svg>',
+  Drinks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11a3 3 0 0 1 0 6h-1M6 8l1 9a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l.5-4.5M8 3v2M11 3v2M14 3v2"/></svg>',
+  Makanan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a2 2 0 0 0 4 0V3M6 10v11M18 3c-1.7 0-3 2-3 5s1 4 3 4 3-1 3-4-1.3-5-3-5zM18 12v9"/></svg>',
+  Food: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a2 2 0 0 0 4 0V3M6 10v11M18 3c-1.7 0-3 2-3 5s1 4 3 4 3-1 3-4-1.3-5-3-5zM18 12v9"/></svg>',
+};
+---
+<section class="beyond" aria-labelledby="beyond-h">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{t.beyond.eyebrow}</p>
+      <h2 class="h2" id="beyond-h">{t.beyond.title}</h2>
+    </div>
+    <div class="beyond__grid">
+      {t.beyond.groups.map((g, i) => (
+        <article class="beyond__card" data-reveal style={`--reveal-delay:${i * 70}ms`}>
+          <span class="beyond__icon" set:html={groupIcon[g.label] ?? ''} aria-hidden="true" />
+          <h3 class="beyond__label">{g.label}</h3>
+          <ul class="beyond__items">
+            {g.items.map((it) => <li>{it}</li>)}
+          </ul>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .beyond__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .beyond__card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    background: var(--bg-elev);
+    transition: border-color 0.3s var(--ease);
+  }
+  .beyond__card:hover { border-color: var(--text); }
+  .beyond__icon { width: 26px; height: 26px; color: var(--accent-ink); }
+  .beyond__icon :global(svg) { width: 100%; height: 100%; }
+  .beyond__label {
+    margin: 16px 0 12px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+  .beyond__items { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 7px; }
+  .beyond__items li { font-family: var(--font-display); font-size: 1.05rem; }
+  @media (max-width: 820px) { .beyond__grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 440px) { .beyond__grid { grid-template-columns: 1fr; } }
+</style>

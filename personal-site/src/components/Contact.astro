@@ -1,0 +1,84 @@
+---
+import Icon from './Icon.astro';
+import { content, site, type Locale } from '../data/content.ts';
+interface Props { locale?: Locale }
+const { locale = 'id' } = Astro.props;
+const t = content[locale];
+const links = [
+  { label: 'LinkedIn', href: site.linkedin, icon: 'linkedin', rel: 'me noopener', ext: true },
+  { label: 'Discord', href: site.discord, icon: 'spark', rel: 'noopener', ext: true },
+  { label: t.contact.emailLabel, href: `mailto:${site.email}`, icon: 'mail', rel: '', ext: false },
+];
+---
+<section class="contact" id="contact" aria-labelledby="contact-h">
+  <div class="container">
+    <div class="contact__head" data-reveal>
+      <p class="eyebrow">{t.contact.eyebrow}</p>
+      <h2 class="h2 contact__title" id="contact-h">{t.contact.title}</h2>
+      <p class="lead" style="margin-top:20px">{t.contact.lead}</p>
+    </div>
+
+    <ul class="contact__links" data-reveal style="--reveal-delay:100ms">
+      {links.map((l) => (
+        <li>
+          <a href={l.href} rel={l.rel || undefined} target={l.ext ? '_blank' : undefined}>
+            <span class="contact__ic"><Icon name={l.icon} size={20} /></span>
+            <span class="contact__lbl">{l.label}</span>
+            <span class="contact__ar"><Icon name={l.ext ? 'arrowUpRight' : 'arrowRight'} size={18} /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <div class="contact__sign" data-reveal aria-hidden="true">
+      <span class="mono">{site.initials}</span>
+      <span class="contact__signname">{t.contact.signoff}</span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .contact__head { max-width: 640px; }
+  .contact__title { margin-top: 16px; }
+  .contact__links {
+    list-style: none;
+    padding: 0;
+    margin: clamp(36px, 6vh, 64px) 0 0;
+    border-top: 1px solid var(--border);
+  }
+  .contact__links a {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 22px 6px;
+    border-bottom: 1px solid var(--border);
+    transition: padding 0.3s var(--ease), color 0.3s var(--ease);
+  }
+  .contact__links a:hover { padding-left: 18px; color: var(--accent-ink); }
+  .contact__ic { color: var(--text-2); transition: color 0.3s var(--ease); }
+  .contact__links a:hover .contact__ic { color: var(--accent-ink); }
+  .contact__lbl { font-family: var(--font-display); font-size: clamp(1.3rem, 3vw, 2rem); font-weight: 600; }
+  .contact__ar { margin-left: auto; color: var(--text-2); }
+  .contact__links a:hover .contact__ar { color: var(--accent-ink); }
+
+  .contact__sign {
+    margin-top: clamp(56px, 10vh, 120px);
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .contact__sign .mono {
+    font-family: var(--font-mono);
+    color: var(--accent-ink);
+    font-size: 1rem;
+  }
+  .contact__signname {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    font-size: clamp(2.4rem, 12vw, 9rem);
+    line-height: 0.9;
+  }
+</style>
