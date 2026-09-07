@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Domain canonical produksi. Sitemap sengaja menunjuk ke domain ini —
+# bukan URL deployment Vercel (*.vercel.app) — agar mesin pencari
+# mengindeks origin yang benar.
+Sitemap: https://personal.andikurniawan.vanillate.id/sitemap-index.xml
