@@ -184,9 +184,12 @@ export function initJourney() {
 
   // ─── progress source ──────────────────────────────────────────────────────
   let autoP = 0;          // internal timeline value
+  let autoDir = 1;        // boomerang direction (+1 dive in, -1 zoom back out)
+  let autoHold = 0;       // ms pause at each end
   let inView = false;
   let hasArmed = false;   // auto: has the current pass started
-  const AUTO_DUR = 20;    // seconds galaxy → Bekasi
+  const AUTO_DUR = 17;    // seconds per direction (comfortable)
+  const AUTO_HOLD = 1200; // ms pause at Bekasi / at the galaxy before reversing
   const scrollP = () => {
     const rect = section.getBoundingClientRect();
     const total = section.offsetHeight - window.innerHeight;
@@ -236,7 +239,15 @@ export function initJourney() {
     if (anim === 'manual') {
       p = scrollP();
     } else {
-      if (inView && hasArmed) autoP = Math.min(1, autoP + dt / 1000 / AUTO_DUR);
+      // seamless boomerang: dive galaxy → Bekasi, hold, zoom back out, hold, repeat
+      if (inView && hasArmed) {
+        if (autoHold > 0) autoHold -= dt;
+        else {
+          autoP += (autoDir * dt) / 1000 / AUTO_DUR;
+          if (autoP >= 1) { autoP = 1; autoDir = -1; autoHold = AUTO_HOLD; }
+          else if (autoP <= 0) { autoP = 0; autoDir = 1; autoHold = AUTO_HOLD; }
+        }
+      }
       p = autoP;
     }
     const tSec = (now - t0) / 1000;
@@ -275,7 +286,7 @@ export function initJourney() {
     if (anim === 'auto') { autoP = scrollP(); hasArmed = inView; } // continue from where scroll left off
   });
   window.addEventListener('exp:restart', () => {
-    autoP = 0; hasArmed = false; lastStage = -1; paint(0);
+    autoP = 0; autoDir = 1; autoHold = 0; hasArmed = false; lastStage = -1; paint(0);
     // re-arm once the section is back in view after the scroll-to-top
     setTimeout(() => { if (anim === 'auto' && inView) hasArmed = true; }, 60);
   });

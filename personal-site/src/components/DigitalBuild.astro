@@ -97,7 +97,9 @@ const files = [
     padding-inline: var(--gutter);
     min-height: min(70vh, 620px);
     display: grid;
-    place-items: center;
+    grid-template-columns: minmax(0, 1fr); /* don't let the pre content widen the track */
+    justify-items: center;
+    align-items: center;
   }
 
   /* IDE window */

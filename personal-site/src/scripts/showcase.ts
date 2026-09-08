@@ -124,7 +124,7 @@ export function initShowcase() {
   jsonEl.innerHTML = JSON_HTML;
 
   const lineState: number[] = CODE.map(() => -2); // -2 empty, -1 full, >=0 partial count
-  let lineH = 0;
+  let lineH = 0, charW = 0;
 
   function render(t: number) {
     const budget = Math.floor(t * total);
@@ -149,11 +149,16 @@ export function initShowcase() {
     }
     // hot line
     lineEls.forEach((el, i) => el.classList.toggle('is-hot', i === caret && t > 0.001 && t < 0.999));
-    // auto-scroll to keep the caret comfortably in view
+    // auto-scroll to keep the caret comfortably in view (vertical + horizontal)
     if (!lineH) { const r = lineEls[1]?.getBoundingClientRect(); lineH = r ? r.height : 20; }
+    if (!charW) charW = (parseFloat(getComputedStyle(codeEl).fontSize) || 12) * 0.6;
     const viewH = codeEl.parentElement!.clientHeight || 300;
     const y = Math.max(0, caret * lineH - viewH * 0.62);
-    codeEl.style.transform = gutterEl.style.transform = `translateY(${-y}px)`;
+    const caretChars = lineState[caret] >= 0 ? lineState[caret] : CODE[caret].length;
+    const visW = (codeEl.parentElement!.clientWidth - gutterEl.offsetWidth) || 280;
+    const x = Math.max(0, 14 + caretChars * charW - (visW - 28)); // follow the caret on long lines
+    codeEl.style.transform = `translate(${-x}px, ${-y}px)`;
+    gutterEl.style.transform = `translateY(${-y}px)`;
 
     // terminal
     TERM.forEach((tm, i) => termLineEls[i].classList.toggle('on', t >= tm.at));
