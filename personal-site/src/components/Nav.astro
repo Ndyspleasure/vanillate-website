@@ -240,6 +240,10 @@ const toggles = [
   .nav__mobile {
     border-top: 1px solid var(--border);
     background: var(--bg-elev);
+    max-height: calc(100svh - 68px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
   .nav__mobile nav {
     display: flex;

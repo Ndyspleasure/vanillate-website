@@ -112,9 +112,12 @@ const workHref = locale === 'en' ? '/en/#work' : '/#work';
   .monogram { width: min(340px, 78%); height: auto; }
   .hero__scroll {
     position: absolute;
-    left: 50%;
+    left: 0;
+    right: 0;
     bottom: 26px;
-    transform: translateX(-50%);
+    margin-inline: auto;
+    width: max-content;
+    max-width: 92%;
     display: inline-flex;
     align-items: center;
     gap: 8px;
