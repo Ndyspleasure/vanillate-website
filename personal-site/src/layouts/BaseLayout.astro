@@ -1,5 +1,6 @@
 ---
 import SEO from '../components/SEO.astro';
+import Experience from '../components/Experience.astro';
 import { type Locale } from '../data/content.ts';
 import '../styles/global.css';
 
@@ -44,10 +45,65 @@ const { locale = 'id', ...seo } = Astro.props;
         } catch (e) {}
       })();
     </script>
+
+    <!-- Experience init (no FOUC): resolves Performance (High/Smooth) + Animation
+         (Auto/Manual) before first paint. A light capability probe only feeds an
+         advisory recommendation; a saved manual choice always wins. -->
+    <script is:inline>
+      (function () {
+        var d = document.documentElement, ls = null;
+        try { ls = window.localStorage; } catch (e) {}
+        function get(k) { try { return ls && ls.getItem(k); } catch (e) { return null; } }
+        var perfChoice = get('exp.perf') || 'auto';   // 'auto' | 'high' | 'low'
+        var animChoice = get('exp.anim') || 'auto';   // 'auto' | 'manual'
+        var seen = !!get('exp.seen');
+        var reduce = false;
+        try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+        function detect() {
+          var s = 0, n = navigator;
+          var cores = n.hardwareConcurrency || 0;
+          if (cores >= 8) s += 2; else if (cores >= 4) s += 1; else if (cores > 0) s -= 1;
+          var mem = n.deviceMemory || 0;
+          if (mem >= 8) s += 2; else if (mem >= 4) s += 1; else if (mem && mem <= 2) s -= 2;
+          var coarse = false;
+          try { coarse = matchMedia('(pointer:coarse)').matches; } catch (e) {}
+          if (coarse) s -= 1;
+          var dpr = window.devicePixelRatio || 1;
+          if (coarse && screen.width * dpr * screen.height * dpr > 4200000) s -= 1;
+          var gl = null;
+          try { var c = document.createElement('canvas'); gl = c.getContext('webgl2') || c.getContext('webgl'); } catch (e) {}
+          if (!gl) { s -= 3; }
+          else {
+            s += 1;
+            try {
+              var ext = gl.getExtension('WEBGL_debug_renderer_info');
+              if (ext) {
+                var r = (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '').toLowerCase();
+                if (/mali-[4t]|adreno \(tm\) [1-5]|powervr|videocore|swiftshader|llvmpipe|software/.test(r)) s -= 3;
+                else if (/apple|nvidia|geforce|radeon|adreno \(tm\) [67]|iris|apple m/.test(r)) s += 1;
+              }
+            } catch (e) {}
+          }
+          if (reduce) s -= 2;
+          return s >= 1 ? 'high' : 'low';
+        }
+
+        var rec = detect();
+        var perf = perfChoice === 'auto' ? rec : perfChoice;
+        d.setAttribute('data-perf', perf);
+        d.setAttribute('data-anim', animChoice);
+        d.setAttribute('data-perf-choice', perfChoice);
+        d.setAttribute('data-perf-rec', rec);
+        if (!seen) d.setAttribute('data-exp-fresh', '');
+        window.__EXP__ = { perf: perf, anim: animChoice, perfChoice: perfChoice, rec: rec, seen: seen };
+      })();
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="grain" aria-hidden="true"></div>
+    <Experience locale={locale} />
     <slot />
 
     <!-- Reveal-on-scroll (progressive enhancement; CSS keeps content visible for reduced-motion) -->

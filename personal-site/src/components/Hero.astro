@@ -21,7 +21,7 @@ const workHref = locale === 'en' ? '/en/#work' : '/#work';
       <p class="hero__roles hero__anim" style="--d:.30s">
         {t.hero.roles.map((r, i) => (
           <>
-            {i > 0 && <span class="dot" aria-hidden="true">·</span>}
+            {i > 0 && <span class="dot" aria-hidden="true"></span>}
             <span>{r}</span>
           </>
         ))}
@@ -97,7 +97,14 @@ const workHref = locale === 'en' ? '/en/#work' : '/#work';
     gap: 10px;
     align-items: center;
   }
-  .hero__roles .dot { color: var(--accent); }
+  .hero__roles .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    flex: 0 0 auto;
+  }
   .hero__lead { margin-top: 26px; max-width: 46ch; }
   .hero__cta { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 12px; }
 

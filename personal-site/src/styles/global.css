@@ -99,6 +99,9 @@ canvas {
   display: block;
   max-width: 100%;
 }
+[hidden] {
+  display: none !important;
+}
 a {
   color: inherit;
   text-decoration: none;

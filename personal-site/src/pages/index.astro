@@ -13,6 +13,7 @@ import BeyondWork from '../components/BeyondWork.astro';
 import Values from '../components/Values.astro';
 import CareerDirection from '../components/CareerDirection.astro';
 import Contact from '../components/Contact.astro';
+import ExperienceOutro from '../components/ExperienceOutro.astro';
 import Footer from '../components/Footer.astro';
 
 const locale = 'id' as const;
@@ -34,5 +35,6 @@ const path = '/';
     <CareerDirection locale={locale} />
     <Contact locale={locale} />
   </main>
+  <ExperienceOutro locale={locale} />
   <Footer locale={locale} path={path} />
 </BaseLayout>

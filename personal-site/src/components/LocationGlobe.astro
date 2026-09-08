@@ -1,279 +1,244 @@
 ---
 import { content, globeStages, site, type Locale } from '../data/content.ts';
+import { geo } from '../data/geo.ts';
 interface Props { locale?: Locale }
 const { locale = 'id' } = Astro.props;
 const t = content[locale];
+const E = geo.earth, I = geo.indonesia, W = geo.westJava, B = geo.bekasi;
+
+// Solar-system stage (procedural). Sun on the left, Earth is the dive target.
+const planets = [
+  { r: 6, o: 150, tilt: 0.42, a: -0.5, fill: 'var(--pl-merc)', name: 'Merkurius' },
+  { r: 10, o: 210, tilt: 0.34, a: 2.4, fill: 'var(--pl-venus)', name: 'Venus' },
+  { r: 12, o: 300, tilt: 0.30, a: 0.5, fill: 'var(--pl-earth)', name: 'Bumi', earth: true },
+  { r: 8, o: 380, tilt: 0.26, a: 3.5, fill: 'var(--pl-mars)', name: 'Mars' },
+  { r: 26, o: 470, tilt: 0.22, a: 5.4, fill: 'var(--pl-jup)', name: 'Jupiter' },
+  { r: 22, o: 560, tilt: 0.2, a: 2.0, fill: 'var(--pl-sat)', name: 'Saturnus', ring: true },
+];
+const SUN = { x: 130, y: 540 };
+const orbX = (o: number, tilt: number, a: number) => SUN.x + Math.cos(a) * o;
+const orbY = (o: number, tilt: number, a: number) => SUN.y + Math.sin(a) * o * tilt;
+const earthPl = planets.find((p) => p.earth)!;
+const earthPos = [orbX(earthPl.o, earthPl.tilt, earthPl.a), orbY(earthPl.o, earthPl.tilt, earthPl.a)];
 ---
-<section class="globe" id="location" aria-labelledby="globe-h">
-  <div class="globe__pin">
-    <canvas class="globe__stars" aria-hidden="true"></canvas>
+<section class="jr" id="location" aria-labelledby="globe-h" data-jr>
+  <div class="jr__pin">
+    <div class="jr__sky" aria-hidden="true">
+      <div class="jr__neb jr__neb--1"></div>
+      <div class="jr__neb jr__neb--2"></div>
+      <div class="jr__neb jr__neb--3"></div>
+      <div class="jr__core"></div>
+      <canvas class="jr__gl" data-gl></canvas>
+    </div>
 
-    <div class="globe__stage" aria-hidden="true">
-      <svg class="globe__svg" viewBox="0 0 1000 1000" role="presentation">
+    <div class="jr__scenes" aria-hidden="true">
+      <!-- ── SOLAR SYSTEM ─────────────────────────────────────────────── -->
+      <svg class="scene scene--solar" data-scene="solar" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
         <defs>
-          <radialGradient id="atmo" cx="50%" cy="46%" r="52%">
-            <stop offset="70%" stop-color="var(--accent)" stop-opacity="0" />
-            <stop offset="92%" stop-color="var(--accent)" stop-opacity="0.18" />
-            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+          <radialGradient id="sunG" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fff7e6" />
+            <stop offset="34%" stop-color="#ffd27a" />
+            <stop offset="70%" stop-color="#ff8a3c" />
+            <stop offset="100%" stop-color="#ff8a3c" stop-opacity="0" />
           </radialGradient>
-          <clipPath id="earthClip"><circle cx="500" cy="470" r="300" /></clipPath>
+          <radialGradient id="plE" cx="38%" cy="34%" r="75%">
+            <stop offset="0%" stop-color="#7fc4ff" /><stop offset="60%" stop-color="#2f7fd6" /><stop offset="100%" stop-color="#0d2f5c" />
+          </radialGradient>
         </defs>
-
-        <g id="g-zoom">
-          <circle cx="500" cy="470" r="330" fill="url(#atmo)" />
-          <circle cx="500" cy="470" r="300" fill="var(--bg-elev)" stroke="var(--border)" stroke-width="1.5" />
-          <g clip-path="url(#earthClip)" stroke="var(--border)" stroke-width="1" fill="none" opacity="0.7">
-            <ellipse cx="500" cy="470" rx="300" ry="90" />
-            <ellipse cx="500" cy="470" rx="300" ry="180" />
-            <ellipse cx="500" cy="470" rx="300" ry="270" />
-            <ellipse cx="500" cy="470" rx="90" ry="300" />
-            <ellipse cx="500" cy="470" rx="180" ry="300" />
-            <ellipse cx="500" cy="470" rx="270" ry="300" />
-            <line x1="200" y1="470" x2="800" y2="470" />
-          </g>
-          <!-- Kepulauan Indonesia (disederhanakan) di sekitar Bekasi -->
-          <g clip-path="url(#earthClip)" fill="var(--text)" opacity="0.5">
-            <path d="M430 486c26-8 60-6 92 2 20 5 40 4 60-2 14-4 30 0 30 8 0 10-24 16-52 16-40 0-70-2-104-10-24-6-40-12-26-14z" />
-            <path d="M600 500c22-2 44 2 60 10 10 5 6 14-8 14-22 0-46-6-60-14-8-5-4-9 8-10z" />
-            <ellipse cx="405" cy="500" rx="16" ry="7" />
-            <ellipse cx="690" cy="516" rx="20" ry="8" />
-            <ellipse cx="470" cy="520" rx="30" ry="9" />
-          </g>
-          <!-- Penanda Bekasi tepat di pusat (500,500) -->
-          <g>
-            <circle class="globe__ring" cx="500" cy="500" r="14" fill="none" stroke="var(--accent)" stroke-width="2" />
-            <circle cx="500" cy="500" r="5.5" fill="var(--accent)" />
-          </g>
+        <g data-zoom="solar">
+          {planets.map((p) => (
+            <ellipse cx={SUN.x} cy={SUN.y} rx={p.o} ry={p.o * p.tilt} fill="none" stroke="var(--jr-orbit)" stroke-width="1" />
+          ))}
+          <circle cx={SUN.x} cy={SUN.y} r="120" fill="url(#sunG)" class="jr-sun" />
+          <circle cx={SUN.x} cy={SUN.y} r="46" fill="#fff2d0" />
+          {planets.map((p) => {
+            const x = orbX(p.o, p.tilt, p.a), y = orbY(p.o, p.tilt, p.a);
+            return (
+              <g>
+                {p.ring && (
+                  <ellipse cx={x} cy={y} rx={p.r * 1.9} ry={p.r * 0.7} fill="none" stroke="#d9c48a" stroke-width="3" opacity="0.8" transform={`rotate(-18 ${x} ${y})`} />
+                )}
+                <circle cx={x} cy={y} r={p.r} fill={p.earth ? 'url(#plE)' : p.fill} />
+                {p.earth && <circle cx={x} cy={y} r={p.r + 6} fill="none" stroke="var(--accent)" stroke-width="1.5" class="jr-earthmark" />}
+              </g>
+            );
+          })}
         </g>
       </svg>
 
-      <p class="globe__stagelabel" data-stagelabel>
-        <span class="globe__stagebig mono">{globeStages[0].label}</span>
-      </p>
+      <!-- ── EARTH (accurate orthographic globe) ──────────────────────── -->
+      <svg class="scene scene--earth" data-scene="earth" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="atmoG" cx="50%" cy="50%" r="50%">
+            <stop offset="72%" stop-color="var(--accent)" stop-opacity="0" />
+            <stop offset="90%" stop-color="#6fb6ff" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="#6fb6ff" stop-opacity="0" />
+          </radialGradient>
+          <radialGradient id="oceanG" cx="40%" cy="36%" r="72%">
+            <stop offset="0%" stop-color="#15406e" /><stop offset="62%" stop-color="#0d2c50" /><stop offset="100%" stop-color="#071a33" />
+          </radialGradient>
+          <radialGradient id="termG" cx="32%" cy="30%" r="80%">
+            <stop offset="55%" stop-color="#000" stop-opacity="0" /><stop offset="100%" stop-color="#000" stop-opacity="0.55" />
+          </radialGradient>
+          <clipPath id="earthClip"><circle cx={E.cx} cy={E.cy} r={E.r} /></clipPath>
+        </defs>
+        <g data-zoom="earth">
+          <circle cx={E.cx} cy={E.cy} r={E.r + 34} fill="url(#atmoG)" />
+          <circle cx={E.cx} cy={E.cy} r={E.r} fill="url(#oceanG)" />
+          <g clip-path="url(#earthClip)">
+            <path d={E.graticule} fill="none" stroke="#2b567f" stroke-width="0.6" opacity="0.5" />
+            <path d={E.land} fill="#2f6d4f" stroke="#54ad83" stroke-width="0.5" />
+            {E.lights.map((p) => <circle cx={p[0]} cy={p[1]} r="1.7" fill="#ffd98a" class="jr-citylight" />)}
+            <circle cx={E.cx} cy={E.cy} r={E.r} fill="url(#termG)" />
+          </g>
+          <circle cx={E.target[0]} cy={E.target[1]} r="7" fill="none" stroke="var(--accent)" stroke-width="2" class="jr-aim" />
+        </g>
+      </svg>
+
+      <!-- ── INDONESIA (archipelago) ──────────────────────────────────── -->
+      <svg class="scene scene--indonesia" data-scene="indonesia" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+        <g data-zoom="indonesia">
+          <path d={I.land} fill="#22384f" stroke="#4d7ea8" stroke-width="0.7" />
+          <path d={I.west} fill="var(--jr-hl)" stroke="#ff9a9a" stroke-width="0.9" />
+          {I.labels.map((l) => <text x={l.p[0]} y={l.p[1]} class="jr-geolabel">{l.t}</text>)}
+          <circle cx={I.target[0]} cy={I.target[1]} r="6" fill="none" stroke="var(--accent)" stroke-width="1.6" class="jr-aim" />
+        </g>
+      </svg>
+
+      <!-- ── WEST JAVA (regencies) ────────────────────────────────────── -->
+      <svg class="scene scene--westjava" data-scene="westjava" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+        <g data-zoom="westjava">
+          <path d={W.context} fill="#1b2a3a" stroke="#3f5f7d" stroke-width="1" />
+          <path d={W.bekasi} fill="var(--jr-hl)" stroke="#ffb0b0" stroke-width="1.3" />
+          {W.labels.map((l) => <text x={l.p[0]} y={l.p[1]} class="jr-geolabel jr-geolabel--sm">{l.t}</text>)}
+          <circle cx={W.target[0]} cy={W.target[1]} r="6" fill="none" stroke="var(--accent)" stroke-width="1.6" class="jr-aim" />
+        </g>
+      </svg>
+
+      <!-- ── BEKASI (real contour) ────────────────────────────────────── -->
+      <svg class="scene scene--bekasi" data-scene="bekasi" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+        <g data-zoom="bekasi">
+          <path d={B.grid} fill="none" stroke="var(--jr-grid)" stroke-width="0.7" />
+          <path d={B.neighbors} fill="#16241b" stroke="#33513c" stroke-width="1" />
+          <path d={B.kabupaten} fill="#20583d" stroke="#6fe0a6" stroke-width="1.4" />
+          <path d={B.kota} fill="var(--jr-hl)" stroke="#ffc4c4" stroke-width="1.4" />
+          {B.labels.map((l) => <text x={l.p[0]} y={l.p[1]} class="jr-geolabel jr-geolabel--sm">{l.t}</text>)}
+          <g class="jr-pin" style={`--px:${B.marker[0]}px;--py:${B.marker[1]}px`}>
+            <circle cx={B.marker[0]} cy={B.marker[1]} r="16" fill="none" stroke="var(--accent)" stroke-width="2" class="jr-pinring" />
+            <circle cx={B.marker[0]} cy={B.marker[1]} r="6" fill="var(--accent)" />
+          </g>
+        </g>
+      </svg>
     </div>
 
-    <ol class="globe__rail" aria-hidden="true">
-      {globeStages.map((s, i) => (
-        <li data-rail={i} class={i === globeStages.length - 1 ? 'is-active' : ''}>
-          <span class="mono">{s.label}</span>
-        </li>
-      ))}
-    </ol>
+    <!-- Stage HUD -->
+    <div class="jr__hud" aria-hidden="true">
+      <p class="jr__stage"><span class="mono" data-stage>{globeStages[0].label}</span></p>
+      <ol class="jr__rail">
+        {globeStages.map((s, i) => (
+          <li data-rail={i} class={i === 0 ? 'is-active' : ''}><span class="mono">{s.label}</span></li>
+        ))}
+      </ol>
+    </div>
 
-    <!-- Konten SEO permanen — tersedia tanpa WebGL/JS (§14). -->
-    <div class="globe__content container">
+    <!-- Permanent, crawlable content, available without WebGL/JS. -->
+    <div class="jr__content container">
       <p class="eyebrow">{t.globe.eyebrow}</p>
       <h2 class="h2" id="globe-h">{t.globe.title}</h2>
-      <p class="globe__body">{t.globe.body}</p>
-      <p class="globe__caption mono">{t.globe.caption} · {site.region}</p>
-      <p class="globe__hint mono">{t.globe.hint}</p>
+      <p class="jr__body">{t.globe.body}</p>
+      <p class="jr__caption mono">{t.globe.caption}</p>
+      <p class="jr__hint mono" data-hint>{t.globe.hint}</p>
     </div>
+
+    <div class="jr__progress" aria-hidden="true"><span data-jrbar></span></div>
   </div>
 </section>
 
 <style>
-  .globe { min-height: 320vh; position: relative; }
-  .globe__pin {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    overflow: hidden;
-    display: grid;
-    place-items: center;
-    background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 6%, var(--bg)) 0%, var(--bg) 55%);
+  .jr { min-height: 320vh; position: relative; }
+  :global(:root[data-anim='auto']) .jr { min-height: 100svh; }
+  .jr__pin {
+    position: sticky; top: 0; height: 100svh; overflow: hidden;
+    display: grid; place-items: center;
+    background: radial-gradient(120% 120% at 50% 18%, #0a1226 0%, #05060d 52%, #03040a 100%);
   }
-  .globe__stars { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .globe__stage {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
+  :global([data-theme='light']) .jr__pin,
+  :global(:root:not([data-theme='dark'])) .jr__pin { /* space stays dark in both themes by design */ }
+
+  .jr__sky { position: absolute; inset: 0; }
+  .jr__gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .jr__core {
+    position: absolute; left: 50%; top: 42%; width: 60vmax; height: 60vmax;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(255,225,170,0.5) 0%, rgba(255,180,120,0.14) 26%, rgba(120,90,200,0.05) 46%, transparent 62%);
+    filter: blur(6px); will-change: opacity, transform;
   }
-  .globe__svg {
-    width: min(78vh, 88vw);
-    height: auto;
-    overflow: visible;
+  .jr__neb { position: absolute; border-radius: 50%; filter: blur(46px); mix-blend-mode: screen; will-change: opacity, transform; }
+  .jr__neb--1 { left: 16%; top: 22%; width: 44vmax; height: 30vmax; background: radial-gradient(circle, rgba(120,80,220,0.34), transparent 66%); }
+  .jr__neb--2 { right: 8%; top: 44%; width: 40vmax; height: 34vmax; background: radial-gradient(circle, rgba(214,45,45,0.22), transparent 66%); }
+  .jr__neb--3 { left: 40%; bottom: 8%; width: 46vmax; height: 26vmax; background: radial-gradient(circle, rgba(60,120,220,0.28), transparent 68%); }
+
+  .jr__scenes { position: absolute; inset: 0; display: grid; place-items: center; }
+  .scene {
+    position: absolute; width: min(94vh, 96vw); height: min(94vh, 96vw); max-height: 100svh;
+    opacity: 0; will-change: opacity, transform;
+    --pl-merc:#b9a58f; --pl-venus:#e6b98a; --pl-earth:#2f7fd6; --pl-mars:#c1573a; --pl-jup:#c9a06a; --pl-sat:#d8bd86;
+    --jr-orbit: rgba(150,180,220,0.18); --jr-hl:#e8443f; --jr-grid: rgba(120,200,150,0.16);
   }
-  #g-zoom { transform-box: fill-box; }
-  .globe__ring { transform-origin: 500px 500px; animation: ringPulse 2.6s ease-out infinite; }
-  @keyframes ringPulse {
-    0% { r: 8; opacity: 0.9; }
-    100% { r: 26; opacity: 0; }
+  .scene svg, .scene { overflow: hidden; }
+  .jr-geolabel { fill: #bcd6f2; font-family: var(--font-mono); font-size: 19px; text-anchor: middle; letter-spacing: 0.06em; paint-order: stroke; stroke: rgba(4,8,16,0.8); stroke-width: 3px; }
+  .jr-geolabel--sm { font-size: 15px; }
+  .jr-pinring { transform-origin: var(--px) var(--py); animation: jrpin 2.6s ease-out infinite; }
+  @keyframes jrpin { 0% { r: 8; opacity: 0.9; } 100% { r: 30; opacity: 0; } }
+  .jr-sun { transform-origin: 130px 540px; animation: jrsun 6s ease-in-out infinite; }
+  @keyframes jrsun { 0%,100% { opacity: 0.9; } 50% { opacity: 1; } }
+  .jr-citylight { animation: jrtwinkle 3.4s ease-in-out infinite; }
+  @keyframes jrtwinkle { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .jr__hud { position: absolute; inset: 0; pointer-events: none; }
+  .jr__stage { position: absolute; top: 12%; left: 0; right: 0; text-align: center; }
+  .jr__stage .mono {
+    font-family: var(--font-mono); font-size: clamp(0.72rem, 1.7vw, 1rem); letter-spacing: 0.34em;
+    color: #eaf1ff; padding: 8px 18px; border: 1px solid rgba(255,255,255,0.16); border-radius: 999px;
+    background: rgba(8,12,24,0.5); backdrop-filter: blur(6px);
   }
-  .globe__stagelabel {
-    position: absolute;
-    top: 12%;
-    left: 0;
-    right: 0;
-    text-align: center;
-  }
-  .globe__stagebig {
-    font-family: var(--font-mono);
-    font-size: clamp(0.8rem, 1.8vw, 1.05rem);
-    letter-spacing: 0.3em;
-    color: var(--accent-ink);
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--bg) 70%, transparent);
-    backdrop-filter: blur(6px);
-  }
-  .globe__rail {
-    position: absolute;
-    right: clamp(16px, 4vw, 54px);
-    top: 50%;
-    transform: translateY(-50%);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    z-index: 3;
-  }
-  .globe__rail li {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.14em;
-    color: var(--text-2);
-    opacity: 0.4;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: opacity 0.3s var(--ease), color 0.3s var(--ease);
-  }
-  .globe__rail li::before {
-    content: '';
-    width: 16px;
-    height: 1px;
-    background: currentColor;
-    transition: width 0.3s var(--ease);
-  }
-  .globe__rail li.is-active { opacity: 1; color: var(--accent-ink); }
-  .globe__rail li.is-active::before { width: 30px; }
-  .globe__content {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: clamp(28px, 6vh, 72px);
-    z-index: 3;
-    max-width: 600px;
-  }
-  .globe__body { margin-top: 14px; color: var(--text-2); max-width: 42ch; }
-  .globe__caption { margin-top: 14px; color: var(--accent-ink); font-size: 0.8rem; letter-spacing: 0.08em; }
-  .globe__hint { margin-top: 20px; color: var(--text-2); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; }
+  .jr__rail { position: absolute; right: clamp(14px, 4vw, 52px); top: 50%; transform: translateY(-50%); list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .jr__rail li { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em; color: #9fb2cc; opacity: 0.4; display: flex; align-items: center; gap: 9px; transition: opacity 0.35s var(--ease), color 0.35s var(--ease); }
+  .jr__rail li::before { content: ''; width: 14px; height: 1px; background: currentColor; transition: width 0.35s var(--ease); }
+  .jr__rail li.is-active { opacity: 1; color: #fff; }
+  .jr__rail li.is-active::before { width: 28px; background: var(--accent); }
+
+  .jr__content { position: absolute; left: 0; right: 0; bottom: clamp(26px, 6vh, 68px); max-width: 600px; }
+  .jr__content .eyebrow { color: #ff9a9a; }
+  .jr__content .h2 { color: #fff; }
+  .jr__body { margin-top: 14px; color: #b9c6da; max-width: 42ch; }
+  .jr__caption { margin-top: 14px; color: #ff9a9a; font-size: 0.8rem; letter-spacing: 0.08em; }
+  .jr__hint { margin-top: 18px; color: #8fa1bb; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .jr__progress { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgba(255,255,255,0.1); }
+  .jr__progress span { display: block; height: 100%; width: 0; background: var(--accent); }
+
+  /* Smooth density/glow response to Performance mode */
+  :global(:root[data-perf='low']) .jr__neb { opacity: 0.6; filter: blur(38px); }
+  :global(:root[data-perf='low']) .jr__core { filter: blur(4px); }
+  .jr__neb, .jr__core { transition: opacity 0.8s var(--ease), filter 0.8s var(--ease); }
 
   @media (max-width: 640px) {
-    .globe__rail { right: 12px; gap: 9px; }
-    .globe__rail li { font-size: 0.6rem; }
+    .jr__rail { right: 10px; gap: 8px; }
+    .jr__rail li { font-size: 0.54rem; }
+    .jr-geolabel { font-size: 24px; } .jr-geolabel--sm { font-size: 19px; }
   }
 
-  /* Reduced motion / no-JS: hentikan pinning, tampilkan keadaan statis penuh. */
+  /* Reduced motion / no JS: static accurate Earth + full copy, no pinning. */
   @media (prefers-reduced-motion: reduce) {
-    .globe { min-height: auto; }
-    .globe__pin { position: static; height: auto; min-height: 92svh; padding-block: var(--section-y); }
-    .globe__ring { animation: none; }
-    .globe__stagelabel { top: 8%; }
+    .jr { min-height: auto; }
+    .jr__pin { position: static; height: auto; min-height: 96svh; padding-block: var(--section-y); }
+    .jr__gl, .jr__core, .jr__neb { display: none; }
+    .scene--earth { opacity: 1; }
+    .jr-pinring, .jr-sun, .jr-citylight { animation: none; }
   }
 </style>
 
 <script>
-  const section = document.querySelector('.globe') as HTMLElement | null;
-  const zoom = document.getElementById('g-zoom');
-  const canvas = document.querySelector('.globe__stars') as HTMLCanvasElement | null;
-  const stageLabel = document.querySelector('[data-stagelabel] .globe__stagebig') as HTMLElement | null;
-  const rail = Array.from(document.querySelectorAll('[data-rail]')) as HTMLElement[];
-  const stages = ['SPACE', 'EARTH', 'ASIA', 'INDONESIA', 'WEST JAVA', 'BEKASI'];
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  if (section && zoom && !reduce) {
-    let active = false;
-    let raf = 0;
-    let stars: { x: number; y: number; r: number; a: number; t: number }[] = [];
-    const ctx = canvas?.getContext('2d') ?? null;
-    let dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-    function initStars() {
-      if (!canvas || !ctx) return;
-      const w = (canvas.width = canvas.offsetWidth * dpr);
-      const h = (canvas.height = canvas.offsetHeight * dpr);
-      const count = window.innerWidth < 700 ? 45 : 150;
-      stars = Array.from({ length: count }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        r: (Math.random() * 1.3 + 0.3) * dpr,
-        a: Math.random(),
-        t: Math.random() * Math.PI * 2,
-      }));
-    }
-
-    let starOpacity = 1;
-    function drawStars() {
-      if (!canvas || !ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (starOpacity <= 0.02) return;
-      const col = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111';
-      for (const s of stars) {
-        s.t += 0.02;
-        const tw = (Math.sin(s.t) * 0.4 + 0.6) * s.a * starOpacity;
-        ctx.globalAlpha = Math.max(0, tw);
-        ctx.fillStyle = col;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    function progress() {
-      const rect = section!.getBoundingClientRect();
-      const total = section!.offsetHeight - window.innerHeight;
-      return Math.min(1, Math.max(0, -rect.top / total));
-    }
-
-    function apply(p: number) {
-      // Zoom scale: eases into a fast dive toward Bekasi (pusat 500,500).
-      const s = 0.45 + Math.pow(p, 1.7) * 7.5;
-      zoom!.setAttribute('transform', `translate(500 500) scale(${s.toFixed(3)}) translate(-500 -500)`);
-      // Bintang memudar saat mendekati permukaan.
-      starOpacity = Math.max(0, 1 - p * 1.7);
-      // Label & rail per tahap.
-      const idx = Math.min(stages.length - 1, Math.floor(p * stages.length + 0.0001));
-      if (stageLabel && stageLabel.textContent !== stages[idx]) stageLabel.textContent = stages[idx];
-      rail.forEach((li, i) => li.classList.toggle('is-active', i === idx));
-    }
-
-    function loop() {
-      drawStars();
-      raf = requestAnimationFrame(loop);
-    }
-    function onScroll() {
-      if (active) apply(progress());
-    }
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          active = e.isIntersecting;
-          if (active) {
-            if (!raf) loop();
-            onScroll();
-          } else if (raf) {
-            cancelAnimationFrame(raf);
-            raf = 0;
-          }
-        }
-      },
-      { threshold: 0 }
-    );
-
-    initStars();
-    apply(0);
-    io.observe(section);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      initStars();
-    });
-  }
+  import { initJourney } from '../scripts/journey.ts';
+  initJourney();
 </script>
