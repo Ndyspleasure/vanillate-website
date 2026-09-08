@@ -4,372 +4,212 @@ interface Props { locale?: Locale }
 const { locale = 'id' } = Astro.props;
 const t = content[locale];
 
-// Posisi node sistem mengelilingi core (viewBox 1000×840, core di 500,410).
-const CX = 500, CY = 410, R = 250;
+// data-flow core nodes around a centre (small panel, viewBox 240×180)
+const CX = 120, CY = 90, R = 66;
 const nodes = systemNodes.map((label, i) => {
   const ang = (-90 + i * 60) * (Math.PI / 180);
   return { label, x: +(CX + Math.cos(ang) * R).toFixed(1), y: +(CY + Math.sin(ang) * R).toFixed(1) };
 });
-const fragPos = [
-  { x: 0.13, y: 0.26 }, { x: 0.72, y: 0.20 }, { x: 0.24, y: 0.70 },
-  { x: 0.78, y: 0.64 }, { x: 0.46, y: 0.13 }, { x: 0.55, y: 0.82 },
+const files = [
+  { n: 'system.ts', hi: true }, { n: 'db.ts' }, { n: 'ai.ts' },
+  { n: 'automation.ts' }, { n: 'config.json' },
 ];
 ---
-<section class="build" aria-labelledby="build-h">
-  <div class="build__pin">
-    <!-- SCENE: CODE -->
-    <div class="scene scene--code" data-scene="code" aria-hidden="true">
-      {t.build.fragments.map((f, i) => (
-        <code class="frag mono" data-frag data-x={fragPos[i]?.x ?? 0.5} data-y={fragPos[i]?.y ?? 0.5}>{f}</code>
-      ))}
+<section class="sc" id="build" aria-labelledby="build-h" data-sc>
+  <div class="container sc__intro">
+    <p class="eyebrow">{t.build.eyebrow}</p>
+    <h2 class="h2" id="build-h">{t.build.title}</h2>
+    <p class="sc__lead">{t.build.lead}</p>
+  </div>
+
+  <div class="sc__stage" data-scstage>
+    <!-- IDE window -->
+    <div class="sc__ide" data-ide>
+      <div class="sc__chrome">
+        <span class="sc__dots"><i></i><i></i><i></i></span>
+        <span class="sc__tabs">
+          {files.map((f) => <span class={`sc__tab${f.hi ? ' is-active' : ''}`}>{f.n}</span>)}
+        </span>
+        <span class="sc__status" data-status><i class="sc__statdot"></i><b data-statustxt>READY</b></span>
+      </div>
+      <div class="sc__main">
+        <aside class="sc__tree hi-only" aria-hidden="true">
+          {files.map((f) => (
+            <span class={`sc__file${f.hi ? ' is-active' : ''}`} data-file={f.n}>{f.n}</span>
+          ))}
+        </aside>
+        <div class="sc__editor">
+          <div class="sc__gutter" data-gutter aria-hidden="true"></div>
+          <pre class="sc__code" data-code aria-hidden="true"></pre>
+        </div>
+      </div>
+      <div class="sc__term" data-term aria-hidden="true"></div>
     </div>
 
-    <!-- SCENE: AK -->
-    <div class="scene scene--ak" data-scene="ak" aria-hidden="true">
-      <svg viewBox="0 0 200 200" class="ak" fill="none">
-        <path class="ak__p" d="M58 150 L86 50 L114 150 M67 118 H105" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" pathLength="1" />
-        <path class="ak__p" d="M126 50 V150 M126 104 L162 50 M133 100 L164 150" stroke="var(--text)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" pathLength="1" />
-      </svg>
-      <p class="scene__cap mono">{t.build.convergeLabel} <b>AK</b></p>
-    </div>
-
-    <!-- SCENE: SYSTEM CORE -->
-    <div class="scene scene--core" data-scene="core" aria-hidden="true">
-      <svg viewBox="0 0 1000 840" class="core" fill="none">
+    <!-- floating: data flow core -->
+    <div class="sc__float sc__float--core hi-only" data-core aria-hidden="true">
+      <span class="sc__floatlabel mono">system.core</span>
+      <svg viewBox="0 0 240 180" fill="none">
         {nodes.map((n, i) => (
           <>
-            <line class="core__line" data-line={i} x1={CX} y1={CY} x2={n.x} y2={n.y} stroke="var(--border)" stroke-width="2" pathLength="1" style={`stroke-dasharray:1;stroke-dashoffset:1`} />
-            <line class="core__flow" data-flow={i} x1={CX} y1={CY} x2={n.x} y2={n.y} stroke="var(--accent)" stroke-width="2" />
+            <line class="sc__cline" data-cline={i} x1={CX} y1={CY} x2={n.x} y2={n.y} stroke="var(--border)" stroke-width="1.5" pathLength="1" />
+            <line class="sc__cflow" data-cflow={i} x1={CX} y1={CY} x2={n.x} y2={n.y} stroke="var(--accent)" stroke-width="1.5" />
           </>
         ))}
         {nodes.map((n, i) => (
-          <g class="core__node" data-node={i}>
-            <circle cx={n.x} cy={n.y} r="34" fill="var(--bg-elev)" stroke="var(--border)" stroke-width="1.5" />
-            <text x={n.x} y={n.y} text-anchor="middle" dominant-baseline="central" class="core__nodetext">{n.label}</text>
+          <g class="sc__cnode" data-cnode={i}>
+            <circle cx={n.x} cy={n.y} r="15" fill="var(--bg-elev)" stroke="var(--border)" stroke-width="1" />
+            <text x={n.x} y={n.y} text-anchor="middle" dominant-baseline="central">{n.label}</text>
           </g>
         ))}
-        <circle cx={CX} cy={CY} r="52" fill="var(--bg-elev)" stroke="var(--accent)" stroke-width="2" />
-        <text x={CX} y={CY} text-anchor="middle" dominant-baseline="central" class="core__center mono">AK</text>
+        <circle cx={CX} cy={CY} r="20" fill="var(--bg-elev)" stroke="var(--accent)" stroke-width="1.5" />
+        <text class="sc__ccore" x={CX} y={CY} text-anchor="middle" dominant-baseline="central">AK</text>
       </svg>
     </div>
 
-    <!-- SCENE: PROCESS state -->
-    <div class="scene scene--process" data-scene="process" aria-hidden="true">
-      <span class="state" data-state>
-        <span class="state__dot"></span>
-        <span class="state__txt mono">{t.build.fragments && 'LOADING'}</span>
-      </span>
+    <!-- floating: API/JSON response -->
+    <div class="sc__float sc__float--api hi-only" data-api aria-hidden="true">
+      <span class="sc__floatlabel mono">response 200 OK</span>
+      <pre class="sc__json" data-json></pre>
     </div>
 
-    <!-- SCENE: PRODUCT -->
-    <div class="scene scene--product" data-scene="product" aria-hidden="true">
-      <div class="product">
-        <div class="product__bar"><span></span><span></span><span></span></div>
-        <div class="product__body">
-          <span class="product__row w70"></span>
-          <span class="product__row w90"></span>
-          <span class="product__row w40 accent"></span>
-        </div>
-      </div>
-      <p class="product__from mono" data-from>{t.build.fromTo}</p>
-      <p class="product__studio" data-studio>{t.build.studioReveal}</p>
+    <!-- floating: activity / git -->
+    <div class="sc__float sc__float--git" data-git aria-hidden="true">
+      <span class="sc__gitrow mono"><i class="sc__pulse"></i><span data-gittxt>main syncing</span></span>
     </div>
+  </div>
 
-    <!-- Konten SEO permanen (§25) -->
-    <div class="build__content container">
-      <p class="eyebrow">{t.build.eyebrow}</p>
-      <h2 class="h2" id="build-h">{t.build.title}</h2>
-      <p class="build__lead">{t.build.lead}</p>
-      <p class="build__fallback muted">{t.build.fallback}</p>
-    </div>
-
-    <div class="build__progress" aria-hidden="true"><span data-progressbar></span></div>
+  <!-- Permanent, crawlable summary (available without JS) -->
+  <div class="container sc__fallback">
+    <p class="muted">{t.build.fallback}</p>
   </div>
 </section>
 
 <style>
-  .build { min-height: 460vh; position: relative; }
-  .build__pin {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    overflow: hidden;
+  .sc { padding-block: var(--section-y); overflow: hidden; }
+  .sc__intro { max-width: 760px; margin-bottom: clamp(28px, 5vh, 56px); }
+  .sc__lead { margin-top: 14px; color: var(--text-2); max-width: 46ch; }
+
+  .sc__stage {
+    position: relative;
+    max-width: var(--container);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    min-height: min(70vh, 620px);
     display: grid;
     place-items: center;
-    background:
-      radial-gradient(80% 60% at 50% 45%, color-mix(in srgb, var(--accent) 5%, var(--bg)) 0%, var(--bg) 70%);
-  }
-  .scene {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    opacity: 0;
-    will-change: opacity, transform;
   }
 
-  /* Code */
-  .frag {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    font-family: var(--font-mono);
-    font-size: clamp(0.72rem, 1.3vw, 0.92rem);
-    color: var(--text-2);
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    padding: 8px 12px;
-    border-radius: 8px;
-    white-space: nowrap;
-  }
-
-  /* AK */
-  .ak { width: min(38vh, 60vw); height: auto; }
-  .ak__p { stroke-dasharray: 1; stroke-dashoffset: 1; }
-  .scene__cap {
-    position: absolute;
-    bottom: 20%;
-    font-size: 0.8rem;
-    color: var(--text-2);
-    letter-spacing: 0.06em;
-  }
-  .scene__cap b { color: var(--accent-ink); }
-
-  /* Core */
-  .core { width: min(96vh, 94vw); height: auto; }
-  .core__nodetext { font-family: var(--font-mono); font-size: 20px; fill: var(--text); letter-spacing: 0.04em; }
-  .core__center { font-family: var(--font-mono); font-size: 30px; fill: var(--accent-ink); font-weight: 600; }
-  .core__flow {
-    stroke-dasharray: 6 240;
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-  .scene--core.is-live .core__flow {
-    opacity: 0.9;
-    animation: flow 1.6s linear infinite;
-  }
-  @keyframes flow { to { stroke-dashoffset: -246; } }
-  .core__node { opacity: 0; }
-
-  /* Process */
-  .scene--process { align-items: end; padding-bottom: 20%; pointer-events: none; }
-  .state {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 18px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--bg) 75%, transparent);
-    backdrop-filter: blur(6px);
-  }
-  .state__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-  .state__txt { font-size: 0.8rem; letter-spacing: 0.16em; color: var(--text); }
-  .state[data-tone='fail'] .state__dot { background: var(--accent); animation: blink 0.5s steps(2) infinite; }
-  .state[data-tone='fail'] .state__txt { color: var(--accent-ink); }
-  .state[data-tone='ok'] .state__dot { background: #21a366; }
-  .state[data-tone='ok'] .state__txt { color: #21a366; }
-  @keyframes blink { 50% { opacity: 0.3; } }
-
-  /* Product */
-  .scene--product { flex-direction: column; }
-  .product {
-    width: min(360px, 74vw);
+  /* IDE window */
+  .sc__ide {
+    width: min(760px, 100%);
     border: 1px solid var(--border);
     border-radius: 14px;
     background: var(--bg-elev);
     overflow: hidden;
-    box-shadow: 0 24px 60px -30px color-mix(in srgb, var(--accent) 50%, transparent);
-    transform: scale(0.9);
+    box-shadow: 0 30px 80px -40px color-mix(in srgb, var(--accent) 40%, transparent);
+    position: relative;
+    z-index: 2;
   }
-  .product__bar { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-  .product__bar span { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
-  .product__bar span:first-child { background: var(--accent); }
-  .product__body { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-  .product__row { height: 12px; border-radius: 6px; background: var(--border); }
-  .product__row.w70 { width: 70%; }
-  .product__row.w90 { width: 90%; }
-  .product__row.w40 { width: 40%; }
-  .product__row.accent { background: color-mix(in srgb, var(--accent) 60%, var(--border)); }
-  .product__from {
-    position: absolute;
-    bottom: 24%;
-    font-size: clamp(0.9rem, 2vw, 1.2rem);
-    letter-spacing: 0.1em;
-    color: var(--text);
-    opacity: 0;
+  .sc__chrome { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .sc__dots { display: inline-flex; gap: 6px; }
+  .sc__dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
+  .sc__dots i:first-child { background: var(--accent); }
+  .sc__tabs { display: flex; gap: 6px; overflow: hidden; flex: 1; min-width: 0; }
+  .sc__tab { font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-2); padding: 4px 9px; border-radius: 6px; white-space: nowrap; }
+  .sc__tab.is-active { color: var(--text); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .sc__status { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.08em; color: var(--text-2); }
+  .sc__statdot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-2); transition: background 0.4s var(--ease); }
+  .sc__status[data-tone='build'] .sc__statdot { background: #e5a13a; } .sc__status[data-tone='build'] b { color: #e5a13a; }
+  .sc__status[data-tone='ok'] .sc__statdot { background: #21a366; } .sc__status[data-tone='ok'] b { color: #21a366; }
+
+  .sc__main { display: flex; min-height: 300px; }
+  .sc__tree { width: 130px; flex: 0 0 auto; border-right: 1px solid var(--border); padding: 12px 8px; display: flex; flex-direction: column; gap: 3px; background: color-mix(in srgb, var(--bg) 40%, var(--bg-elev)); }
+  .sc__file { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-2); padding: 5px 8px; border-radius: 6px; transition: color 0.3s, background 0.3s; }
+  .sc__file.is-active { color: var(--accent-ink); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+  .sc__editor { flex: 1; min-width: 0; display: flex; padding: 14px 0; max-height: 320px; overflow: hidden; position: relative; }
+  .sc__editor::after { content: ''; position: absolute; inset: auto 0 0 0; height: 42px; background: linear-gradient(transparent, var(--bg-elev)); pointer-events: none; }
+  .sc__editor::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 24px; background: linear-gradient(var(--bg-elev), transparent); pointer-events: none; z-index: 1; }
+  .sc__gutter, .sc__code { font-family: var(--font-mono); font-size: clamp(0.68rem, 1.15vw, 0.82rem); line-height: 1.65; will-change: transform; }
+  .sc__gutter { flex: 0 0 auto; width: 40px; text-align: right; padding-right: 12px; color: color-mix(in srgb, var(--text-2) 60%, transparent); user-select: none; white-space: pre; }
+  .sc__code { margin: 0; flex: 1; min-width: 0; white-space: pre; overflow: hidden; color: var(--text); }
+  /* runtime-injected nodes need :global (scoped styles skip dynamic DOM) */
+  .sc__code :global(.ln) { display: block; padding-inline: 14px; border-radius: 4px; min-height: 1.65em; }
+  .sc__code :global(.ln.is-hot) { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+  .sc__code :global(.k) { color: #c678dd; }
+  .sc__code :global(.s) { color: #98c379; }
+  .sc__code :global(.c) { color: color-mix(in srgb, var(--text-2) 85%, transparent); font-style: italic; }
+  .sc__code :global(.f) { color: #61afef; }
+  .sc__code :global(.n) { color: #d19a66; }
+  .sc__code :global(.t) { color: #e5c07b; }
+  .sc__code :global(.p) { color: #56b6c2; }
+  :global([data-theme='light'] .sc__code .k) { color: #a626a4; }
+  :global([data-theme='light'] .sc__code .s) { color: #50a14f; }
+  :global([data-theme='light'] .sc__code .f) { color: #4078f2; }
+  :global([data-theme='light'] .sc__code .t) { color: #b26b00; }
+  :global([data-theme='light'] .sc__code .p) { color: #0184bc; }
+  .sc__editor :global(.sc__caret) { display: inline-block; width: 2px; height: 1.05em; background: var(--accent); vertical-align: text-bottom; animation: scblink 1s steps(2) infinite; }
+  @keyframes scblink { 50% { opacity: 0; } }
+
+  .sc__term { border-top: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 55%, #000); padding: 10px 16px; min-height: 76px; font-family: var(--font-mono); font-size: 0.68rem; line-height: 1.7; color: var(--text-2); }
+  .sc__term :global(.tl) { display: block; opacity: 0; transform: translateY(4px); transition: opacity 0.4s, transform 0.4s; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .sc__term :global(.tl.on) { opacity: 1; transform: none; }
+  .sc__term :global(.ok) { color: #21a366; } .sc__term :global(.ac) { color: var(--accent-ink); } .sc__term :global(.dim) { color: color-mix(in srgb, var(--text-2) 70%, transparent); }
+
+  /* floating panels */
+  .sc__float {
+    position: absolute; z-index: 3; border: 1px solid var(--border); border-radius: 12px;
+    background: color-mix(in srgb, var(--bg-elev) 92%, transparent); backdrop-filter: blur(8px);
+    box-shadow: 0 20px 50px -30px rgba(0,0,0,0.6); padding: 12px; opacity: 0; transform: translateY(10px) scale(0.98);
+    transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); pointer-events: none;
   }
-  .product__studio {
-    position: absolute;
-    bottom: 14%;
-    font-family: var(--font-display);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: -0.02em;
-    font-size: clamp(1.6rem, 6vw, 4rem);
-    color: var(--accent-ink);
-    opacity: 0;
+  .sc__float.on { opacity: 1; transform: none; }
+  .sc__floatlabel { display: block; font-size: 0.6rem; letter-spacing: 0.1em; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; }
+  .sc__float--core { top: -2%; right: max(-8px, -3vw); width: 210px; }
+  .sc__float--core svg { width: 100%; height: auto; }
+  .sc__cnode text, .sc__ccore { font-family: var(--font-mono); font-size: 8px; fill: var(--text-2); }
+  .sc__ccore { fill: var(--accent-ink); font-weight: 600; font-size: 9px; }
+  .sc__cnode { opacity: 0; transition: opacity 0.5s var(--ease); }
+  .sc__cnode.on { opacity: 1; }
+  .sc__cflow { stroke-dasharray: 4 60; opacity: 0; }
+  .sc__cflow.on { opacity: 0.9; animation: scflow 1.8s linear infinite; }
+  @keyframes scflow { to { stroke-dashoffset: -64; } }
+  .sc__float--api { bottom: 4%; right: max(-6px, -2vw); width: 210px; }
+  .sc__json { margin: 0; font-family: var(--font-mono); font-size: 0.66rem; line-height: 1.6; color: var(--text-2); white-space: pre; }
+  .sc__json :global(.s) { color: #98c379; } .sc__json :global(.k) { color: #56b6c2; } .sc__json :global(.n) { color: #d19a66; }
+  .sc__float--git { bottom: 6%; left: max(-6px, -2vw); width: auto; padding: 8px 12px; }
+  .sc__gitrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.64rem; color: var(--text-2); }
+  .sc__pulse { width: 7px; height: 7px; border-radius: 50%; background: #21a366; box-shadow: 0 0 0 0 #21a36699; animation: scpulse 2s infinite; }
+  @keyframes scpulse { 0% { box-shadow: 0 0 0 0 #21a36666; } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+  .sc__fallback { max-width: 620px; margin-top: clamp(28px, 5vh, 52px); }
+  .sc__fallback .muted { font-size: 0.9rem; opacity: 0.62; }
+
+  /* Performance: Smooth mode sheds the floating panels + heavy motion, keeps the IDE story */
+  :global(:root[data-perf='low']) .hi-only { display: none; }
+  :global(:root[data-perf='low']) .sc__ide { box-shadow: 0 18px 50px -34px rgba(0,0,0,0.6); }
+
+  @media (max-width: 900px) {
+    .sc__tree { display: none; }
+    .sc__float--core { width: 150px; top: -12px; right: -6px; }
+    .sc__float--api { width: 168px; bottom: -10px; right: -6px; }
+  }
+  @media (max-width: 620px) {
+    .sc__stage { padding-inline: var(--gutter); min-height: 0; }
+    .sc__float--core, .sc__float--api { display: none; }
+    .sc__float--git { left: auto; right: 8px; bottom: -8px; }
   }
 
-  .build__content {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: clamp(60px, 12vh, 120px);
-    text-align: center;
-    z-index: 4;
-    pointer-events: none;
-  }
-  .build__content .eyebrow { justify-content: center; }
-  .build__content .eyebrow::before { display: none; }
-  .build__lead { margin: 14px auto 0; color: var(--text-2); max-width: 40ch; }
-  .build__fallback {
-    max-width: 60ch;
-    margin: 14px auto 0;
-    font-size: 0.9rem;
-    /* Terlihat oleh crawler & pembaca; disamarkan halus agar tak menutup animasi */
-    opacity: 0.55;
-  }
-  .build__progress {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 2px;
-    background: var(--border);
-  }
-  .build__progress span { display: block; height: 100%; width: 0; background: var(--accent); }
-
-  /* Reduced motion / no-JS: tampilkan semua konten sebagai daftar statis. */
+  /* Reduced motion / no JS: show full code + panels, no animation. */
   @media (prefers-reduced-motion: reduce) {
-    .build { min-height: auto; }
-    .build__pin { position: static; height: auto; min-height: 80svh; padding-block: var(--section-y); place-items: center; }
-    .scene { position: static; opacity: 1; inset: auto; }
-    .scene--code, .scene--process, .scene--product .product,
-    .scene--ak, .scene--core { display: none; } /* animasi disembunyikan; teks tetap */
-    .product__from, .product__studio { position: static; opacity: 1; }
-    .build__content { position: static; }
-    .build__fallback { opacity: 1; }
+    .sc__caret, .sc__pulse, .sc__cflow.on { animation: none; }
+    .sc__float, .sc__term .tl { opacity: 1; transform: none; }
+    .sc__cnode { opacity: 1; }
   }
 </style>
 
 <script>
-  const section = document.querySelector('.build') as HTMLElement | null;
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  if (section && !reduce) {
-    const scenes: Record<string, HTMLElement> = {};
-    section.querySelectorAll('[data-scene]').forEach((el) => {
-      scenes[(el as HTMLElement).dataset.scene!] = el as HTMLElement;
-    });
-    const frags = Array.from(section.querySelectorAll('[data-frag]')) as HTMLElement[];
-    const lines = Array.from(section.querySelectorAll('[data-line]')) as SVGElement[];
-    const coreNodes = Array.from(section.querySelectorAll('[data-node]')) as SVGElement[];
-    const stateEl = section.querySelector('[data-state]') as HTMLElement | null;
-    const stateTxt = section.querySelector('[data-state] .state__txt') as HTMLElement | null;
-    const fromEl = section.querySelector('[data-from]') as HTMLElement | null;
-    const studioEl = section.querySelector('[data-studio]') as HTMLElement | null;
-    const bar = section.querySelector('[data-progressbar]') as HTMLElement | null;
-
-    const stops = [
-      { until: 0.745, txt: 'LOADING', tone: '' },
-      { until: 0.78, txt: 'ANALYZING', tone: '' },
-      { until: 0.815, txt: 'BUILDING', tone: '' },
-      { until: 0.845, txt: 'VALIDATING', tone: '' },
-      { until: 0.875, txt: 'BUILD FAILED', tone: 'fail' },
-      { until: 0.9, txt: 'RETRYING…', tone: 'fail' },
-      { until: 0.94, txt: 'BUILD SUCCESS', tone: 'ok' },
-      { until: 1.01, txt: 'DEPLOYED', tone: 'ok' },
-    ];
-
-    const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-    const seg = (p: number, a: number, b: number, c: number, d: number) =>
-      p <= a || p >= d ? 0 : p < b ? (p - a) / (b - a) : p > c ? 1 - (p - c) / (d - c) : 1;
-    const lerp = (a: number, b: number, x: number) => a + (b - a) * x;
-
-    let active = false;
-    let raf = 0;
-
-    function render() {
-      const rect = section!.getBoundingClientRect();
-      const total = section!.offsetHeight - window.innerHeight;
-      const p = clamp(-rect.top / total);
-      if (bar) bar.style.width = (p * 100).toFixed(1) + '%';
-
-      // Scene opacities
-      const oCode = seg(p, 0, 0.03, 0.30, 0.42);
-      const oAk = seg(p, 0.34, 0.42, 0.54, 0.62);
-      const oCore = seg(p, 0.56, 0.64, 0.88, 0.93);
-      const oProc = seg(p, 0.69, 0.72, 0.93, 0.96);
-      const oProd = seg(p, 0.90, 0.95, 1.1, 1.2);
-      scenes.code.style.opacity = String(oCode);
-      scenes.ak.style.opacity = String(oAk);
-      scenes.core.style.opacity = String(oCore);
-      scenes.process.style.opacity = String(oProc);
-      scenes.product.style.opacity = String(oProd);
-
-      // Code convergence (0.18 → 0.40)
-      const c = clamp((p - 0.16) / 0.24);
-      for (const f of frags) {
-        const bx = parseFloat(f.dataset.x || '0.5');
-        const by = parseFloat(f.dataset.y || '0.5');
-        f.style.left = lerp(bx, 0.5, c) * 100 + '%';
-        f.style.top = lerp(by, 0.5, c) * 100 + '%';
-        f.style.opacity = String(1 - clamp((c - 0.75) / 0.25));
-        f.style.transform = `translate(-50%,-50%) scale(${lerp(1, 0.7, c)})`;
-      }
-
-      // AK draw (0.38 → 0.54)
-      const ak = clamp((p - 0.38) / 0.16);
-      section!.querySelectorAll('.ak__p').forEach((el) =>
-        ((el as SVGElement).style.strokeDashoffset = String(1 - ak))
-      );
-
-      // Core lines draw (0.58 → 0.80) + nodes appear staggered
-      const core = clamp((p - 0.58) / 0.22);
-      lines.forEach((ln, i) => {
-        const lp = clamp((core - i * 0.06) / 0.5);
-        (ln as SVGElement).style.strokeDashoffset = String(1 - lp);
-      });
-      coreNodes.forEach((nd, i) => {
-        const np = clamp((core - i * 0.07) / 0.4);
-        (nd as SVGElement).style.opacity = String(np);
-      });
-      scenes.core.classList.toggle('is-live', oCore > 0.6);
-
-      // Process state
-      if (oProc > 0.05 && stateTxt && stateEl) {
-        const s = stops.find((x) => p < x.until) || stops[stops.length - 1];
-        if (stateTxt.textContent !== s.txt) stateTxt.textContent = s.txt;
-        if (stateEl.dataset.tone !== s.tone) stateEl.dataset.tone = s.tone;
-      }
-
-      // Final texts
-      if (fromEl) fromEl.style.opacity = String(seg(p, 0.9, 0.93, 0.985, 1.02));
-      if (studioEl) {
-        const sp = clamp((p - 0.95) / 0.05);
-        studioEl.style.opacity = String(sp);
-        studioEl.style.transform = `translateY(${lerp(14, 0, sp)}px)`;
-      }
-    }
-
-    function loop() {
-      render();
-      raf = requestAnimationFrame(loop);
-    }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          active = e.isIntersecting;
-          if (active && !raf) loop();
-          else if (!active && raf) {
-            cancelAnimationFrame(raf);
-            raf = 0;
-          }
-        }
-      },
-      { threshold: 0 }
-    );
-    render();
-    io.observe(section);
-  }
+  import { initShowcase } from '../scripts/showcase.ts';
+  initShowcase();
 </script>

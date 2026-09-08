@@ -15,7 +15,7 @@ export const site = {
   region: 'Jawa Barat',
   country: 'Indonesia',
   countryCode: 'ID',
-  email: 'halo@andikurniawan.vanillate.id', // placeholder — ganti bila perlu (lihat README)
+  email: 'andikurniawanoke23@gmail.com',
   linkedin: 'https://www.linkedin.com/in/andi-kurniawan23/',
   discord: 'https://discord.gg/A7n88d6uRW',
   studioUrl: 'https://vanillate.id',
@@ -44,13 +44,13 @@ export const studioStats = [
   { value: '+500', id: 'Interaksi per Sesi', en: 'Interactions per Session' },
 ] as const;
 
-// Zoom sinematik: SPACE → BEKASI (master brief §12).
+// Perjalanan sinematik satu tarikan: Bima Sakti → Bekasi.
 export const globeStages = [
-  { key: 'space', label: 'SPACE', id: 'Ruang angkasa', en: 'Outer space' },
-  { key: 'earth', label: 'EARTH', id: 'Bumi', en: 'Earth' },
-  { key: 'asia', label: 'ASIA', id: 'Asia', en: 'Asia' },
+  { key: 'galaxy', label: 'BIMA SAKTI', id: 'Galaksi Bima Sakti', en: 'The Milky Way' },
+  { key: 'solar', label: 'TATA SURYA', id: 'Tata Surya', en: 'Solar System' },
+  { key: 'earth', label: 'BUMI', id: 'Planet Bumi', en: 'Planet Earth' },
   { key: 'indonesia', label: 'INDONESIA', id: 'Indonesia', en: 'Indonesia' },
-  { key: 'westjava', label: 'WEST JAVA', id: 'Jawa Barat', en: 'West Java' },
+  { key: 'westjava', label: 'JAWA BARAT', id: 'Jawa Barat', en: 'West Java' },
   { key: 'bekasi', label: 'BEKASI', id: 'Bekasi', en: 'Bekasi' },
 ] as const;
 
@@ -187,14 +187,47 @@ type Copy = {
     signoff: string;
   };
   footer: { tagline: string; rights: string; backTop: string };
+  perf: {
+    eyebrow: string;
+    title: string;
+    lead: string;
+    recommended: string;
+    systemPick: string;
+    high: { name: string; desc: string };
+    low: { name: string; desc: string };
+    auto: { name: string; desc: string };
+    start: string;
+    later: string;
+    label: string;
+    change: string;
+    modeHigh: string;
+    modeLow: string;
+    modeAuto: string;
+    a11y: string;
+    // step 2 — animation experience
+    animEyebrow: string;
+    animTitle: string;
+    animLead: string;
+    animAuto: { name: string; desc: string };
+    animManual: { name: string; desc: string };
+    animLabel: string;
+    animAutoShort: string;
+    animManualShort: string;
+    animA11y: string;
+    back: string;
+    // closing panel at the bottom of the journey
+    endEyebrow: string;
+    endTitle: string;
+    endLead: string;
+  };
 };
 
 export const content: Record<Locale, Copy> = {
   // ═══════════════════════════════════════ INDONESIA (canonical) ═══════════
   id: {
-    metaTitle: 'Andi Kurniawan — Mahasiswa, Profesional, Founder & Developer',
+    metaTitle: 'Andi Kurniawan, Mahasiswa, Profesional, Founder dan Developer',
     metaDescription:
-      'Andi Kurniawan — mahasiswa, profesional, founder Vanillate Studio, dan developer berbasis di Bekasi, Indonesia. Menjelajahi management, data, teknologi, dan pengembangan produk digital.',
+      'Andi Kurniawan adalah mahasiswa, profesional, founder Vanillate Studio, dan developer yang berbasis di Bekasi, Indonesia. Berkarya di bidang management, data, teknologi, dan pengembangan produk digital.',
     nav: { about: 'Tentang', work: 'Karya', vanillate: 'Vanillate', contact: 'Kontak' },
     a11y: {
       skip: 'Lewati ke konten utama',
@@ -222,21 +255,21 @@ export const content: Record<Locale, Copy> = {
       ],
     },
     globe: {
-      eyebrow: 'Dari Mana Berkarya?',
+      eyebrow: 'Dari Mana Berkarya',
       title: 'Berbasis di Bekasi, Indonesia.',
-      body: 'Setiap produk dan keputusan berangkat dari satu titik nyata di peta — Bekasi, Jawa Barat, Indonesia.',
-      caption: 'Bekasi · Indonesia',
-      hint: 'Gulir untuk memperbesar dari ruang angkasa menuju Bekasi',
+      body: 'Setiap produk dan keputusan berawal dari satu titik nyata di peta. Bekasi, Jawa Barat, Indonesia.',
+      caption: 'Bekasi, Indonesia',
+      hint: 'Gulir untuk menyusuri Bima Sakti hingga sampai ke Bekasi',
     },
     expertise: {
       eyebrow: 'Yang Dikerjakan',
       title: 'Empat disiplin yang saling menopang.',
-      lead: 'Management, data, teknologi, dan operasional — dipakai bersama untuk membangun dan menjaga produk tetap berjalan.',
+      lead: 'Management, data, teknologi, dan operasional dipakai bersama untuk membangun produk sekaligus menjaganya tetap berjalan.',
     },
     skills: {
       eyebrow: 'Perkakas',
       title: 'Alat yang dipakai setiap hari.',
-      lead: 'Dari kode hingga operasional tim — perangkat yang menopang cara kerja sehari-hari.',
+      lead: 'Dari menulis kode hingga mengelola operasional tim, inilah perangkat yang menopang cara kerja sehari-hari.',
       hoverHint: 'Arahkan kursor untuk detail',
     },
     build: {
@@ -250,19 +283,19 @@ export const content: Record<Locale, Copy> = {
       retrying: 'RETRYING…',
       recovered: 'BUILD SUCCESS',
       complete: 'BUILD COMPLETE',
-      fromTo: 'FROM CODE TO PRODUCT.',
+      fromTo: 'DARI KODE MENJADI PRODUK.',
       studioReveal: 'VANILLATE STUDIO',
-      fallback: 'Membangun pengalaman digital melalui teknologi, data, AI, automation, dan community tools — dari fragmen kode, dirakit menjadi sistem, hingga menjadi produk nyata.',
+      fallback: 'Membangun pengalaman digital melalui teknologi, data, AI, automation, dan community tools. Berawal dari fragmen kode, dirakit menjadi sistem, lalu tumbuh menjadi produk nyata.',
     },
     vanillate: {
-      eyebrow: 'Founder — Vanillate Studio',
+      eyebrow: 'Founder Vanillate Studio',
       title: 'Membangun produk digital untuk komunitas Indonesia.',
-      role: 'Founder · Manajer Operasional',
+      role: 'Founder dan Manajer Operasional',
       lead: 'Membangun produk digital yang menghadirkan pengalaman baru bagi komunitas dan pengguna Indonesia.',
       storyTitle: 'Berawal dari Satu Ide',
       story: [
-        'Vanillate lahir pada 2026 dari satu pengamatan sederhana: komunitas online Indonesia membutuhkan produk digital yang terus dikembangkan, bukan sekadar diluncurkan lalu ditinggalkan.',
-        'Dimulai dari Vanillate Sambung Kata, kemudian berkembang menjadi studio yang membangun berbagai pengalaman digital untuk komunitas dan pengguna Indonesia.',
+        'Vanillate lahir pada 2026 dari satu pengamatan sederhana. Komunitas online Indonesia membutuhkan produk digital yang terus dikembangkan, bukan sekadar diluncurkan lalu ditinggalkan.',
+        'Perjalanan dimulai dari Vanillate Sambung Kata, lalu tumbuh menjadi studio yang membangun berbagai pengalaman digital untuk komunitas dan pengguna Indonesia.',
       ],
       futureTitle: 'Arah Berikutnya',
       future: ['Community Tools', 'Social Apps', 'AI Tools', 'Automation Platform', 'Web Platform', 'Mobile Applications', 'Cloud Services'],
@@ -271,8 +304,8 @@ export const content: Record<Locale, Copy> = {
     work: {
       eyebrow: 'Karya Pilihan',
       title: 'Yang sudah dibangun.',
-      lead: 'Produk nyata yang dipakai komunitas — dirawat dan dikembangkan, bukan proyek sekali rilis.',
-      projectCategory: 'Community Game · Discord',
+      lead: 'Produk nyata yang dipakai komunitas, dirawat dan terus dikembangkan, bukan proyek sekali rilis.',
+      projectCategory: 'Game Komunitas Discord',
       projectDesc: 'Permainan komunitas yang dirancang untuk menciptakan interaksi dan menjaga komunitas tetap aktif.',
       cta: 'Lihat Project',
     },
@@ -300,7 +333,7 @@ export const content: Record<Locale, Copy> = {
       title: 'Arah dan perkembangan.',
       now: { label: 'Sekarang', items: ['Mahasiswa', 'Profesional', 'Founder'] },
       focus: { label: 'Fokus', items: ['Management', 'Data', 'Technology', 'Leadership'] },
-      next: { label: 'Berikutnya', items: ['HR · Team Lead'] },
+      next: { label: 'Berikutnya', items: ['HR dan Team Lead'] },
     },
     contact: {
       eyebrow: 'Kontak',
@@ -314,13 +347,59 @@ export const content: Record<Locale, Copy> = {
       rights: 'Seluruh hak cipta dilindungi.',
       backTop: 'Kembali ke atas',
     },
+    perf: {
+      eyebrow: 'Selamat Datang',
+      title: 'Pilih pengalaman visual Anda.',
+      lead: 'Situs ini menghadirkan perjalanan visual dari galaksi hingga Bekasi. Pilih tingkat kehalusan efek yang paling nyaman untuk perangkat Anda. Cerita dan tampilannya tetap sama utuh.',
+      recommended: 'Direkomendasikan untuk perangkat Anda',
+      systemPick: 'Rekomendasi sistem',
+      high: {
+        name: 'Performa Tinggi',
+        desc: 'Partikel penuh, galaksi paling detail, dan animasi paling kaya. Paling cocok untuk perangkat yang bertenaga.',
+      },
+      low: {
+        name: 'Performa Ringan',
+        desc: 'Efek yang lebih hemat agar tetap mulus, tanpa kehilangan cerita maupun karakter visualnya.',
+      },
+      auto: {
+        name: 'Otomatis',
+        desc: 'Biarkan situs menyesuaikan sendiri dengan kemampuan perangkat Anda.',
+      },
+      start: 'Mulai jelajahi',
+      later: 'Pakai rekomendasi sistem',
+      label: 'Performa',
+      change: 'Ubah kapan saja lewat tombol Performa di atas.',
+      modeHigh: 'Tinggi',
+      modeLow: 'Ringan',
+      modeAuto: 'Otomatis',
+      a11y: 'Ganti mode performa',
+      animEyebrow: 'Langkah Dua',
+      animTitle: 'Bagaimana Anda ingin menikmatinya?',
+      animLead: 'Pilih cara menjalani perjalanan visualnya. Desain dan ceritanya tetap sama.',
+      animAuto: {
+        name: 'Otomatis',
+        desc: 'Paling sinematik. Setiap tahap berjalan sendiri mengikuti timeline saat section aktif.',
+      },
+      animManual: {
+        name: 'Manual',
+        desc: 'Anda yang memegang kendali. Gulir untuk menyusuri setiap tahap dengan tempo Anda sendiri.',
+      },
+      animLabel: 'Animasi',
+      animAutoShort: 'Otomatis',
+      animManualShort: 'Manual',
+      animA11y: 'Ganti mode animasi',
+      back: 'Kembali',
+      endEyebrow: 'Akhir Perjalanan',
+      endTitle: 'Sudah sampai di ujung.',
+      endLead: 'Coba rasakan dengan cara yang berbeda, lalu jelajahi sekali lagi.',
+    },
   },
 
   // ═══════════════════════════════════════════════ ENGLISH ════════════════
   en: {
-    metaTitle: 'Andi Kurniawan — Student, Professional, Founder & Developer',
+    metaTitle: 'Andi Kurniawan, Student, Professional, Founder and Developer',
     metaDescription:
-      'Andi Kurniawan — student, professional, founder of Vanillate Studio, and developer based in Bekasi, Indonesia. Working across management, data, technology, and digital product development.',
+      'Andi Kurniawan is a student, professional, founder of Vanillate Studio, and developer based in Bekasi, Indonesia. Working across management, data, technology, and digital product development.',
     nav: { about: 'About', work: 'Work', vanillate: 'Vanillate', contact: 'Contact' },
     a11y: {
       skip: 'Skip to main content',
@@ -350,19 +429,19 @@ export const content: Record<Locale, Copy> = {
     globe: {
       eyebrow: "Where I'm Building From",
       title: 'Based in Bekasi, Indonesia.',
-      body: 'Every product and decision starts from one real point on the map — Bekasi, West Java, Indonesia.',
-      caption: 'Bekasi · Indonesia',
-      hint: 'Scroll to zoom from outer space down to Bekasi',
+      body: 'Every product and decision starts from one real point on the map. Bekasi, West Java, Indonesia.',
+      caption: 'Bekasi, Indonesia',
+      hint: 'Scroll to travel from the Milky Way all the way down to Bekasi',
     },
     expertise: {
       eyebrow: 'What I Do',
       title: 'Four disciplines that reinforce each other.',
-      lead: 'Management, data, technology, and operations — used together to build products and keep them running.',
+      lead: 'Management, data, technology, and operations work together to build products and keep them running.',
     },
     skills: {
       eyebrow: 'Toolkit',
       title: 'Tools used every day.',
-      lead: 'From code to team operations — the tools behind the daily workflow.',
+      lead: 'From writing code to running team operations, these are the tools behind the daily workflow.',
       hoverHint: 'Hover for details',
     },
     build: {
@@ -378,16 +457,16 @@ export const content: Record<Locale, Copy> = {
       complete: 'BUILD COMPLETE',
       fromTo: 'FROM CODE TO PRODUCT.',
       studioReveal: 'VANILLATE STUDIO',
-      fallback: 'Building digital experiences through technology, data, AI, automation, and community tools — from code fragments, assembled into a system, into a real product.',
+      fallback: 'Building digital experiences through technology, data, AI, automation, and community tools. It starts with code fragments, assembles into a system, then grows into a real product.',
     },
     vanillate: {
-      eyebrow: 'Founder — Vanillate Studio',
+      eyebrow: 'Founder of Vanillate Studio',
       title: 'Building digital products for Indonesian communities.',
-      role: 'Founder · Operations Manager',
+      role: 'Founder and Operations Manager',
       lead: 'Building digital products that bring new experiences to Indonesian communities and users.',
       storyTitle: 'It Started With One Idea',
       story: [
-        'Vanillate was born in 2026 from a simple observation: Indonesian online communities need digital products that keep evolving, not ones that are launched then abandoned.',
+        'Vanillate was born in 2026 from a simple observation. Indonesian online communities need digital products that keep evolving, not ones that launch and then get abandoned.',
         'It began with Vanillate Sambung Kata, then grew into a studio building digital experiences for Indonesian communities and users.',
       ],
       futureTitle: "What's Next",
@@ -397,8 +476,8 @@ export const content: Record<Locale, Copy> = {
     work: {
       eyebrow: 'Selected Work',
       title: "What's been built.",
-      lead: 'Real products used by communities — maintained and evolved, not one-off launches.',
-      projectCategory: 'Community Game · Discord',
+      lead: 'Real products used by communities, maintained and evolved rather than launched once and left behind.',
+      projectCategory: 'Discord Community Game',
       projectDesc: 'A community game designed to spark interaction and keep communities active.',
       cta: 'View Project',
     },
@@ -426,7 +505,7 @@ export const content: Record<Locale, Copy> = {
       title: 'Direction and growth.',
       now: { label: 'Now', items: ['Student', 'Professional', 'Founder'] },
       focus: { label: 'Focus', items: ['Management', 'Data', 'Technology', 'Leadership'] },
-      next: { label: 'Next', items: ['HR · Team Lead'] },
+      next: { label: 'Next', items: ['HR and Team Lead'] },
     },
     contact: {
       eyebrow: 'Contact',
@@ -439,6 +518,52 @@ export const content: Record<Locale, Copy> = {
       tagline: 'Building digital experiences from Bekasi, Indonesia.',
       rights: 'All rights reserved.',
       backTop: 'Back to top',
+    },
+    perf: {
+      eyebrow: 'Welcome',
+      title: 'Choose your visual experience.',
+      lead: 'This site takes you on a visual journey from the galaxy down to Bekasi. Pick how rich the effects feel on your device. The story and the design stay exactly the same.',
+      recommended: 'Recommended for your device',
+      systemPick: 'System recommendation',
+      high: {
+        name: 'High Performance',
+        desc: 'Full particles, the most detailed galaxy, and the richest animation. Best for capable devices.',
+      },
+      low: {
+        name: 'Smooth Performance',
+        desc: 'Lighter effects for a consistently smooth ride, without losing the story or the visual character.',
+      },
+      auto: {
+        name: 'Automatic',
+        desc: 'Let the site adapt itself to your device automatically.',
+      },
+      start: 'Start exploring',
+      later: 'Use system recommendation',
+      label: 'Performance',
+      change: 'Change it anytime from the Performance button up top.',
+      modeHigh: 'High',
+      modeLow: 'Smooth',
+      modeAuto: 'Auto',
+      a11y: 'Change performance mode',
+      animEyebrow: 'Step Two',
+      animTitle: 'How would you like to experience it?',
+      animLead: 'Choose how the visual journey unfolds. The design and the story stay the same.',
+      animAuto: {
+        name: 'Automatic',
+        desc: 'The most cinematic. Each stage plays on its own timeline as the section comes into view.',
+      },
+      animManual: {
+        name: 'Manual',
+        desc: 'You are in control. Scroll to move through each stage at your own pace.',
+      },
+      animLabel: 'Animation',
+      animAutoShort: 'Auto',
+      animManualShort: 'Manual',
+      animA11y: 'Change animation mode',
+      back: 'Back',
+      endEyebrow: 'Journey Complete',
+      endTitle: "You've reached the end.",
+      endLead: 'Try it a different way, then explore all over again.',
     },
   },
 };

@@ -19,10 +19,29 @@ const links = [
   { label: t.nav.vanillate, id: 'vanillate' },
   { label: t.nav.contact, id: 'contact' },
 ];
+
+// Experience toggles (Performance + Animation). Wired by scripts/experience.ts.
+const toggles = [
+  {
+    kind: 'perf', label: t.perf.label, a11y: t.perf.a11y,
+    opts: [
+      { set: 'perf:auto', name: t.perf.auto.name, note: t.perf.systemPick, short: t.perf.modeAuto },
+      { set: 'perf:high', name: t.perf.high.name, note: '', short: t.perf.modeHigh },
+      { set: 'perf:low', name: t.perf.low.name, note: '', short: t.perf.modeLow },
+    ],
+  },
+  {
+    kind: 'anim', label: t.perf.animLabel, a11y: t.perf.animA11y,
+    opts: [
+      { set: 'anim:auto', name: t.perf.animAuto.name, note: '', short: t.perf.animAutoShort },
+      { set: 'anim:manual', name: t.perf.animManual.name, note: '', short: t.perf.animManualShort },
+    ],
+  },
+];
 ---
 <header class="nav" data-nav>
   <div class="container nav__inner">
-    <a class="nav__brand" href={homeHref} aria-label={`${'Andi Kurniawan'} — beranda`}>
+    <a class="nav__brand" href={homeHref} aria-label={locale === 'en' ? 'Andi Kurniawan, home' : 'Andi Kurniawan, beranda'}>
       <span class="mono">AK</span>
       <span class="nav__name">Andi Kurniawan</span>
     </a>
@@ -32,6 +51,23 @@ const links = [
     </nav>
 
     <div class="nav__ctrls">
+      {toggles.map((tg) => (
+        <div class="exptog" data-exp-tog={tg.kind}>
+          <button type="button" class="exptog__btn" data-exp-btn aria-haspopup="true" aria-expanded="false" aria-label={tg.a11y}>
+            <span class="exptog__k mono">{tg.label}</span>
+            <span class="exptog__v mono" data-exp-val></span>
+            <svg class="exptog__cn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="exptog__menu" data-exp-menu hidden role="menu">
+            {tg.opts.map((o) => (
+              <button type="button" class="exptog__opt" role="menuitemradio" aria-checked="false" data-exp-set={o.set} data-short={o.short}>
+                <b>{o.name}</b>
+                {o.note && <small>{o.note}</small>}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
       <button type="button" class="iconbtn" data-theme-toggle aria-label={t.a11y.theme}>
         <span class="only-light"><Icon name="moon" size={18} /></span>
         <span class="only-dark"><Icon name="sun" size={18} /></span>
@@ -51,6 +87,18 @@ const links = [
       {links.map((l) => <a href={secHref(l.id)} data-menu-link>{l.label}</a>)}
       <a href={altHref} class="mono" hreflang={other}>{locale === 'en' ? 'Bahasa Indonesia' : 'English'}</a>
     </nav>
+    <div class="nav__mobtog">
+      {toggles.map((tg) => (
+        <div class="mobtog" data-exp-tog={tg.kind}>
+          <span class="mobtog__k mono">{tg.label}</span>
+          <div class="mobtog__opts">
+            {tg.opts.map((o) => (
+              <button type="button" class="mobtog__opt mono" role="menuitemradio" aria-checked="false" data-exp-set={o.set} data-short={o.short}>{o.short}</button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   </div>
 </header>
 
@@ -146,6 +194,40 @@ const links = [
     font-size: 0.78rem;
     letter-spacing: 0.06em;
   }
+
+  /* Experience toggles */
+  .exptog { position: relative; display: none; }
+  @media (min-width: 921px) { .exptog { display: inline-flex; } }
+  .exptog__btn {
+    display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elev); color: var(--text);
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.03em;
+    transition: border-color 0.2s var(--ease);
+  }
+  .exptog__btn:hover { border-color: var(--text); }
+  .exptog__k { color: var(--text-2); display: none; }
+  @media (min-width: 1040px) { .exptog__k { display: inline; } }
+  .exptog__v { color: var(--accent-ink); }
+  .exptog__cn { width: 13px; height: 13px; color: var(--text-2); }
+  .exptog__menu {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 120; width: 230px;
+    border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elev);
+    box-shadow: 0 20px 50px -24px rgba(0,0,0,0.5); padding: 6px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .exptog__opt { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 9px 11px; border-radius: 8px; transition: background 0.2s; }
+  .exptog__opt:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .exptog__opt b { font-family: var(--font-body); font-weight: 600; font-size: 0.88rem; }
+  .exptog__opt small { color: var(--text-2); font-family: var(--font-mono); font-size: 0.64rem; }
+  .exptog__opt.is-on { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .exptog__opt.is-on b { color: var(--accent-ink); }
+
+  /* mobile toggles inside the menu */
+  .nav__mobtog { padding: 4px var(--gutter) 20px; display: flex; flex-direction: column; gap: 16px; }
+  .mobtog__k { display: block; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2); margin-bottom: 8px; }
+  .mobtog__opts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mobtog__opt { padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; color: var(--text-2); }
+  .mobtog__opt.is-on { border-color: var(--accent); color: var(--accent-ink); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  @media (min-width: 921px) { .nav__mobtog { display: none; } }
   .only-dark { display: none; }
   :global([data-theme='dark']) .only-dark { display: inline-flex; }
   :global([data-theme='dark']) .only-light { display: none; }
@@ -179,13 +261,18 @@ const links = [
     margin-top: 8px;
   }
 
-  @media (max-width: 780px) {
-    .nav__links,
-    .nav__name {
+  @media (max-width: 920px) {
+    .nav__links {
       display: none;
     }
     .nav__burger {
       display: inline-flex;
+    }
+  }
+  /* keep the long name only where there's room next to the toggles */
+  @media (max-width: 1040px) {
+    .nav__name {
+      display: none;
     }
   }
 </style>

@@ -57,9 +57,9 @@ personal-site/
 Semua teks ada di **`src/data/content.ts`** (objek `content.id` & `content.en`)
 dan **`src/data/projects.ts`**. Tidak perlu menyentuh markup komponen.
 
-> **Catatan email:** memakai placeholder `halo@andikurniawan.vanillate.id`
-> (di `content.ts`). Ganti ke alamat yang ingin ditampilkan publik. Email
-> pribadi hanya ditayangkan bila kamu sendiri yang mengisinya.
+> **Catatan email:** alamat kontak publik `andikurniawanoke23@gmail.com`
+> diatur di `src/data/content.ts` (`site.email`) dan otomatis dipakai di
+> seluruh situs (contact, footer, tombol email, `mailto:`).
 
 > **Foto:** hero dan OG memakai monogram AK. Untuk memasang foto asli, taruh
 > file di `public/` lalu tambahkan `<img>` di `src/components/Hero.astro`

@@ -1,0 +1,121 @@
+---
+// Experience settings: first-visit chooser (Performance + Animation) and the
+// shared window.EXP state API that the journey + coding showcase listen to.
+import { content, type Locale } from '../data/content.ts';
+interface Props { locale?: Locale }
+const { locale = 'id' } = Astro.props;
+const p = content[locale].perf;
+---
+<div class="expo" data-expo hidden aria-hidden="true">
+  <div class="expo__bg"></div>
+  <div class="expo__card" role="dialog" aria-modal="true" aria-label={p.title}>
+    <div class="expo__steps" data-expo-track>
+      <!-- STEP 1 Performance -->
+      <section class="expo__step" data-step="1">
+        <p class="eyebrow expo__eyebrow">{p.eyebrow}</p>
+        <h2 class="expo__title">{p.title}</h2>
+        <p class="expo__lead">{p.lead}</p>
+        <div class="expo__grid">
+          <button type="button" class="expo__opt" data-pick-perf="high">
+            <span class="expo__optic" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+            </span>
+            <span class="expo__optname">{p.high.name}</span>
+            <span class="expo__optdesc">{p.high.desc}</span>
+            <span class="expo__rec" data-rec="high" hidden>{p.recommended}</span>
+          </button>
+          <button type="button" class="expo__opt" data-pick-perf="low">
+            <span class="expo__optic" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9M12 3v9l6.5 3.8"/></svg>
+            </span>
+            <span class="expo__optname">{p.low.name}</span>
+            <span class="expo__optdesc">{p.low.desc}</span>
+            <span class="expo__rec" data-rec="low" hidden>{p.recommended}</span>
+          </button>
+        </div>
+        <button type="button" class="expo__ghost" data-expo-auto>{p.later}</button>
+      </section>
+
+      <!-- STEP 2 Animation -->
+      <section class="expo__step" data-step="2">
+        <p class="eyebrow expo__eyebrow">{p.animEyebrow}</p>
+        <h2 class="expo__title">{p.animTitle}</h2>
+        <p class="expo__lead">{p.animLead}</p>
+        <div class="expo__grid">
+          <button type="button" class="expo__opt" data-pick-anim="auto">
+            <span class="expo__optic" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l11-7z"/></svg>
+            </span>
+            <span class="expo__optname">{p.animAuto.name}</span>
+            <span class="expo__optdesc">{p.animAuto.desc}</span>
+          </button>
+          <button type="button" class="expo__opt" data-pick-anim="manual">
+            <span class="expo__optic" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>
+            </span>
+            <span class="expo__optname">{p.animManual.name}</span>
+            <span class="expo__optdesc">{p.animManual.desc}</span>
+          </button>
+        </div>
+        <div class="expo__actions">
+          <button type="button" class="expo__back" data-expo-back>{p.back}</button>
+          <button type="button" class="btn btn--primary expo__start" data-expo-start>{p.start}</button>
+        </div>
+      </section>
+    </div>
+    <div class="expo__dots" aria-hidden="true"><i class="is-on" data-dot="1"></i><i data-dot="2"></i></div>
+  </div>
+</div>
+
+<style>
+  .expo { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 20px; }
+  .expo__bg { position: absolute; inset: 0; background: radial-gradient(120% 120% at 50% 12%, #0a1226 0%, #05060d 60%, #03040a 100%); opacity: 0; transition: opacity 0.5s var(--ease); }
+  .expo.is-in .expo__bg { opacity: 1; }
+  .expo__card {
+    position: relative; width: min(720px, 100%); max-height: calc(100svh - 40px); overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 20px;
+    background: color-mix(in srgb, #0b0f1c 88%, transparent); backdrop-filter: blur(14px);
+    box-shadow: 0 40px 120px -50px rgba(0,0,0,0.8); padding: clamp(24px, 4vw, 44px);
+    opacity: 0; transform: translateY(16px) scale(0.98); transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  }
+  .expo.is-in .expo__card { opacity: 1; transform: none; }
+  .expo.is-out .expo__card { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  .expo.is-out .expo__bg { opacity: 0; }
+  .expo__steps { position: relative; }
+  .expo__step { display: none; }
+  .expo:not([data-at]) .expo__step[data-step='1'],
+  .expo[data-at='1'] .expo__step[data-step='1'],
+  .expo[data-at='2'] .expo__step[data-step='2'] { display: block; animation: expfade 0.45s var(--ease); }
+  @keyframes expfade { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+  .expo__eyebrow { color: #ff9a9a; justify-content: flex-start; }
+  .expo__title { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.4rem, 3.4vw, 2rem); letter-spacing: -0.02em; color: #fff; margin-top: 14px; }
+  .expo__lead { color: #b9c6da; margin-top: 12px; max-width: 46ch; font-size: 0.96rem; }
+  .expo__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+  .expo__opt {
+    position: relative; text-align: left; display: flex; flex-direction: column; gap: 8px;
+    padding: 18px; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
+    background: rgba(255,255,255,0.03); color: #eaf1ff; cursor: pointer;
+    transition: border-color 0.25s var(--ease), background 0.25s var(--ease), transform 0.25s var(--ease);
+  }
+  .expo__opt:hover { border-color: rgba(255,255,255,0.35); transform: translateY(-2px); }
+  .expo__opt.is-sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .expo__optic { width: 30px; height: 30px; color: #ff9a9a; }
+  .expo__optic svg { width: 100%; height: 100%; }
+  .expo__optname { font-family: var(--font-display); font-weight: 600; font-size: 1.06rem; }
+  .expo__optdesc { color: #9fb0c6; font-size: 0.82rem; line-height: 1.5; }
+  .expo__rec { display: inline-block; margin-top: 4px; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.04em; color: #8fe0b0; background: rgba(33,163,102,0.14); border: 1px solid rgba(33,163,102,0.4); padding: 4px 8px; border-radius: 999px; width: fit-content; }
+  .expo__ghost, .expo__back { margin-top: 20px; font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.06em; color: #9fb0c6; background: none; border: 0; cursor: pointer; }
+  .expo__ghost:hover, .expo__back:hover { color: #fff; }
+  .expo__actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 22px; }
+  .expo__start { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .expo__start[disabled] { opacity: 0.4; pointer-events: none; }
+  .expo__dots { display: flex; gap: 8px; justify-content: center; margin-top: 22px; }
+  .expo__dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: background 0.3s, width 0.3s; }
+  .expo__dots i.is-on { background: var(--accent); width: 20px; border-radius: 4px; }
+  @media (max-width: 560px) { .expo__grid { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  import { initExperience } from '../scripts/experience.ts';
+  initExperience();
+</script>
