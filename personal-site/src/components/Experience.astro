@@ -72,7 +72,8 @@ const p = content[locale].perf;
   .expo__bg { position: absolute; inset: 0; background: radial-gradient(120% 120% at 50% 12%, #0a1226 0%, #05060d 60%, #03040a 100%); opacity: 0; transition: opacity 0.5s var(--ease); }
   .expo.is-in .expo__bg { opacity: 1; }
   .expo__card {
-    position: relative; width: min(720px, 100%); max-height: calc(100svh - 40px); overflow: hidden;
+    position: relative; width: min(720px, 100%); max-height: calc(100svh - 40px);
+    overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     border: 1px solid rgba(255,255,255,0.12); border-radius: 20px;
     background: color-mix(in srgb, #0b0f1c 88%, transparent); backdrop-filter: blur(14px);
     box-shadow: 0 40px 120px -50px rgba(0,0,0,0.8); padding: clamp(24px, 4vw, 44px);
