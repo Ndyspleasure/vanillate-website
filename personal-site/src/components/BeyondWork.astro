@@ -19,10 +19,12 @@ const groupIcon: Record<string, string> = {
     <div class="section-head" data-reveal>
       <p class="eyebrow">{t.beyond.eyebrow}</p>
       <h2 class="h2" id="beyond-h">{t.beyond.title}</h2>
+      <p class="lead" style="margin-top:16px">{t.beyond.lead}</p>
     </div>
     <div class="beyond__grid">
       {t.beyond.groups.map((g, i) => (
-        <article class="beyond__card" data-reveal style={`--reveal-delay:${i * 70}ms`}>
+        <article class="beyond__card" data-reveal data-tilt="6" style={`--reveal-delay:${i * 70}ms`}>
+          <span class="tilt-glare" aria-hidden="true"></span>
           <span class="beyond__icon" set:html={groupIcon[g.label] ?? ''} aria-hidden="true" />
           <h3 class="beyond__label">{g.label}</h3>
           <ul class="beyond__items">
@@ -41,14 +43,14 @@ const groupIcon: Record<string, string> = {
     gap: 14px;
   }
   .beyond__card {
+    position: relative;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 24px;
     background: var(--bg-elev);
-    transition: border-color 0.3s var(--ease);
   }
-  .beyond__card:hover { border-color: var(--text); }
-  .beyond__icon { display: inline-flex; width: 26px; height: 26px; color: var(--accent-ink); }
+  .beyond__card:hover { border-color: var(--text); --lift: -3px; }
+  .beyond__icon { position: relative; display: inline-flex; width: 26px; height: 26px; color: var(--accent-ink); }
   .beyond__icon :global(svg) { width: 100%; height: 100%; }
   .beyond__label {
     margin: 16px 0 12px;

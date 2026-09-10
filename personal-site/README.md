@@ -25,7 +25,13 @@ mengganggu** situs studio (`vanillate.id`, tetap di GitHub Pages). Punya
   gambar OG 1200×630. Konten inti selalu ada di HTML (tidak bergantung JS/WebGL).
 - **Aksesibel** — `prefers-reduced-motion`, skip link, focus states, alt text,
   keyboard-friendly. Animasi tidak pernah wajib untuk memahami halaman.
-- **Cepat** — statis, ~6KB JS, tanpa library berat (tanpa Three.js).
+- **Sistem animasi reusable** (`src/scripts/motion.ts`) — reveal, counter,
+  magnetic, 3D tilt, parallax, dan cursor ring. Opt-in lewat `data-*`, patuh
+  `prefers-reduced-motion` + mode Performa, tanpa library. Lihat bagian
+  [Sistem animasi](#sistem-animasi-motionts) di bawah.
+- **3D interaktif** — galaxy WebGL merespons pointer/gerak perangkat (parallax
+  kamera berbasis kedalaman) tanpa Three.js.
+- **Cepat** — statis, ~10KB JS (gzip), tanpa library berat (tanpa Three.js).
 
 ## Struktur
 
@@ -64,6 +70,34 @@ dan **`src/data/projects.ts`**. Tidak perlu menyentuh markup komponen.
 > **Foto:** hero dan OG memakai monogram AK. Untuk memasang foto asli, taruh
 > file di `public/` lalu tambahkan `<img>` di `src/components/Hero.astro`
 > (layout sudah menyediakan ruang di sisi visual).
+
+## Sistem animasi (motion.ts)
+
+Seluruh mikro-interaksi berjalan lewat **satu engine tanpa dependensi**
+(`src/scripts/motion.ts`), di-boot sekali dari `BaseLayout.astro`. Prinsipnya
+**content-first**: setiap efek bersifat _opt-in_ lewat atribut `data-*`, dan
+selalu tunduk pada tiga sinyal global yang sudah ada di situs —
+`prefers-reduced-motion`, mode **Performa** (`data-perf`), dan jenis pointer.
+Tanpa JS pun konten tetap tampil utuh.
+
+| Atribut | Fungsi | Catatan |
+| --- | --- | --- |
+| `data-reveal` | Muncul saat masuk viewport | Varian: `up` (default), `down`, `left`, `right`, `scale`, `fade`. Delay per elemen via `--reveal-delay`. |
+| `data-reveal-stagger="80"` | Stagger otomatis anak-anaknya | Angka = jeda antar-anak (ms); `data-reveal-base` untuk offset awal. |
+| `data-count` | Angka menghitung naik saat terlihat | Teks elemen jadi target (mis. `150K+`, `+300%`, `2026`). |
+| `data-magnetic="0.3"` | Elemen menarik ke arah pointer | Desktop saja; angka = kekuatan. |
+| `data-tilt="7"` | 3D tilt mengikuti pointer | Desktop + Performa Tinggi saja; angka = derajat maks. Tambah `<span class="tilt-glare">` untuk kilau. Lift hover pakai `--lift`. |
+| `data-parallax="0.12"` | Geser halus saat scroll | Hanya untuk elemen dekoratif, bukan teks penting. |
+| `data-cursor` | Cincin cursor aditif | Satu elemen global di `BaseLayout` (Performa Tinggi + mouse). |
+
+**Gating otomatis:** `reduced-motion` mematikan seluruh gerak dekoratif (konten
+langsung final), **Performa Ringan** melepas tilt + cursor + glare tapi
+mempertahankan cerita, dan perangkat sentuh tidak pernah mendapat efek
+hover-only. Engine mendengarkan event `exp:perf`, jadi mengganti Performa di nav
+langsung berpengaruh tanpa reload.
+
+Karena berdiri sendiri dan bebas dependensi, `motion.ts` + utilitasnya di
+`global.css` bisa disalin ke situs Vanillate lain.
 
 ## Regenerasi gambar OG
 

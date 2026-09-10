@@ -30,11 +30,11 @@ const workHref = locale === 'en' ? '/en/#work' : '/#work';
       <p class="lead hero__lead hero__anim" style="--d:.38s">{t.hero.lead}</p>
 
       <div class="hero__cta hero__anim" style="--d:.46s">
-        <a class="btn btn--primary" href={workHref}>
+        <a class="btn btn--primary" href={workHref} data-magnetic="0.4">
           {t.hero.ctaPrimary}
           <span class="arrow"><Icon name="arrowRight" size={17} /></span>
         </a>
-        <a class="btn btn--ghost" href={site.linkedin} target="_blank" rel="noopener me">
+        <a class="btn btn--ghost" href={site.linkedin} target="_blank" rel="noopener me" data-magnetic="0.3">
           {t.hero.ctaSecondary}
           <span class="arrow"><Icon name="arrowUpRight" size={16} /></span>
         </a>
@@ -43,7 +43,7 @@ const workHref = locale === 'en' ? '/en/#work' : '/#work';
 
     <!-- Visual: AK monogram. Layout menyisakan tempat untuk foto asli nanti (§8). -->
     <div class="hero__visual hero__anim" style="--d:.35s" aria-hidden="true">
-      <svg class="monogram" viewBox="0 0 200 200" fill="none" role="presentation">
+      <svg class="monogram" viewBox="0 0 200 200" fill="none" role="presentation" data-tilt="12">
         <defs>
           <linearGradient id="akg" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="var(--accent)" />

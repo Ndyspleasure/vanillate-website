@@ -165,6 +165,7 @@ type Copy = {
   beyond: {
     eyebrow: string;
     title: string;
+    lead: string;
     groups: { label: string; items: string[] }[];
   };
   values: {
@@ -237,7 +238,7 @@ export const content: Record<Locale, Copy> = {
     },
     hero: {
       roles: ['Mahasiswa', 'Profesional', 'Founder', 'Developer'],
-      lead: 'Membangun, mengelola, dan mengembangkan berbagai produk serta pengalaman digital.',
+      lead: 'Saya membangun dan mengelola produk digital — dari satu ide dan baris kode pertama, sampai jadi sesuatu yang benar-benar dipakai orang.',
       ctaPrimary: 'Lihat Karya',
       ctaSecondary: 'LinkedIn',
       scroll: 'Gulir untuk menjelajah',
@@ -245,7 +246,7 @@ export const content: Record<Locale, Copy> = {
     about: {
       eyebrow: 'Mengenal Andi',
       title: 'Dari management ke data, teknologi, lalu membangun.',
-      body: 'Berangkat dari dunia management, berkembang ke data dan teknologi, lalu membangun berbagai pengalaman digital melalui Vanillate Studio.',
+      body: 'Saya berangkat dari dunia management, penasaran dengan data, lalu keterusan di teknologi. Sekarang sebagian besar waktu saya habis untuk membangun dan merawat produk lewat Vanillate Studio.',
       identity: ['Mahasiswa', 'Profesional', 'Founder', 'Developer'],
       stats: [
         { value: '2+', label: 'Tahun Pengalaman' },
@@ -264,12 +265,12 @@ export const content: Record<Locale, Copy> = {
     expertise: {
       eyebrow: 'Yang Dikerjakan',
       title: 'Empat disiplin yang saling menopang.',
-      lead: 'Management, data, teknologi, dan operasional dipakai bersama untuk membangun produk sekaligus menjaganya tetap berjalan.',
+      lead: 'Empat hal ini jarang saya kerjakan sendiri-sendiri. Management dan operasional yang menjaga semuanya tetap jalan, data untuk mengambil keputusan, dan teknologi untuk mewujudkannya.',
     },
     skills: {
       eyebrow: 'Perkakas',
       title: 'Alat yang dipakai setiap hari.',
-      lead: 'Dari menulis kode hingga mengelola operasional tim, inilah perangkat yang menopang cara kerja sehari-hari.',
+      lead: 'Bukan daftar semua yang pernah saya coba — ini alat yang benar-benar saya buka hampir tiap hari, dari menulis kode sampai merapikan operasional.',
       hoverHint: 'Arahkan kursor untuk detail',
     },
     build: {
@@ -294,8 +295,8 @@ export const content: Record<Locale, Copy> = {
       lead: 'Membangun produk digital yang menghadirkan pengalaman baru bagi komunitas dan pengguna Indonesia.',
       storyTitle: 'Berawal dari Satu Ide',
       story: [
-        'Vanillate lahir pada 2026 dari satu pengamatan sederhana. Komunitas online Indonesia membutuhkan produk digital yang terus dikembangkan, bukan sekadar diluncurkan lalu ditinggalkan.',
-        'Perjalanan dimulai dari Vanillate Sambung Kata, lalu tumbuh menjadi studio yang membangun berbagai pengalaman digital untuk komunitas dan pengguna Indonesia.',
+        'Vanillate lahir pada 2026 dari satu hal yang mengganggu saya: banyak produk untuk komunitas online Indonesia yang ramai saat rilis, lalu pelan-pelan ditinggalkan. Saya ingin membuat yang sebaliknya — yang terus dirawat.',
+        'Semua dimulai dari Vanillate Sambung Kata, satu game Discord. Dari situ pelan-pelan tumbuh jadi studio kecil yang membangun berbagai produk untuk komunitas dan pengguna di Indonesia.',
       ],
       futureTitle: 'Arah Berikutnya',
       future: ['Community Tools', 'Social Apps', 'AI Tools', 'Automation Platform', 'Web Platform', 'Mobile Applications', 'Cloud Services'],
@@ -312,6 +313,7 @@ export const content: Record<Locale, Copy> = {
     beyond: {
       eyebrow: 'Di Balik Layar',
       title: 'Di luar pekerjaan.',
+      lead: 'Di luar layar, saya orang yang cukup biasa. Ini beberapa hal kecil yang mengisi waktu luang.',
       groups: [
         { label: 'Games', items: ['Mobile Legends', 'Roblox', 'Minecraft'] },
         { label: 'Platform', items: ['Discord'] },
@@ -338,7 +340,7 @@ export const content: Record<Locale, Copy> = {
     contact: {
       eyebrow: 'Kontak',
       title: 'Mari bangun sesuatu yang berarti.',
-      lead: 'Ide dimulai dari sesuatu yang sederhana. Tinggal bagaimana membuatnya menjadi nyata.',
+      lead: 'Punya ide, tawaran kerja sama, atau sekadar ingin ngobrol soal produk dan teknologi? Kirim saja — saya baca semuanya.',
       emailLabel: 'Email',
       signoff: 'Andi Kurniawan',
     },
@@ -409,7 +411,7 @@ export const content: Record<Locale, Copy> = {
     },
     hero: {
       roles: ['Student', 'Professional', 'Founder', 'Developer'],
-      lead: 'Building, managing, and growing digital products and experiences.',
+      lead: 'I build and run digital products — from the first idea and line of code to something people actually use.',
       ctaPrimary: 'View Work',
       ctaSecondary: 'LinkedIn',
       scroll: 'Scroll to explore',
@@ -417,7 +419,7 @@ export const content: Record<Locale, Copy> = {
     about: {
       eyebrow: 'Meet Andi',
       title: 'From management to data, technology, then building.',
-      body: 'Starting in management, moving into data and technology, then building digital experiences through Vanillate Studio.',
+      body: 'I started out in management, got curious about data, and ended up hooked on technology. These days most of my time goes into building and maintaining products through Vanillate Studio.',
       identity: ['Student', 'Professional', 'Founder', 'Developer'],
       stats: [
         { value: '2+', label: 'Years of Experience' },
@@ -436,12 +438,12 @@ export const content: Record<Locale, Copy> = {
     expertise: {
       eyebrow: 'What I Do',
       title: 'Four disciplines that reinforce each other.',
-      lead: 'Management, data, technology, and operations work together to build products and keep them running.',
+      lead: 'I rarely use these one at a time. Management and operations keep things running, data guides the decisions, and technology makes them real.',
     },
     skills: {
       eyebrow: 'Toolkit',
       title: 'Tools used every day.',
-      lead: 'From writing code to running team operations, these are the tools behind the daily workflow.',
+      lead: 'Not everything I have ever tried — just the tools I actually open most days, from writing code to keeping operations tidy.',
       hoverHint: 'Hover for details',
     },
     build: {
@@ -466,8 +468,8 @@ export const content: Record<Locale, Copy> = {
       lead: 'Building digital products that bring new experiences to Indonesian communities and users.',
       storyTitle: 'It Started With One Idea',
       story: [
-        'Vanillate was born in 2026 from a simple observation. Indonesian online communities need digital products that keep evolving, not ones that launch and then get abandoned.',
-        'It began with Vanillate Sambung Kata, then grew into a studio building digital experiences for Indonesian communities and users.',
+        'Vanillate began in 2026 out of something that bugged me: so many products for Indonesian online communities are loud at launch, then slowly abandoned. I wanted to build the opposite — something that keeps getting cared for.',
+        'It all started with Vanillate Sambung Kata, a single Discord game. From there it slowly grew into a small studio building products for communities and users across Indonesia.',
       ],
       futureTitle: "What's Next",
       future: ['Community Tools', 'Social Apps', 'AI Tools', 'Automation Platform', 'Web Platform', 'Mobile Applications', 'Cloud Services'],
@@ -484,6 +486,7 @@ export const content: Record<Locale, Copy> = {
     beyond: {
       eyebrow: 'Behind the Scenes',
       title: 'Beyond work.',
+      lead: 'Off the screen I am a pretty ordinary person. Here are a few small things that fill the downtime.',
       groups: [
         { label: 'Games', items: ['Mobile Legends', 'Roblox', 'Minecraft'] },
         { label: 'Platform', items: ['Discord'] },
@@ -510,7 +513,7 @@ export const content: Record<Locale, Copy> = {
     contact: {
       eyebrow: 'Contact',
       title: "Let's build something meaningful.",
-      lead: 'Ideas start from something simple. It comes down to making them real.',
+      lead: 'Have an idea, a collaboration in mind, or just want to talk products and tech? Reach out — I read everything.',
       emailLabel: 'Email',
       signoff: 'Andi Kurniawan',
     },
