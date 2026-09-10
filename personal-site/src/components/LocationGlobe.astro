@@ -6,20 +6,37 @@ const { locale = 'id' } = Astro.props;
 const t = content[locale];
 const E = geo.earth, I = geo.indonesia, W = geo.westJava, B = geo.bekasi;
 
-// Solar-system stage (procedural). Sun on the left, Earth is the dive target.
+// Solar-system stage (procedural). Sun on the left; the eight planets are in
+// their real order out from the Sun, with relative sizes kept in the correct
+// ranking (Jupiter > Saturn > Uranus > Neptune > Earth > Venus > Mars > Mercury)
+// and characteristic colours. Earth is the dive target.
 const planets = [
   { r: 6, o: 150, tilt: 0.42, a: -0.5, fill: 'var(--pl-merc)', name: 'Merkurius' },
-  { r: 10, o: 210, tilt: 0.34, a: 2.4, fill: 'var(--pl-venus)', name: 'Venus' },
-  { r: 12, o: 300, tilt: 0.30, a: 0.5, fill: 'var(--pl-earth)', name: 'Bumi', earth: true },
-  { r: 8, o: 380, tilt: 0.26, a: 3.5, fill: 'var(--pl-mars)', name: 'Mars' },
-  { r: 26, o: 470, tilt: 0.22, a: 5.4, fill: 'var(--pl-jup)', name: 'Jupiter' },
-  { r: 22, o: 560, tilt: 0.2, a: 2.0, fill: 'var(--pl-sat)', name: 'Saturnus', ring: true },
+  { r: 10, o: 212, tilt: 0.34, a: 2.4, fill: 'var(--pl-venus)', name: 'Venus' },
+  { r: 12, o: 292, tilt: 0.30, a: 0.5, fill: 'url(#plE)', name: 'Bumi', earth: true },
+  { r: 8, o: 372, tilt: 0.26, a: 3.5, fill: 'var(--pl-mars)', name: 'Mars' },
+  { r: 26, o: 500, tilt: 0.22, a: 5.4, fill: 'var(--pl-jup)', name: 'Jupiter' },
+  { r: 22, o: 610, tilt: 0.20, a: 2.0, fill: 'var(--pl-sat)', name: 'Saturnus', ring: true, ringAngle: -18 },
+  { r: 17, o: 700, tilt: 0.18, a: 0.78, fill: 'var(--pl-ura)', name: 'Uranus', ring: true, ringAngle: -78 },
+  { r: 16, o: 775, tilt: 0.17, a: 1.15, fill: 'var(--pl-nep)', name: 'Neptunus' },
 ];
 const SUN = { x: 130, y: 540 };
 const orbX = (o: number, tilt: number, a: number) => SUN.x + Math.cos(a) * o;
 const orbY = (o: number, tilt: number, a: number) => SUN.y + Math.sin(a) * o * tilt;
 const earthPl = planets.find((p) => p.earth)!;
 const earthPos = [orbX(earthPl.o, earthPl.tilt, earthPl.a), orbY(earthPl.o, earthPl.tilt, earthPl.a)];
+
+// Asteroid belt between Mars (o≈372) and Jupiter (o≈500).
+const beltTilt = 0.24;
+const belt = Array.from({ length: 60 }, (_, i) => {
+  const ang = (i / 60) * Math.PI * 2 + ((i * i) % 11) * 0.09;
+  const o = 415 + ((i * 41) % 40);
+  return {
+    x: +(SUN.x + Math.cos(ang) * o).toFixed(1),
+    y: +(SUN.y + Math.sin(ang) * o * beltTilt).toFixed(1),
+    r: +(0.6 + (i % 3) * 0.35).toFixed(2),
+  };
+});
 ---
 <section class="jr" id="location" aria-labelledby="globe-h" data-jr>
   <div class="jr__pin">
@@ -51,12 +68,18 @@ const earthPos = [orbX(earthPl.o, earthPl.tilt, earthPl.a), orbY(earthPl.o, eart
           ))}
           <circle cx={SUN.x} cy={SUN.y} r="120" fill="url(#sunG)" class="jr-sun" />
           <circle cx={SUN.x} cy={SUN.y} r="46" fill="#fff2d0" />
+          <g class="jr-belt">
+            {belt.map((b) => <circle cx={b.x} cy={b.y} r={b.r} fill="var(--jr-belt)" />)}
+          </g>
           {planets.map((p) => {
             const x = orbX(p.o, p.tilt, p.a), y = orbY(p.o, p.tilt, p.a);
+            const ura = p.name === 'Uranus';
             return (
               <g>
                 {p.ring && (
-                  <ellipse cx={x} cy={y} rx={p.r * 1.9} ry={p.r * 0.7} fill="none" stroke="#d9c48a" stroke-width="3" opacity="0.8" transform={`rotate(-18 ${x} ${y})`} />
+                  <ellipse cx={x} cy={y} rx={p.r * (ura ? 1.7 : 1.9)} ry={p.r * (ura ? 0.5 : 0.7)}
+                    fill="none" stroke={ura ? '#bfe6ec' : '#d9c48a'} stroke-width={ura ? 1.6 : 3}
+                    opacity={ura ? 0.55 : 0.8} transform={`rotate(${p.ringAngle ?? -18} ${x} ${y})`} />
                 )}
                 <circle cx={x} cy={y} r={p.r} fill={p.earth ? 'url(#plE)' : p.fill} />
                 {p.earth && <circle cx={x} cy={y} r={p.r + 6} fill="none" stroke="var(--accent)" stroke-width="1.5" class="jr-earthmark" />}
@@ -183,7 +206,9 @@ const earthPos = [orbX(earthPl.o, earthPl.tilt, earthPl.a), orbY(earthPl.o, eart
     position: absolute; width: min(94vh, 96vw); height: min(94vh, 96vw); max-height: 100svh;
     opacity: 0; will-change: opacity, transform;
     --pl-merc:#b9a58f; --pl-venus:#e6b98a; --pl-earth:#2f7fd6; --pl-mars:#c1573a; --pl-jup:#c9a06a; --pl-sat:#d8bd86;
+    --pl-ura:#a8dbe0; --pl-nep:#4a6fd0;
     --jr-orbit: rgba(150,180,220,0.18); --jr-hl:#e8443f; --jr-grid: rgba(120,200,150,0.16);
+    --jr-belt: rgba(190,200,220,0.5);
   }
   /* Landscape (laptop/desktop/large screens): fill the viewport edge-to-edge so
      the scene is wide and never boxed into a centre square. The SVG uses
