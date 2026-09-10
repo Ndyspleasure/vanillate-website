@@ -53,8 +53,8 @@ const principles = (c.principles as Pair[]).map((p, i) => ({
         {c.heroLead}
       </p>
       <div class="mt-9 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
-        <Button href="/products" variant="primary" size="lg">{c.heroCtaPrimary}</Button>
-        <Button href="/about" variant="secondary" size="lg">{c.heroCtaSecondary}</Button>
+        <Button href="/products" variant="primary" size="lg" magnetic>{c.heroCtaPrimary}</Button>
+        <Button href="/about" variant="secondary" size="lg" magnetic>{c.heroCtaSecondary}</Button>
       </div>
 
       <!-- Rekam jejak: social proof + counter live (dipertahankan) -->
@@ -65,7 +65,12 @@ const principles = (c.principles as Pair[]).map((p, i) => ({
         <div class="grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-ink-900/10 dark:bg-cream-100/10 md:grid-cols-4">
           {homeStats.map((s) => (
             <div class="flex flex-col gap-1 bg-cream-50 dark:bg-ink-950 px-4 py-5 sm:px-5">
-              <span class="font-display text-2xl md:text-[2rem] font-semibold tracking-tightest text-ink-900 dark:text-cream-50 tabular-nums">
+              <span
+                class="font-display text-2xl md:text-[2rem] font-semibold tracking-tightest text-ink-900 dark:text-cream-50 tabular-nums"
+                data-count={s.num}
+                data-count-prefix={s.prefix}
+                data-count-suffix={s.suffix}
+              >
                 {s.prefix + formatNum(s.num) + s.suffix}
               </span>
               <span class="text-sm font-semibold text-ink-800 dark:text-cream-100">{s.label}</span>
@@ -126,7 +131,7 @@ const principles = (c.principles as Pair[]).map((p, i) => ({
       </div>
       <div class="grid gap-4 sm:grid-cols-3">
         {principles.map((p, i) => (
-          <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6" style={`--reveal-delay: ${i * 110}ms`}>
+          <div class="reveal rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 transition-colors hover:border-amber-500/40" style={`--reveal-delay: ${i * 110}ms`}>
             <span class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={p.icon} />
             </span>
@@ -150,11 +155,11 @@ const principles = (c.principles as Pair[]).map((p, i) => ({
           {c.ctaText}
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
-          <a href={url('/products')} class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
+          <a href={url('/products')} data-magnetic="0.35" class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-ink-950 px-6 py-3 font-medium hover:bg-amber-400 transition-colors">
             {c.ctaPrimaryLabel}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </a>
-          <a href={url('/support')} class="inline-flex items-center rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
+          <a href={url('/support')} data-magnetic="0.3" class="inline-flex items-center rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
             {c.ctaSecondaryLabel}
           </a>
         </div>

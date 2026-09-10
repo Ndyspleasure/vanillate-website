@@ -2,8 +2,11 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import LogoPNG from '@components/LogoPNG.astro';
+import FounderImage from '@components/FounderImage.astro';
 import { site, homeStats } from '@data/site';
 import { pageContent } from '@data/pages';
+import { founder, founderUrl } from '@data/founder';
+import { url } from '@utils/url';
 
 // Hero halaman ini dikelola dari /admin/halaman → tab "Tentang".
 const c = pageContent('about');
@@ -185,6 +188,34 @@ const roadmap = [
             ))}
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOUNDER -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3 reveal">
+      <div class="md:col-span-1">
+        <p class="eyebrow">Pendiri</p>
+      </div>
+      <div class="md:col-span-2">
+        <a
+          href={url(founderUrl)}
+          class="group grid gap-6 sm:grid-cols-[minmax(0,15rem)_1fr] items-center rounded-3xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5 sm:p-6 transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:shadow-[0_20px_60px_-30px_rgba(11,10,14,0.4)]"
+          aria-label={`Lihat profil founder: ${founder.name}`}
+        >
+          <FounderImage variant="card" class="w-full" />
+          <div>
+            <p class="eyebrow mb-2">{founder.role}</p>
+            <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest">{founder.name}</h2>
+            <p class="mt-1.5 font-mono text-xs text-ink-500 dark:text-cream-300/60">{founder.roleFull} · {founder.location}</p>
+            <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed max-w-prose">{founder.short}</p>
+            <span class="mt-6 inline-flex items-center gap-2 rounded-full bg-ink-900 text-cream-50 dark:bg-amber-500 dark:text-ink-950 px-5 py-2.5 text-sm font-medium transition-transform group-hover:gap-3">
+              Lihat Profil Founder
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
       </div>
     </div>
   </section>

@@ -1,0 +1,59 @@
+---
+// FounderImage — background bertema (Dark/Light) pada satu layer, lalu PNG
+// Founder transparan di layer atas. PNG hanya berisi objek Founder; seluruh
+// background, glow, dan dekorasi dibuat di sini oleh website.
+//
+// Jika file public/founder/<slug>.png belum ada, komponen jatuh ke monogram
+// "AK" agar halaman tidak pernah menampilkan gambar rusak.
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { url } from '@utils/url';
+import { founder } from '@data/founder';
+
+export interface Props {
+  variant?: 'card' | 'hero';
+  class?: string;
+}
+const { variant = 'card', class: className = '' } = Astro.props;
+
+const publicPath = fileURLToPath(new URL(`../../public${founder.image}`, import.meta.url));
+const hasPhoto = existsSync(publicPath);
+
+const ratio = variant === 'hero' ? 'aspect-[4/5] sm:aspect-[3/4]' : 'aspect-[4/5]';
+---
+
+<div
+  class:list={[
+    'founder-figure relative isolate overflow-hidden rounded-3xl border border-ink-900/10 dark:border-cream-100/10',
+    'bg-gradient-to-b from-cream-100 to-cream-50 dark:from-ink-800 dark:to-ink-950',
+    ratio,
+    className,
+  ]}
+>
+  <!-- Layer background: glow + ambient (mengikuti theme) -->
+  <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+    <div class="absolute -top-1/4 left-1/2 h-3/4 w-3/4 -translate-x-1/2 rounded-full bg-amber-500/25 blur-3xl dark:bg-amber-500/20"></div>
+    <div class="absolute bottom-[-20%] left-[-10%] h-2/3 w-2/3 rounded-full bg-[#6C3BEB]/12 blur-3xl dark:bg-[#6C3BEB]/25"></div>
+    <div class="absolute bottom-[-15%] right-[-10%] h-1/2 w-1/2 rounded-full bg-teal-500/10 blur-3xl dark:bg-teal-500/15"></div>
+    <!-- halo lembut di belakang subjek supaya siluet tetap terbaca di kedua theme -->
+    <div class="absolute inset-x-0 bottom-0 top-[18%] bg-[radial-gradient(60%_60%_at_50%_70%,rgba(255,255,255,0.55),transparent_70%)] dark:bg-[radial-gradient(60%_60%_at_50%_68%,rgba(243,193,88,0.14),transparent_72%)]"></div>
+    <!-- dekorasi grid halus -->
+    <div class="absolute inset-0 opacity-[0.06] dark:opacity-[0.08] [background-image:linear-gradient(currentColor_1px,transparent_1px),linear-gradient(90deg,currentColor_1px,transparent_1px)] [background-size:32px_32px] text-ink-900 dark:text-cream-100"></div>
+  </div>
+
+  {hasPhoto ? (
+    <img
+      src={url(founder.image)}
+      alt={founder.imageAlt}
+      class="absolute inset-x-0 bottom-0 mx-auto h-[96%] w-auto max-w-none select-none object-contain object-bottom drop-shadow-[0_24px_48px_rgba(11,10,14,0.28)] dark:drop-shadow-[0_24px_48px_rgba(0,0,0,0.55)]"
+      loading="lazy"
+      decoding="async"
+    />
+  ) : (
+    <div class="absolute inset-0 grid place-items-center" aria-label={founder.imageAlt} role="img">
+      <span class="font-display text-[clamp(3rem,14vw,7rem)] font-bold tracking-tightest text-ink-900/85 dark:text-cream-50/90">
+        {founder.initials}
+      </span>
+    </div>
+  )}
+</div>

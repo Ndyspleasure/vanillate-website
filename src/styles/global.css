@@ -101,3 +101,69 @@
     transform: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Motion system utilities — pair with src/scripts/motion.ts. Opt-in via
+   data-* attributes; the amber signature drives the tilt glare + cursor ring.
+   Everything below is disabled for reduced motion / touch pointers.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-tilt] {
+  transform: perspective(820px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+    translate3d(0, var(--lift, 0px), 0);
+  transform-style: preserve-3d;
+  isolation: isolate;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+}
+[data-tilt].is-tilting { transition: border-color 0.3s ease; }
+.tilt-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  z-index: -1;
+  background: radial-gradient(
+    280px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(232, 184, 74, 0.22),
+    transparent 60%
+  );
+  transition: opacity 0.4s ease;
+}
+[data-tilt].is-tilting .tilt-glare { opacity: 0.6; }
+
+[data-magnetic] {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+[data-magnetic]:active { transition: none; }
+
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(232, 184, 74, 0.8);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0;
+  mix-blend-mode: difference;
+  transition: opacity 0.3s ease, width 0.25s ease, height 0.25s ease,
+    background 0.25s ease, border-color 0.25s ease;
+}
+.cursor.is-on { opacity: 0.85; }
+.cursor.is-active {
+  width: 52px;
+  height: 52px;
+  background: rgba(232, 184, 74, 0.16);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor { display: none; }
+  [data-tilt] { transform: translate3d(0, var(--lift, 0px), 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-tilt] { transform: none !important; }
+  .cursor { display: none !important; }
+}
