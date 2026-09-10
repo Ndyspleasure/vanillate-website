@@ -45,6 +45,17 @@ export function initJourney() {
     p <= a || p >= d ? 0 : p < b ? (p - a) / (b - a) : p > c ? 1 - (p - c) / (d - c) : 1;
   const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 
+  // On landscape the scene fills the whole viewport (cover), which is much wider
+  // than the old centre square, so the SVG is drawn larger. Scale the scene zoom
+  // down to match, which also pulls edge labels (e.g. KARAWANG) back inside the
+  // viewBox instead of being clipped. Portrait/mobile keeps the original zoom.
+  let zoomK = 1;
+  const computeZoomK = () => {
+    const vw = window.innerWidth || 1, vh = window.innerHeight || 1;
+    zoomK = vw >= vh ? clamp(0.94 * vh / vw, 0.52, 1) : 1;
+  };
+  computeZoomK();
+
   // ─── static fallback (reduced motion) ─────────────────────────────────────
   if (reduce) {
     (window as any).__journey = { setProgress() {}, reduced: true };
@@ -214,7 +225,7 @@ export function initJourney() {
       s.el.style.opacity = String(o);
       if (o > 0.001) {
         const lp = clamp((p - a) / (b - a));
-        const sc = lerp(s.sIn, s.sOut, easeInOut(lp));
+        const sc = lerp(s.sIn, s.sOut, easeInOut(lp)) * zoomK;
         s.g.setAttribute('transform', `translate(${500 - s.t[0] * sc} ${500 - s.t[1] * sc}) scale(${sc.toFixed(3)})`);
       }
     }
@@ -313,7 +324,7 @@ export function initJourney() {
     setTimeout(() => { if (anim === 'auto' && inView) hasArmed = true; }, 60);
   });
 
-  window.addEventListener('resize', () => resizeGL && resizeGL(), { passive: true });
+  window.addEventListener('resize', () => { computeZoomK(); resizeGL && resizeGL(); }, { passive: true });
 
   // ─── interactive camera input (pointer on desktop, tilt on mobile) ─────────
   const amp = () => (perf === 'low' ? 0.014 : 0.022);

@@ -66,10 +66,12 @@ const round = (d, dp = 1) =>
   });
 
 // ─── load sources ───────────────────────────────────────────────────────────
-const landTopo = req('node_modules/world-atlas/land-110m.json');
+// Higher-detail coastlines: Natural Earth 50m (was 110m) for a crisper globe.
+const landTopo = req('node_modules/world-atlas/land-50m.json');
 const land = feature(landTopo, landTopo.objects.land);
-const idnProv = req('node_modules/indonesia-geodata/json/indonesiaLow.json');
-const idnProvMed = req('node_modules/indonesia-geodata/json/indonesiaMedium.json');
+// Indonesia: medium-resolution provinces (was low) for more island detail.
+const idnProv = req('node_modules/indonesia-geodata/json/indonesiaMedium.json');
+const idnProvMed = idnProv;
 
 async function loadAdm2() {
   const local = process.env.ADM2_GEOJSON;
@@ -112,11 +114,18 @@ function buildEarth() {
 
   const visible = (lonlat) => d3.geoDistance(lonlat, center) < Math.PI / 2 - 0.02;
   const cityDefs = [
-    ['Jakarta', 106.83, -6.2], ['Singapore', 103.8, 1.35], ['Kuala Lumpur', 101.7, 3.14],
-    ['Bangkok', 100.5, 13.75], ['Manila', 121.0, 14.6], ['Tokyo', 139.7, 35.68],
-    ['Beijing', 116.4, 39.9], ['New Delhi', 77.2, 28.6], ['Sydney', 151.2, -33.87],
-    ['Perth', 115.86, -31.95], ['Seoul', 126.98, 37.57], ['Ho Chi Minh', 106.7, 10.78],
-    ['Dhaka', 90.4, 23.8], ['Hong Kong', 114.16, 22.3], ['Darwin', 130.84, -12.46],
+    // Indonesia (home region gets the most lights)
+    ['Jakarta', 106.83, -6.2], ['Bandung', 107.6, -6.9], ['Surabaya', 112.75, -7.25],
+    ['Medan', 98.67, 3.59], ['Semarang', 110.42, -6.97], ['Makassar', 119.42, -5.15],
+    ['Palembang', 104.76, -2.99], ['Denpasar', 115.22, -8.65], ['Balikpapan', 116.83, -1.24],
+    ['Yogyakarta', 110.37, -7.8], ['Pontianak', 109.34, -0.02], ['Manado', 124.85, 1.49],
+    ['Jayapura', 140.72, -2.53],
+    // Regional context
+    ['Singapore', 103.8, 1.35], ['Kuala Lumpur', 101.7, 3.14], ['Bangkok', 100.5, 13.75],
+    ['Manila', 121.0, 14.6], ['Tokyo', 139.7, 35.68], ['Beijing', 116.4, 39.9],
+    ['New Delhi', 77.2, 28.6], ['Sydney', 151.2, -33.87], ['Perth', 115.86, -31.95],
+    ['Seoul', 126.98, 37.57], ['Ho Chi Minh', 106.7, 10.78], ['Dhaka', 90.4, 23.8],
+    ['Hong Kong', 114.16, 22.3], ['Darwin', 130.84, -12.46],
   ];
   const lights = cityDefs
     .filter((c) => visible([c[1], c[2]]))
@@ -126,7 +135,7 @@ function buildEarth() {
     r: R,
     cx: VB / 2,
     cy: VB / 2,
-    land: round(path(land), 1),
+    land: round(path(land), 0),
     graticule: round(path(graticule()), 1),
     target: px(proj([107.0, -6.24])), // Bekasi on the disc → zoom aim
     lights,
