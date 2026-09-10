@@ -185,6 +185,14 @@ const earthPos = [orbX(earthPl.o, earthPl.tilt, earthPl.a), orbY(earthPl.o, eart
     --pl-merc:#b9a58f; --pl-venus:#e6b98a; --pl-earth:#2f7fd6; --pl-mars:#c1573a; --pl-jup:#c9a06a; --pl-sat:#d8bd86;
     --jr-orbit: rgba(150,180,220,0.18); --jr-hl:#e8443f; --jr-grid: rgba(120,200,150,0.16);
   }
+  /* Landscape (laptop/desktop/large screens): fill the viewport edge-to-edge so
+     the scene is wide and never boxed into a centre square. The SVG uses
+     preserveAspectRatio="…slice" (cover), so it fills the width; scene zoom
+     levels below are tuned so key labels stay inside the frame. Portrait/mobile
+     keeps the fit-to-width square above. */
+  @media (min-aspect-ratio: 1/1) {
+    .scene { width: 100%; height: 100%; max-height: none; }
+  }
   .scene svg, .scene { overflow: hidden; }
   .jr-geolabel { fill: #bcd6f2; font-family: var(--font-mono); font-size: 19px; text-anchor: middle; letter-spacing: 0.06em; paint-order: stroke; stroke: rgba(4,8,16,0.8); stroke-width: 3px; }
   .jr-geolabel--sm { font-size: 15px; }
