@@ -41,11 +41,13 @@ const dotClass = {
 ---
 
 <article
+  data-tilt="4"
   class:list={[
     'group relative flex flex-col overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 backdrop-blur transition-all hover:border-ink-900/20 dark:hover:border-cream-100/20',
     featured ? 'md:col-span-2 p-8 md:p-10' : 'p-6 md:p-8',
   ]}
 >
+  <span class="tilt-glare" aria-hidden="true"></span>
   <!-- Accent bar -->
   <div
     class="absolute inset-x-0 top-0 h-0.5 opacity-70"

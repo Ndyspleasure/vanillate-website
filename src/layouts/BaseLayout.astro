@@ -66,6 +66,7 @@ const { title, description, image, noindex } = Astro.props;
   </head>
   <body class="min-h-screen flex flex-col">
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:bg-amber-500 focus:px-4 focus:py-2 focus:text-ink-950">Lewati ke konten</a>
+    <div class="cursor" data-cursor aria-hidden="true"></div>
     <AnnouncementBanner />
     <Header />
     <main id="main" class="flex-1">
@@ -95,6 +96,14 @@ const { title, description, image, noindex } = Astro.props;
           revealEls.forEach((el) => io.observe(el));
         }
       }
+    </script>
+
+    <!-- Micro-interactions (counters, magnetic, 3D tilt, cursor ring). Opt-in
+         via data-* attributes; obeys reduced-motion + pointer type. Public
+         pages only (admin uses AdminLayout). -->
+    <script>
+      import { initMotion } from '../scripts/motion.ts';
+      initMotion();
     </script>
   </body>
 </html>
