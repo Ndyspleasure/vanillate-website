@@ -14,15 +14,15 @@ const t = content[locale];
     <div class="about__grid">
       <div class="about__body" data-reveal>
         <p class="lead">{t.about.body}</p>
-        <ul class="about__identity">
-          {t.about.identity.map((i) => <li>{i}</li>)}
+        <ul class="about__identity" data-reveal-stagger="70">
+          {t.about.identity.map((i) => <li data-reveal="scale">{i}</li>)}
         </ul>
       </div>
 
       <dl class="about__stats" data-reveal style="--reveal-delay:120ms">
         {t.about.stats.map((s) => (
           <div class="stat">
-            <dt class="stat__v">{s.value}</dt>
+            <dt class="stat__v" data-count>{s.value}</dt>
             <dd class="stat__l">{s.label}</dd>
           </div>
         ))}

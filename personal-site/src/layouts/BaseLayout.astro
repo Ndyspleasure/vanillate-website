@@ -103,29 +103,16 @@ const { locale = 'id', ...seo } = Astro.props;
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="grain" aria-hidden="true"></div>
+    <div class="cursor" data-cursor aria-hidden="true"></div>
     <Experience locale={locale} />
     <slot />
 
-    <!-- Reveal-on-scroll (progressive enhancement; CSS keeps content visible for reduced-motion) -->
+    <!-- Motion system (progressive enhancement). Reveal, counters, magnetic,
+         3D tilt, parallax and the cursor ring all live in one engine that obeys
+         reduced-motion + the Performance setting. Content stays visible without it. -->
     <script>
-      const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const els = document.querySelectorAll('[data-reveal]');
-      if (!rm && 'IntersectionObserver' in window && els.length) {
-        const io = new IntersectionObserver(
-          (entries) => {
-            for (const e of entries) {
-              if (e.isIntersecting) {
-                e.target.classList.add('is-in');
-                io.unobserve(e.target);
-              }
-            }
-          },
-          { rootMargin: '0px 0px -8% 0px', threshold: 0.05 }
-        );
-        els.forEach((el) => io.observe(el));
-      } else {
-        els.forEach((el) => el.classList.add('is-in'));
-      }
+      import { initMotion } from '../scripts/motion.ts';
+      initMotion();
     </script>
   </body>
 </html>

@@ -17,7 +17,7 @@ const t = content[locale];
     <dl class="van__stats" data-reveal>
       {studioStats.map((s) => (
         <div class="van__stat">
-          <dt class="van__num">{s.value}</dt>
+          <dt class="van__num" data-count>{s.value}</dt>
           <dd class="van__lbl">{s[locale]}</dd>
         </div>
       ))}
@@ -27,7 +27,7 @@ const t = content[locale];
       <div class="van__col" data-reveal>
         <h3 class="h3 van__story-title">{t.vanillate.storyTitle}</h3>
         {t.vanillate.story.map((p) => <p class="van__p">{p}</p>)}
-        <a class="btn btn--primary van__cta" href={site.studioUrl} target="_blank" rel="noopener">
+        <a class="btn btn--primary van__cta" href={site.studioUrl} target="_blank" rel="noopener" data-magnetic="0.35">
           {t.vanillate.cta}
           <span class="arrow"><Icon name="arrowUpRight" size={16} /></span>
         </a>

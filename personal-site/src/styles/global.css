@@ -245,15 +245,113 @@ section {
 }
 
 /* ─── Reveal-on-scroll ────────────────────────────────────────────────────── */
+/* Default = rise. Direction/scale variants let each section pick its own accent
+   without new JS — the motion engine only toggles `.is-in`. */
 [data-reveal] {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
   transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
 }
+[data-reveal="down"] { transform: translateY(-24px); }
+[data-reveal="left"] { transform: translateX(28px); }
+[data-reveal="right"] { transform: translateX(-28px); }
+[data-reveal="scale"] { transform: scale(0.94); }
+[data-reveal="fade"] { transform: none; }
 [data-reveal].is-in {
   opacity: 1;
   transform: none;
+}
+
+/* ─── Motion system utilities ─────────────────────────────────────────────── */
+/* 3D tilt — CSS owns the transform string so a hover lift (--lift) and the
+   pointer rotation (--rx/--ry from motion.ts) compose instead of clobbering. */
+[data-tilt] {
+  transform: perspective(760px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+    translate3d(0, var(--lift, 0px), 0);
+  transform-style: preserve-3d;
+  isolation: isolate; /* keep the glare between the card's bg and its content */
+  transition: transform 0.4s var(--ease), border-color 0.3s var(--ease),
+    box-shadow 0.3s var(--ease);
+}
+[data-tilt].is-tilting { transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease); }
+/* Optional glare — add a `.tilt-glare` child element inside the card. It sits at
+   z-index -1 so, within the isolated card, it paints over the background but
+   under the text (readability first). */
+.tilt-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent) 22%, transparent),
+    transparent 60%
+  );
+  transition: opacity 0.4s var(--ease);
+  z-index: -1;
+}
+[data-tilt].is-tilting .tilt-glare { opacity: 0.55; }
+
+/* Magnetic — transform is driven inline by motion.ts; keep it smooth on return. */
+[data-magnetic] { transition: transform 0.3s var(--ease); will-change: transform; }
+[data-magnetic]:active { transition: none; }
+
+/* Custom cursor ring (additive; native cursor stays). */
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 75%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 400;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease), width 0.25s var(--ease),
+    height 0.25s var(--ease), background 0.25s var(--ease),
+    border-color 0.25s var(--ease);
+  mix-blend-mode: difference;
+}
+.cursor.is-on { opacity: 0.9; }
+.cursor.is-active {
+  width: 52px;
+  height: 52px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 90%, transparent);
+}
+
+/* Gradient / shimmer text — used sparingly for a single hero accent. */
+.text-gradient {
+  background: linear-gradient(
+    100deg,
+    var(--text) 0%,
+    var(--accent-ink) 42%,
+    var(--text) 84%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 7s var(--ease-in-out) infinite;
+}
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ─── Performance & input gating ──────────────────────────────────────────── */
+/* Low perf keeps the story but sheds the heaviest pointer effects. */
+:root[data-perf="low"] .cursor { display: none; }
+:root[data-perf="low"] .tilt-glare { display: none; }
+:root[data-perf="low"] [data-tilt] { transform: translate3d(0, var(--lift, 0px), 0); }
+/* No hover / coarse pointer: no tilt, no cursor ring, no shimmer distraction. */
+@media (hover: none), (pointer: coarse) {
+  .cursor { display: none; }
+  [data-tilt] { transform: translate3d(0, var(--lift, 0px), 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -262,6 +360,9 @@ section {
     transform: none !important;
     transition: none !important;
   }
+  [data-tilt] { transform: none !important; }
+  .text-gradient { animation: none; }
+  .cursor { display: none !important; }
   * {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;

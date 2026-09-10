@@ -56,6 +56,10 @@ export function initJourney() {
   let perf = root.getAttribute('data-perf') === 'low' ? 'low' : 'high';
   let anim = root.getAttribute('data-anim') === 'manual' ? 'manual' : 'auto';
 
+  // Interactive 3D camera parallax — a tiny offset from pointer / device tilt,
+  // eased on the CPU. Target (offTX/offTY) is set by input; offX/offY chase it.
+  let offTX = 0, offTY = 0, offX = 0, offY = 0;
+
   // ─── WebGL galaxy ─────────────────────────────────────────────────────────
   const gl = canvas ? (canvas.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: false }) as WebGLRenderingContext | null) : null;
   let render2d: ((p: number, tSec: number) => void) | null = null;
@@ -68,12 +72,15 @@ export function initJourney() {
   if (gl && canvas) {
     const vs = `
       attribute vec2 a_dir; attribute float a_z; attribute float a_size; attribute float a_bright; attribute float a_col;
-      uniform float u_cam; uniform float u_px; uniform float u_dim; uniform vec2 u_aspect;
+      uniform float u_cam; uniform float u_px; uniform float u_dim; uniform vec2 u_aspect; uniform vec2 u_off;
       varying float v_b; varying float v_col;
       void main(){
         float f = fract(a_z - u_cam);
         float zz = f * 0.985 + 0.015;
-        vec2 pos = (a_dir / zz);
+        // Interactive 3D camera: nearer stars shift more than far ones (parallax
+        // depth). u_off is a tiny pointer/gyro offset eased on the CPU side.
+        vec2 par = u_off * (0.5 + min(1.0 / zz, 5.0));
+        vec2 pos = (a_dir / zz) + par;
         gl_Position = vec4(pos.x * u_aspect.x, pos.y * u_aspect.y, 0.0, 1.0);
         gl_PointSize = clamp(a_size / zz * u_px, 0.0, 26.0 * u_px);
         float farFade = smoothstep(1.0, 0.2, f);
@@ -131,6 +138,7 @@ export function initJourney() {
     const uPx = gl.getUniformLocation(prog, 'u_px');
     const uDim = gl.getUniformLocation(prog, 'u_dim');
     const uAspect = gl.getUniformLocation(prog, 'u_aspect');
+    const uOff = gl.getUniformLocation(prog, 'u_off');
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
     gl.clearColor(0, 0, 0, 0);
 
@@ -151,6 +159,7 @@ export function initJourney() {
       const dim = lerp(1.0, 0.32, clamp((p - 0.28) / 0.34)); // fade stars behind the planet scenes
       gl.uniform1f(uCam, cam);
       gl.uniform1f(uDim, dim);
+      gl.uniform2f(uOff, offX, offY);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.POINTS, 0, Math.floor(drawCount));
     };
@@ -250,6 +259,19 @@ export function initJourney() {
       }
       p = autoP;
     }
+    // ease the interactive camera offset toward its pointer/gyro target
+    offX += (offTX - offX) * 0.06;
+    offY += (offTY - offY) * 0.06;
+    // cohere the depth: nebula clouds drift at their own rate (GL stars parallax
+    // in the shader), so the scene feels layered rather than flat.
+    if (Math.abs(offX) > 0.0002 || Math.abs(offY) > 0.0002) {
+      const nx = offX * 900, ny = offY * 900;
+      nebs.forEach((n, i) => {
+        const k = 1.4 + i * 0.5;
+        n.style.transform = `translate3d(${(nx * k).toFixed(1)}px, ${(ny * k).toFixed(1)}px, 0)`;
+      });
+    }
+
     const tSec = (now - t0) / 1000;
     if (renderGL) renderGL(p, tSec); else if (render2d) render2d(p, tSec);
     paint(p);
@@ -292,6 +314,32 @@ export function initJourney() {
   });
 
   window.addEventListener('resize', () => resizeGL && resizeGL(), { passive: true });
+
+  // ─── interactive camera input (pointer on desktop, tilt on mobile) ─────────
+  const amp = () => (perf === 'low' ? 0.014 : 0.022);
+  section.addEventListener(
+    'pointermove',
+    (e) => {
+      if ((e as PointerEvent).pointerType === 'touch') return;
+      const a = amp();
+      offTX = ((e as PointerEvent).clientX / window.innerWidth - 0.5) * a * 2;
+      offTY = -((e as PointerEvent).clientY / window.innerHeight - 0.5) * a * 2;
+    },
+    { passive: true }
+  );
+  section.addEventListener('pointerleave', () => { offTX = 0; offTY = 0; });
+  // Device tilt (best-effort; iOS needs a permission gesture we don't force).
+  window.addEventListener(
+    'deviceorientation',
+    (e) => {
+      if (e.gamma == null || e.beta == null) return;
+      const a = amp();
+      offTX = clamp(e.gamma / 30, -1, 1) * a;
+      offTY = clamp((e.beta - 45) / 30, -1, 1) * a;
+    },
+    { passive: true }
+  );
+
   paint(0);
 
   // QA / debug hook

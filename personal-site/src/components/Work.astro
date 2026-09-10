@@ -17,7 +17,8 @@ const base = locale === 'en' ? '/en' : '';
 
     <div class="work__list">
       {projects.map((p, i) => (
-        <article class="pcard" data-reveal style={`--reveal-delay:${i * 90}ms`}>
+        <article class="pcard" data-reveal data-tilt="4" style={`--reveal-delay:${i * 90}ms`}>
+          <span class="tilt-glare" aria-hidden="true"></span>
           <a class="pcard__link" href={`${base}/work/${p.slug}`} aria-labelledby={`p-${p.slug}`}>
             <div class="pcard__media">
               <img
@@ -48,13 +49,13 @@ const base = locale === 'en' ? '/en' : '';
 <style>
   .work__list { display: grid; gap: 20px; }
   .pcard {
+    position: relative;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--bg-elev);
-    transition: border-color 0.3s var(--ease), transform 0.3s var(--ease);
   }
-  .pcard:hover { border-color: var(--text); transform: translateY(-3px); }
+  .pcard:hover { border-color: var(--text); --lift: -3px; }
   .pcard__link { display: grid; grid-template-columns: 1.1fr 1fr; align-items: stretch; }
   .pcard__media {
     position: relative;

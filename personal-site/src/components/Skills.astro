@@ -17,7 +17,8 @@ const t = content[locale];
       {skills.map((s, i) => {
         const icon = skillIcons[s.name];
         return (
-          <li class="skill" data-reveal style={`--brand:${icon?.color ?? 'var(--accent)'};--reveal-delay:${i * 50}ms`}>
+          <li class="skill" data-reveal data-tilt="6" style={`--brand:${icon?.color ?? 'var(--accent)'};--reveal-delay:${i * 50}ms`}>
+            <span class="tilt-glare" aria-hidden="true"></span>
             <span class="skill__icon" set:html={icon?.svg ?? ''} aria-hidden="true" />
             <div class="skill__meta">
               <h3 class="skill__name">{s.name}</h3>
@@ -40,6 +41,7 @@ const t = content[locale];
     gap: 14px;
   }
   .skill {
+    position: relative;
     background: var(--bg-elev);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -47,14 +49,18 @@ const t = content[locale];
     display: flex;
     flex-direction: column;
     gap: 16px;
-    transition: transform 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
   }
   .skill:hover {
-    transform: translateY(-4px);
+    --lift: -4px;
     border-color: color-mix(in srgb, var(--brand) 60%, var(--border));
     box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--brand) 70%, transparent);
   }
+  .skill .tilt-glare {
+    background: radial-gradient(200px circle at var(--mx, 50%) var(--my, 50%),
+      color-mix(in srgb, var(--brand) 24%, transparent), transparent 62%);
+  }
   .skill__icon {
+    position: relative;
     width: 34px;
     height: 34px;
     color: var(--text-2);
