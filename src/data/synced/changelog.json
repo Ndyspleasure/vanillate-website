@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.53.0",
+    "date": "2026-09-11",
+    "title": "Support Center baru & akses bantuan lebih mudah",
+    "highlights": [
+      "🛟 Support Center baru lewat /support untuk memilih jenis bantuan",
+      "🎧 Alur Hubungi Tim Support kini lebih mudah dijangkau dari DM bot",
+      "📱 Ada kanal bantuan cadangan resmi bila DM ke kamu tidak tersedia"
+    ]
+  },
+  {
     "version": "2.52.1",
     "date": "2026-09-11",
     "title": "Perbaikan ruang permainan yang sempat macet",
