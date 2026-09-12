@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.54.0",
+    "date": "2026-09-12",
+    "title": "AI Support memakai FAQ terbaru dari pusat bantuan",
+    "highlights": [
+      "🤖 Asisten AI Support kini menarik FAQ terbaru langsung dari pusat bantuan (CMS) secara otomatis — begitu tim menambah atau mengubah FAQ, jawaban bot ikut ter-update tanpa perlu memperbarui bot.",
+      "🛠️ Bila pusat bantuan sedang tidak dapat dijangkau, AI Support tetap menjawab memakai FAQ bawaan (aman, tidak error).",
+      "📚 Admin bisa menyegarkan jawaban kapan saja lewat perintah pemeliharaan tanpa me-restart bot."
+    ]
+  },
+  {
     "version": "2.53.0",
     "date": "2026-09-11",
     "title": "Support Center baru & akses bantuan lebih mudah",
