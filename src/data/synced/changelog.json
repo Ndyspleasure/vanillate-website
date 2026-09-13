@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.55.0",
+    "date": "2026-09-13",
+    "title": "Mode PvP Team — main beregu bareng teman!",
+    "highlights": [
+      "👥 Mode baru PvP Team: bentuk regu Duo (2v2), Trio (3v3), atau Squad (4v4)",
+      "⚔️ Menang bareng satu tim — semua anggota tim pemenang dapat reward",
+      "🙋 Mode Solo tetap sama seperti biasa, kini dipilih lewat menu PvP → Solo",
+      "✅ Host bisa tetap memulai walau tim belum penuh setelah konfirmasi"
+    ]
+  },
+  {
     "version": "2.54.0",
     "date": "2026-09-12",
     "title": "AI Support memakai FAQ terbaru dari pusat bantuan",
