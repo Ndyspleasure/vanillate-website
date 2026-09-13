@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.57.1",
+    "date": "2026-09-13",
+    "title": "Rating pelayanan lebih andal tercatat",
+    "highlights": [
+      "🛡️ Hasil rating Tim Support kini lebih terjamin tercatat—bila channel rating sedang bermasalah, laporannya otomatis dialihkan ke channel log admin",
+      "🧹 Perbaikan internal untuk kebersihan & keakuratan data laporan"
+    ]
+  },
+  {
     "version": "2.57.0",
     "date": "2026-09-13",
     "title": "Beri rating pelayanan Tim Support (CSAT)",
