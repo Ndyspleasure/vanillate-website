@@ -1,5 +1,25 @@
 [
   {
+    "version": "2.57.0",
+    "date": "2026-09-13",
+    "title": "Beri rating pelayanan Tim Support (CSAT)",
+    "highlights": [
+      "⭐ Setelah sesi chat dengan Tim Support selesai, kamu bisa memberi rating 1–5 + komentar",
+      "🙏 Masukanmu membantu kami meningkatkan kualitas pelayanan",
+      "🔒 Sesi tetap hanya bisa ditutup oleh Tim Support"
+    ]
+  },
+  {
+    "version": "2.56.0",
+    "date": "2026-09-13",
+    "title": "FAQ bantuan cepat sebelum chat & sesi support lebih tertib",
+    "highlights": [
+      "❓ Sebelum menghubungi Tim Support, kini muncul FAQ bantuan cepat—banyak kendala bisa langsung selesai",
+      "🔒 Sesi chat dengan Tim Support hanya bisa ditutup oleh tim support, biar percakapanmu tidak terputus di tengah jalan",
+      "🛠️ Admin bisa mengatur & menambah isi FAQ kapan saja"
+    ]
+  },
+  {
     "version": "2.55.0",
     "date": "2026-09-13",
     "title": "Mode PvP Team — main beregu bareng teman!",
