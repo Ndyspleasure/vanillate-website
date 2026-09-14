@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
+import Vani from '@components/mascot/Vani.astro';
 import { url } from '@utils/url';
 
 const destinations = [
@@ -15,6 +16,9 @@ const destinations = [
   <section class="relative overflow-hidden">
     <div class="aurora bg-amber-500/25 h-[400px] w-[400px] top-[-60px] left-1/2 -translate-x-1/2" aria-hidden="true"></div>
     <div class="container-page py-28 md:py-32 text-center relative">
+      <div class="mb-8 flex justify-center animate-fade-up">
+        <Vani variant="error" size="md" animation="subtle" alt="" />
+      </div>
       <p class="font-mono text-sm text-amber-600 dark:text-amber-500 mb-4 animate-fade-up">404</p>
       <h1 class="font-display text-4xl md:text-6xl font-semibold tracking-tightest mb-4 animate-fade-up">Halaman ini tidak ada.</h1>
       <p class="text-lg text-ink-600 dark:text-cream-200/80 max-w-md mx-auto mb-8 animate-fade-up" style="animation-delay: 0.1s">
