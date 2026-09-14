@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.57.2",
+    "date": "2026-09-14",
+    "title": "Perapian daftar perintah bot",
+    "highlights": [
+      "🧹 Perintah khusus developer kini tersembunyi dari daftar slash command publik",
+      "✨ Daftar command yang tampil untuk pemain jadi lebih ringkas & relevan"
+    ]
+  },
+  {
     "version": "2.57.1",
     "date": "2026-09-13",
     "title": "Rating pelayanan lebih andal tercatat",
