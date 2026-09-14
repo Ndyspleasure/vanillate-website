@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Button from '@components/Button.astro';
 import BotCard from '@components/BotCard.astro';
+import Vani from '@components/mascot/Vani.astro';
 import LiveGameCounter from '@components/LiveGameCounter.astro';
 import { bots } from '@data/bots';
 import { homeStats } from '@data/site';
@@ -45,16 +46,26 @@ const principles = (c.principles as Pair[]).map((p, i) => ({
     <div class="aurora bg-teal-500/20 h-[400px] w-[400px] top-[60px] right-[4%]" style="animation-delay: -6s" aria-hidden="true"></div>
 
     <div class="container-page relative">
-      <p class="eyebrow mb-6 animate-fade-up">{c.heroEyebrow}</p>
-      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.4rem,6.4vw,5rem)] leading-[0.98] max-w-4xl animate-fade-up">
-        {c.heroTitle} <span class="italic text-amber-600 dark:text-amber-500">{c.heroTitleAccent}</span> {c.heroTitleEnd}
-      </h1>
-      <p class="mt-7 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
-        {c.heroLead}
-      </p>
-      <div class="mt-9 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
-        <Button href="/products" variant="primary" size="lg" magnetic>{c.heroCtaPrimary}</Button>
-        <Button href="/about" variant="secondary" size="lg" magnetic>{c.heroCtaSecondary}</Button>
+      <!-- Konten tetap prioritas utama; Vani hadir sebagai visual pendukung
+           di kolom kanan (desktop) dan di bawah CTA (mobile), tidak pernah
+           mengalahkan headline/CTA. -->
+      <div class="grid items-center gap-10 lg:grid-cols-[1.15fr_auto]">
+        <div class="min-w-0">
+          <p class="eyebrow mb-6 animate-fade-up">{c.heroEyebrow}</p>
+          <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.4rem,6.4vw,5rem)] leading-[0.98] max-w-4xl animate-fade-up">
+            {c.heroTitle} <span class="italic text-amber-600 dark:text-amber-500">{c.heroTitleAccent}</span> {c.heroTitleEnd}
+          </h1>
+          <p class="mt-7 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+            {c.heroLead}
+          </p>
+          <div class="mt-9 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
+            <Button href="/products" variant="primary" size="lg" magnetic>{c.heroCtaPrimary}</Button>
+            <Button href="/about" variant="secondary" size="lg" magnetic>{c.heroCtaSecondary}</Button>
+          </div>
+        </div>
+        <div class="justify-self-center lg:justify-self-end">
+          <Vani variant="hero" size="lg" priority animation="subtle" alt="Vani, maskot Vanillate Studio" />
+        </div>
       </div>
 
       <!-- Rekam jejak: social proof + counter live (dipertahankan) -->
