@@ -3,31 +3,37 @@
 // Vani — maskot resmi Vanillate Studio.
 //
 // Komponen tunggal, dependency-free, yang menampilkan karakter Vani sebagai
-// bagian dari visual identity, bukan sekadar gambar tempelan. Dipakai ulang di
-// banyak halaman lewat satu API sederhana — tidak perlu menulis <img> manual.
+// bagian dari visual identity. Dipakai ulang di banyak halaman lewat satu API
+// sederhana — tidak perlu menulis <img> manual.
 //
-//   <Vani />                                  (default, size md, animasi subtle)
+//   <Vani />                                   (default, size md, animasi subtle)
 //   <Vani variant="hero" size="lg" priority /> (di atas fold, muat lebih awal)
-//   <Vani variant="support" size="md" />
-//   <Vani variant="error" size="sm" alt="" /> (dekoratif, tak dibaca screen reader)
+//   <Vani expression="thumbsup" size="sm" />   (pilih pose/ekspresi langsung)
+//   <Vani variant="error" alt="" />            (dekoratif, tak dibaca screen reader)
 //
-// Prinsip: character first, effects second.
-//   • Identitas karakter TIDAK diubah — tanpa filter hue/brightness/contrast,
-//     tanpa redraw. Yang menyesuaikan tema hanyalah bingkai, bayangan, dan glow
-//     di sekeliling karakter (lihat <style> di bawah).
-//   • Aset JPG berlatar terang, jadi Vani dibingkai seperti "potret" — tetap
-//     rapi di light maupun dark mode tanpa memaksakan warna baru ke karakter.
-//   • Rasio gambar dijaga (object-fit: contain, aspect-ratio terkunci) supaya
-//     tidak ada bagian karakter yang terpotong dan tidak ada layout shift.
-//   • Semua animasi halus & otomatis mati saat prefers-reduced-motion.
+// Aset: PNG transparan per-ekspresi di /public/mascot/vani/. Karakter "melayang"
+// (tanpa kotak/bingkai putih); yang menyesuaikan tema hanya bayangan & glow
+// halus di sekelilingnya — identitas & warna karakter tidak pernah diubah
+// (tanpa filter hue/brightness/contrast, tanpa redraw).
 //
-// Ekstensi masa depan (§24 brief): saat tersedia aset pose/ekspresi berbeda
-// (mis. vani-support.webp), cukup arahkan SOURCES[variant] ke aset baru —
-// pemanggilan <Vani variant="support" /> di seluruh situs otomatis ikut.
+// Dua cara memilih gambar:
+//   • variant   → makna penempatan (hero/support/dst), dipetakan ke satu
+//                 ekspresi default lewat VARIANT_EXPRESSION.
+//   • expression→ pilih pose spesifik langsung; menimpa pemetaan variant.
+//
+// Menambah pose baru cukup: taruh PNG di /public/mascot/vani/ lalu daftarkan di
+// SOURCES (nama → dimensi) — tidak perlu menyentuh markup atau halaman pemanggil.
 import { url } from '@utils/url';
 
+type Variant = 'default' | 'hero' | 'about' | 'support' | 'empty' | 'error';
+type Expression =
+  | 'default' | 'wave' | 'happy' | 'celebrate' | 'thinking' | 'thumbsup'
+  | 'support' | 'oops' | 'peek' | 'point-left' | 'point-right' | 'sleeping'
+  | 'lineup';
+
 export interface Props {
-  variant?: 'default' | 'hero' | 'about' | 'support' | 'empty' | 'error';
+  variant?: Variant;
+  expression?: Expression;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   animation?: 'none' | 'float' | 'fade' | 'subtle';
   priority?: boolean;
@@ -37,6 +43,7 @@ export interface Props {
 
 const {
   variant = 'default',
+  expression,
   size = 'md',
   animation = 'subtle',
   priority = false,
@@ -44,20 +51,37 @@ const {
   class: className = '',
 } = Astro.props;
 
-// Satu sumber kebenaran untuk aset per-variant. Sekarang semuanya memakai aset
-// utama vani.jpg; strukturnya sengaja dibuat agar aset pose/ekspresi baru cukup
-// ditambahkan di sini tanpa menyentuh markup atau halaman pemanggil.
-const MASCOT = '/mascot/vani.jpg';
-const SOURCES: Record<NonNullable<Props['variant']>, string> = {
-  default: MASCOT,
-  hero: MASCOT,
-  about: MASCOT,
-  support: MASCOT,
-  empty: MASCOT,
-  error: MASCOT,
+// Dimensi intrinsik tiap aset (setelah trim). Dipakai untuk mengunci
+// aspect-ratio → tidak ada layout shift, dan proporsi karakter terjaga.
+const SOURCES: Record<Expression, { file: string; w: number; h: number }> = {
+  default:       { file: 'vani-default.png',     w: 771, h: 800 },
+  wave:          { file: 'vani-wave.png',        w: 777, h: 800 },
+  happy:         { file: 'vani-happy.png',       w: 771, h: 800 },
+  celebrate:     { file: 'vani-celebrate.png',   w: 781, h: 800 },
+  thinking:      { file: 'vani-thinking.png',    w: 771, h: 800 },
+  thumbsup:      { file: 'vani-thumbsup.png',    w: 771, h: 800 },
+  support:       { file: 'vani-support.png',     w: 771, h: 800 },
+  oops:          { file: 'vani-oops.png',        w: 771, h: 800 },
+  peek:          { file: 'vani-peek.png',        w: 611, h: 800 },
+  'point-left':  { file: 'vani-point-left.png',  w: 800, h: 784 },
+  'point-right': { file: 'vani-point-right.png', w: 800, h: 784 },
+  sleeping:      { file: 'vani-sleeping.png',    w: 771, h: 800 },
+  lineup:        { file: 'vani-lineup.png',      w: 800, h: 418 },
 };
 
-const src = url(SOURCES[variant] ?? MASCOT);
+// Ekspresi default untuk tiap variant (penempatan semantik).
+const VARIANT_EXPRESSION: Record<Variant, Expression> = {
+  default: 'default',
+  hero: 'wave',
+  about: 'happy',
+  support: 'support',
+  empty: 'thinking',
+  error: 'oops',
+};
+
+const resolved = expression ?? VARIANT_EXPRESSION[variant] ?? 'default';
+const asset = SOURCES[resolved] ?? SOURCES.default;
+const src = url(`/mascot/vani/${asset.file}`);
 
 // priority=true → muat segera (hero above-the-fold). Selebihnya lazy supaya
 // maskot tidak pernah mendahului konten utama saat halaman dibuka.
@@ -70,86 +94,64 @@ const decorative = alt.trim() === '';
 
 <div
   class:list={['vani', className]}
-  data-variant={variant}
   data-size={size}
   data-animation={animation}
+  style={`--vani-ar:${asset.w}/${asset.h}`}
 >
-  <!-- Glow/ambient di sekeliling bingkai (bukan pada karakter). Menyesuaikan
-       tema; sangat halus agar Vani tidak terasa "AI generated". -->
+  <!-- Glow/ambient di belakang karakter (bukan pada karakter). Sangat halus,
+       menyesuaikan tema, membantu siluet terbaca di latar apa pun. -->
   <div class="vani__ambient" aria-hidden="true"></div>
 
-  <div class="vani__frame">
-    <div class="vani__media">
-      <img
-        class="vani__img"
-        src={src}
-        alt={alt}
-        width="1200"
-        height="896"
-        loading={loading}
-        fetchpriority={fetchpriority}
-        decoding="async"
-        draggable="false"
-        aria-hidden={decorative ? 'true' : undefined}
-      />
-    </div>
+  <div class="vani__media">
+    <img
+      class="vani__img"
+      src={src}
+      alt={alt}
+      width={asset.w}
+      height={asset.h}
+      loading={loading}
+      fetchpriority={fetchpriority}
+      decoding="async"
+      draggable="false"
+      aria-hidden={decorative ? 'true' : undefined}
+    />
   </div>
 </div>
 
 <style>
   /* ── Layout dasar ────────────────────────────────────────────────────────
      Lebar dikendalikan clamp() per size; tinggi mengikuti aspect-ratio aset
-     (1200:896) sehingga ruang sudah dipesan sebelum gambar termuat → tanpa
-     layout shift. max-width: 100% menjamin tidak pernah ada overflow. */
+     sehingga ruang sudah dipesan sebelum gambar termuat → tanpa layout shift.
+     max-width: 100% menjamin tidak pernah ada overflow horizontal. */
   .vani {
     position: relative;
     display: inline-block;
-    width: var(--vani-w, clamp(140px, 30vw, 220px));
+    width: var(--vani-w, clamp(150px, 30vw, 240px));
     max-width: 100%;
-    aspect-ratio: 1200 / 896;
+    aspect-ratio: var(--vani-ar, 771 / 800);
     isolation: isolate;
-    /* Entrance: sekali saat elemen dirender. Halus & singkat. */
     animation: vani-enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  /* Ukuran responsif — semua pakai clamp(min, prefer-vw, max) supaya luwes
-     dari mobile kecil sampai wide desktop tanpa breakpoint kaku. */
-  .vani[data-size='sm'] { --vani-w: clamp(96px, 20vw, 132px); }
-  .vani[data-size='md'] { --vani-w: clamp(140px, 30vw, 220px); }
-  .vani[data-size='lg'] { --vani-w: clamp(200px, 40vw, 320px); }
-  .vani[data-size='xl'] { --vani-w: clamp(240px, 52vw, 420px); }
-
-  /* ── Bingkai (potret) ────────────────────────────────────────────────────
-     Aset berlatar terang; bingkai membuatnya terasa disengaja di kedua tema.
-     Yang berubah antar-tema hanya border/shadow/glow, bukan karakter. */
-  .vani__frame {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: 1.25rem;
-    overflow: hidden;
-    /* Light mode */
-    border: 1px solid rgba(17, 16, 21, 0.1); /* ink-900/10 */
-    background: radial-gradient(115% 90% at 50% 32%, #ffffff 0%, #fbf8f1 60%, #f5efe0 100%);
-    box-shadow: 0 20px 60px -30px rgba(11, 10, 14, 0.3);
-    transition:
-      transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.4s ease,
-      border-color 0.4s ease;
-    will-change: transform;
-  }
+  /* Ukuran responsif — clamp(min, prefer-vw, max), luwes dari mobile kecil
+     sampai wide desktop. Cukup besar agar pose & ekspresi tetap jelas. */
+  .vani[data-size='sm'] { --vani-w: clamp(110px, 22vw, 150px); }
+  .vani[data-size='md'] { --vani-w: clamp(150px, 30vw, 240px); }
+  .vani[data-size='lg'] { --vani-w: clamp(210px, 42vw, 360px); }
+  .vani[data-size='xl'] { --vani-w: clamp(260px, 54vw, 460px); }
 
   .vani__media {
     width: 100%;
     height: 100%;
-    /* Float loop hidup di layer ini, terpisah dari entrance (yang ada di
-       .vani), sehingga kedua transform tidak saling menimpa. */
-    animation: vani-float var(--vani-dur, 4.4s) ease-in-out infinite;
-    animation-delay: 0.8s; /* mulai setelah entrance selesai */
+    /* Float loop di layer ini, terpisah dari entrance (di .vani), agar kedua
+       transform tidak saling menimpa. */
+    animation: vani-float var(--vani-dur, 4.6s) ease-in-out infinite;
+    animation-delay: 0.8s;
   }
 
-  /* Aspek gambar dipertahankan; contain memastikan seluruh karakter (kepala,
-     kaki, ekor) selalu utuh dan tidak pernah terpotong. */
+  /* Karakter melayang transparan. object-fit: contain menjaga seluruh karakter
+     (kepala, telinga, kaki, ekor) selalu utuh, tidak pernah terpotong.
+     drop-shadow = bayangan pijakan lembut (bukan mengubah karakter). */
   .vani__img {
     display: block;
     width: 100%;
@@ -157,37 +159,33 @@ const decorative = alt.trim() === '';
     object-fit: contain;
     user-select: none;
     -webkit-user-drag: none;
+    filter: drop-shadow(0 16px 22px rgba(11, 10, 14, 0.22));
+    transition: filter 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* ── Ambient glow ────────────────────────────────────────────────────────
-     Berada di belakang bingkai (pada latar halaman), sangat halus. Ini "sentuhan
-     tema" untuk dark mode (glow ungu + emas) — di luar karakter, bukan filter. */
+  /* ── Ambient glow (halus, di belakang karakter) ──────────────────────────
+     Light: hangat vanilla/emas tipis. Menegaskan karakter tanpa "efek AI". */
   .vani__ambient {
     position: absolute;
-    inset: -14%;
+    inset: 6%;
     z-index: -1;
     pointer-events: none;
     border-radius: 50%;
-    background: radial-gradient(closest-side, rgba(232, 184, 74, 0.18), transparent 72%);
-    opacity: 0.7;
+    background: radial-gradient(closest-side, rgba(232, 184, 74, 0.14), transparent 72%);
+    opacity: 0.6;
     transition: opacity 0.4s ease;
   }
 
   /* ── Dark mode ───────────────────────────────────────────────────────────
-     Bingkai memakai border terang tipis + bayangan lebih dalam + glow emas/ungu
-     yang sangat halus. Interior tetap terang agar aset menyatu (potret bercahaya
-     di atas latar gelap), tanpa mengubah warna asli Vani. */
-  :global(html.dark) .vani__frame {
-    border-color: rgba(245, 239, 224, 0.12); /* cream-100/12 */
-    box-shadow:
-      0 24px 60px -28px rgba(0, 0, 0, 0.6),
-      0 0 0 1px rgba(232, 184, 74, 0.06);
+     Bayangan lebih dalam + glow emas/ungu sangat halus supaya siluet gelap
+     terangkat dari latar gelap. Warna karakter tetap. */
+  :global(html.dark) .vani__img {
+    filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.55));
   }
-
   :global(html.dark) .vani__ambient {
     background:
-      radial-gradient(closest-side, rgba(232, 184, 74, 0.16), transparent 70%),
-      radial-gradient(closest-side at 65% 75%, rgba(108, 59, 235, 0.14), transparent 72%);
+      radial-gradient(closest-side, rgba(232, 184, 74, 0.14), transparent 70%),
+      radial-gradient(closest-side at 60% 72%, rgba(108, 59, 235, 0.12), transparent 72%);
     opacity: 0.85;
   }
 
@@ -195,15 +193,13 @@ const decorative = alt.trim() === '';
      Sangat ringan: sedikit terangkat + glow menguat. Tidak pernah bergantung
      pada hover — mobile tetap mendapat pengalaman penuh tanpa ini. */
   @media (hover: hover) and (pointer: fine) {
-    .vani:hover .vani__frame {
-      transform: translateY(-4px) scale(1.015);
-      box-shadow: 0 28px 70px -30px rgba(11, 10, 14, 0.38);
+    .vani:hover .vani__img {
+      transform: translateY(-4px) scale(1.02);
+      filter: drop-shadow(0 24px 30px rgba(11, 10, 14, 0.28));
     }
-    .vani:hover .vani__ambient { opacity: 1; }
-    :global(html.dark) .vani:hover .vani__frame {
-      box-shadow:
-        0 30px 70px -26px rgba(0, 0, 0, 0.7),
-        0 0 0 1px rgba(232, 184, 74, 0.12);
+    .vani:hover .vani__ambient { opacity: 0.9; }
+    :global(html.dark) .vani:hover .vani__img {
+      filter: drop-shadow(0 26px 32px rgba(0, 0, 0, 0.6));
     }
   }
 
@@ -234,7 +230,7 @@ const decorative = alt.trim() === '';
   @media (prefers-reduced-motion: reduce) {
     .vani,
     .vani__media { animation: none !important; }
-    .vani__frame { transition: none; }
+    .vani__img { transition: none; }
     .vani { opacity: 1; }
   }
 </style>
