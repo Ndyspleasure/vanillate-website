@@ -8,15 +8,16 @@
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 import { url } from '@utils/url';
+import { wsIcon } from '@/lib/workspace-icons';
 
 const cards = [
-  { href: '/admin/workspace/roles',      icon: '🛡️', title: 'Role & Izin',          desc: 'Definisi role, kunci izin granular, dan cakupan (own/team/project/workspace).' },
-  { href: '/admin/workspace/teams',      icon: '👥', title: 'Tim',                  desc: 'Definisi tim & ketua. Keanggotaan tetap dikelola bot (operasional).' },
-  { href: '/admin/workspace/schedules',  icon: '📅', title: 'Jadwal Kerja',         desc: 'Template shift 7 hari + toleransi keterlambatan.' },
-  { href: '/admin/workspace/welcome',    icon: '👋', title: 'Welcome & Onboarding', desc: 'Pesan sambutan staff baru + langkah onboarding.' },
-  { href: '/admin/workspace/features',   icon: '🎚️', title: 'Feature Toggle',       desc: 'Nyalakan / matikan / maintenance tiap subsistem bot.' },
-  { href: '/admin/workspace/automation', icon: '⚙️', title: 'Automation',           desc: 'Aturan pemicu → aksi (mis. staff aktif → kirim welcome).' },
-  { href: '/admin/workspace/settings',   icon: '🛠️', title: 'Konfigurasi Sistem',   desc: 'Eskalasi, reminder, toleransi, daily brief, channel pengumuman.' },
+  { href: '/admin/workspace/roles',      icon: 'shield',    title: 'Role & Izin',          desc: 'Definisi role, kunci izin granular, dan cakupan (own/team/project/workspace).' },
+  { href: '/admin/workspace/teams',      icon: 'users',     title: 'Tim',                  desc: 'Definisi tim & ketua. Keanggotaan tetap dikelola bot (operasional).' },
+  { href: '/admin/workspace/schedules',  icon: 'calendar',  title: 'Jadwal Kerja',         desc: 'Template shift 7 hari + toleransi keterlambatan.' },
+  { href: '/admin/workspace/welcome',    icon: 'user-plus', title: 'Welcome & Onboarding', desc: 'Pesan sambutan staff baru + langkah onboarding.' },
+  { href: '/admin/workspace/features',   icon: 'sliders',   title: 'Feature Toggle',       desc: 'Nyalakan / matikan / maintenance tiap subsistem bot.' },
+  { href: '/admin/workspace/automation', icon: 'zap',       title: 'Automation',           desc: 'Aturan pemicu → aksi (mis. staff aktif → kirim welcome).' },
+  { href: '/admin/workspace/settings',   icon: 'wrench',    title: 'Konfigurasi Sistem',   desc: 'Eskalasi, reminder, toleransi, daily brief, channel pengumuman.' },
 ];
 ---
 
@@ -43,7 +44,7 @@ const cards = [
           class="group rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4 hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors"
         >
           <div class="flex items-start gap-3">
-            <span class="text-2xl">{c.icon}</span>
+            <span class="mt-0.5 flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400" set:html={wsIcon(c.icon)} />
             <div class="min-w-0">
               <p class="font-display text-base font-semibold tracking-tightest group-hover:text-amber-700 dark:group-hover:text-amber-400">{c.title}</p>
               <p class="mt-0.5 text-sm text-ink-500 dark:text-cream-300/60 leading-relaxed">{c.desc}</p>
