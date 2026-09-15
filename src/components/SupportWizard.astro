@@ -11,6 +11,7 @@
 // `@data/support`. Ikon memakai registry SVG tunggal di `@data/icons`.
 // ─────────────────────────────────────────────────────────────────────────────
 import Icon from '@components/Icon.astro';
+import Vani from '@components/mascot/Vani.astro';
 import {
   formatWhatsappNumber,
   supportCategories,
@@ -272,8 +273,13 @@ const cardIcon =
 
       <!-- STEP 5 — REVIEW -->
       <div data-step="5" class="hidden" hidden>
-        <h3 class={panelTitle} data-panel-heading tabindex="-1">Ringkasan Support</h3>
-        <p class={panelDesc}>Periksa sekali lagi sebelum lanjut. Kamu masih bisa memperbaiki bagian mana pun.</p>
+        <div class="flex items-center gap-4">
+          <Vani expression="happy" size="sm" animation="subtle" alt="" class="hidden flex-none sm:block" />
+          <div class="min-w-0">
+            <h3 class={panelTitle} data-panel-heading tabindex="-1">Ringkasan Support</h3>
+            <p class={panelDesc}>Periksa sekali lagi sebelum lanjut. Kamu masih bisa memperbaiki bagian mana pun.</p>
+          </div>
+        </div>
 
         <div class="mt-6 overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900">
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-ink-900/10 dark:border-cream-100/10 px-5 py-4">

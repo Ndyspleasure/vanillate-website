@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import BotCard from '@components/BotCard.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
+import Vani from '@components/mascot/Vani.astro';
 import { bots } from '@data/bots';
 import { site, inviteSteps, whyVanillate } from '@data/site';
 import { faqIndexUrl, faqItemsFrom, populatedFaqCategories } from '@data/faq';
@@ -60,9 +61,18 @@ const categories = [...new Set(bots.map((b) => b.category))];
 
   <!-- KATALOG PRODUK -->
   <section class="container-page pb-8">
-    <div class="grid gap-6 reveal">
-      {bots.map((bot) => <BotCard bot={bot} featured />)}
-    </div>
+    {bots.length > 0 ? (
+      <div class="grid gap-6 reveal">
+        {bots.map((bot) => <BotCard bot={bot} featured />)}
+      </div>
+    ) : (
+      <div class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-ink-900/15 dark:border-cream-100/15 px-6 py-14 text-center">
+        <Vani expression="sleeping" size="md" animation="subtle" alt="" />
+        <p class="text-ink-500 dark:text-cream-300/60">
+          Belum ada produk yang ditampilkan. Tambahkan lewat panel admin.
+        </p>
+      </div>
+    )}
   </section>
 
   <!-- CARA MENGUNDANG -->
@@ -143,7 +153,11 @@ const categories = [...new Set(bots.map((b) => b.category))];
   <section class="container-page pb-24">
     <div class="rounded-3xl bg-ink-900 dark:bg-ink-900 p-10 md:p-16 relative overflow-hidden reveal">
       <div class="aurora bg-amber-500/20 h-[300px] w-[300px] top-[-50px] right-[-50px]" aria-hidden="true"></div>
-      <div class="relative max-w-2xl">
+      <div class="relative grid gap-8 md:grid-cols-[auto_1fr] md:items-center">
+        <div class="hidden md:flex">
+          <Vani expression="point-right" size="sm" animation="subtle" alt="" />
+        </div>
+        <div class="max-w-2xl">
         <h2 class="font-display text-3xl md:text-5xl font-semibold tracking-tightest text-cream-50">
           {c.ctaTitle}
         </h2>
@@ -159,6 +173,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
             Gabung Discord Support
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
           </a>
+        </div>
         </div>
       </div>
     </div>

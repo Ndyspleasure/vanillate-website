@@ -9,6 +9,7 @@
 // seperti ini jauh lebih cepat daripada permintaan jaringan.
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Icon from '@components/Icon.astro';
+import Vani from '@components/mascot/Vani.astro';
 import { site } from '@data/site';
 import { url } from '@utils/url';
 import {
@@ -44,6 +45,8 @@ const topikPopuler = kategori
     <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
 
     <div class="container-page relative">
+      <div class="grid items-center gap-10 lg:grid-cols-[1fr_auto]">
+        <div class="min-w-0">
       <p class="eyebrow mb-6 animate-fade-up">FAQ</p>
       <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-4xl animate-fade-up">
         Semua panduan,<br />satu <span class="italic text-amber-600 dark:text-amber-500">tempat</span>.
@@ -79,12 +82,25 @@ const topikPopuler = kategori
           Selalu diperbarui
         </span>
       </div>
+        </div>
+        <div class="hidden lg:flex justify-self-end">
+          <Vani expression="thinking" size="lg" animation="subtle" alt="" />
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- HASIL PENCARIAN (muncul hanya saat mengetik) -->
   <section id="faq-hasil-wrap" class="container-page pb-8 hidden">
     <div id="faq-hasil" class="grid gap-3"></div>
+    <!-- State "tidak ditemukan": disembunyikan, di-toggle oleh skrip pencarian -->
+    <div id="faq-noresult" class="hidden flex-col items-center gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-6 py-12 text-center">
+      <Vani expression="thinking" size="md" animation="subtle" alt="" />
+      <div>
+        <p class="font-display text-lg font-semibold tracking-tightest">FAQ tidak ditemukan.</p>
+        <p class="mt-2 text-sm text-ink-500 dark:text-cream-300/60" data-noresult-hint>Coba gunakan kata kunci lainnya.</p>
+      </div>
+    </div>
   </section>
 
   <!-- KATEGORI -->
@@ -192,6 +208,8 @@ const topikPopuler = kategori
   const input = document.getElementById('faq-cari') as HTMLInputElement | null;
   const hasilWrap = document.getElementById('faq-hasil-wrap');
   const hasil = document.getElementById('faq-hasil');
+  const noResult = document.getElementById('faq-noresult');
+  const noResultHint = noResult?.querySelector<HTMLElement>('[data-noresult-hint]') ?? null;
   const jelajah = document.getElementById('faq-jelajah');
   const hitung = document.getElementById('faq-hitung');
   const sumber = document.getElementById('faq-index');
@@ -222,6 +240,8 @@ const topikPopuler = kategori
     if (!q) {
       hasilWrap.classList.add('hidden');
       jelajah.classList.remove('hidden');
+      noResult?.classList.add('hidden');
+      noResult?.classList.remove('flex');
       if (hitung) hitung.textContent = '';
       return;
     }
@@ -235,14 +255,16 @@ const topikPopuler = kategori
     hasilWrap.classList.remove('hidden');
 
     if (cocok.length === 0) {
-      hasil.innerHTML = `<div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-6 py-12 text-center">
-        <p class="font-display text-lg font-semibold tracking-tightest">FAQ tidak ditemukan.</p>
-        <p class="mt-2 text-sm text-ink-500 dark:text-cream-300/60">Coba gunakan kata kunci lainnya.</p>
-      </div>`;
+      hasil.innerHTML = '';
+      if (noResultHint) noResultHint.textContent = `Tidak ada hasil untuk “${qRaw.trim()}”. Coba kata kunci lain.`;
+      noResult?.classList.remove('hidden');
+      noResult?.classList.add('flex');
       if (hitung) hitung.textContent = `Tidak ada hasil untuk "${qRaw.trim()}".`;
       return;
     }
 
+    noResult?.classList.add('hidden');
+    noResult?.classList.remove('flex');
     hasil.innerHTML = cocok.slice(0, 24).map(kartu).join('');
     if (hitung) hitung.textContent = `${cocok.length} hasil untuk "${qRaw.trim()}".`;
   }

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import Vani from '@components/mascot/Vani.astro';
 import status from '@data/synced/_status.json';
 import version from '@data/synced/version.json';
 import changelog from '@data/synced/changelog.json';
@@ -56,15 +57,22 @@ const overallOk = s.ok === true || s.seeded === true;
   <section class="relative overflow-hidden pt-20 pb-10 md:pt-28">
     <div class="aurora bg-teal-500/20 h-[380px] w-[380px] top-[-100px] right-[6%]" aria-hidden="true"></div>
     <div class="container-page relative">
-      <p class="eyebrow mb-6 animate-fade-up">Status Data</p>
-      <h1 class="font-display font-semibold tracking-tightest text-[clamp(2rem,5.5vw,4rem)] leading-[1.03] max-w-4xl animate-fade-up">
-        Data website<br />selalu <span class="italic text-amber-600 dark:text-amber-500">sinkron</span> dengan repo.
-      </h1>
-      <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
-        Data game (harga shop, fitur, command, versi, changelog) memakai
-        <strong>repository GitHub sebagai sumber kebenaran</strong>. Setiap perubahan
-        di repo bot ditarik otomatis lalu website re-deploy — tanpa update manual.
-      </p>
+      <div class="grid items-center gap-10 lg:grid-cols-[1fr_auto]">
+        <div class="min-w-0">
+          <p class="eyebrow mb-6 animate-fade-up">Status Data</p>
+          <h1 class="font-display font-semibold tracking-tightest text-[clamp(2rem,5.5vw,4rem)] leading-[1.03] max-w-4xl animate-fade-up">
+            Data website<br />selalu <span class="italic text-amber-600 dark:text-amber-500">sinkron</span> dengan repo.
+          </h1>
+          <p class="mt-6 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed animate-fade-up" style="animation-delay: 0.1s">
+            Data game (harga shop, fitur, command, versi, changelog) memakai
+            <strong>repository GitHub sebagai sumber kebenaran</strong>. Setiap perubahan
+            di repo bot ditarik otomatis lalu website re-deploy — tanpa update manual.
+          </p>
+        </div>
+        <div class="hidden lg:flex justify-self-end">
+          <Vani expression={overallOk ? 'thumbsup' : 'oops'} size="lg" animation="subtle" alt="" />
+        </div>
+      </div>
     </div>
   </section>
 
