@@ -7,6 +7,7 @@ name: Sync konten dari Supabase
 #   • products.json     ← tabel `products` + media & rilis
 #   • pages.json        ← tabel `page_content`
 #   • faq.json          ← tabel `faq_categories` + `faqs` (seluruh panduan)
+#   • team.json         ← tabel `team_members`        (anggota tim aktif /team)
 # Lihat docs/ADMIN-CMS.md bagian 6 & 12, dan docs/PIPELINE-TERBIT.md untuk
 # perkiraan waktu tayang serta cara menerbitkan segera.
 #
@@ -75,7 +76,8 @@ jobs:
                   src/data/synced/partnership.json \
                   src/data/synced/products.json \
                   src/data/synced/pages.json \
-                  src/data/synced/faq.json
+                  src/data/synced/faq.json \
+                  src/data/synced/team.json
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "✓ Konten tidak berubah — lewati deploy."

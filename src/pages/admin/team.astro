@@ -1,0 +1,496 @@
+---
+// Admin — Team Management.
+//
+// CRUD anggota tim Vanillate Studio + unggah foto profil ke Supabase Storage
+// (bucket team-media). Data tersimpan ke tabel team_members, lalu ditarik saat
+// build (scripts/sync-content.mjs) ke halaman publik /team. Hanya anggota
+// berstatus 'active' yang tampil ke pengunjung; 'inactive' tetap tersimpan.
+//
+// Foto profil OPSIONAL: bila anggota tidak memakai foto custom, situs memakai
+// SVG default (Discord / WhatsApp / Instagram) yang mengikuti tema.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Team Management" active="team">
+  <AdminPageHeader
+    eyebrow="Studio"
+    title="Team Management"
+    description="Kelola anggota tim yang tampil di halaman /team. Tambah, edit, hapus, atur urutan, dan status aktif. Perubahan tampil di /team setelah build berikutnya."
+  />
+
+  <div id="team-root" class="px-6 lg:px-10 py-8 max-w-4xl">
+    <div id="list-view"></div>
+    <div id="editor-view" class="hidden"></div>
+    <p id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 hidden rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg z-50" role="status" aria-live="polite"></p>
+  </div>
+
+  <!-- Dialog konfirmasi hapus -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-[60]">
+    <div class="absolute inset-0 bg-ink-950/60 backdrop-blur-sm" data-confirm="cancel"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" class="w-full max-w-md rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 p-6 shadow-2xl">
+        <h2 id="confirm-title" class="font-display text-xl font-semibold tracking-tightest">Hapus anggota ini?</h2>
+        <p id="confirm-body" class="mt-2 text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Data anggota dan asset profil yang terkait akan dihapus dari Team.
+        </p>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" data-confirm="cancel" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Batal</button>
+          <button type="button" data-confirm="ok" class="rounded-xl bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-500 transition-colors">Hapus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { DEFAULT_PROFILES } from '@data/team';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+  const BTN = 'rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
+  const BTN2 = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors';
+
+  const BUCKET = 'team-media';
+  const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  const MAX_BYTES = 10 * 1024 * 1024; // 10 MB (sesuai batas bucket)
+
+  const PROFILE_OPTIONS: [string, string][] = [
+    ['custom', 'Upload Custom Image'],
+    ['discord', 'Discord'],
+    ['whatsapp', 'WhatsApp'],
+    ['instagram', 'Instagram'],
+  ];
+  const STATUS_OPTIONS: [string, string][] = [['active', 'Aktif'], ['inactive', 'Nonaktif']];
+
+  let bolehEdit = false;
+  let uid: string | null = null;
+  let current: any = null;         // anggota yang sedang diedit (null di daftar)
+  let daftar: any[] = [];          // cache daftar terurut, untuk reorder
+  let pendingFile: File | null = null;      // foto yang dipilih tapi belum tersimpan
+  let pendingPreviewUrl: string | null = null;
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const listView = () => $('list-view');
+  const editorView = () => $('editor-view');
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    void muatDaftar();
+    $('team-root').addEventListener('click', onClick);
+    $('team-root').addEventListener('change', onChange);
+  });
+
+  // ─── Util ────────────────────────────────────────────────────────────────────
+  function toast(pesan: string, ok = true) {
+    const t = $('toast');
+    t.textContent = pesan;
+    t.className = `fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg z-50 ${
+      ok ? 'bg-teal-600 text-white' : 'bg-red-600 text-white'
+    }`;
+    window.clearTimeout((toast as any)._t);
+    (toast as any)._t = window.setTimeout(() => t.classList.add('hidden'), 4000);
+  }
+  const safeName = (s: string) => s.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
+  const publicUrl = (path: string) => getSupabase()!.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  const nowISO = () => new Date().toISOString();
+  const cleanHandle = (s: string) => s.trim().replace(/^@+/, '');
+  const handleTampil = (s: string) => (cleanHandle(s) ? `@${cleanHandle(s)}` : '');
+
+  function initials(name: string): string {
+    return (
+      name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || 'V'
+    );
+  }
+
+  /** HTML avatar kecil untuk daftar & preview. `size` kelas Tailwind h-/w-. */
+  function avatarHtml(m: any, size = 'h-12 w-12', glyph = 'h-1/2 w-1/2', imgSrc?: string): string {
+    const base = `relative isolate overflow-hidden rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-gradient-to-b from-cream-100 to-cream-50 dark:from-ink-800 dark:to-ink-950 ${size}`;
+    const type = m.profile_type || 'discord';
+    const src = imgSrc ?? (type === 'custom' ? m.profile_image : '');
+    if (type === 'custom' && src) {
+      return `<div class="${base}"><img src="${esc(src)}" alt="" class="absolute inset-0 h-full w-full object-contain object-center p-1" /></div>`;
+    }
+    const def = (DEFAULT_PROFILES as any)[type];
+    if (def) {
+      return `<div class="${base} grid place-items-center"><svg viewBox="0 0 24 24" fill="currentColor" class="${glyph}" style="color:${def.color}" aria-hidden="true">${def.inner}</svg></div>`;
+    }
+    return `<div class="${base} grid place-items-center"><span class="font-display font-bold text-ink-900/80 dark:text-cream-50/90">${esc(initials(m.name || ''))}</span></div>`;
+  }
+
+  // ─── Daftar anggota ────────────────────────────────────────────────────────────
+  async function muatDaftar() {
+    current = null;
+    pendingFile = null;
+    if (pendingPreviewUrl) { URL.revokeObjectURL(pendingPreviewUrl); pendingPreviewUrl = null; }
+    editorView().classList.add('hidden');
+    const box = listView();
+    box.classList.remove('hidden');
+    box.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) { box.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+
+    const { data, error } = await supabase.from('team_members')
+      .select('id, name, discord_username, position, profile_image, profile_type, status, display_order')
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: true });
+    if (error) { box.innerHTML = stateBlock('error', pesanError(error)); return; }
+
+    daftar = (data ?? []) as any[];
+
+    const baris = (m: any, i: number) => {
+      const handle = handleTampil(m.discord_username || '');
+      const nonaktif = m.status !== 'active';
+      const naik = i > 0 ? '' : 'opacity-30 pointer-events-none';
+      const turun = i < daftar.length - 1 ? '' : 'opacity-30 pointer-events-none';
+      return `
+        <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4">
+          ${avatarHtml(m, 'h-12 w-12 flex-none', 'h-1/2 w-1/2')}
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="font-display font-semibold tracking-tightest truncate">${esc(m.name)}</p>
+              ${nonaktif ? '<span class="rounded-full bg-ink-500/15 text-ink-500 dark:text-cream-300/60 px-2 py-0.5 text-[0.65rem] font-mono uppercase tracking-wider">nonaktif</span>' : '<span class="rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 px-2 py-0.5 text-[0.65rem] font-mono uppercase tracking-wider">aktif</span>'}
+            </div>
+            <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60 truncate">${m.position ? esc(m.position) : '—'}${handle ? ' · ' + esc(handle) : ''}</p>
+          </div>
+          ${bolehEdit ? `
+            <div class="flex items-center gap-1">
+              <button type="button" title="Naikkan urutan" class="${BTN2} !px-2.5 ${naik}" data-action="naik" data-id="${esc(m.id)}">↑</button>
+              <button type="button" title="Turunkan urutan" class="${BTN2} !px-2.5 ${turun}" data-action="turun" data-id="${esc(m.id)}">↓</button>
+            </div>` : ''}
+          <button type="button" class="${BTN2}" data-action="edit" data-id="${esc(m.id)}">${bolehEdit ? 'Edit' : 'Lihat'}</button>
+        </div>`;
+    };
+
+    box.innerHTML = `
+      <div class="mb-6 flex items-center justify-between gap-3">
+        <p class="text-sm text-ink-600 dark:text-cream-200/80">${daftar.length} anggota. Hanya yang <strong>aktif</strong> tampil di <strong>/team</strong> setelah build berikutnya.</p>
+        ${bolehEdit ? `<button type="button" class="${BTN}" data-action="tambah">+ Tambah anggota</button>` : ''}
+      </div>
+      <div class="space-y-3">
+        ${daftar.length ? daftar.map(baris).join('') : stateBlock('empty', 'Belum ada anggota tim.')}
+      </div>`;
+  }
+
+  // ─── Editor ──────────────────────────────────────────────────────────────────
+  async function bukaEditor(id: string | null) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    pendingFile = null;
+    if (pendingPreviewUrl) { URL.revokeObjectURL(pendingPreviewUrl); pendingPreviewUrl = null; }
+
+    if (id) {
+      const { data, error } = await supabase.from('team_members').select('*').eq('id', id).maybeSingle();
+      if (error || !data) { toast(pesanError(error), false); return; }
+      current = data;
+    } else {
+      const maxOrder = daftar.reduce((mx, m) => Math.max(mx, Number(m.display_order) || 0), 0);
+      current = {
+        id: null, name: '', discord_username: '', position: '', description: '',
+        profile_image: '', profile_image_path: '', profile_type: 'discord',
+        profile_link: '', status: 'active', display_order: maxOrder + 1,
+      };
+    }
+    listView().classList.add('hidden');
+    editorView().classList.remove('hidden');
+    renderEditor();
+    window.scrollTo({ top: 0 });
+  }
+
+  function field(id: string, label: string, inner: string, hint = '') {
+    return `<div>
+      <label class="block text-sm font-medium mb-1.5" for="${id}">${esc(label)}</label>
+      ${inner}
+      ${hint ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(hint)}</p>` : ''}
+    </div>`;
+  }
+  const inp = (id: string, val: any, extra = '') => `<input id="${id}" value="${esc(val ?? '')}" ${extra} class="${INPUT}" />`;
+  const ta = (id: string, val: any, rows = 3, extra = '') => `<textarea id="${id}" rows="${rows}" ${extra} class="${INPUT}">${esc(val ?? '')}</textarea>`;
+  const sel = (id: string, val: any, opts: [string, string][]) =>
+    `<select id="${id}" class="${INPUT}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${val === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+
+  function renderEditor() {
+    const m = current;
+    const nuevo = !m.id;
+    const disabled = !bolehEdit;
+
+    editorView().innerHTML = `
+      <div class="mb-6 flex items-center justify-between gap-3">
+        <button type="button" class="${BTN2}" data-action="kembali">← Daftar anggota</button>
+        ${!nuevo && bolehEdit ? `<button type="button" class="rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-2 text-sm font-medium hover:bg-red-500/10 transition-colors" data-action="hapus-anggota">Hapus anggota</button>` : ''}
+      </div>
+
+      <h2 class="font-display text-2xl font-semibold tracking-tightest mb-6">${nuevo ? 'Tambah anggota' : esc(m.name)}</h2>
+
+      <div class="space-y-5 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${field('f-name', 'Nama', inp('f-name', m.name, 'maxlength="80"'))}
+          ${field('f-discord', 'Username Discord', inp('f-discord', m.discord_username, 'maxlength="60" placeholder="ndyspleasure"'), "Tanpa '@' — situs menambahkannya otomatis.")}
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${field('f-position', 'Posisi', inp('f-position', m.position, 'maxlength="80" placeholder="mis. Founder & AI Engineer"'))}
+          ${field('f-order', 'Urutan tampil', inp('f-order', m.display_order ?? 100, 'inputmode="numeric"'), 'Kecil = tampil lebih dulu.')}
+        </div>
+        ${field('f-description', 'Deskripsi (opsional)', ta('f-description', m.description, 3, 'maxlength="400"'), 'Kosongkan bila tidak perlu — kartu tidak akan menyisakan ruang kosong.')}
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${field('f-link', 'Link profil (opsional)', inp('f-link', m.profile_link, 'type="url" placeholder="https://…"'), 'Harus diawali http(s). Kosong = tombol profil tidak ditampilkan.')}
+          ${field('f-status', 'Status', sel('f-status', m.status || 'active', STATUS_OPTIONS), 'Nonaktif = tetap tersimpan tapi disembunyikan dari /team.')}
+        </div>
+
+        <!-- Foto profil -->
+        <div class="space-y-4 rounded-xl bg-ink-900/[0.03] dark:bg-cream-100/[0.03] p-4">
+          <p class="font-mono text-xs uppercase tracking-wider text-ink-500 dark:text-cream-300/60">Profile Image</p>
+          <div class="flex flex-wrap gap-x-6 gap-y-2">
+            ${PROFILE_OPTIONS.map(([v, l]) => `
+              <label class="flex items-center gap-2 text-sm font-medium">
+                <input type="radio" name="f-profile-type" value="${esc(v)}" ${(m.profile_type || 'discord') === v ? 'checked' : ''} ${disabled ? 'disabled' : ''} class="h-4 w-4 text-amber-500 focus:ring-amber-500" />
+                ${esc(l)}
+              </label>`).join('')}
+          </div>
+
+          <div class="flex flex-wrap items-start gap-4">
+            <div id="foto-preview" class="flex-none"></div>
+            <div id="foto-custom" class="min-w-[220px] flex-1 space-y-2">
+              ${bolehEdit ? `
+                <label class="block text-sm font-medium" for="f-file">Unggah gambar</label>
+                <input id="f-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="${INPUT}" />
+                <p class="text-xs text-ink-500 dark:text-cream-300/60 leading-relaxed">
+                  Prioritaskan <strong>PNG transparan</strong>. Format lain (JPG, WEBP, GIF) tetap didukung.
+                  Maks 10&nbsp;MB. Preview muncul di samping; foto tersimpan saat kamu klik <strong>Simpan</strong>.
+                  Background gambar tidak diubah otomatis.
+                </p>
+                ${m.profile_image ? `<button type="button" class="text-sm text-red-600 dark:text-red-400 hover:underline" data-action="hapus-foto">Hapus foto tersimpan</button>` : ''}
+              ` : '<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat.</p>'}
+            </div>
+          </div>
+        </div>
+
+        ${bolehEdit ? `<div class="flex items-center gap-3 pt-2">
+          <button type="button" class="${BTN}" data-action="simpan">${nuevo ? 'Tambah anggota' : 'Simpan perubahan'}</button>
+        </div>` : '<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat.</p>'}
+      </div>
+    `;
+    if (disabled) editorView().querySelectorAll('input,textarea,select').forEach((n) => ((n as any).disabled = true));
+    renderPreview();
+    syncCustomVisibility();
+  }
+
+  /** Nilai profile_type yang sedang dipilih di form. */
+  function selectedType(): string {
+    const el = editorView().querySelector('input[name="f-profile-type"]:checked') as HTMLInputElement | null;
+    return el?.value || current?.profile_type || 'discord';
+  }
+
+  function renderPreview() {
+    const box = document.getElementById('foto-preview');
+    if (!box) return;
+    const type = selectedType();
+    // Preview memakai: file yang baru dipilih → foto tersimpan → SVG default → monogram.
+    const src = type === 'custom' ? (pendingPreviewUrl || current?.profile_image || '') : '';
+    box.innerHTML = avatarHtml({ ...current, profile_type: type }, 'h-24 w-24', 'h-2/5 w-2/5', src);
+  }
+
+  function syncCustomVisibility() {
+    const custom = selectedType() === 'custom';
+    const box = document.getElementById('foto-custom');
+    if (box) box.classList.toggle('hidden', !custom);
+  }
+
+  function kumpulkan() {
+    const v = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value?.trim() ?? '';
+    const orderN = parseInt(v('f-order'), 10);
+    const status = v('f-status') === 'inactive' ? 'inactive' : 'active';
+    return {
+      name: v('f-name'),
+      discord_username: cleanHandle(v('f-discord')) || null,
+      position: v('f-position') || null,
+      description: v('f-description') || null,
+      profile_link: v('f-link') || null,
+      profile_type: selectedType(),
+      status,
+      display_order: Number.isFinite(orderN) ? orderN : 100,
+    };
+  }
+
+  async function simpan() {
+    if (!bolehEdit) return;
+    const patch = kumpulkan();
+    if (!patch.name) { toast('Nama wajib diisi.', false); return; }
+    if (patch.profile_link && !/^https?:\/\//i.test(patch.profile_link)) {
+      toast('Link profil harus diawali http:// atau https://', false); return;
+    }
+    const supabase = getSupabase()!;
+    const meta = { ...patch, updated_at: nowISO(), updated_by: uid };
+
+    let memberId = current?.id as string | null;
+    if (memberId) {
+      const { error } = await supabase.from('team_members').update(meta).eq('id', memberId);
+      if (error) { toast(pesanError(error), false); return; }
+    } else {
+      const { data, error } = await supabase.from('team_members').insert(meta).select('id').maybeSingle();
+      if (error) { toast(pesanError(error), false); return; }
+      memberId = data?.id ?? null;
+      if (!memberId) { toast('Gagal membuat anggota.', false); return; }
+    }
+
+    // Unggah foto yang tertunda hanya bila tipe custom.
+    if (patch.profile_type === 'custom' && pendingFile) {
+      const ok = await uploadFoto(memberId);
+      if (!ok) { await bukaEditor(memberId); return; } // baris sudah tersimpan; tampilkan lagi
+    }
+
+    toast('Tersimpan.');
+    await muatDaftar();
+  }
+
+  async function uploadFoto(memberId: string): Promise<boolean> {
+    const file = pendingFile;
+    if (!file) return true;
+    if (!ALLOWED_TYPES.includes(file.type)) { toast('Format tidak didukung. Pakai PNG, JPG, WEBP, atau GIF.', false); return false; }
+    if (file.size > MAX_BYTES) { toast('Ukuran melebihi 10 MB.', false); return false; }
+
+    const supabase = getSupabase()!;
+    const oldPath = String(current?.profile_image_path ?? '');
+    const path = `${memberId}/${Date.now()}-${safeName(file.name)}`;
+    const up = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+    if (up.error) { toast(up.error.message, false); return false; }
+
+    const publik = publicUrl(path);
+    const { error } = await supabase.from('team_members')
+      .update({ profile_image: publik, profile_image_path: path, updated_at: nowISO(), updated_by: uid })
+      .eq('id', memberId);
+    if (error) { toast(pesanError(error), false); return false; }
+
+    // Buang berkas lama setelah kolom menunjuk yang baru.
+    if (oldPath && oldPath !== path) await supabase.storage.from(BUCKET).remove([oldPath]);
+    pendingFile = null;
+    return true;
+  }
+
+  async function hapusFoto() {
+    if (!bolehEdit || !current?.id) return;
+    if (!current.profile_image && !current.profile_image_path) return;
+    const supabase = getSupabase()!;
+    const oldPath = String(current.profile_image_path ?? '');
+    const { error } = await supabase.from('team_members')
+      .update({ profile_image: null, profile_image_path: null, updated_at: nowISO(), updated_by: uid })
+      .eq('id', current.id);
+    if (error) { toast(pesanError(error), false); return; }
+    if (oldPath) await supabase.storage.from(BUCKET).remove([oldPath]);
+    current.profile_image = '';
+    current.profile_image_path = '';
+    pendingFile = null;
+    if (pendingPreviewUrl) { URL.revokeObjectURL(pendingPreviewUrl); pendingPreviewUrl = null; }
+    toast('Foto dihapus.');
+    renderEditor();
+  }
+
+  async function hapusAnggota() {
+    if (!bolehEdit || !current?.id) return;
+    const ok = await konfirmasi();
+    if (!ok) return;
+    const supabase = getSupabase()!;
+
+    // Buang seluruh asset foto anggota ini dari Storage (bila ada).
+    try {
+      const { data: files } = await supabase.storage.from(BUCKET).list(current.id);
+      if (files?.length) await supabase.storage.from(BUCKET).remove(files.map((f) => `${current.id}/${f.name}`));
+    } catch (_) { /* lanjut hapus baris meski pembersihan storage gagal */ }
+    if (current.profile_image_path) await supabase.storage.from(BUCKET).remove([current.profile_image_path]);
+
+    const { error } = await supabase.from('team_members').delete().eq('id', current.id);
+    if (error) { toast(pesanError(error), false); return; }
+    toast('Anggota dihapus.');
+    await muatDaftar();
+  }
+
+  // ─── Urutan ────────────────────────────────────────────────────────────────────
+  async function pindah(id: string, dir: -1 | 1) {
+    if (!bolehEdit) return;
+    const idx = daftar.findIndex((m) => m.id === id);
+    const target = idx + dir;
+    if (idx < 0 || target < 0 || target >= daftar.length) return;
+
+    // Susun ulang urutan lalu beri display_order berurutan 1..n; hanya baris yang
+    // berubah yang ditulis, jadi tidak ada penomoran ganda meski data awal seri.
+    const urut = [...daftar];
+    [urut[idx], urut[target]] = [urut[target], urut[idx]];
+
+    const supabase = getSupabase()!;
+    const updates = urut
+      .map((m, i) => ({ id: m.id, want: i + 1, now: Number(m.display_order) }))
+      .filter((u) => u.want !== u.now)
+      .map((u) => supabase.from('team_members').update({ display_order: u.want, updated_at: nowISO(), updated_by: uid }).eq('id', u.id));
+
+    const hasil = await Promise.all(updates);
+    const gagal = hasil.find((r: any) => r.error);
+    if (gagal) { toast(pesanError((gagal as any).error), false); return; }
+    await muatDaftar();
+  }
+
+  // ─── Dialog konfirmasi ──────────────────────────────────────────────────────────
+  let resolveKonfirmasi: ((v: boolean) => void) | null = null;
+  function konfirmasi(): Promise<boolean> {
+    const modal = $('confirm-modal');
+    modal.classList.remove('hidden');
+    return new Promise<boolean>((resolve) => { resolveKonfirmasi = resolve; });
+  }
+  function tutupKonfirmasi(v: boolean) {
+    $('confirm-modal').classList.add('hidden');
+    resolveKonfirmasi?.(v);
+    resolveKonfirmasi = null;
+  }
+  $('confirm-modal').addEventListener('click', (e) => {
+    const el = (e.target as HTMLElement).closest('[data-confirm]') as HTMLElement | null;
+    if (!el) return;
+    tutupKonfirmasi(el.dataset.confirm === 'ok');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('confirm-modal').classList.contains('hidden')) tutupKonfirmasi(false);
+  });
+
+  // ─── Delegasi event ──────────────────────────────────────────────────────────
+  function onClick(e: Event) {
+    const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+    if (!btn) return;
+    const a = btn.dataset.action;
+    if (a === 'tambah') return void bukaEditor(null);
+    if (a === 'edit') return void bukaEditor(btn.dataset.id!);
+    if (a === 'kembali') return void muatDaftar();
+    if (a === 'simpan') return void simpan();
+    if (a === 'hapus-anggota') return void hapusAnggota();
+    if (a === 'hapus-foto') return void hapusFoto();
+    if (a === 'naik') return void pindah(btn.dataset.id!, -1);
+    if (a === 'turun') return void pindah(btn.dataset.id!, 1);
+  }
+
+  function onChange(e: Event) {
+    const el = e.target as HTMLElement;
+    if ((el as HTMLInputElement).name === 'f-profile-type') {
+      renderPreview();
+      syncCustomVisibility();
+      return;
+    }
+    if (el.id === 'f-file') {
+      const file = (el as HTMLInputElement).files?.[0] || null;
+      if (pendingPreviewUrl) { URL.revokeObjectURL(pendingPreviewUrl); pendingPreviewUrl = null; }
+      pendingFile = null;
+      if (file) {
+        if (!ALLOWED_TYPES.includes(file.type)) { toast('Format tidak didukung. Pakai PNG, JPG, WEBP, atau GIF.', false); (el as HTMLInputElement).value = ''; return; }
+        if (file.size > MAX_BYTES) { toast('Ukuran melebihi 10 MB.', false); (el as HTMLInputElement).value = ''; return; }
+        pendingFile = file;
+        pendingPreviewUrl = URL.createObjectURL(file);
+      }
+      renderPreview();
+    }
+  }
+
+  // Ambil uid sesi untuk kolom updated_by.
+  (async () => {
+    const supabase = getSupabase();
+    if (supabase) uid = (await supabase.auth.getSession()).data.session?.user.id ?? null;
+  })();
+</script>
