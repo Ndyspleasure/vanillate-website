@@ -1,15 +1,26 @@
 {
   "members": [
     {
-      "id": "seed-andi-kurniawan",
+      "id": "18df4628-0e27-4287-a040-043244f7685c",
       "name": "Andi Kurniawan",
       "discordUsername": "ndyspleasure",
       "position": "Founder & AI Engineer",
-      "description": "Pendiri sekaligus penggerak harian Vanillate Studio, dari arah produk sampai kode yang menjalankannya.",
-      "profileImage": "",
-      "profileType": "discord",
-      "profileLink": "",
+      "description": "Pendiri sekaligus penggerak harian Vanillate Studio, dari arah produk sampai baris kode yang menjalankannya.",
+      "profileImage": "/founder/andi-kurniawan.png",
+      "profileType": "custom",
+      "profileLink": "https://personal.andikurniawan.vanillate.id/",
       "displayOrder": 1
+    },
+    {
+      "id": "4e8e0411-e4af-4f75-8c43-23185bb5cfb8",
+      "name": "Vani",
+      "discordUsername": "",
+      "position": "Maskot & Staff Studio",
+      "description": "Wajah ramah Vanillate Studio. Vani menemani kamu di setiap sudut ekosistem, dari halaman ini sampai kanal komunitas.",
+      "profileImage": "/VaniStaff.jpg",
+      "profileType": "custom",
+      "profileLink": "",
+      "displayOrder": 2
     }
   ]
 }
