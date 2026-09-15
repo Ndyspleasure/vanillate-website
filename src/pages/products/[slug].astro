@@ -4,6 +4,7 @@ import Button from '@components/Button.astro';
 import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
 import BotTag from '@components/BotTag.astro';
+import BotAvatar from '@components/BotAvatar.astro';
 import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, latestRelease, formatBytes, productImage, badgeClass } from '@data/bots';
 import FAQLink from '@components/FAQLink.astro';
 import { faqCategoryPath, faqCategoryUrl, faqCategoryFor, faqItems, faqsByCategory } from '@data/faq';
@@ -33,7 +34,6 @@ const otherBots = getOtherBots(bot.slug, 3);
 const isAndroid = bot.platform === 'android';
 const release = latestRelease(bot);
 const screenshots = bot.media.filter((m) => m.kind === 'screenshot' || m.kind === 'banner');
-const heroThumb = productImage(bot.thumbnail);
 
 // Langkah pemasangan: dari CMS bila diisi, selain itu memakai langkah bawaan.
 const defaultInstallSteps = [
@@ -69,23 +69,7 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
       <div class="flex items-start gap-4 mb-6">
         <!-- Ikon jadi lapisan dasar; gambar menutupinya bila ada. Gambar yang
              gagal dimuat membuang dirinya sendiri sehingga ikon kembali tampil. -->
-        <span
-          class="relative flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-2xl"
-          style={`background: ${bot.color}20; color: ${bot.color};`}
-          aria-hidden="true"
-        >
-          <Icon name={bot.icon} class="h-8 w-8" />
-          {heroThumb && (
-            <img
-              src={heroThumb}
-              alt=""
-              class="absolute inset-0 h-full w-full object-cover"
-              loading="eager"
-              decoding="async"
-              onerror="this.remove()"
-            />
-          )}
-        </span>
+        <BotAvatar bot={bot} class="h-16 w-16 rounded-2xl" iconClass="h-8 w-8" eager />
         <div>
           <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60 mb-1">
             {bot.category}

@@ -279,6 +279,21 @@ export function productImage(src: string | undefined | null, small = false): str
   return url(small ? s.replace(/\.png$/, '-256.png') : s);
 }
 
+// Avatar animasi (PNG "profil hidup") per produk. Sengaja ditaruh di kode, bukan
+// di data tersinkron (products.json ditimpa tiap sync), supaya penetapan ini
+// tidak hilang. Kosong → produk memakai avatar statis biasa. Dipakai bersama
+// fallback <picture> yang menghormati prefers-reduced-motion (statis saat
+// reduced motion, animasi saat tidak).
+const LOCAL_ANIMATED: Record<string, string> = {
+  'sambung-kata': '/bots/sambung-kata.webp',
+};
+
+/** URL avatar animasi (WebP) produk bila tersedia, atau null. */
+export function productAnimated(slug: string): string | null {
+  const p = LOCAL_ANIMATED[slug];
+  return p ? url(p) : null;
+}
+
 /** Kelas Tailwind untuk badge produk. Nada dipetakan di sini, bukan disimpan di DB. */
 export function badgeClass(tone: BadgeTone): string {
   switch (tone) {

@@ -1,0 +1,59 @@
+---
+// Avatar produk (foto profil bot). Selalu ada lapisan ikon aksen sebagai dasar;
+// gambar menutupinya bila tersedia, dan <img> yang gagal dimuat membuang dirinya
+// sendiri sehingga ikon kembali muncul (tidak pernah ada kotak kosong).
+//
+// Bila produk punya avatar animasi (productAnimated), dipakai <picture> supaya:
+//   • prefers-reduced-motion → gambar STATIS (tidak bergerak)
+//   • selainnya              → WebP animasi ("profil hidup")
+// Tanpa JavaScript, murni CSS media query.
+import type { Bot } from '@data/bots';
+import { productImage, productAnimated } from '@data/bots';
+import Icon from '@components/Icon.astro';
+
+export interface Props {
+  bot: Bot;
+  /** Ukuran & radius kotak avatar (kelas Tailwind), mis. 'h-11 w-11 rounded-xl'. */
+  class?: string;
+  /** Ukuran ikon fallback, mis. 'h-6 w-6'. */
+  iconClass?: string;
+  /** Pakai varian -256 untuk gambar statis (kartu kecil). */
+  small?: boolean;
+  eager?: boolean;
+}
+
+const { bot, class: className = '', iconClass = 'h-6 w-6', small = false, eager = false } = Astro.props;
+const staticSrc = productImage(bot.thumbnail, small);
+const animated = productAnimated(bot.slug);
+const loading = eager ? 'eager' : 'lazy';
+---
+
+<span
+  class:list={['relative flex flex-none items-center justify-center overflow-hidden', className]}
+  style={`background: ${bot.color}20; color: ${bot.color};`}
+  aria-hidden="true"
+>
+  <Icon name={bot.icon} class={iconClass} />
+  {animated && staticSrc ? (
+    <picture class="absolute inset-0 block h-full w-full">
+      <source srcset={staticSrc} media="(prefers-reduced-motion: reduce)" />
+      <img
+        src={animated}
+        alt=""
+        class="h-full w-full object-cover"
+        loading={loading}
+        decoding="async"
+        onerror="this.remove()"
+      />
+    </picture>
+  ) : staticSrc ? (
+    <img
+      src={staticSrc}
+      alt=""
+      class="absolute inset-0 h-full w-full object-cover"
+      loading={loading}
+      decoding="async"
+      onerror="this.remove()"
+    />
+  ) : null}
+</span>

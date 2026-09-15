@@ -32,6 +32,8 @@ export const site = {
 export const nav = [
   { label: 'Beranda', href: '/' },
   { label: 'Produk', href: '/products' },
+  { label: 'FAQ', href: '/faq' },
+  { label: 'Changelog', href: '/changelog' },
   { label: 'Tentang', href: '/about' },
   { label: 'Support', href: '/support' },
 ];

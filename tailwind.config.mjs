@@ -49,7 +49,9 @@ export default {
       },
       animation: {
         'aurora-slow': 'aurora 18s ease-in-out infinite',
-        'fade-up': 'fadeUp 0.6s ease-out both',
+        // Entrance halus (easeOutExpo) — sama dengan bahasa gerak komponen lain
+        // supaya kemunculan tidak terasa kaku/patah.
+        'fade-up': 'fadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) both',
         // Animasi highlight event di beranda. Semua otomatis dinonaktifkan
         // saat prefers-reduced-motion (lihat global.css).
         float: 'float 3.6s ease-in-out infinite',
@@ -63,7 +65,7 @@ export default {
           '50%': { transform: 'translate(2%, -2%) scale(1.05)' },
         },
         fadeUp: {
-          from: { opacity: '0', transform: 'translateY(12px)' },
+          from: { opacity: '0', transform: 'translateY(16px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
         // Ikon event mengambang naik-turun halus.
