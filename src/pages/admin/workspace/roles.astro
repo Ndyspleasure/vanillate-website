@@ -26,6 +26,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     newWorkspaceId, PERMISSION_CATEGORIES, SCOPED_PERMISSIONS, PERMISSION_SCOPES,
     SCOPE_LABEL, WILDCARD_PERMISSION, permissionLabel,
   } from '@/lib/workspace-admin';
+  import { wsIcon } from '@/lib/workspace-icons';
 
   let bolehEdit = false;
   const INPUT = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
@@ -45,7 +46,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const dis = bolehEdit ? '' : 'disabled';
     return PERMISSION_CATEGORIES.map((c) => `
       <details class="rounded-lg border border-ink-900/10 dark:border-cream-100/10">
-        <summary class="cursor-pointer px-3 py-2 text-sm font-medium">${c.emoji} ${esc(c.label)} <span class="text-xs text-ink-500 dark:text-cream-300/60">(${c.permissions.filter((p) => perms.includes(p)).length}/${c.permissions.length})</span></summary>
+        <summary class="cursor-pointer px-3 py-2 text-sm font-medium flex items-center gap-2"><span class="text-ink-500 dark:text-cream-300/70">${wsIcon(c.icon, 'h-4 w-4')}</span>${esc(c.label)} <span class="text-xs text-ink-500 dark:text-cream-300/60">(${c.permissions.filter((p) => perms.includes(p)).length}/${c.permissions.length})</span></summary>
         <div class="px-3 pb-3 space-y-1.5">
           ${c.permissions.map((p) => {
             const scoped = SCOPED_PERMISSIONS.includes(p);

@@ -11,35 +11,35 @@
 export interface PermCategory {
   key: string;
   label: string;
-  emoji: string;
+  icon: string;   // nama ikon (lihat workspace-icons.ts), bukan emoji
   permissions: string[];
 }
 
 /** Kategori izin (mengikuti src/core/permissionMeta.ts di bot). */
 export const PERMISSION_CATEGORIES: PermCategory[] = [
-  { key: 'umum', label: 'Umum', emoji: '🏠', permissions: ['dashboard.access', 'workspace.manage'] },
-  { key: 'task', label: 'Pekerjaan', emoji: '📋', permissions: [
+  { key: 'umum', label: 'Umum', icon: 'home', permissions: ['dashboard.access', 'workspace.manage'] },
+  { key: 'task', label: 'Pekerjaan', icon: 'clipboard', permissions: [
     'task.view', 'task.view_all', 'task.create', 'task.edit', 'task.delete', 'task.assign',
     'task.change_deadline', 'task.change_priority', 'task.complete', 'task.cancel',
     'task.manage_absolute', 'task.review',
   ] },
-  { key: 'schedule', label: 'Jadwal', emoji: '📅', permissions: [
+  { key: 'schedule', label: 'Jadwal', icon: 'calendar', permissions: [
     'schedule.view', 'schedule.create', 'schedule.edit', 'schedule.assign', 'holiday.manage',
   ] },
-  { key: 'attendance', label: 'Absensi', emoji: '🕐', permissions: [
+  { key: 'attendance', label: 'Absensi', icon: 'clock', permissions: [
     'attendance.view_self', 'attendance.view_team', 'attendance.edit', 'attendance.approve_correction',
   ] },
-  { key: 'project', label: 'Proyek', emoji: '📁', permissions: [
+  { key: 'project', label: 'Proyek', icon: 'folder', permissions: [
     'project.view', 'project.create', 'project.edit', 'project.delete',
   ] },
-  { key: 'okr', label: 'Target/OKR', emoji: '🎯', permissions: ['okr.view', 'okr.manage'] },
-  { key: 'team', label: 'Tim', emoji: '👥', permissions: ['team.view', 'team.manage'] },
-  { key: 'role', label: 'Role & Anggota', emoji: '🛡️', permissions: ['role.manage', 'member.manage'] },
-  { key: 'approval', label: 'Persetujuan', emoji: '📝', permissions: ['approval.request', 'approval.decide'] },
-  { key: 'document', label: 'Dokumen', emoji: '📄', permissions: ['document.view', 'document.manage'] },
-  { key: 'report', label: 'Laporan', emoji: '📊', permissions: ['report.view', 'report.view_team', 'report.staff_stats'] },
-  { key: 'notif', label: 'Notifikasi & Audit', emoji: '🔔', permissions: ['notification.broadcast', 'audit.view'] },
-  { key: 'developer', label: 'Developer', emoji: '🧑‍💻', permissions: [
+  { key: 'okr', label: 'Target/OKR', icon: 'target', permissions: ['okr.view', 'okr.manage'] },
+  { key: 'team', label: 'Tim', icon: 'users', permissions: ['team.view', 'team.manage'] },
+  { key: 'role', label: 'Role & Anggota', icon: 'shield', permissions: ['role.manage', 'member.manage'] },
+  { key: 'approval', label: 'Persetujuan', icon: 'file-check', permissions: ['approval.request', 'approval.decide'] },
+  { key: 'document', label: 'Dokumen', icon: 'file-text', permissions: ['document.view', 'document.manage'] },
+  { key: 'report', label: 'Laporan', icon: 'bar-chart', permissions: ['report.view', 'report.view_team', 'report.staff_stats'] },
+  { key: 'notif', label: 'Notifikasi & Audit', icon: 'bell', permissions: ['notification.broadcast', 'audit.view'] },
+  { key: 'developer', label: 'Developer', icon: 'code', permissions: [
     'developer.access', 'developer.workspace.manage', 'developer.staff.manage', 'developer.welcome.manage',
     'developer.role.manage', 'developer.permission.manage', 'developer.notification.manage',
     'developer.task.manage', 'developer.schedule.manage', 'developer.automation.manage',
