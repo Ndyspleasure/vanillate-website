@@ -120,38 +120,13 @@ function toMember(r: RawMember, i: number): TeamMember {
 
 const mentah = ((teamData as { members?: RawMember[] }).members ?? []) as RawMember[];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Vani — maskot & staff resmi Vanillate Studio.
-//
-// Sengaja DIDEFINISIKAN DI KODE, bukan di data tersinkron (team.json ditimpa
-// tiap sync), supaya penetapan ini tidak pernah hilang. Ini elemen brand
-// permanen — sejalan dengan profil Founder (src/data/founder.ts) dan pose maskot
-// (LOCAL_ANIMATED di src/data/bots.ts) yang juga dipatok di kode. Roster tim
-// manusia tetap sepenuhnya dikelola dari CMS; hanya maskot yang dipatok di sini.
-//
-// Fotonya aset repo (public/VaniStaff.jpg), jadi profileType 'custom' dengan
-// path lokal — url() di komponen menanganinya sama seperti path publik lain.
-// ─────────────────────────────────────────────────────────────────────────────
-export const MASCOT_MEMBER: TeamMember = {
-  id: 'vani-mascot',
-  name: 'Vani',
-  discordUsername: '',
-  position: 'Maskot & Staff Studio',
-  description:
-    'Wajah ramah Vanillate Studio. Vani menemani kamu di setiap sudut ekosistem, dari halaman ini sampai kanal komunitas — penanda bahwa yang kamu pakai memang buatan orang yang sama.',
-  profileImage: '/VaniStaff.jpg',
-  profileType: 'custom',
-  profileLink: '',
-  displayOrder: 9999,
-};
-
-// Daftar publik anggota tim: roster dari CMS (sudah difilter 'active' & diurut
-// di sisi sync; diurut ulang di sini agar tetap benar meski sumbernya tak urut),
-// lalu maskot selalu ditempatkan paling akhir.
-export const team: TeamMember[] = [
-  ...mentah
-    .map(toMember)
-    .filter((m) => m.name)
-    .sort((a, b) => a.displayOrder - b.displayOrder),
-  MASCOT_MEMBER,
-];
+// Daftar publik anggota tim — SELURUHNYA dari CMS (termasuk Founder & maskot
+// Vani), tanpa satu pun anggota yang dipatok di kode. Sudah difilter 'active' &
+// diurut di sisi sync; pengurutan diulang di sini agar tetap benar meski
+// sumbernya tak urut. Foto anggota boleh berupa aset repo (mis. /VaniStaff.jpg,
+// /founder/andi-kurniawan.png) atau hasil unggahan ke Storage — keduanya
+// ditangani sama oleh url() di komponen.
+export const team: TeamMember[] = mentah
+  .map(toMember)
+  .filter((m) => m.name)
+  .sort((a, b) => a.displayOrder - b.displayOrder);
