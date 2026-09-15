@@ -1,0 +1,138 @@
+---
+// Konfigurasi Sistem Vanillate Workspace — singleton workspace_settings.
+// Eskalasi, reminder, toleransi, daily brief, channel pengumuman.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Konfigurasi Sistem · Workspace" active="ws-settings">
+  <AdminPageHeader
+    eyebrow="Vanillate Workspace"
+    title="Konfigurasi Sistem"
+    description="Reminder, toleransi keterlambatan, daily brief, eskalasi, dan notifikasi wajib. Nilai angka tetap divalidasi ulang oleh bot."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-2xl">
+    <form id="ws-form" class="space-y-6">
+      <div id="ws-body" class="space-y-5"></div>
+      <div id="ws-aksi" class="hidden flex-wrap items-center gap-3">
+        <button type="submit" id="ws-save" class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">Simpan perubahan</button>
+        <p id="ws-pesan" class="text-sm" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { parseMinutes, NOTIFICATION_TYPES } from '@/lib/workspace-admin';
+
+  let bolehEdit = false;
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+
+  document.addEventListener('admin:ready', (e) => {
+    bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
+    void muat();
+  });
+
+  function field(label: string, id: string, value: string, help = '', type = 'text'): string {
+    return `<div>
+      <label for="${id}" class="block text-sm font-medium mb-1.5">${esc(label)}</label>
+      <input type="${type}" id="${id}" value="${esc(value)}" class="${INPUT}" />
+      ${help ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(help)}</p>` : ''}
+    </div>`;
+  }
+
+  async function muat() {
+    const body = document.getElementById('ws-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+
+    const { data, error } = await supabase
+      .from('workspace_settings')
+      .select('*')
+      .eq('id', 'workspace')
+      .maybeSingle();
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data) { body.innerHTML = stateBlock('empty', 'Baris konfigurasi belum ada. Jalankan supabase/workspace-schema.sql.'); return; }
+
+    const mandatory: string[] = Array.isArray(data.mandatory_notification_types) ? data.mandatory_notification_types : [];
+    body.innerHTML = `
+      ${field('Pengingat deadline (menit, pisah koma)', 's-reminders', (data.default_reminder_offsets || []).join(', '), 'Mis. 1440, 180, 60 = 24 jam, 3 jam, 1 jam sebelum deadline.')}
+      ${field('Pengingat absensi (menit sebelum jadwal)', 's-att', (data.attendance_reminder_offsets || []).join(', '), 'Mis. 30, 15.')}
+      ${field('Toleransi keterlambatan default (menit)', 's-tol', String(data.default_late_tolerance_minutes ?? 10), '', 'number')}
+      ${field('Jam Daily Brief (HH:mm)', 's-brief', data.daily_brief_time ?? '08:00', '', 'text')}
+      ${field('Channel pengumuman (ID Discord)', 's-announce', data.announce_channel_id ?? '', 'ID channel teks Discord (opsional).')}
+      <div>
+        <p class="block text-sm font-medium mb-2">Notifikasi wajib (tak bisa dimatikan pengguna)</p>
+        <div class="grid grid-cols-2 gap-2">
+          ${NOTIFICATION_TYPES.map((t) => `
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" data-notif="${esc(t)}" ${mandatory.includes(t) ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+              <span class="font-mono text-xs">${esc(t)}</span>
+            </label>`).join('')}
+        </div>
+      </div>
+      <div>
+        <label for="s-escalation" class="block text-sm font-medium mb-1.5">Aturan eskalasi (JSON)</label>
+        <textarea id="s-escalation" rows="4" class="${INPUT} font-mono text-xs">${esc(JSON.stringify(data.escalation_rules ?? [], null, 2))}</textarea>
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Array: [{ "afterMinutes": 60, "notify": ["manager"], "message": "…" }]. Target: responsible | manager | coordinator | project_owner.</p>
+      </div>`;
+
+    document.getElementById('ws-aksi')!.classList.remove('hidden');
+    if (!bolehEdit) {
+      body.querySelectorAll('input, textarea').forEach((el) => ((el as HTMLInputElement).disabled = true));
+      (document.getElementById('ws-save') as HTMLButtonElement).disabled = true;
+      document.getElementById('ws-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
+    }
+  }
+
+  document.getElementById('ws-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!bolehEdit) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const btn = document.getElementById('ws-save') as HTMLButtonElement;
+    const pesan = document.getElementById('ws-pesan')!;
+    const val = (id: string) => (document.getElementById(id) as HTMLInputElement).value.trim();
+
+    let escalation: unknown;
+    try {
+      escalation = JSON.parse(val('s-escalation') || '[]');
+      if (!Array.isArray(escalation)) throw new Error('bukan array');
+    } catch {
+      pesan.textContent = 'Aturan eskalasi harus JSON array yang valid.';
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+    const brief = val('s-brief');
+    if (!/^\d{1,2}:\d{2}$/.test(brief)) {
+      pesan.textContent = 'Jam Daily Brief harus format HH:mm.';
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Menyimpan…'; pesan.textContent = ''; pesan.className = 'text-sm';
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+    const mandatory = Array.from(document.querySelectorAll<HTMLInputElement>('[data-notif]:checked')).map((el) => el.dataset.notif);
+
+    const tol = parseInt(val('s-tol'), 10);
+    const { error } = await supabase.from('workspace_settings').update({
+      default_reminder_offsets: parseMinutes(val('s-reminders')),
+      attendance_reminder_offsets: parseMinutes(val('s-att')),
+      default_late_tolerance_minutes: Number.isFinite(tol) && tol >= 0 ? tol : 10,
+      daily_brief_time: brief,
+      announce_channel_id: val('s-announce') || null,
+      mandatory_notification_types: mandatory,
+      escalation_rules: escalation,
+      updated_at: new Date().toISOString(),
+      updated_by: uid,
+    }).eq('id', 'workspace');
+
+    if (error) { pesan.textContent = pesanError(error); pesan.className = 'text-sm text-red-600 dark:text-red-400'; }
+    else { pesan.textContent = 'Tersimpan. Bot menerapkannya dalam beberapa menit.'; pesan.className = 'text-sm text-teal-700 dark:text-teal-300'; }
+    btn.disabled = false; btn.textContent = 'Simpan perubahan';
+  });
+</script>

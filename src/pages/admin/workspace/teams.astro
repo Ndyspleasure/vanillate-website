@@ -1,0 +1,113 @@
+---
+// Tim Vanillate Workspace — tabel workspace_teams (definisi saja).
+// Keanggotaan (member→tim) tetap dikelola bot secara operasional.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Tim · Workspace" active="ws-teams">
+  <AdminPageHeader
+    eyebrow="Vanillate Workspace"
+    title="Tim"
+    description="Definisi tim & ketua. Keanggotaan tim tetap dikelola dari bot (operasional) dan tidak diubah dari sini."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-3xl space-y-5">
+    <button type="button" id="ws-add" class="hidden rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">+ Tambah tim</button>
+    <div id="ws-body" class="space-y-3"></div>
+    <p id="ws-pesan" class="text-sm" role="status" aria-live="polite"></p>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { newWorkspaceId } from '@/lib/workspace-admin';
+
+  let bolehEdit = false;
+  const INPUT = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
+
+  document.addEventListener('admin:ready', (e) => {
+    bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
+    void muat();
+  });
+
+  function pesan(msg: string, ok = true) {
+    const el = document.getElementById('ws-pesan')!;
+    el.textContent = msg;
+    el.className = `text-sm ${ok ? 'text-teal-700 dark:text-teal-300' : 'text-red-600 dark:text-red-400'}`;
+  }
+
+  function card(row: any): string {
+    const dis = bolehEdit ? '' : 'disabled';
+    return `<div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3.5 space-y-2" data-id="${esc(row.id)}">
+      <div class="flex items-center justify-between gap-2">
+        <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(row.id)}</span>
+        ${bolehEdit ? `<div class="flex gap-2">
+          <button type="button" data-act="save" class="rounded-lg bg-amber-500/90 px-3 py-1 text-xs font-semibold text-ink-950 hover:bg-amber-400">Simpan</button>
+          <button type="button" data-act="del" class="rounded-lg border border-red-500/40 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10">Hapus</button>
+        </div>` : ''}
+      </div>
+      <input data-f="name" placeholder="Nama tim" value="${esc(row.name ?? '')}" class="${INPUT}" ${dis} />
+      <input data-f="description" placeholder="Deskripsi (opsional)" value="${esc(row.description ?? '')}" class="${INPUT}" ${dis} />
+      <input data-f="lead_discord_id" placeholder="ID Discord ketua (opsional)" value="${esc(row.lead_discord_id ?? '')}" class="${INPUT}" ${dis} />
+    </div>`;
+  }
+
+  async function muat() {
+    const body = document.getElementById('ws-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+    const { data, error } = await supabase.from('workspace_teams').select('*').order('sort', { ascending: true });
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (bolehEdit) document.getElementById('ws-add')!.classList.remove('hidden');
+    body.innerHTML = (data && data.length) ? data.map(card).join('') : stateBlock('empty', 'Belum ada tim.');
+  }
+
+  function rowValues(el: HTMLElement) {
+    const v: any = {};
+    el.querySelectorAll<HTMLInputElement>('[data-f]').forEach((i) => (v[i.dataset.f!] = i.value.trim()));
+    return v;
+  }
+
+  document.getElementById('ws-add')?.addEventListener('click', () => {
+    const body = document.getElementById('ws-body')!;
+    if (body.querySelector('[data-id="new"]')) return;
+    const empty = body.querySelector('.py-16'); if (empty) empty.remove();
+    body.insertAdjacentHTML('afterbegin', card({ id: 'new', name: '', description: '', lead_discord_id: '' }));
+  });
+
+  document.getElementById('ws-body')?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-act]') as HTMLButtonElement | null;
+    if (!btn || !bolehEdit) return;
+    const cardEl = btn.closest('[data-id]') as HTMLElement;
+    const id = cardEl.dataset.id!;
+    const supabase = getSupabase(); if (!supabase) return;
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    if (btn.dataset.act === 'del') {
+      if (id === 'new') { cardEl.remove(); return; }
+      if (!confirm('Hapus tim ini? Keanggotaan di bot tidak ikut terhapus.')) return;
+      const { error } = await supabase.from('workspace_teams').delete().eq('id', id);
+      if (error) return pesan(pesanError(error), false);
+      cardEl.remove(); pesan('Tim dihapus.');
+      return;
+    }
+
+    const v = rowValues(cardEl);
+    if (!v.name) return pesan('Nama tim wajib diisi.', false);
+    const payload = { name: v.name, description: v.description || null, lead_discord_id: v.lead_discord_id || null, updated_at: new Date().toISOString(), updated_by: uid };
+    if (id === 'new') {
+      const newId = newWorkspaceId('TEAM');
+      const { error } = await supabase.from('workspace_teams').insert({ id: newId, ...payload });
+      if (error) return pesan(pesanError(error), false);
+      cardEl.dataset.id = newId;
+      (cardEl.querySelector('.font-mono') as HTMLElement).textContent = newId;
+    } else {
+      const { error } = await supabase.from('workspace_teams').update(payload).eq('id', id);
+      if (error) return pesan(pesanError(error), false);
+    }
+    pesan('Tersimpan. Bot menerapkannya dalam beberapa menit.');
+  });
+</script>

@@ -1,0 +1,56 @@
+---
+// Ringkasan produk Vanillate Workspace di CMS.
+//
+// Produk KEDUA di panel admin (selain Sambung Kata). Semua konfigurasi bot
+// Vanillate Workspace diatur dari sub-halaman di bawah dan tersimpan di tabel
+// Supabase `workspace_*` (namespace terpisah dari `bot_*` milik Sambung Kata).
+// Bot menariknya berkala ke cache lokal — perubahan berlaku dalam beberapa menit.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import { url } from '@utils/url';
+
+const cards = [
+  { href: '/admin/workspace/roles',      icon: '🛡️', title: 'Role & Izin',          desc: 'Definisi role, kunci izin granular, dan cakupan (own/team/project/workspace).' },
+  { href: '/admin/workspace/teams',      icon: '👥', title: 'Tim',                  desc: 'Definisi tim & ketua. Keanggotaan tetap dikelola bot (operasional).' },
+  { href: '/admin/workspace/schedules',  icon: '📅', title: 'Jadwal Kerja',         desc: 'Template shift 7 hari + toleransi keterlambatan.' },
+  { href: '/admin/workspace/welcome',    icon: '👋', title: 'Welcome & Onboarding', desc: 'Pesan sambutan staff baru + langkah onboarding.' },
+  { href: '/admin/workspace/features',   icon: '🎚️', title: 'Feature Toggle',       desc: 'Nyalakan / matikan / maintenance tiap subsistem bot.' },
+  { href: '/admin/workspace/automation', icon: '⚙️', title: 'Automation',           desc: 'Aturan pemicu → aksi (mis. staff aktif → kirim welcome).' },
+  { href: '/admin/workspace/settings',   icon: '🛠️', title: 'Konfigurasi Sistem',   desc: 'Eskalasi, reminder, toleransi, daily brief, channel pengumuman.' },
+];
+---
+
+<AdminLayout title="Vanillate Workspace" active="ws-home">
+  <AdminPageHeader
+    eyebrow="Produk · Vanillate Workspace"
+    title="Konfigurasi Vanillate Workspace"
+    description="Semua konfigurasi bot manajemen kerja diatur di sini dan tersimpan di tabel workspace_* (terpisah penuh dari Sambung Kata). Bot menariknya otomatis dan berkala ke cache lokal."
+  />
+
+  <div class="px-6 lg:px-10 py-8 max-w-4xl">
+    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4 mb-8">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Di Discord, command bot kini <strong>hanya dashboard & laporan</strong> (tugas, absensi, laporan,
+        kalender, notifikasi). <strong>Konfigurasi berpindah ke sini.</strong> Perubahan tersimpan ke database
+        lalu bot menerapkannya pada siklus sync berikutnya (± beberapa menit).
+      </p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      {cards.map((c) => (
+        <a
+          href={url(c.href)}
+          class="group rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4 hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors"
+        >
+          <div class="flex items-start gap-3">
+            <span class="text-2xl">{c.icon}</span>
+            <div class="min-w-0">
+              <p class="font-display text-base font-semibold tracking-tightest group-hover:text-amber-700 dark:group-hover:text-amber-400">{c.title}</p>
+              <p class="mt-0.5 text-sm text-ink-500 dark:text-cream-300/60 leading-relaxed">{c.desc}</p>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</AdminLayout>

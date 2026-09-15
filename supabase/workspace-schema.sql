@@ -1,0 +1,344 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+--  Vanillate Workspace — Skema Config CMS
+--  Namespace TERPISAH dari Sambung Kata: semua tabel berprefiks `workspace_*`.
+--  Jalankan SETELAH supabase/schema.sql (memakai admin_users, is_admin(),
+--  is_admin_editor()). Jalankan di Supabase Dashboard → SQL Editor → New query.
+--  Aman dijalankan ulang (idempoten).
+--
+--  MODEL PERAN (sama seperti bot_settings):
+--    • Browser admin  → hanya anon key; RLS yang menjaga (tanpa JWT = 0 baris).
+--    • Panel /admin   → owner/admin menulis KONFIGURASI di sini.
+--    • Bot workspace  → service_role (bypass RLS), HANYA MEMBACA, lalu men-sync
+--                       ke cache file lokal. service_role TIDAK PERNAH di browser.
+--
+--  BATAS CAKUPAN (yang ADA di sini = KONFIGURASI saja):
+--    role & izin, tim (definisi), jadwal kerja, welcome/onboarding,
+--    feature toggle, automation (definisi), eskalasi, reminder/toleransi/
+--    daily-brief. Data OPERASIONAL (absensi, status tugas, persetujuan,
+--    notifikasi, assignment member→role/tim, runCount automation) TETAP di bot.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 0. (OPSIONAL) AKSES ADMIN PER-PRODUK
+-- ───────────────────────────────────────────────────────────────────────────
+-- Membatasi admin tertentu ke produk tertentu. Additif & aman: default memberi
+-- akses ke kedua produk supaya admin lama tidak kehilangan akses.
+-- Aktifkan blok ini bila ingin memisahkan siapa yang boleh mengedit tiap produk.
+--
+-- alter table public.admin_users
+--   add column if not exists products text[] not null
+--     default array['sambung-kata','vanillate-workspace'];
+--
+-- create or replace function public.is_workspace_editor()
+-- returns boolean language sql stable security definer set search_path = '' as $$
+--   select exists (
+--     select 1 from public.admin_users
+--     where id = auth.uid()
+--       and role in ('owner','admin')
+--       and 'vanillate-workspace' = any(products)
+--   );
+-- $$;
+-- grant execute on function public.is_workspace_editor() to authenticated;
+--
+-- Bila diaktifkan, ganti `public.is_admin_editor()` pada policy di bawah dengan
+-- `public.is_workspace_editor()`. Draft ini memakai is_admin_editor() dulu.
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 1. ROLE & IZIN  (workspace_roles)
+-- ───────────────────────────────────────────────────────────────────────────
+-- id memakai format id bot ('ROLE-XXXXXX') supaya assignment member→role di bot
+-- (members.roleIds) TIDAK perlu migrasi. Nama role bebas diubah; hanya KUNCI
+-- izin yang jadi kontrak internal. permissions = ['*'] artinya super-admin.
+create table if not exists public.workspace_roles (
+  id           text primary key,
+  name         text not null,
+  description  text,
+  permissions  jsonb   not null default '[]'::jsonb,  -- array kunci Permission, atau ["*"]
+  scopes       jsonb   not null default '{}'::jsonb,   -- { "<permission>": "own|team|project|workspace" }
+  rank         integer not null default 100,           -- angka besar = lebih tinggi
+  color        integer,
+  is_system    boolean not null default false,         -- role bawaan: tak bisa dihapus (izin tetap bisa diubah)
+  sort         integer not null default 100,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  updated_by   uuid references public.admin_users(id) on delete set null
+);
+comment on table public.workspace_roles is
+  'Definisi role & izin workspace (SSoT). Bot membaca via service_role lalu sync ke cache lokal. Assignment member→role tetap di bot.';
+create index if not exists workspace_roles_sort_idx on public.workspace_roles (sort, rank desc);
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 2. TIM  (workspace_teams)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Definisi tim saja (nama, deskripsi, ketua). Keanggotaan tim (members.teamIds)
+-- OPERASIONAL → tetap dikelola bot. lead_discord_id = Discord user id ketua.
+create table if not exists public.workspace_teams (
+  id              text primary key,            -- 'TEAM-XXXXXX'
+  name            text not null,
+  description     text,
+  lead_discord_id text,
+  sort            integer not null default 100,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now(),
+  updated_by      uuid references public.admin_users(id) on delete set null
+);
+comment on table public.workspace_teams is
+  'Definisi tim workspace. Keanggotaan (member→tim) tetap operasional di bot.';
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 3. JADWAL KERJA  (workspace_schedules)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Template shift. days = array 7 entri (index 0=Senin .. 6=Minggu), tiap entri
+-- { start, end, breakStart, breakEnd } dengan null = libur.
+create table if not exists public.workspace_schedules (
+  id                     text primary key,     -- 'SCH-XXXXXX'
+  name                   text not null,
+  description            text,
+  days                   jsonb not null default '[]'::jsonb,
+  late_tolerance_minutes integer not null default 10,
+  sort                   integer not null default 100,
+  created_at             timestamptz not null default now(),
+  updated_at             timestamptz not null default now(),
+  updated_by             uuid references public.admin_users(id) on delete set null
+);
+comment on table public.workspace_schedules is
+  'Template jadwal kerja (shift). Penetapan template→member tetap operasional di bot.';
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 4. WELCOME & ONBOARDING  (workspace_welcome) — singleton
+-- ───────────────────────────────────────────────────────────────────────────
+create table if not exists public.workspace_welcome (
+  id               text primary key default 'workspace',
+  enabled          boolean not null default false,
+  target_status    text    not null default 'active',
+  target_team_ids  jsonb   not null default '[]'::jsonb,
+  send_dm          boolean not null default true,
+  send_channel     boolean not null default false,
+  channel_id       text,
+  title            text    not null default '',
+  body             text    not null default '',
+  onboarding_steps jsonb   not null default '[]'::jsonb,
+  first_task_title text,
+  updated_at       timestamptz not null default now(),
+  updated_by       uuid references public.admin_users(id) on delete set null,
+  constraint workspace_welcome_singleton check (id = 'workspace')
+);
+comment on table public.workspace_welcome is
+  'Konfigurasi Staff Welcome & Onboarding (singleton). Pengiriman welcome tetap operasional di bot.';
+
+insert into public.workspace_welcome (id, enabled, title, body, onboarding_steps)
+values (
+  'workspace', false,
+  'Selamat Datang, {display_name}! 🎉',
+  'Halo {mention}, selamat bergabung di **{workspace}**!',
+  '["Baca peraturan staff","Baca SOP / dokumentasi","Konfirmasi ketersediaan jadwal","Selesaikan pekerjaan pertama"]'::jsonb
+)
+on conflict (id) do nothing;
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 5. FEATURE TOGGLE  (workspace_features)
+-- ───────────────────────────────────────────────────────────────────────────
+create table if not exists public.workspace_features (
+  key        text primary key,
+  label      text not null,
+  state      text not null default 'on' check (state in ('on','off','maintenance')),
+  sort       integer not null default 100,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references public.admin_users(id) on delete set null
+);
+comment on table public.workspace_features is
+  'Feature toggle workspace (on/off/maintenance). Bot menegakkannya; nilai di-sync ke cache lokal.';
+
+insert into public.workspace_features (key, label, state, sort) values
+  ('tasks',          'Pekerjaan',          'on', 10),
+  ('absolute_tasks', 'Pekerjaan Absolute', 'on', 20),
+  ('routine_tasks',  'Pekerjaan Rutin',    'on', 30),
+  ('attendance',     'Absensi',            'on', 40),
+  ('leave',          'Cuti / Izin',        'on', 50),
+  ('projects',       'Proyek',             'on', 60),
+  ('okr',            'Target / OKR',       'on', 70),
+  ('documents',      'Dokumen',            'on', 80),
+  ('calendar',       'Kalender',           'on', 90),
+  ('reports',        'Laporan',            'on', 100),
+  ('welcome',        'Staff Welcome',      'on', 110),
+  ('automation',     'Automation',         'on', 120),
+  ('daily_brief',    'Daily Brief',        'on', 130)
+on conflict (key) do nothing;
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 6. AUTOMATION (definisi)  (workspace_automation)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Hanya DEFINISI rule. Statistik eksekusi (runCount, lastRunAt) OPERASIONAL →
+-- tetap di bot.
+create table if not exists public.workspace_automation (
+  id          text primary key,           -- 'AUT-XXXXXX'
+  name        text not null,
+  trigger     text not null,              -- mis. 'staff.activated','task.completed'
+  conditions  jsonb   not null default '{}'::jsonb,
+  actions     jsonb   not null default '[]'::jsonb,  -- array AutomationAction
+  params      jsonb   not null default '{}'::jsonb,
+  enabled     boolean not null default true,
+  is_system   boolean not null default false,
+  sort        integer not null default 100,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references public.admin_users(id) on delete set null
+);
+comment on table public.workspace_automation is
+  'Definisi rule automation. Statistik eksekusi (runCount/lastRunAt) tetap operasional di bot.';
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 7. KONFIGURASI SISTEM  (workspace_settings) — singleton
+-- ───────────────────────────────────────────────────────────────────────────
+-- Eskalasi, reminder, toleransi, daily-brief, channel pengumuman. `features` &
+-- `welcome` sudah punya tabel sendiri. `setupDone` tetap operasional di bot.
+create table if not exists public.workspace_settings (
+  id                             text primary key default 'workspace',
+  owner_discord_id               text,
+  default_reminder_offsets       jsonb   not null default '[1440,180,60]'::jsonb, -- menit
+  escalation_rules               jsonb   not null default '[]'::jsonb,            -- [{afterMinutes,notify[],message?}]
+  mandatory_notification_types   jsonb   not null default '[]'::jsonb,
+  default_late_tolerance_minutes integer not null default 10,
+  attendance_reminder_offsets    jsonb   not null default '[30,15]'::jsonb,
+  daily_brief_time               text    not null default '08:00',
+  announce_channel_id            text,
+  updated_at                     timestamptz not null default now(),
+  updated_by                     uuid references public.admin_users(id) on delete set null,
+  constraint workspace_settings_singleton check (id = 'workspace')
+);
+comment on table public.workspace_settings is
+  'Konfigurasi sistem workspace (eskalasi, reminder, toleransi, daily brief). Singleton.';
+
+insert into public.workspace_settings (
+  id, default_reminder_offsets, escalation_rules, mandatory_notification_types,
+  default_late_tolerance_minutes, attendance_reminder_offsets, daily_brief_time
+) values (
+  'workspace',
+  '[1440,180,60]'::jsonb,
+  '[{"afterMinutes":0,"notify":["responsible"]},{"afterMinutes":60,"notify":["manager"]},{"afterMinutes":240,"notify":["coordinator"]}]'::jsonb,
+  '["penugasan_baru","eskalasi","permintaan_persetujuan"]'::jsonb,
+  10,
+  '[30,15]'::jsonb,
+  '08:00'
+)
+on conflict (id) do nothing;
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 8. AUDIT — siapa mengubah config apa, kapan (workspace_settings_audit)
+-- ───────────────────────────────────────────────────────────────────────────
+create table if not exists public.workspace_settings_audit (
+  id         bigint generated always as identity primary key,
+  table_name text not null,
+  row_id     text,
+  action     text not null,           -- insert | update | delete
+  old_data   jsonb,
+  new_data   jsonb,
+  changed_by uuid references public.admin_users(id) on delete set null,
+  changed_at timestamptz not null default now()
+);
+create index if not exists workspace_settings_audit_idx
+  on public.workspace_settings_audit (changed_at desc);
+
+-- Trigger generik: PK bisa `id` atau `key`, jadi diambil dari to_jsonb.
+create or replace function public.log_workspace_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_new jsonb := case when tg_op = 'DELETE' then null else to_jsonb(new) end;
+  v_old jsonb := case when tg_op = 'INSERT' then null else to_jsonb(old) end;
+  v_row text := coalesce(v_new->>'id', v_new->>'key', v_old->>'id', v_old->>'key');
+  v_by  uuid := nullif(coalesce(v_new->>'updated_by', v_old->>'updated_by'), '')::uuid;
+begin
+  -- Untuk UPDATE, lewati bila tak ada perubahan berarti.
+  if tg_op = 'UPDATE' and v_new - 'updated_at' = v_old - 'updated_at' then
+    return new;
+  end if;
+  insert into public.workspace_settings_audit (table_name, row_id, action, old_data, new_data, changed_by)
+  values (tg_table_name, v_row, lower(tg_op), v_old, v_new, v_by);
+  return coalesce(new, old);
+end;
+$$;
+
+-- Pasang trigger di tiap tabel config.
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'workspace_roles','workspace_teams','workspace_schedules','workspace_welcome',
+    'workspace_features','workspace_automation','workspace_settings'
+  ] loop
+    execute format('drop trigger if exists trg_%1$s_audit on public.%1$s;', t);
+    execute format(
+      'create trigger trg_%1$s_audit after insert or update or delete on public.%1$s
+         for each row execute function public.log_workspace_change();', t);
+  end loop;
+end $$;
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 9. ROW LEVEL SECURITY
+-- ───────────────────────────────────────────────────────────────────────────
+-- Pola sama dgn bot_settings: admin baca, editor tulis, bot service_role bypass.
+alter table public.workspace_roles           enable row level security;
+alter table public.workspace_teams           enable row level security;
+alter table public.workspace_schedules       enable row level security;
+alter table public.workspace_welcome         enable row level security;
+alter table public.workspace_features        enable row level security;
+alter table public.workspace_automation      enable row level security;
+alter table public.workspace_settings        enable row level security;
+alter table public.workspace_settings_audit  enable row level security;
+
+-- Tabel LIST (roles/teams/schedules/automation): baca admin, tulis penuh editor.
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'workspace_roles','workspace_teams','workspace_schedules','workspace_automation'
+  ] loop
+    execute format('drop policy if exists "ws admin baca %1$s" on public.%1$s;', t);
+    execute format('create policy "ws admin baca %1$s" on public.%1$s
+                      for select to authenticated using (public.is_admin());', t);
+    execute format('drop policy if exists "ws editor kelola %1$s" on public.%1$s;', t);
+    execute format('create policy "ws editor kelola %1$s" on public.%1$s
+                      for all to authenticated
+                      using (public.is_admin_editor())
+                      with check (public.is_admin_editor());', t);
+  end loop;
+end $$;
+
+-- Tabel SINGLETON / KV (welcome/features/settings): baca admin, update editor.
+-- (insert benih lewat schema/bootstrap; authenticated cukup update.)
+do $$
+declare t text;
+begin
+  foreach t in array array['workspace_welcome','workspace_features','workspace_settings'] loop
+    execute format('drop policy if exists "ws admin baca %1$s" on public.%1$s;', t);
+    execute format('create policy "ws admin baca %1$s" on public.%1$s
+                      for select to authenticated using (public.is_admin());', t);
+    execute format('drop policy if exists "ws editor ubah %1$s" on public.%1$s;', t);
+    execute format('create policy "ws editor ubah %1$s" on public.%1$s
+                      for update to authenticated
+                      using (public.is_admin_editor())
+                      with check (public.is_admin_editor());', t);
+  end loop;
+end $$;
+-- Catatan: workspace_features boleh dianggap "list" bila admin perlu menambah
+-- fitur baru dari panel — bila ya, pindahkan ke blok LIST (for all).
+
+-- Audit: baca-saja untuk admin (ditulis oleh trigger security definer).
+drop policy if exists "ws admin baca audit" on public.workspace_settings_audit;
+create policy "ws admin baca audit" on public.workspace_settings_audit
+  for select to authenticated using (public.is_admin());
+-- ═══════════════════════════════════════════════════════════════════════════

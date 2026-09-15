@@ -1,0 +1,124 @@
+---
+// Welcome & Onboarding Vanillate Workspace — singleton workspace_welcome.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Welcome & Onboarding · Workspace" active="ws-welcome">
+  <AdminPageHeader
+    eyebrow="Vanillate Workspace"
+    title="Welcome & Onboarding"
+    description="Pesan sambutan otomatis untuk staff baru + langkah onboarding. Variabel: {mention} {display_name} {role} {team} {workspace}."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-2xl">
+    <form id="ws-form" class="space-y-5">
+      <div id="ws-body" class="space-y-5"></div>
+      <div id="ws-aksi" class="hidden flex-wrap items-center gap-3">
+        <button type="submit" id="ws-save" class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">Simpan perubahan</button>
+        <p id="ws-pesan" class="text-sm" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { STAFF_STATUSES } from '@/lib/workspace-admin';
+
+  let bolehEdit = false;
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+
+  document.addEventListener('admin:ready', (e) => {
+    bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
+    void muat();
+  });
+
+  function toggle(id: string, label: string, on: boolean, help = ''): string {
+    return `<label class="flex items-start justify-between gap-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3 cursor-pointer">
+      <span class="min-w-0"><span class="block text-sm font-medium">${esc(label)}</span>${help ? `<span class="block text-xs text-ink-500 dark:text-cream-300/60">${esc(help)}</span>` : ''}</span>
+      <input type="checkbox" id="${id}" ${on ? 'checked' : ''} class="mt-0.5 h-5 w-5 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+    </label>`;
+  }
+
+  async function muat() {
+    const body = document.getElementById('ws-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+    const { data, error } = await supabase.from('workspace_welcome').select('*').eq('id', 'workspace').maybeSingle();
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data) { body.innerHTML = stateBlock('empty', 'Baris welcome belum ada. Jalankan supabase/workspace-schema.sql.'); return; }
+
+    const steps: string[] = Array.isArray(data.onboarding_steps) ? data.onboarding_steps : [];
+    const teams: string[] = Array.isArray(data.target_team_ids) ? data.target_team_ids : [];
+    body.innerHTML = `
+      ${toggle('w-enabled', 'Aktifkan Welcome', !!data.enabled, 'Bila mati, sambutan tidak dikirim walau staff menjadi aktif.')}
+      <div>
+        <label for="w-status" class="block text-sm font-medium mb-1.5">Status staff pemicu</label>
+        <select id="w-status" class="${INPUT}">
+          ${STAFF_STATUSES.map((s) => `<option value="${s.value}" ${data.target_status === s.value ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}
+        </select>
+      </div>
+      ${toggle('w-dm', 'Kirim via DM', data.send_dm !== false)}
+      ${toggle('w-channel', 'Kirim via Channel', !!data.send_channel, 'Butuh ID channel di bawah.')}
+      <div><label for="w-channelId" class="block text-sm font-medium mb-1.5">ID Channel (opsional)</label><input type="text" id="w-channelId" value="${esc(data.channel_id ?? '')}" class="${INPUT}" /></div>
+      <div><label for="w-title" class="block text-sm font-medium mb-1.5">Judul</label><input type="text" id="w-title" value="${esc(data.title ?? '')}" class="${INPUT}" /></div>
+      <div><label for="w-body" class="block text-sm font-medium mb-1.5">Isi pesan</label><textarea id="w-body" rows="4" class="${INPUT}">${esc(data.body ?? '')}</textarea></div>
+      <div><label for="w-steps" class="block text-sm font-medium mb-1.5">Langkah onboarding (satu per baris)</label><textarea id="w-steps" rows="4" class="${INPUT}">${esc(steps.join('\n'))}</textarea></div>
+      <div><label for="w-firstTask" class="block text-sm font-medium mb-1.5">Judul pekerjaan pertama (opsional)</label><input type="text" id="w-firstTask" value="${esc(data.first_task_title ?? '')}" class="${INPUT}" /></div>
+      <div><label for="w-teams" class="block text-sm font-medium mb-1.5">Batasi ke tim (ID, pisah koma — kosong = semua)</label><input type="text" id="w-teams" value="${esc(teams.join(', '))}" class="${INPUT}" /></div>`;
+
+    document.getElementById('ws-aksi')!.classList.remove('hidden');
+    if (!bolehEdit) {
+      body.querySelectorAll('input, textarea, select').forEach((el) => ((el as HTMLInputElement).disabled = true));
+      (document.getElementById('ws-save') as HTMLButtonElement).disabled = true;
+      document.getElementById('ws-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
+    }
+  }
+
+  document.getElementById('ws-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!bolehEdit) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const btn = document.getElementById('ws-save') as HTMLButtonElement;
+    const pesan = document.getElementById('ws-pesan')!;
+    const chk = (id: string) => (document.getElementById(id) as HTMLInputElement).checked;
+    const val = (id: string) => (document.getElementById(id) as HTMLInputElement).value.trim();
+
+    if (chk('w-channel') && !val('w-channelId')) {
+      pesan.textContent = 'Kirim via Channel aktif tapi ID Channel kosong.';
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+    if (!chk('w-dm') && !chk('w-channel')) {
+      pesan.textContent = 'Minimal satu saluran (DM atau Channel) harus aktif.';
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Menyimpan…'; pesan.textContent = ''; pesan.className = 'text-sm';
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    const { error } = await supabase.from('workspace_welcome').update({
+      enabled: chk('w-enabled'),
+      target_status: (document.getElementById('w-status') as HTMLSelectElement).value,
+      send_dm: chk('w-dm'),
+      send_channel: chk('w-channel'),
+      channel_id: val('w-channelId') || null,
+      title: val('w-title'),
+      body: (document.getElementById('w-body') as HTMLTextAreaElement).value,
+      onboarding_steps: (document.getElementById('w-steps') as HTMLTextAreaElement).value.split('\n').map((s) => s.trim()).filter(Boolean),
+      first_task_title: val('w-firstTask') || null,
+      target_team_ids: val('w-teams') ? val('w-teams').split(',').map((s) => s.trim()).filter(Boolean) : [],
+      updated_at: new Date().toISOString(),
+      updated_by: uid,
+    }).eq('id', 'workspace');
+
+    if (error) { pesan.textContent = pesanError(error); pesan.className = 'text-sm text-red-600 dark:text-red-400'; }
+    else { pesan.textContent = 'Tersimpan. Bot menerapkannya dalam beberapa menit.'; pesan.className = 'text-sm text-teal-700 dark:text-teal-300'; }
+    btn.disabled = false; btn.textContent = 'Simpan perubahan';
+  });
+</script>
