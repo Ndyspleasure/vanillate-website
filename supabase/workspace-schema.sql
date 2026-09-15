@@ -271,6 +271,10 @@ begin
 end;
 $$;
 
+-- Trigger function tak perlu dapat dipanggil langsung via RPC (trigger tetap
+-- berjalan internal). Revoke menghilangkan temuan advisor SECURITY DEFINER.
+revoke execute on function public.log_workspace_change() from anon, authenticated;
+
 -- Pasang trigger di tiap tabel config.
 do $$
 declare t text;
