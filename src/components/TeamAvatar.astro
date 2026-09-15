@@ -1,0 +1,74 @@
+---
+// TeamAvatar — avatar anggota tim dengan background bertema (Light/Dark).
+//
+// Tiga kemungkinan tampilan:
+//   1. Foto custom  → <img> di atas layer background bertema. object-contain
+//      supaya subjek TIDAK terpotong; PNG transparan tetap terbaca di kedua tema
+//      karena background & glow dibuat di sini oleh situs.
+//   2. Default profile (Discord / WhatsApp / Instagram) → glyph SVG merek yang
+//      tetap kontras di terang & gelap, di atas background bertema.
+//   3. Custom dipilih tapi belum ada foto → monogram inisial (bukan gambar rusak).
+import { url } from '@utils/url';
+import { DEFAULT_PROFILES, hasCustomImage, type TeamMember } from '@data/team';
+
+export interface Props {
+  member: TeamMember;
+  class?: string;
+}
+const { member, class: className = '' } = Astro.props;
+
+const custom = hasCustomImage(member);
+// Default profile hanya untuk tipe non-custom yang valid.
+const def = member.profileType !== 'custom' ? DEFAULT_PROFILES[member.profileType] : null;
+
+// Inisial untuk fallback monogram (maks 2 huruf).
+const initials =
+  member.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('') || 'V';
+---
+
+<div
+  class:list={[
+    'team-avatar relative isolate aspect-square overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10',
+    'bg-gradient-to-b from-cream-100 to-cream-50 dark:from-ink-800 dark:to-ink-950',
+    className,
+  ]}
+>
+  <!-- Layer background bertema: glow lembut supaya subjek transparan terbaca di kedua mode -->
+  <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+    <div class="absolute -top-1/4 left-1/2 h-3/4 w-3/4 -translate-x-1/2 rounded-full bg-amber-500/20 blur-2xl dark:bg-amber-500/15"></div>
+    <div class="absolute bottom-[-20%] right-[-15%] h-1/2 w-1/2 rounded-full bg-[#6C3BEB]/10 blur-2xl dark:bg-[#6C3BEB]/20"></div>
+    <div class="absolute inset-x-0 bottom-0 top-[15%] bg-[radial-gradient(60%_60%_at_50%_60%,rgba(255,255,255,0.5),transparent_70%)] dark:bg-[radial-gradient(60%_60%_at_50%_60%,rgba(243,193,88,0.12),transparent_72%)]"></div>
+  </div>
+
+  {custom ? (
+    <img
+      src={url(member.profileImage)}
+      alt={`Foto profil ${member.name}`}
+      class="absolute inset-0 h-full w-full select-none object-contain object-center p-2 drop-shadow-[0_10px_24px_rgba(11,10,14,0.20)] dark:drop-shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
+      loading="lazy"
+      decoding="async"
+    />
+  ) : def ? (
+    <div class="absolute inset-0 grid place-items-center" role="img" aria-label={`Foto profil default ${def.label}`}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        class="h-[42%] w-[42%] drop-shadow-[0_4px_10px_rgba(11,10,14,0.15)]"
+        style={`color:${def.color}`}
+        aria-hidden="true"
+        set:html={def.inner}
+      ></svg>
+    </div>
+  ) : (
+    <div class="absolute inset-0 grid place-items-center" aria-label={`Foto profil ${member.name}`} role="img">
+      <span class="font-display text-[clamp(1.5rem,10vw,2.75rem)] font-bold tracking-tightest text-ink-900/80 dark:text-cream-50/90">
+        {initials}
+      </span>
+    </div>
+  )}
+</div>

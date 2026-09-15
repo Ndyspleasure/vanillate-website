@@ -1,0 +1,151 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Button from '@components/Button.astro';
+import TeamAvatar from '@components/TeamAvatar.astro';
+import Vani from '@components/mascot/Vani.astro';
+import { site } from '@data/site';
+import { team, discordHandle, hasCustomImage } from '@data/team';
+import { url } from '@utils/url';
+
+const canonical = new URL('/team', site.url).toString();
+
+// Structured data: BreadcrumbList (Studio → Tentang → Tim) + ItemList anggota.
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Vanillate Studio', item: site.url },
+        { '@type': 'ListItem', position: 2, name: 'Tentang', item: `${site.url}/about` },
+        { '@type': 'ListItem', position: 3, name: 'Tim', item: canonical },
+      ],
+    },
+    {
+      '@type': 'ItemList',
+      itemListElement: team.map((m, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+          '@type': 'Person',
+          name: m.name,
+          ...(m.position ? { jobTitle: m.position } : {}),
+          ...(hasCustomImage(m) && /^https?:\/\//i.test(m.profileImage) ? { image: m.profileImage } : {}),
+          ...(m.profileLink ? { url: m.profileLink } : {}),
+          worksFor: { '@type': 'Organization', name: site.name, url: site.url },
+        },
+      })),
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title="Tim"
+  description="Tim di balik Vanillate Studio — orang-orang yang merancang, membangun, dan merawat produk digital untuk komunitas online Indonesia."
+>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(structuredData)} />
+
+  <!-- HERO -->
+  <section class="container-page pt-20 pb-12 md:pt-28">
+    <nav aria-label="Breadcrumb" class="mb-8 flex flex-wrap items-center gap-2 font-mono text-xs text-ink-500 dark:text-cream-300/60">
+      <a href={url('/')} class="hover:text-amber-600 dark:hover:text-amber-400">Vanillate Studio</a>
+      <span aria-hidden="true">/</span>
+      <a href={url('/about')} class="hover:text-amber-600 dark:hover:text-amber-400">Tentang</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-800 dark:text-cream-100">Tim</span>
+    </nav>
+
+    <p class="eyebrow mb-6">Tim Kami</p>
+    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-3xl">
+      Orang-orang di balik <span class="italic text-amber-600 dark:text-amber-500">Vanillate</span>
+    </h1>
+    <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
+      Studio kecil dengan standar yang tidak kecil. Inilah tim yang merancang, membangun, dan merawat
+      setiap produk Vanillate — dari arah studio sampai baris kode yang menjalankannya setiap hari.
+    </p>
+
+    {team.length > 0 && (
+      <div class="mt-8">
+        <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
+          <span class="h-2 w-2 rounded-full bg-teal-500"></span>
+          {team.length} anggota aktif
+        </span>
+      </div>
+    )}
+  </section>
+
+  <!-- DAFTAR ANGGOTA -->
+  <section class="container-page pb-20">
+    {team.length > 0 ? (
+      <div
+        class="grid gap-6 items-start [grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr))]"
+      >
+        {team.map((m, i) => {
+          const handle = discordHandle(m.discordUsername);
+          return (
+            <article
+              class="reveal group flex flex-col items-center rounded-3xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 text-center transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:shadow-[0_20px_60px_-30px_rgba(11,10,14,0.4)]"
+              style={`--reveal-delay: ${(i % 4) * 70}ms`}
+            >
+              <TeamAvatar member={m} class="w-28 sm:w-32" />
+
+              <h2 class="mt-5 font-display text-xl font-semibold tracking-tightest text-ink-900 dark:text-cream-50 break-words max-w-full">
+                {m.name}
+              </h2>
+
+              {handle && (
+                <p class="mt-1 font-mono text-xs text-amber-600 dark:text-amber-500 break-all max-w-full">{handle}</p>
+              )}
+
+              {m.position && (
+                <p class="mt-2 text-sm font-medium text-ink-700 dark:text-cream-200">{m.position}</p>
+              )}
+
+              {m.description && (
+                <p class="mt-3 text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{m.description}</p>
+              )}
+
+              {m.profileLink && (
+                <a
+                  href={m.profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="mt-4 inline-flex items-center gap-1.5 rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium text-ink-800 dark:text-cream-100 transition-colors hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
+                  aria-label={`Lihat profil ${m.name}`}
+                >
+                  Lihat Profil
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
+                </a>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    ) : (
+      <div class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-ink-900/15 dark:border-cream-100/15 px-6 py-16 text-center">
+        <Vani expression="sleeping" size="md" animation="subtle" alt="" />
+        <p class="max-w-md text-ink-500 dark:text-cream-300/60">
+          Belum ada anggota tim yang ditampilkan. Tambahkan lewat panel admin di Team Management.
+        </p>
+      </div>
+    )}
+  </section>
+
+  <!-- CTA -->
+  <section class="container-page pb-24 border-t border-ink-900/10 dark:border-cream-100/10 pt-16">
+    <div class="max-w-2xl reveal">
+      <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">
+        Ingin tahu lebih banyak tentang studionya?
+      </h2>
+      <p class="text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed mb-8">
+        Cerita, filosofi, dan arah Vanillate Studio ada di halaman Tentang. Atau mampir langsung ke
+        komunitas kami dan sapa timnya.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <Button href="/about" variant="primary" size="lg">Tentang Studio</Button>
+        <Button href={site.links.discordSupport} variant="secondary" size="lg" external>Gabung Discord</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

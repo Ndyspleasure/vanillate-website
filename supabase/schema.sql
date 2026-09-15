@@ -1624,3 +1624,95 @@ create policy "editor kelola faq alias" on public.faq_slug_aliases
 --      dan daftar FAQ di src/data/faq.ts) dan dihasilkan oleh
 --      scripts/build-faq-seed.mjs. Jalankan SETELAH file ini.
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 16. TEAM — anggota tim di balik Vanillate Studio
+--
+-- Satu baris = satu anggota tim, dikelola dari /admin/team lalu ditarik saat
+-- build (scripts/sync-content.mjs) ke halaman publik /team. Section Team di
+-- /about hanya menautkan ke sana. Frontend TIDAK meng-hardcode anggota: seluruh
+-- daftar berasal dari tabel ini.
+--
+-- Foto custom disimpan di Supabase Storage (bucket publik `team-media`), BUKAN
+-- di repo. Bila anggota tidak memakai foto custom, frontend memakai SVG default
+-- (Discord / WhatsApp / Instagram) yang mengikuti tema situs.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 16a. Anggota tim
+create table if not exists public.team_members (
+  id                uuid primary key default gen_random_uuid(),
+  name              text not null,
+  discord_username  text,                              -- disimpan tanpa '@'; situs menambah '@' saat menampilkan
+  position          text,                              -- jabatan/peran (mis. "Founder & AI Engineer")
+  description        text,                             -- deskripsi singkat (opsional)
+  -- Foto profil custom: URL publik + path objek di bucket team-media (untuk hapus).
+  profile_image     text,
+  profile_image_path text,
+  -- Jenis foto profil. 'custom' memakai profile_image; sisanya memakai SVG default.
+  profile_type      text not null default 'discord'
+                      check (profile_type in ('custom', 'discord', 'whatsapp', 'instagram')),
+  profile_link      text,                              -- tautan profil (opsional)
+  -- Status tampil di /team. 'active' terlihat pengunjung; 'inactive' tetap
+  -- tersimpan di CMS tapi disembunyikan — jadi admin tak perlu menghapus anggota
+  -- yang hanya sedang tidak aktif.
+  status            text not null default 'active'
+                      check (status in ('active', 'inactive')),
+  display_order     integer not null default 100,      -- urutan tampil (kecil = atas)
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  updated_by        uuid references public.admin_users(id) on delete set null
+);
+
+create index if not exists team_members_order_idx on public.team_members(display_order, created_at);
+
+comment on table public.team_members is
+  'Anggota tim Vanillate Studio. Dikelola dari /admin/team, ditarik saat build ke halaman publik /team. Hanya status=active yang tampil ke pengunjung.';
+comment on column public.team_members.profile_type is
+  'custom = pakai profile_image; discord/whatsapp/instagram = pakai SVG default bertema.';
+comment on column public.team_members.status is
+  'active = tampil di /team; inactive = disembunyikan tapi datanya tetap ada di CMS.';
+
+-- 16b. RLS — admin baca, editor kelola. Publik lewat build (service_role, bypass).
+alter table public.team_members enable row level security;
+
+drop policy if exists "admin baca team_members" on public.team_members;
+create policy "admin baca team_members" on public.team_members
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "editor kelola team_members" on public.team_members;
+create policy "editor kelola team_members" on public.team_members
+  for all to authenticated
+  using (public.is_admin_editor()) with check (public.is_admin_editor());
+
+-- 16c. Storage bucket (publik) + policies pada storage.objects
+--   team-media → foto profil anggota (≤10 MB). PNG transparan diprioritaskan,
+--   format gambar umum lain tetap diterima.
+-- Bucket publik: siapa pun boleh MENGUNDUH lewat URL publik. Menulis/menghapus
+-- hanya editor (owner/admin) lewat panel admin.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values
+  ('team-media', 'team-media', true, 10485760,
+   array['image/png','image/jpeg','image/webp','image/gif'])
+on conflict (id) do nothing;
+
+drop policy if exists "publik baca team files" on storage.objects;
+create policy "publik baca team files" on storage.objects
+  for select to public using (bucket_id = 'team-media');
+
+drop policy if exists "editor kelola team-media" on storage.objects;
+create policy "editor kelola team-media" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'team-media' and public.is_admin_editor())
+  with check (bucket_id = 'team-media' and public.is_admin_editor());
+
+-- 16d. Seed contoh: hanya bila tabel masih kosong, supaya /team tidak melompong
+--      saat pertama kali dipasang. Memakai SVG default (tanpa foto custom) agar
+--      tidak perlu unggahan biner. Aman diulang: bila sudah ada anggota, tidak
+--      menambah apa pun.
+insert into public.team_members (name, discord_username, position, description, profile_type, profile_link, status, display_order)
+select 'Andi Kurniawan', 'ndyspleasure', 'Founder & AI Engineer',
+       'Pendiri sekaligus penggerak harian Vanillate Studio, dari arah produk sampai kode yang menjalankannya.',
+       'discord', null, 'active', 1
+where not exists (select 1 from public.team_members);
+-- ═══════════════════════════════════════════════════════════════════════════

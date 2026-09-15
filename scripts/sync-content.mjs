@@ -12,6 +12,7 @@
 //   • products.json      ← tabel `products` + media & rilis
 //   • pages.json         ← tabel `page_content`
 //   • faq.json           ← tabel `faq_categories` + `faqs` (seluruh panduan)
+//   • team.json          ← tabel `team_members`        (anggota tim aktif /team)
 //
 // Kenapa lewat build, bukan dibaca langsung di browser pengunjung?
 //   Website ini statis dan tabel-tabel itu dijaga RLS — hanya admin yang boleh
@@ -41,6 +42,7 @@ const FILE_PARTNERSHIP = path.join(DIR_SYNCED, 'partnership.json');
 const FILE_PRODUCTS = path.join(DIR_SYNCED, 'products.json');
 const FILE_PAGES = path.join(DIR_SYNCED, 'pages.json');
 const FILE_FAQ = path.join(DIR_SYNCED, 'faq.json');
+const FILE_TEAM = path.join(DIR_SYNCED, 'team.json');
 
 const URL_SUPABASE = (process.env.SUPABASE_URL || '').trim().replace(/\/$/, '');
 const SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
@@ -57,6 +59,7 @@ const KOSONG_PARTNERSHIP = {
 const KOSONG_PRODUCTS = { products: [] };
 const KOSONG_PAGES = { pages: {} };
 const KOSONG_FAQ = { categories: [], faqs: [] };
+const KOSONG_TEAM = { members: [] };
 
 // ─── Util berkas ────────────────────────────────────────────────────────────
 
@@ -567,6 +570,57 @@ async function syncFaq() {
   console.log(`  kategori aktif: ${categories.length} · FAQ aktif: ${faqs.length}`);
 }
 
+// ─── 6. Anggota tim (team_members) ──────────────────────────────────────────
+//
+// Hanya anggota berstatus 'active' yang ditarik: yang 'inactive' memang tidak
+// boleh tampil di /team, dan cara paling aman memastikannya adalah tidak pernah
+// menerbitkannya sama sekali. Sudah diurutkan display_order di sini.
+
+async function syncTeam() {
+  let baris;
+  try {
+    // profile_image_path ditandai opsional supaya database yang belum menjalankan
+    // schema terbaru tetap bisa menerbitkan daftar tim (hanya tanpa kolom itu).
+    baris = await ambilLonggar(
+      'team_members',
+      ['id', 'name', 'discord_username', 'position', 'description', 'profile_image',
+       'profile_type', 'profile_link', 'display_order'],
+      ['profile_image_path'],
+      '&status=eq.active&order=display_order.asc,created_at.asc',
+    );
+  } catch (err) {
+    pertahankanYangLama(FILE_TEAM, KOSONG_TEAM, err.message);
+    return;
+  }
+
+  const TIPE = ['custom', 'discord', 'whatsapp', 'instagram'];
+  const members = baris
+    .map((m) => {
+      const type = TIPE.includes(m.profile_type) ? m.profile_type : 'discord';
+      // Foto custom hanya relevan bila tipe 'custom'; selain itu situs memakai
+      // SVG default, jadi URL foto tidak perlu ikut diterbitkan.
+      const image = type === 'custom'
+        ? urlBerkas(m.profile_image, m.profile_image_path, 'team-media')
+        : '';
+      return {
+        id: String(m.id ?? ''),
+        name: String(m.name ?? '').trim(),
+        discordUsername: String(m.discord_username ?? '').trim().replace(/^@+/, ''),
+        position: String(m.position ?? '').trim(),
+        description: String(m.description ?? '').trim(),
+        profileImage: image,
+        profileType: type,
+        profileLink: urlAman(m.profile_link, `link profil ${m.name}`),
+        displayOrder: Number.isFinite(Number(m.display_order)) ? Number(m.display_order) : 100,
+      };
+    })
+    .filter((m) => m.id && m.name);
+
+  tulis(FILE_TEAM, { members });
+  console.log('✓ team.json diperbarui.');
+  console.log(`  anggota aktif: ${members.length}`);
+}
+
 // ─── Jalan ──────────────────────────────────────────────────────────────────
 
 if (!URL_SUPABASE || !SERVICE_KEY) {
@@ -576,6 +630,7 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
   pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, alasan);
   pertahankanYangLama(FILE_PAGES, KOSONG_PAGES, alasan);
   pertahankanYangLama(FILE_FAQ, KOSONG_FAQ, alasan);
+  pertahankanYangLama(FILE_TEAM, KOSONG_TEAM, alasan);
   process.exit(0);
 }
 
@@ -587,4 +642,5 @@ await syncPartnership();
 await syncProducts();
 await syncPages();
 await syncFaq();
+await syncTeam();
 process.exit(0);

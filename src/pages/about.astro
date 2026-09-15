@@ -4,13 +4,19 @@ import Button from '@components/Button.astro';
 import LogoPNG from '@components/LogoPNG.astro';
 import FounderImage from '@components/FounderImage.astro';
 import Vani from '@components/mascot/Vani.astro';
+import TeamAvatar from '@components/TeamAvatar.astro';
 import { site, homeStats } from '@data/site';
 import { pageContent } from '@data/pages';
 import { founder, founderUrl } from '@data/founder';
+import { team, teamUrl } from '@data/team';
 import { url } from '@utils/url';
 
 // Hero halaman ini dikelola dari /admin/halaman → tab "Tentang".
 const c = pageContent('about');
+
+// Cuplikan anggota tim untuk section Team (data dari CMS, bukan hardcode).
+const teamPreview = team.slice(0, 5);
+const teamExtra = Math.max(0, team.length - teamPreview.length);
 
 // Format angka gaya Indonesia (pemisah ribuan titik).
 function formatNum(n: number): string {
@@ -216,6 +222,48 @@ const roadmap = [
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
             </span>
           </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIM -->
+  <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3 reveal">
+      <div class="md:col-span-1">
+        <p class="eyebrow">Tim</p>
+      </div>
+      <div class="md:col-span-2">
+        <a
+          href={url(teamUrl)}
+          class="group block rounded-3xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 sm:p-8 transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:shadow-[0_20px_60px_-30px_rgba(11,10,14,0.4)]"
+          aria-label="Lihat halaman Tim Vanillate Studio"
+        >
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Tim di balik Vanillate</h2>
+          <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed max-w-prose">
+            Vanillate digerakkan oleh tim kecil yang terlibat langsung di setiap lini, dari arah produk,
+            pengembangan, sampai menjaga hubungan dengan komunitas. Kenali orang-orang di baliknya.
+          </p>
+
+          {teamPreview.length > 0 && (
+            <div class="mt-6 flex items-center">
+              <div class="flex items-center">
+                {teamPreview.map((m) => (
+                  <div class="-ml-3 first:ml-0 rounded-full ring-2 ring-cream-50 dark:ring-ink-950">
+                    <TeamAvatar member={m} class="h-12 w-12 !rounded-full" />
+                  </div>
+                ))}
+              </div>
+              {teamExtra > 0 && (
+                <span class="ml-3 font-mono text-xs text-ink-500 dark:text-cream-300/60">+{teamExtra} lainnya</span>
+              )}
+            </div>
+          )}
+
+          <span class="mt-6 inline-flex items-center gap-2 rounded-full bg-ink-900 text-cream-50 dark:bg-amber-500 dark:text-ink-950 px-5 py-2.5 text-sm font-medium transition-transform group-hover:gap-3">
+            Lihat Halaman Tim
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </span>
         </a>
       </div>
     </div>
