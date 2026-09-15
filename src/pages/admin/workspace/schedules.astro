@@ -1,0 +1,147 @@
+---
+// Jadwal Kerja Vanillate Workspace — tabel workspace_schedules (template shift).
+// Penetapan template→member tetap operasional di bot.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Jadwal Kerja · Workspace" active="ws-schedules">
+  <AdminPageHeader
+    eyebrow="Vanillate Workspace"
+    title="Jadwal Kerja"
+    description="Template shift 7 hari + toleransi keterlambatan. Kosongkan jam masuk sebuah hari = libur. Penetapan ke anggota dilakukan di bot."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-3xl space-y-5">
+    <button type="button" id="ws-add" class="hidden rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">+ Tambah template</button>
+    <div id="ws-body" class="space-y-4"></div>
+    <p id="ws-pesan" class="text-sm" role="status" aria-live="polite"></p>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { newWorkspaceId, DAY_LABELS } from '@/lib/workspace-admin';
+
+  let bolehEdit = false;
+  const T = 'w-full rounded-md border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-1 text-xs outline-none focus:border-amber-500';
+  const INPUT = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
+
+  document.addEventListener('admin:ready', (e) => {
+    bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
+    void muat();
+  });
+
+  function pesan(msg: string, ok = true) {
+    const el = document.getElementById('ws-pesan')!;
+    el.textContent = msg;
+    el.className = `text-sm ${ok ? 'text-teal-700 dark:text-teal-300' : 'text-red-600 dark:text-red-400'}`;
+  }
+
+  function dayRow(i: number, d: any): string {
+    const dis = bolehEdit ? '' : 'disabled';
+    const v = (k: string) => esc(d?.[k] ?? '');
+    return `<tr data-day="${i}">
+      <td class="py-1 pr-2 text-xs font-medium whitespace-nowrap">${DAY_LABELS[i]}</td>
+      <td class="px-1"><input data-d="start" type="time" value="${v('start')}" class="${T}" ${dis} /></td>
+      <td class="px-1"><input data-d="end" type="time" value="${v('end')}" class="${T}" ${dis} /></td>
+      <td class="px-1"><input data-d="breakStart" type="time" value="${v('breakStart')}" class="${T}" ${dis} /></td>
+      <td class="px-1"><input data-d="breakEnd" type="time" value="${v('breakEnd')}" class="${T}" ${dis} /></td>
+    </tr>`;
+  }
+
+  function card(row: any): string {
+    const dis = bolehEdit ? '' : 'disabled';
+    const days: any[] = Array.isArray(row.days) ? row.days : [];
+    return `<div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3.5 space-y-3" data-id="${esc(row.id)}">
+      <div class="flex items-center justify-between gap-2">
+        <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(row.id)}</span>
+        ${bolehEdit ? `<div class="flex gap-2">
+          <button type="button" data-act="save" class="rounded-lg bg-amber-500/90 px-3 py-1 text-xs font-semibold text-ink-950 hover:bg-amber-400">Simpan</button>
+          <button type="button" data-act="del" class="rounded-lg border border-red-500/40 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10">Hapus</button>
+        </div>` : ''}
+      </div>
+      <div class="grid sm:grid-cols-2 gap-2">
+        <input data-f="name" placeholder="Nama template" value="${esc(row.name ?? '')}" class="${INPUT}" ${dis} />
+        <input data-f="late_tolerance_minutes" type="number" min="0" placeholder="Toleransi telat (menit)" value="${esc(row.late_tolerance_minutes ?? 10)}" class="${INPUT}" ${dis} />
+      </div>
+      <input data-f="description" placeholder="Deskripsi (opsional)" value="${esc(row.description ?? '')}" class="${INPUT}" ${dis} />
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead><tr class="text-[0.7rem] text-ink-500 dark:text-cream-300/60"><th class="pr-2">Hari</th><th class="px-1">Masuk</th><th class="px-1">Pulang</th><th class="px-1">Istirahat</th><th class="px-1">Selesai</th></tr></thead>
+          <tbody>${[0,1,2,3,4,5,6].map((i) => dayRow(i, days[i])).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  async function muat() {
+    const body = document.getElementById('ws-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+    const { data, error } = await supabase.from('workspace_schedules').select('*').order('sort', { ascending: true });
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (bolehEdit) document.getElementById('ws-add')!.classList.remove('hidden');
+    body.innerHTML = (data && data.length) ? data.map(card).join('') : stateBlock('empty', 'Belum ada template jadwal.');
+  }
+
+  function collectDays(cardEl: HTMLElement) {
+    return [0,1,2,3,4,5,6].map((i) => {
+      const tr = cardEl.querySelector(`tr[data-day="${i}"]`)!;
+      const g = (k: string) => (tr.querySelector(`[data-d="${k}"]`) as HTMLInputElement).value || null;
+      const start = g('start');
+      if (!start) return { start: null, end: null, breakStart: null, breakEnd: null };
+      return { start, end: g('end'), breakStart: g('breakStart'), breakEnd: g('breakEnd') };
+    });
+  }
+
+  document.getElementById('ws-add')?.addEventListener('click', () => {
+    const body = document.getElementById('ws-body')!;
+    if (body.querySelector('[data-id="new"]')) return;
+    const empty = body.querySelector('.py-16'); if (empty) empty.remove();
+    body.insertAdjacentHTML('afterbegin', card({ id: 'new', name: '', description: '', late_tolerance_minutes: 10, days: [] }));
+  });
+
+  document.getElementById('ws-body')?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-act]') as HTMLButtonElement | null;
+    if (!btn || !bolehEdit) return;
+    const cardEl = btn.closest('[data-id]') as HTMLElement;
+    const id = cardEl.dataset.id!;
+    const supabase = getSupabase(); if (!supabase) return;
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    if (btn.dataset.act === 'del') {
+      if (id === 'new') { cardEl.remove(); return; }
+      if (!confirm('Hapus template jadwal ini?')) return;
+      const { error } = await supabase.from('workspace_schedules').delete().eq('id', id);
+      if (error) return pesan(pesanError(error), false);
+      cardEl.remove(); pesan('Template dihapus.');
+      return;
+    }
+
+    const name = (cardEl.querySelector('[data-f="name"]') as HTMLInputElement).value.trim();
+    if (!name) return pesan('Nama template wajib diisi.', false);
+    const tolRaw = parseInt((cardEl.querySelector('[data-f="late_tolerance_minutes"]') as HTMLInputElement).value, 10);
+    const payload = {
+      name,
+      description: (cardEl.querySelector('[data-f="description"]') as HTMLInputElement).value.trim() || null,
+      late_tolerance_minutes: Number.isFinite(tolRaw) && tolRaw >= 0 ? tolRaw : 10,
+      days: collectDays(cardEl),
+      updated_at: new Date().toISOString(),
+      updated_by: uid,
+    };
+    if (id === 'new') {
+      const newId = newWorkspaceId('SCH');
+      const { error } = await supabase.from('workspace_schedules').insert({ id: newId, ...payload });
+      if (error) return pesan(pesanError(error), false);
+      cardEl.dataset.id = newId;
+      (cardEl.querySelector('.font-mono') as HTMLElement).textContent = newId;
+    } else {
+      const { error } = await supabase.from('workspace_schedules').update(payload).eq('id', id);
+      if (error) return pesan(pesanError(error), false);
+    }
+    pesan('Tersimpan. Bot menerapkannya dalam beberapa menit.');
+  });
+</script>

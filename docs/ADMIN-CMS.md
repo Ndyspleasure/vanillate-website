@@ -3,6 +3,10 @@
 Panduan lengkap panel `/admin`: cara kerjanya, cara menyiapkannya, dan apa yang
 masih perlu dikerjakan di sisi bot.
 
+> **Dua produk di CMS.** Panel ini mengelola **🎮 Sambung Kata** (tabel `bot_*`,
+> dokumen ini) **dan** **🗂️ Vanillate Workspace** (tabel `workspace_*`). Untuk
+> konfigurasi Vanillate Workspace, lihat [`WORKSPACE-CMS.md`](./WORKSPACE-CMS.md).
+
 ---
 
 ## 1. Model keamanan — baca ini dulu
