@@ -4,10 +4,10 @@
       "id": "18df4628-0e27-4287-a040-043244f7685c",
       "name": "Andi Kurniawan",
       "discordUsername": "ndyspleasure",
-      "position": "Founder & AI Engineer",
+      "position": "Founder & Operations manager",
       "description": "Pendiri sekaligus penggerak harian Vanillate Studio, dari arah produk sampai baris kode yang menjalankannya.",
-      "profileImage": "/founder/andi-kurniawan.png",
-      "profileType": "custom",
+      "profileImage": "",
+      "profileType": "discord",
       "profileLink": "https://personal.andikurniawan.vanillate.id/",
       "displayOrder": 1
     },
@@ -21,6 +21,28 @@
       "profileType": "custom",
       "profileLink": "",
       "displayOrder": 2
+    },
+    {
+      "id": "a5e144d7-d9a5-4f0d-be0a-f9901ae77a9b",
+      "name": "Sherin Kalandra",
+      "discordUsername": "ryujin_2521",
+      "position": "Support Assistant (SA)",
+      "description": "Mendukung operasional harian, menangani kebutuhan pengguna, serta memastikan proses support berjalan dengan baik.",
+      "profileImage": "",
+      "profileType": "discord",
+      "profileLink": "",
+      "displayOrder": 3
+    },
+    {
+      "id": "f4593467-4ecf-40a8-9f1d-d6e9e64f8783",
+      "name": "Muhammad Ghifari Ramadhan",
+      "discordUsername": "ntzee666",
+      "position": "Support Assistant (SA)",
+      "description": "Mendukung operasional harian, menangani kebutuhan pengguna, serta memastikan proses support berjalan dengan baik.",
+      "profileImage": "",
+      "profileType": "discord",
+      "profileLink": "",
+      "displayOrder": 4
     }
   ]
 }
