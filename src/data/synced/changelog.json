@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.57.3",
+    "date": "2026-09-15",
+    "title": "Peningkatan stabilitas & penanganan laporan yang lebih rapi",
+    "highlights": [
+      "🛠️ Pemeliharaan & perapian konfigurasi internal untuk menjaga kestabilan bot",
+      "🐛 Laporan bug dari pemain kini ditangani di ruang khusus, terpisah dari kotak masukan pemain",
+      "📨 Alur kirim masukan/feedback lewat /masukan tetap lancar seperti biasa"
+    ]
+  },
+  {
     "version": "2.57.2",
     "date": "2026-09-14",
     "title": "Perapian daftar perintah bot",
