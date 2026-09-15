@@ -25,8 +25,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { STAFF_STATUSES } from '@/lib/workspace-admin';
+  import { loadCatalog, options } from '@/lib/workspace-catalog';
 
   let bolehEdit = false;
+  // Status staff dari katalog bot (tak hardcode); fallback ke konstanta.
+  let STATUSES = STAFF_STATUSES;
   const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
 
   document.addEventListener('admin:ready', (e) => {
@@ -46,6 +49,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     body.innerHTML = stateBlock('loading', '');
     const supabase = getSupabase();
     if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+    STATUSES = options(await loadCatalog(), 'staff_status', STAFF_STATUSES);
     const { data, error } = await supabase.from('workspace_welcome').select('*').eq('id', 'workspace').maybeSingle();
     if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
     if (!data) { body.innerHTML = stateBlock('empty', 'Baris welcome belum ada. Jalankan supabase/workspace-schema.sql.'); return; }
@@ -57,7 +61,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <div>
         <label for="w-status" class="block text-sm font-medium mb-1.5">Status staff pemicu</label>
         <select id="w-status" class="${INPUT}">
-          ${STAFF_STATUSES.map((s) => `<option value="${s.value}" ${data.target_status === s.value ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}
+          ${STATUSES.map((s) => `<option value="${s.value}" ${data.target_status === s.value ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}
         </select>
       </div>
       ${toggle('w-dm', 'Kirim via DM', data.send_dm !== false)}

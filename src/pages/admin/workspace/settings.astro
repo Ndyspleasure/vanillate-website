@@ -26,8 +26,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { parseMinutes, NOTIFICATION_TYPES } from '@/lib/workspace-admin';
+  import { loadCatalog, ofKind } from '@/lib/workspace-catalog';
 
   let bolehEdit = false;
+  // Jenis notifikasi dari katalog bot (tak hardcode); fallback ke konstanta.
+  let NOTIF_TYPES: string[] = NOTIFICATION_TYPES;
   const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
 
   document.addEventListener('admin:ready', (e) => {
@@ -49,6 +52,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const supabase = getSupabase();
     if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
 
+    const cat = await loadCatalog();
+    const nt = ofKind(cat, 'notification_type');
+    if (nt.length) NOTIF_TYPES = nt.map((r) => r.value);
     const { data, error } = await supabase
       .from('workspace_settings')
       .select('*')
@@ -67,7 +73,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <div>
         <p class="block text-sm font-medium mb-2">Notifikasi wajib (tak bisa dimatikan pengguna)</p>
         <div class="grid grid-cols-2 gap-2">
-          ${NOTIFICATION_TYPES.map((t) => `
+          ${NOTIF_TYPES.map((t) => `
             <label class="flex items-center gap-2 text-sm">
               <input type="checkbox" data-notif="${esc(t)}" ${mandatory.includes(t) ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
               <span class="font-mono text-xs">${esc(t)}</span>

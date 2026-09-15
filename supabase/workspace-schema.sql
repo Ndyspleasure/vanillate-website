@@ -346,3 +346,49 @@ drop policy if exists "ws admin baca audit" on public.workspace_settings_audit;
 create policy "ws admin baca audit" on public.workspace_settings_audit
   for select to authenticated using (public.is_admin());
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 10. KATALOG KAPABILITAS (workspace_catalog) — DITERBITKAN BOT, dibaca CMS
+-- ───────────────────────────────────────────────────────────────────────────
+-- Agar CMS TIDAK meng-hardcode daftar (Permission, scope, trigger/action
+-- automation, status staff, jenis notifikasi, kunci fitur), bot menerbitkan
+-- katalog kapabilitasnya ke tabel ini saat startup (service_role, satu arah
+-- bot -> CMS). CMS membacanya untuk membangun dropdown/checklist, jadi daftar
+-- selalu SINKRON dengan bot dan tak pernah basi. Menambah kapabilitas BARU tetap
+-- butuh dukungan kode bot; INSTANCE (role/tim/jadwal/automation/fitur) dikelola
+-- di tabel workspace_* masing-masing dan bebas ditambah/dihapus admin.
+create table if not exists public.workspace_catalog (
+  kind       text not null,   -- 'permission' | 'permission_category' | 'scope'
+                              -- | 'automation_trigger' | 'automation_action'
+                              -- | 'staff_status' | 'notification_type' | 'feature'
+  value      text not null,
+  label      text,
+  meta       jsonb   not null default '{}'::jsonb,  -- mis. {category, scoped, icon}
+  sort       integer not null default 100,
+  updated_at timestamptz not null default now(),
+  primary key (kind, value)
+);
+comment on table public.workspace_catalog is
+  'Katalog kapabilitas bot Vanillate Workspace, diterbitkan bot (service_role) & dibaca CMS agar tak ada daftar hardcoded di website.';
+create index if not exists workspace_catalog_kind_idx on public.workspace_catalog (kind, sort);
+
+alter table public.workspace_catalog enable row level security;
+drop policy if exists "ws admin baca catalog" on public.workspace_catalog;
+create policy "ws admin baca catalog" on public.workspace_catalog
+  for select to authenticated using (public.is_admin());
+-- (Bot menulis via service_role -> bypass RLS. Tak ada policy tulis utk authenticated.)
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 11. FITUR: jadikan LIST penuh (admin boleh tambah/hapus dari CMS)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Selain update state, editor kini boleh INSERT/DELETE baris fitur.
+drop policy if exists "ws editor tambah workspace_features" on public.workspace_features;
+create policy "ws editor tambah workspace_features" on public.workspace_features
+  for insert to authenticated with check (public.is_admin_editor());
+
+drop policy if exists "ws editor hapus workspace_features" on public.workspace_features;
+create policy "ws editor hapus workspace_features" on public.workspace_features
+  for delete to authenticated using (public.is_admin_editor());
+-- ═══════════════════════════════════════════════════════════════════════════
