@@ -6,6 +6,7 @@ import Header from '@components/Header.astro';
 import AnnouncementBanner from '@components/AnnouncementBanner.astro';
 import Footer from '@components/Footer.astro';
 import BackToTop from '@components/BackToTop.astro';
+import VaniContact from '@components/mascot/VaniContact.astro';
 import { url } from '@utils/url';
 
 export interface Props {
@@ -74,6 +75,7 @@ const { title, description, image, noindex } = Astro.props;
     </main>
     <Footer />
     <BackToTop />
+    <VaniContact />
 
     <script>
       // Scroll reveal global: tampilkan elemen .reveal saat masuk viewport.

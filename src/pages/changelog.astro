@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Icon from '@components/Icon.astro';
 import Button from '@components/Button.astro';
+import Vani from '@components/mascot/Vani.astro';
 import { getFeaturedBot, buildInviteUrl, inviteCtaLabel } from '@data/bots';
 import { faqCategoryUrl, faqIndexUrl } from '@data/faq';
 import changelog from '@data/synced/changelog.json';
@@ -64,6 +65,8 @@ const totalReleases = entries.length;
     <div class="aurora bg-teal-500/15 h-[320px] w-[320px] top-[40px] right-[4%]" style="animation-delay: -7s" aria-hidden="true"></div>
 
     <div class="container-page relative">
+      <div class="grid items-center gap-10 lg:grid-cols-[1fr_auto]">
+        <div class="min-w-0">
       <p class="eyebrow mb-6 animate-fade-up inline-flex items-center gap-2">
         <Icon name="history" class="h-4 w-4" /> Changelog
       </p>
@@ -84,6 +87,11 @@ const totalReleases = entries.length;
         <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
           <Icon name="calendar" class="h-4 w-4 text-ink-500 dark:text-cream-300/70" /> Terakhir {fmtDate(latest.date)}
         </span>
+      </div>
+        </div>
+        <div class="hidden lg:flex justify-self-end">
+          <Vani expression="celebrate" size="lg" animation="subtle" alt="" />
+        </div>
       </div>
     </div>
   </section>
