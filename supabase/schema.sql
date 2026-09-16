@@ -1357,8 +1357,10 @@ alter table public.products drop column if exists install_note;
 alter table public.products drop column if exists install_steps;
 drop table if exists public.product_releases cascade;
 drop policy if exists "editor kelola product-apk" on storage.objects;
-delete from storage.objects where bucket_id = 'product-apk';
-delete from storage.buckets where id = 'product-apk';
+-- Bucket product-apk yang tersisa (biasanya sudah kosong) dihapus lewat
+-- dashboard Storage atau Storage API — Postgres memblokir DELETE langsung pada
+-- storage.buckets/objects (trigger protect_delete), jadi TIDAK diletakkan di sini
+-- agar schema.sql tetap aman dijalankan berulang.
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 14. KONTEN HALAMAN PUBLIK
