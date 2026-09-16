@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.58.0",
+    "date": "2026-09-16",
+    "title": "Pusat Bantuan baru: FAQ dulu, langsung solusi",
+    "highlights": [
+      "❓ Buka /support kini langsung menampilkan FAQ & Bantuan Cepat — banyak kendala bisa selesai sendiri tanpa menunggu agent",
+      "🔑 Panduan mengatasi masalah izin akses bot didahulukan: bot tak merespons, perintah / tak muncul, gagal membuat room, sampai bot tak bisa DM — lengkap dengan cara mengatasinya",
+      "🎧 Masih butuh bantuan? Tombol Hubungi Tim Support tetap satu ketuk untuk terhubung dengan tim kami",
+      "✨ Alur bantuan dirapikan agar lebih ringkas dan cepat menemukan jawaban"
+    ]
+  },
+  {
     "version": "2.57.3",
     "date": "2026-09-15",
     "title": "Peningkatan stabilitas & penanganan laporan yang lebih rapi",
