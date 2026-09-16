@@ -130,6 +130,30 @@ Peran **viewer** hanya bisa melihat; **admin/owner** bisa menulis (ditegakkan RL
 
 ---
 
-## 6. Tahap berikutnya (di luar cakupan sekarang)
-Mengirim **data operasional** (absensi, status tugas) dari bot ke Supabase untuk
-ditampilkan di dashboard website — dikerjakan terpisah nanti.
+## 6. Tugas: buat & tugaskan dari CMS (command-queue + mirror)
+
+Sejak Phase 2, **pembuatan & penugasan tugas** dilakukan dari `/admin/workspace/tasks`,
+sementara bot tetap "mesin tugas" (reminder, eskalasi, transisi status).
+
+```
+   /admin/workspace/tasks                Supabase                     Bot workspace
+   ──────────────────────                ────────                     ─────────────
+   INSERT perintah  ──(anon+RLS)──►  workspace_task_commands  ◄─(service_role poll)─ operationsSync
+   (task.create/assign/…)             (pending)                        │ eksekusi via service tugas
+                                                                       ▼ (aktor = owner)
+   baca daftar  ◄──(anon+RLS)──  workspace_tasks / workspace_members ◄─ mirror (bot terbitkan)
+```
+
+- **Cermin** `workspace_members` & `workspace_tasks` diterbitkan bot (service_role) agar
+  CMS bisa memilih penerima & menampilkan tugas. SSoT tugas tetap di bot.
+- **Antrean** `workspace_task_commands`: admin meng-INSERT `pending`; bot mengeksekusi
+  (`task.create`/`assign`/`set_deadline`/`set_priority`/`set_status`/`cancel`/`delete`)
+  lalu menulis balik `done`/`error`. Aktor perintah = **owner workspace** (melewati izin).
+- Env bot tambahan: `WORKSPACE_OPS_SYNC_MS` (default 30000).
+
+Di Discord, `/dashboard` menampilkan tugas ini (info) + aksi self-service pribadi;
+tak ada lagi pembuatan/penugasan di Discord.
+
+## 7. Tahap berikutnya (opsional)
+Menampilkan **absensi & statistik** operasional lain di dashboard website
+(mirror tambahan) — bisa mengikuti pola yang sama bila diperlukan.
