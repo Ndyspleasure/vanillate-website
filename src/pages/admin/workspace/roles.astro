@@ -27,9 +27,41 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     SCOPE_LABEL, WILDCARD_PERMISSION, permissionLabel,
   } from '@/lib/workspace-admin';
   import { wsIcon } from '@/lib/workspace-icons';
+  import { loadCatalog, ofKind } from '@/lib/workspace-catalog';
 
   let bolehEdit = false;
   const INPUT = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
+
+  // Daftar izin/kategori/scope berasal dari KATALOG bot (tak hardcode). Fallback
+  // ke konstanta bila katalog belum diterbitkan. Ikon kategori tetap presentasi.
+  const ICON_BY_KEY: Record<string, string> = Object.fromEntries(PERMISSION_CATEGORIES.map((c) => [c.key, c.icon]));
+  let CATS: { key: string; label: string; icon: string; permissions: string[] }[] = PERMISSION_CATEGORIES;
+  let SCOPED = new Set<string>(SCOPED_PERMISSIONS);
+  let SCOPES: { value: string; label: string }[] = PERMISSION_SCOPES.map((s) => ({ value: s, label: SCOPE_LABEL[s] }));
+  let LABELS: Record<string, string> = {};
+
+  async function refreshCatalog() {
+    const rows = await loadCatalog();
+    const permRows = ofKind(rows, 'permission');
+    const catRows = ofKind(rows, 'permission_category');
+    const scopeRows = ofKind(rows, 'scope');
+    if (!permRows.length || !catRows.length) return; // pakai fallback
+    LABELS = Object.fromEntries(permRows.map((p) => [p.value, p.label ?? p.value]));
+    SCOPED = new Set(permRows.filter((p) => p.meta?.scoped).map((p) => p.value));
+    if (scopeRows.length) SCOPES = scopeRows.map((s) => ({ value: s.value, label: s.label ?? s.value }));
+    const known = new Set(catRows.map((c) => c.value));
+    CATS = [
+      ...catRows.map((c) => ({
+        key: c.value, label: c.label ?? c.value, icon: ICON_BY_KEY[c.value] ?? 'dot',
+        permissions: permRows.filter((p) => (p.meta?.category ?? 'lainnya') === c.value).map((p) => p.value),
+      })),
+      // izin tanpa kategori dikenal → grup "Lainnya" di akhir.
+      ...(() => {
+        const rest = permRows.filter((p) => !known.has(p.meta?.category ?? 'lainnya')).map((p) => p.value);
+        return rest.length ? [{ key: 'lainnya', label: 'Lainnya', icon: 'dot', permissions: rest }] : [];
+      })(),
+    ];
+  }
 
   document.addEventListener('admin:ready', (e) => {
     bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
@@ -44,20 +76,20 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   function permGrid(perms: string[], scopes: Record<string, string>): string {
     const dis = bolehEdit ? '' : 'disabled';
-    return PERMISSION_CATEGORIES.map((c) => `
+    return CATS.map((c) => `
       <details class="rounded-lg border border-ink-900/10 dark:border-cream-100/10">
         <summary class="cursor-pointer px-3 py-2 text-sm font-medium flex items-center gap-2"><span class="text-ink-500 dark:text-cream-300/70">${wsIcon(c.icon, 'h-4 w-4')}</span>${esc(c.label)} <span class="text-xs text-ink-500 dark:text-cream-300/60">(${c.permissions.filter((p) => perms.includes(p)).length}/${c.permissions.length})</span></summary>
         <div class="px-3 pb-3 space-y-1.5">
           ${c.permissions.map((p) => {
-            const scoped = SCOPED_PERMISSIONS.includes(p);
+            const scoped = SCOPED.has(p);
             const sc = scopes[p] || 'own';
             return `<div class="flex items-center gap-2 flex-wrap">
               <label class="flex items-center gap-2 text-sm">
                 <input data-perm="${esc(p)}" type="checkbox" ${perms.includes(p) ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" ${dis} />
-                <span class="font-mono text-xs">${esc(permissionLabel(p))}</span>
+                <span class="font-mono text-xs">${esc(LABELS[p] ?? permissionLabel(p))}</span>
               </label>
               ${scoped ? `<select data-scope="${esc(p)}" class="rounded-md border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-0.5 text-xs" ${dis}>
-                ${PERMISSION_SCOPES.map((s) => `<option value="${s}" ${sc === s ? 'selected' : ''}>${esc(SCOPE_LABEL[s])}</option>`).join('')}
+                ${SCOPES.map((s) => `<option value="${s.value}" ${sc === s.value ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}
               </select>` : ''}
             </div>`;
           }).join('')}
@@ -96,6 +128,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     body.innerHTML = stateBlock('loading', '');
     const supabase = getSupabase();
     if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+    await refreshCatalog();
     const { data, error } = await supabase.from('workspace_roles').select('*').order('sort', { ascending: true }).order('rank', { ascending: false });
     if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
     if (bolehEdit) document.getElementById('ws-add')!.classList.remove('hidden');

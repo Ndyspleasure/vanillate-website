@@ -1,6 +1,7 @@
 ---
-// Feature Toggle Vanillate Workspace — tabel workspace_features.
-// Tiap fitur bisa on / off / maintenance. Bot menegakkannya.
+// Feature Toggle Vanillate Workspace — tabel workspace_features (CRUD).
+// Tiap fitur bisa on / off / maintenance. Admin bisa tambah/hapus fitur.
+// Bot menegakkan hanya kunci yang memang dicek kodenya (lihat katalog).
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
@@ -9,14 +10,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   <AdminPageHeader
     eyebrow="Vanillate Workspace"
     title="Feature Toggle"
-    description="Nyalakan, matikan, atau set maintenance tiap subsistem bot. Bot menarik perubahan ini secara berkala."
+    description="Nyalakan, matikan, atau set maintenance tiap subsistem bot. Kamu bisa menambah/menghapus fitur; bot menerapkannya untuk kunci yang memang dikenal (lihat daftar katalog)."
   />
-  <div class="px-6 lg:px-10 py-8 max-w-3xl space-y-6">
+  <div class="px-6 lg:px-10 py-8 max-w-3xl space-y-5">
+    <button type="button" id="ws-add" class="hidden rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">+ Tambah fitur</button>
+    <datalist id="feature-keys"></datalist>
     <div id="ws-body" class="space-y-3"></div>
-    <div id="ws-aksi" class="hidden flex-wrap items-center gap-3">
-      <button type="button" id="ws-save" class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">Simpan perubahan</button>
-      <p id="ws-pesan" class="text-sm" role="status" aria-live="polite"></p>
-    </div>
+    <p id="ws-pesan" class="text-sm" role="status" aria-live="polite"></p>
   </div>
 </AdminLayout>
 
@@ -24,6 +24,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { wsStateDot } from '@/lib/workspace-icons';
+  import { loadCatalog, ofKind } from '@/lib/workspace-catalog';
 
   let bolehEdit = false;
   const STATES = [
@@ -31,11 +32,42 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     { v: 'maintenance', label: 'Maintenance' },
     { v: 'off', label: 'OFF' },
   ];
+  const INPUT = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
 
   document.addEventListener('admin:ready', (e) => {
     bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
     void muat();
   });
+
+  function pesan(msg: string, ok = true) {
+    const el = document.getElementById('ws-pesan')!;
+    el.textContent = msg;
+    el.className = `text-sm ${ok ? 'text-teal-700 dark:text-teal-300' : 'text-red-600 dark:text-red-400'}`;
+  }
+
+  function card(row: any): string {
+    const isNew = row.key === undefined;
+    const dis = bolehEdit ? '' : 'disabled';
+    const state = row.state ?? 'on';
+    return `<div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3.5 space-y-2.5" data-key="${esc(row.key ?? '')}" data-new="${isNew ? '1' : '0'}">
+      <div class="flex items-center gap-2.5">
+        <span data-dot class="flex-none">${wsStateDot(state)}</span>
+        <div class="min-w-0 flex-1 grid sm:grid-cols-2 gap-2">
+          ${isNew
+            ? `<input data-f="key" list="feature-keys" placeholder="kunci fitur (mis. tasks)" class="${INPUT} font-mono" ${dis} />`
+            : `<span class="font-mono text-xs text-ink-500 dark:text-cream-300/60 self-center">${esc(row.key)}</span>`}
+          <input data-f="label" placeholder="Nama fitur" value="${esc(row.label ?? '')}" class="${INPUT}" ${dis} />
+        </div>
+        ${bolehEdit ? `<div class="flex flex-none gap-2">
+          <button type="button" data-act="save" class="rounded-lg bg-amber-500/90 px-3 py-1 text-xs font-semibold text-ink-950 hover:bg-amber-400">Simpan</button>
+          <button type="button" data-act="del" class="rounded-lg border border-red-500/40 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10">Hapus</button>
+        </div>` : ''}
+      </div>
+      <select data-f="state" class="w-44 rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" ${dis}>
+        ${STATES.map((s) => `<option value="${s.v}" ${state === s.v ? 'selected' : ''}>${s.label}</option>`).join('')}
+      </select>
+    </div>`;
+  }
 
   async function muat() {
     const body = document.getElementById('ws-body')!;
@@ -43,63 +75,69 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const supabase = getSupabase();
     if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
 
+    // Katalog kunci fitur yang dikenal bot → saran input (datalist).
+    const cat = ofKind(await loadCatalog(), 'feature');
+    document.getElementById('feature-keys')!.innerHTML =
+      cat.map((r) => `<option value="${esc(r.value)}">${esc(r.label ?? r.value)}</option>`).join('');
+
     const { data, error } = await supabase
       .from('workspace_features')
       .select('key, label, state, sort')
       .order('sort', { ascending: true });
-
     if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
-    if (!data || !data.length) { body.innerHTML = stateBlock('empty', 'Belum ada fitur. Jalankan supabase/workspace-schema.sql.'); return; }
+    if (bolehEdit) document.getElementById('ws-add')!.classList.remove('hidden');
+    body.innerHTML = (data && data.length) ? data.map(card).join('') : stateBlock('empty', 'Belum ada fitur.');
 
-    body.innerHTML = data.map((row: any) => `
-      <div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3.5 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <span data-dot="${esc(row.key)}" class="flex-none">${wsStateDot(row.state)}</span>
-          <div class="min-w-0">
-            <p class="text-sm font-medium">${esc(row.label)}</p>
-            <p class="text-xs text-ink-500 dark:text-cream-300/60 font-mono">${esc(row.key)}</p>
-          </div>
-        </div>
-        <select data-key="${esc(row.key)}" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
-          ${STATES.map((s) => `<option value="${s.v}" ${row.state === s.v ? 'selected' : ''}>${s.label}</option>`).join('')}
-        </select>
-      </div>`).join('');
-
-    // Perbarui titik status saat pilihan diubah.
-    body.querySelectorAll<HTMLSelectElement>('[data-key]').forEach((sel) => {
+    // Titik status ikut berubah saat state diganti.
+    body.querySelectorAll<HTMLSelectElement>('[data-f="state"]').forEach((sel) => {
       sel.addEventListener('change', () => {
-        const dot = body.querySelector(`[data-dot="${sel.dataset.key}"]`);
+        const dot = sel.closest('[data-key]')?.querySelector('[data-dot]');
         if (dot) dot.innerHTML = wsStateDot(sel.value);
       });
     });
-
-    document.getElementById('ws-aksi')!.classList.remove('hidden');
-    if (!bolehEdit) {
-      body.querySelectorAll('select').forEach((el) => ((el as HTMLSelectElement).disabled = true));
-      (document.getElementById('ws-save') as HTMLButtonElement).disabled = true;
-      document.getElementById('ws-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
-    }
   }
 
-  document.getElementById('ws-save')?.addEventListener('click', async () => {
-    if (!bolehEdit) return;
-    const supabase = getSupabase();
-    if (!supabase) return;
-    const btn = document.getElementById('ws-save') as HTMLButtonElement;
-    const pesan = document.getElementById('ws-pesan')!;
-    btn.disabled = true; btn.textContent = 'Menyimpan…'; pesan.textContent = ''; pesan.className = 'text-sm';
+  document.getElementById('ws-add')?.addEventListener('click', () => {
+    const body = document.getElementById('ws-body')!;
+    if (body.querySelector('[data-new="1"]')) return;
+    const empty = body.querySelector('.py-16'); if (empty) empty.remove();
+    body.insertAdjacentHTML('afterbegin', card({}));
+  });
+
+  document.getElementById('ws-body')?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-act]') as HTMLButtonElement | null;
+    if (!btn || !bolehEdit) return;
+    const cardEl = btn.closest('[data-key]') as HTMLElement;
+    const isNew = cardEl.dataset.new === '1';
+    const supabase = getSupabase(); if (!supabase) return;
     const { data: sesi } = await supabase.auth.getSession();
     const uid = sesi.session?.user.id ?? null;
+    const val = (f: string) => (cardEl.querySelector(`[data-f="${f}"]`) as HTMLInputElement | HTMLSelectElement).value.trim();
 
-    const selects = Array.from(document.querySelectorAll<HTMLSelectElement>('[data-key]'));
-    const hasil = await Promise.all(selects.map((el) =>
-      supabase.from('workspace_features')
-        .update({ state: el.value, updated_at: new Date().toISOString(), updated_by: uid })
-        .eq('key', el.dataset.key!),
-    ));
-    const gagal = hasil.find((r) => r.error);
-    if (gagal?.error) { pesan.textContent = pesanError(gagal.error); pesan.className = 'text-sm text-red-600 dark:text-red-400'; }
-    else { pesan.textContent = 'Tersimpan. Bot menerapkannya dalam beberapa menit.'; pesan.className = 'text-sm text-teal-700 dark:text-teal-300'; }
-    btn.disabled = false; btn.textContent = 'Simpan perubahan';
+    if (btn.dataset.act === 'del') {
+      if (isNew) { cardEl.remove(); return; }
+      if (!confirm('Hapus fitur ini?')) return;
+      const { error } = await supabase.from('workspace_features').delete().eq('key', cardEl.dataset.key);
+      if (error) return pesan(pesanError(error), false);
+      cardEl.remove(); pesan('Fitur dihapus.');
+      return;
+    }
+
+    const label = val('label');
+    const state = val('state');
+    if (!label) return pesan('Nama fitur wajib diisi.', false);
+    if (isNew) {
+      const key = val('key');
+      if (!/^[a-z0-9_]+$/.test(key)) return pesan('Kunci fitur hanya boleh huruf kecil, angka, dan garis bawah.', false);
+      const { error } = await supabase.from('workspace_features').insert({ key, label, state, updated_at: new Date().toISOString(), updated_by: uid });
+      if (error) return pesan(pesanError(error), false);
+      cardEl.dataset.key = key; cardEl.dataset.new = '0';
+      pesan('Fitur ditambahkan. Bot menerapkannya (bila kunci dikenal) dalam beberapa menit.');
+      void muat();
+    } else {
+      const { error } = await supabase.from('workspace_features').update({ label, state, updated_at: new Date().toISOString(), updated_by: uid }).eq('key', cardEl.dataset.key);
+      if (error) return pesan(pesanError(error), false);
+      pesan('Tersimpan. Bot menerapkannya dalam beberapa menit.');
+    }
   });
 </script>

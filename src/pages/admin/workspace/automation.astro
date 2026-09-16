@@ -22,8 +22,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { newWorkspaceId, AUTOMATION_TRIGGERS, AUTOMATION_ACTIONS } from '@/lib/workspace-admin';
+  import { loadCatalog, options } from '@/lib/workspace-catalog';
 
   let bolehEdit = false;
+  // Daftar trigger/action berasal dari katalog bot (tak hardcode); fallback ke konstanta.
+  let TRIGGERS = AUTOMATION_TRIGGERS;
+  let ACTIONS = AUTOMATION_ACTIONS;
   const INPUT = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
 
   document.addEventListener('admin:ready', (e) => {
@@ -52,7 +56,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <input data-f="name" placeholder="Nama rule" value="${esc(row.name ?? '')}" class="${INPUT}" ${dis} />
       <div class="grid sm:grid-cols-2 gap-2">
         <select data-f="trigger" class="${INPUT}" ${dis}>
-          ${AUTOMATION_TRIGGERS.map((t) => `<option value="${t.value}" ${row.trigger === t.value ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}
+          ${TRIGGERS.map((t) => `<option value="${t.value}" ${row.trigger === t.value ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}
         </select>
         <label class="flex items-center gap-2 text-sm px-1">
           <input data-f="enabled" type="checkbox" ${row.enabled !== false ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" ${dis} />
@@ -62,7 +66,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <div>
         <p class="text-xs font-medium mb-1">Aksi</p>
         <div class="grid sm:grid-cols-2 gap-1.5">
-          ${AUTOMATION_ACTIONS.map((a) => `<label class="flex items-center gap-2 text-sm">
+          ${ACTIONS.map((a) => `<label class="flex items-center gap-2 text-sm">
             <input data-action="${a.value}" type="checkbox" ${actions.includes(a.value) ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" ${dis} />
             <span>${esc(a.label)}</span></label>`).join('')}
         </div>
@@ -76,6 +80,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     body.innerHTML = stateBlock('loading', '');
     const supabase = getSupabase();
     if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+    const rows = await loadCatalog();
+    TRIGGERS = options(rows, 'automation_trigger', AUTOMATION_TRIGGERS);
+    ACTIONS = options(rows, 'automation_action', AUTOMATION_ACTIONS);
     const { data, error } = await supabase.from('workspace_automation').select('*').order('sort', { ascending: true });
     if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
     if (bolehEdit) document.getElementById('ws-add')!.classList.remove('hidden');
@@ -86,7 +93,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const body = document.getElementById('ws-body')!;
     if (body.querySelector('[data-id="new"]')) return;
     const empty = body.querySelector('.py-16'); if (empty) empty.remove();
-    body.insertAdjacentHTML('afterbegin', card({ id: 'new', name: '', trigger: AUTOMATION_TRIGGERS[0].value, actions: [], enabled: true, is_system: false, params: {} }));
+    body.insertAdjacentHTML('afterbegin', card({ id: 'new', name: '', trigger: TRIGGERS[0].value, actions: [], enabled: true, is_system: false, params: {} }));
   });
 
   document.getElementById('ws-body')?.addEventListener('click', async (e) => {
