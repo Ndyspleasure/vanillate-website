@@ -1205,8 +1205,8 @@ create table if not exists public.products (
   tagline       text,
   description   text,
   -- Platform menentukan pola CTA di halaman publik:
-  --   discord → "Undang ke Server" (invite),  android → "Download APK".
-  platform      text not null default 'discord' check (platform in ('discord','android','web')),
+  --   discord → "Undang ke Server" (invite),  web → "Buka Aplikasi" (tautan).
+  platform      text not null default 'discord' check (platform in ('discord','web')),
   status        text not null default 'live' check (status in ('live','beta','preorder','coming-soon')),
   category      text,
   accent_color  text,                               -- hex aksen "dunia" produk (mis. #E8B84A)
@@ -1225,11 +1225,9 @@ create table if not exists public.products (
   discord_scopes           jsonb not null default '["bot","applications.commands"]'::jsonb,
   discord_integration_type text,                    -- '0' guild install, '1' user install
   invite_url               text,                    -- override; kosong = dibangun dari field di atas
-  -- Android app (file APK ada di product_releases)
-  package_name  text,
-  min_android   text,                               -- mis. 'Android 8.0'
-  install_note  text,                               -- catatan pasang (aktifkan sumber tak dikenal, dll)
-  -- CTA & tautan umum
+  -- Aplikasi web (dibuka lewat tautan, mis. deploy Netlify/Vercel)
+  --   cta_url   → alamat aplikasi/website (jadi tombol utama halaman produk)
+  --   cta_label → label tombol (kosong = "Buka Aplikasi")
   cta_label     text,
   cta_url       text,
   -- SEO khusus
@@ -1258,31 +1256,9 @@ create table if not exists public.product_media (
 );
 create index if not exists product_media_product_idx on public.product_media(product_id, sort);
 
--- 13c. Rilis APK — file .apk di bucket product-apk (manajemen versi)
-create table if not exists public.product_releases (
-  id            uuid primary key default gen_random_uuid(),
-  product_id    uuid not null references public.products(id) on delete cascade,
-  version       text not null,                      -- '1.0.0'
-  version_code  integer,                            -- Android versionCode (opsional)
-  storage_path  text not null,                      -- path .apk di bucket product-apk
-  url           text,                               -- URL unduh publik (cache)
-  file_size     bigint,                             -- ukuran byte
-  sha256        text,                               -- checksum integritas (ditampilkan di halaman unduh)
-  release_notes text,
-  min_android   text,
-  is_latest     boolean not null default false,
-  published     boolean not null default true,
-  created_at    timestamptz not null default now(),
-  created_by    uuid references public.admin_users(id) on delete set null
-);
-create index if not exists product_releases_product_idx on public.product_releases(product_id, created_at desc);
--- Hanya satu rilis "terbaru" per produk.
-create unique index if not exists product_releases_one_latest on public.product_releases(product_id) where is_latest;
-
--- 13d. RLS — admin baca, editor kelola. Publik lewat build (service_role, bypass).
+-- 13c. RLS — admin baca, editor kelola. Publik lewat build (service_role, bypass).
 alter table public.products         enable row level security;
 alter table public.product_media    enable row level security;
-alter table public.product_releases enable row level security;
 
 drop policy if exists "admin baca products" on public.products;
 create policy "admin baca products" on public.products
@@ -1300,30 +1276,19 @@ create policy "editor kelola product_media" on public.product_media
   for all to authenticated
   using (public.is_admin_editor()) with check (public.is_admin_editor());
 
-drop policy if exists "admin baca product_releases" on public.product_releases;
-create policy "admin baca product_releases" on public.product_releases
-  for select to authenticated using (public.is_admin());
-drop policy if exists "editor kelola product_releases" on public.product_releases;
-create policy "editor kelola product_releases" on public.product_releases
-  for all to authenticated
-  using (public.is_admin_editor()) with check (public.is_admin_editor());
-
--- 13e. Storage buckets (publik) + policies pada storage.objects
+-- 13d. Storage bucket (publik) + policies pada storage.objects
 --   product-media → foto/video/ikon (≤50 MB)
---   product-apk   → berkas .apk (≤250 MB)
 -- Bucket publik: siapa pun boleh MENGUNDUH lewat URL publik. Menulis/menghapus
 -- hanya editor (owner/admin) lewat panel admin.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
   ('product-media', 'product-media', true, 52428800,
-   array['image/png','image/jpeg','image/webp','image/gif','image/svg+xml','video/mp4','video/webm']),
-  ('product-apk', 'product-apk', true, 262144000,
-   array['application/vnd.android.package-archive','application/octet-stream'])
+   array['image/png','image/jpeg','image/webp','image/gif','image/svg+xml','video/mp4','video/webm'])
 on conflict (id) do nothing;
 
 drop policy if exists "publik baca product files" on storage.objects;
 create policy "publik baca product files" on storage.objects
-  for select to public using (bucket_id in ('product-media','product-apk'));
+  for select to public using (bucket_id = 'product-media');
 
 drop policy if exists "editor kelola product-media" on storage.objects;
 create policy "editor kelola product-media" on storage.objects
@@ -1331,13 +1296,7 @@ create policy "editor kelola product-media" on storage.objects
   using (bucket_id = 'product-media' and public.is_admin_editor())
   with check (bucket_id = 'product-media' and public.is_admin_editor());
 
-drop policy if exists "editor kelola product-apk" on storage.objects;
-create policy "editor kelola product-apk" on storage.objects
-  for all to authenticated
-  using (bucket_id = 'product-apk' and public.is_admin_editor())
-  with check (bucket_id = 'product-apk' and public.is_admin_editor());
-
--- 13f. Seed produk pertama: Vanillate Sambung Kata (Discord bot).
+-- 13e. Seed produk pertama: Vanillate Sambung Kata (Discord bot).
 --      Fitur & command sengaja TIDAK di-seed di sini — untuk Sambung Kata
 --      keduanya tetap ditarik dari repo bot (src/data/synced/bot-info.json),
 --      satu sumber kebenaran. Produk lain mengisi lewat /admin/produk.
@@ -1357,18 +1316,17 @@ values
    'Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.')
 on conflict (slug) do nothing;
 
--- 13g. Konten produk sepenuhnya dikelola CMS.
---      Tujuannya: seluruh isi halaman produk (termasuk badge, FAQ, langkah
---      pasang, dan CTA penutup) bisa diubah dari /admin/produk tanpa menyentuh
---      source code. Aditif & backward-compatible — semua kolom nullable atau
---      berdefault, jadi baris produk yang sudah ada tidak berubah.
+-- 13f. Konten produk sepenuhnya dikelola CMS.
+--      Tujuannya: seluruh isi halaman produk (termasuk badge, FAQ, dan CTA
+--      penutup) bisa diubah dari /admin/produk tanpa menyentuh source code.
+--      Aditif & backward-compatible — semua kolom nullable atau berdefault,
+--      jadi baris produk yang sudah ada tidak berubah.
 alter table public.products add column if not exists badge         text;
 alter table public.products add column if not exists badge_tone    text not null default 'accent';
 alter table public.products add column if not exists cta_heading   text;
 alter table public.products add column if not exists cta_text      text;
 alter table public.products add column if not exists cta_note      text;
 alter table public.products add column if not exists faq           jsonb not null default '[]'::jsonb;
-alter table public.products add column if not exists install_steps jsonb not null default '[]'::jsonb;
 
 -- Nada warna badge dibatasi ke daftar aman: nilainya dipetakan ke kelas CSS di
 -- situs, jadi DB tidak pernah menyimpan markup atau kelas mentah.
@@ -1380,10 +1338,27 @@ comment on column public.products.badge is
   'Label kecil di kartu produk (mis. "Terpopuler"). Kosong = elemen badge tidak dirender sama sekali.';
 comment on column public.products.faq is
   'FAQ khusus produk: array [{q, a}]. Kosong = section FAQ disembunyikan.';
-comment on column public.products.install_steps is
-  'Langkah pemasangan (array string). Kosong = memakai langkah bawaan sesuai platform.';
+comment on column public.products.cta_url is
+  'Produk web: tautan aplikasi/website (mis. domain Netlify/Vercel) — jadi tombol utama halaman produk.';
 comment on column public.products.thumbnail_url is
   'Logo/cover produk. Kosong = halaman memakai ikon aksen sebagai fallback (bukan gambar rusak).';
+
+-- 13g. Migrasi: dari aplikasi Android (unggah APK) ke aplikasi web (tautan).
+--      Produk web cukup mengisi cta_url (dibuka lewat peramban), jadi berkas APK,
+--      tabel rilis, dan bucket product-apk tidak lagi dipakai. Idempoten: aman
+--      dijalankan ulang, dan hanya menghapus objek legacy bila masih ada.
+update public.products set platform = 'web' where platform = 'android';
+alter table public.products drop constraint if exists products_platform_check;
+alter table public.products add constraint products_platform_check
+  check (platform in ('discord', 'web'));
+alter table public.products drop column if exists package_name;
+alter table public.products drop column if exists min_android;
+alter table public.products drop column if exists install_note;
+alter table public.products drop column if exists install_steps;
+drop table if exists public.product_releases cascade;
+drop policy if exists "editor kelola product-apk" on storage.objects;
+delete from storage.objects where bucket_id = 'product-apk';
+delete from storage.buckets where id = 'product-apk';
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 14. KONTEN HALAMAN PUBLIK

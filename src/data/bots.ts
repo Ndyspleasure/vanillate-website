@@ -5,14 +5,14 @@
 // ditulis di sini. Modul ini tetap bernama `bots` dan mempertahankan API lama
 // (Bot, buildInviteUrl, getFeaturedBot, dst) supaya seluruh halaman yang sudah
 // ada tidak perlu diubah — sekaligus menambah dukungan produk non-Discord
-// (aplikasi Android dengan unduhan APK).
+// (aplikasi web yang dibuka lewat tautan).
 
 import botInfo from './synced/bot-info.json';
 import productsData from './synced/products.json';
 import type { IconName } from './icons';
 import { url } from '@utils/url';
 
-export type Platform = 'discord' | 'android' | 'web';
+export type Platform = 'discord' | 'web';
 
 export type BadgeTone = 'accent' | 'info' | 'success' | 'warn' | 'neutral';
 
@@ -22,15 +22,6 @@ export type ProductMedia = {
   kind: 'icon' | 'screenshot' | 'video' | 'banner';
   url: string;
   alt: string;
-};
-
-export type ProductRelease = {
-  version: string;
-  url: string;               // URL unduh publik (Supabase Storage)
-  fileSize: number | null;   // byte
-  sha256: string | null;     // checksum integritas
-  minAndroid: string;
-  releaseNotes: string;
 };
 
 export type Bot = {
@@ -43,18 +34,13 @@ export type Bot = {
   featured: boolean;
   verified?: boolean;
   category: string;
-  platform: Platform;           // menentukan pola CTA (Undang vs Download)
+  platform: Platform;           // menentukan pola CTA (Undang vs Buka aplikasi)
   // Discord
   clientId?: string;
   permissions: string;
   scopes: string[];
   integrationType?: string;
   inviteUrlOverride?: string;
-  // Android
-  packageName?: string;
-  minAndroid?: string;
-  androidInstallNote?: string;
-  release?: ProductRelease | null;   // rilis APK terbaru
   media: ProductMedia[];             // screenshot / video / banner
   // Umum
   color: string;
@@ -64,7 +50,6 @@ export type Bot = {
   badge?: string;
   badgeTone: BadgeTone;
   faq: ProductFaq[];
-  installSteps: string[];
   ctaHeading?: string;
   ctaText?: string;
   features: string[];
@@ -72,7 +57,9 @@ export type Bot = {
   /** Slug kategori FAQ produk ini (pengganti dokumentasi per produk). */
   faqCategory?: string;
   longIntro?: string[];
+  /** Produk web: label tombol utama (opsional; default "Buka Aplikasi"). */
   ctaLabel?: string;
+  /** Produk web: tautan aplikasi/website (mis. domain Netlify/Vercel). */
   ctaUrl?: string;
   ctaNote?: string;
   seoTitle?: string;
@@ -109,25 +96,22 @@ type RawProduct = {
   longIntro?: string[];
   commands?: { name: string; description: string }[];
   discord?: { clientId?: string; permissions?: string; scopes?: string[]; integrationType?: string; inviteUrl?: string };
-  android?: { packageName?: string; minAndroid?: string; installNote?: string } | null;
   ctaLabel?: string;
   ctaUrl?: string;
   faqCategory?: string;
   seoTitle?: string;
   seoDescription?: string;
   media?: ProductMedia[];
-  release?: ProductRelease | null;
   badge?: string;
   badgeTone?: string;
   faq?: ProductFaq[];
-  installSteps?: string[];
   ctaHeading?: string;
   ctaText?: string;
   ctaNote?: string;
 };
 
 const STATUSES = ['live', 'beta', 'preorder', 'coming-soon'] as const;
-const PLATFORMS = ['discord', 'android', 'web'] as const;
+const PLATFORMS = ['discord', 'web'] as const;
 const TONES = ['accent', 'info', 'success', 'warn', 'neutral'] as const;
 
 function toBot(p: RawProduct): Bot {
@@ -156,10 +140,6 @@ function toBot(p: RawProduct): Bot {
     scopes: p.discord?.scopes && p.discord.scopes.length ? p.discord.scopes : ['bot', 'applications.commands'],
     integrationType: p.discord?.integrationType || undefined,
     inviteUrlOverride: p.discord?.inviteUrl || undefined,
-    packageName: p.android?.packageName || undefined,
-    minAndroid: p.android?.minAndroid || undefined,
-    androidInstallNote: p.android?.installNote || undefined,
-    release: p.release ?? null,
     // Media tanpa URL disaring di sini. Bila lolos, section galeri tetap
     // dianggap berisi lalu merender <img> kosong — judul muncul di atas
     // ruang yang tidak berisi apa-apa.
@@ -172,7 +152,6 @@ function toBot(p: RawProduct): Bot {
     badge: p.badge || undefined,
     badgeTone: (TONES as readonly string[]).includes(p.badgeTone ?? '') ? (p.badgeTone as BadgeTone) : 'accent',
     faq: Array.isArray(p.faq) ? p.faq.filter((f) => f && f.q && f.a) : [],
-    installSteps: Array.isArray(p.installSteps) ? p.installSteps.filter(Boolean) : [],
     ctaHeading: p.ctaHeading || undefined,
     ctaText: p.ctaText || undefined,
     ctaNote: p.ctaNote || undefined,
@@ -208,7 +187,7 @@ export const bots: Bot[] = allBots.sort(
 // ─────────────────────────────────────────────────────────────────────────────
 export const CTA = {
   invite: 'Undang ke Server',
-  download: 'Download APK',
+  open: 'Buka Aplikasi',
   preorder: 'Amankan Tempat',
   notify: 'Ikuti Kabarnya',
   guide: 'Lihat Panduan',
@@ -229,20 +208,18 @@ export function buildInviteUrl(bot: Bot): string | null {
   return `https://discord.com/oauth2/authorize?${params.toString()}`;
 }
 
-/** Rilis APK terbaru sebuah produk Android (atau null). */
-export function latestRelease(bot: Bot): ProductRelease | null {
-  return bot.platform === 'android' ? (bot.release ?? null) : null;
+/** Tautan aplikasi web sebuah produk (platform 'web'), atau null. */
+export function webAppUrl(bot: Bot): string | null {
+  return bot.platform === 'web' ? (bot.ctaUrl || null) : null;
 }
 
-/** URL unduh langsung (APK terbaru) untuk produk Android, atau null. */
-export function downloadUrl(bot: Bot): string | null {
-  const rel = latestRelease(bot);
-  return rel?.url || null;
+/** Label tombol utama aplikasi web (dari CMS bila diisi, selain itu bawaan). */
+export function webCtaLabel(bot: Bot): string {
+  return bot.ctaLabel || CTA.open;
 }
 
-/** Label tombol invite/CTA utama sesuai status & platform bot. */
+/** Label tombol invite/CTA utama Discord sesuai status bot. */
 export function inviteCtaLabel(bot: Bot): string {
-  if (bot.platform === 'android') return CTA.download;
   if (bot.status === 'preorder') return CTA.preorder;
   if (bot.status === 'coming-soon') return CTA.notify;
   return CTA.invite;
@@ -250,13 +227,13 @@ export function inviteCtaLabel(bot: Bot): string {
 
 /**
  * CTA utama produk untuk kartu & hero: label + href + apakah tautan eksternal.
- * Discord → invite; Android → unduh APK; selain itu / belum siap → halaman detail.
+ * Discord → invite; Web → buka aplikasi; selain itu / belum siap → halaman detail.
  */
 export function productPrimaryCta(bot: Bot): { label: string; href: string; external: boolean } {
   const invite = buildInviteUrl(bot);
   if (invite) return { label: inviteCtaLabel(bot), href: invite, external: true };
-  const dl = downloadUrl(bot);
-  if (dl) return { label: `${CTA.download}${latestRelease(bot)?.version ? ` v${latestRelease(bot)!.version}` : ''}`, href: dl, external: true };
+  const web = webAppUrl(bot);
+  if (web) return { label: webCtaLabel(bot), href: web, external: true };
   return { label: bot.status === 'coming-soon' ? CTA.notify : `Lihat ${bot.shortName}`, href: `/products/${bot.slug}`, external: false };
 }
 
@@ -303,14 +280,6 @@ export function badgeClass(tone: BadgeTone): string {
     case 'neutral': return 'bg-ink-900/10 dark:bg-cream-100/10 text-ink-600 dark:text-cream-200';
     default:        return 'bg-amber-500/15 text-amber-700 dark:text-amber-400';
   }
-}
-
-/** Format ukuran byte ke bentuk ringkas (mis. 24 MB). */
-export function formatBytes(n: number | null | undefined): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return '';
-  if (n < 1024) return `${n} B`;
-  if (n < 1048576) return `${(n / 1024).toFixed(0)} KB`;
-  return `${(n / 1048576).toFixed(1)} MB`;
 }
 
 export function getFeaturedBot(): Bot {

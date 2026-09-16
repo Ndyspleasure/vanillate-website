@@ -733,38 +733,38 @@ diubah saat menambah bagian konten baru.
 ## 15. Katalog Produk (umbrella studio)
 
 Reposisi situs dari "situs Sambung Kata" menjadi **rumah & katalog seluruh produk
-Vanillate Studio**. Satu katalog menampung Discord bot, aplikasi Android (APK
-diunduh langsung dari situs), dan produk berikutnya — dikelola dari **`/admin/produk`**.
+Vanillate Studio**. Satu katalog menampung Discord bot, aplikasi web (dibuka lewat
+tautan, mis. yang di-deploy ke Netlify/Vercel), dan produk berikutnya — dikelola
+dari **`/admin/produk`**.
+
+Untuk aplikasi web, **tidak ada berkas yang diunggah**: cukup isi **Tautan
+aplikasi** (kolom `cta_url`). Ini menggantikan alur lama yang mewajibkan unggah
+berkas **APK** — yang boros kuota Storage dan lebih ribet.
 
 ### Tabel (schema.sql bagian 13)
 
 | Tabel | Peran |
 |---|---|
-| `products` | Baris = satu produk. `platform` (`discord`/`android`/`web`) menentukan pola CTA di halaman publik (Undang vs Download APK). |
+| `products` | Baris = satu produk. `platform` (`discord`/`web`) menentukan pola CTA di halaman publik (Undang vs Buka Aplikasi). Produk web memakai `cta_url` sebagai tombol utama. |
 | `product_media` | Foto/video/ikon/banner per produk — file di bucket **`product-media`**. |
-| `product_releases` | Rilis **APK** per produk (versi, ukuran, **SHA-256**, catatan) — file di bucket **`product-apk`**; satu `is_latest` per produk. |
 
 RLS sama seperti Partnership: admin baca, `owner`/`admin` kelola. Halaman publik
 **tidak** membaca tabel ini — ditarik saat build (service_role).
 
 ### Storage
 
-Dua bucket **publik** dibuat oleh schema: `product-media` (≤50 MB) & `product-apk`
-(≤250 MB). Siapa pun boleh **mengunduh** lewat URL publik; **menulis/menghapus**
-hanya editor (lewat panel, memakai JWT admin). File APK **tidak** disimpan di repo.
-
-> **Hosting APK — kuota.** Paket gratis Supabase Storage terbatas pada penyimpanan
-> & bandwidth/egress bulanan. Karena situs hanya menyimpan **URL**, file mudah
-> dipindah nanti ke **Cloudflare R2** (egress gratis) atau **GitHub Releases** bila
-> unduhan membesar — cukup ganti URL di metadata.
+Satu bucket **publik** dibuat oleh schema: `product-media` (≤50 MB). Siapa pun
+boleh **mengunduh** lewat URL publik; **menulis/menghapus** hanya editor (lewat
+panel, memakai JWT admin). Aplikasi web tidak menaruh berkas apa pun di Storage —
+hanya **tautan** yang disimpan di metadata produk.
 
 ### Alur edit → terbit
 
 ```
-   Admin di /admin/produk  (CRUD + upload media/APK ke Storage)
+   Admin di /admin/produk  (CRUD + upload media ke Storage; aplikasi web = tautan)
               │
               ▼
-   Supabase: products / product_media / product_releases  (+ file di Storage)
+   Supabase: products / product_media  (+ file media di Storage)
               │  scripts/sync-content.mjs (syncProducts), saat build
               ▼
    src/data/synced/products.json  ─── di-commit bila berubah
