@@ -39,6 +39,17 @@ const peekSrc = url('/mascot/vani/vani-peek.png');
       </button>
     </div>
 
+    <a class="vani-contact__item vani-contact__item--primary" href={url('/chat')}>
+      <span class="vani-contact__ic vani-contact__ic--chat" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>
+      </span>
+      <span class="vani-contact__body">
+        <span class="vani-contact__label">Live Chat</span>
+        <span class="vani-contact__meta">Ngobrol langsung dengan tim — real-time</span>
+      </span>
+      <svg class="vani-contact__go" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+    </a>
+
     <a class="vani-contact__item" href={discordUrl} target="_blank" rel="noopener noreferrer">
       <span class="vani-contact__ic vani-contact__ic--discord" aria-hidden="true">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3.2a.074.074 0 0 0-.079.037c-.34.607-.719 1.4-.984 2.02a18.27 18.27 0 0 0-5.487 0 12.6 12.6 0 0 0-.997-2.02.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C1.27 7.94.62 11.42.94 14.86a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127c-.598.35-1.22.645-1.873.892a.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-4.061-.838-7.51-3.549-10.464a.06.06 0 0 0-.031-.028ZM8.02 12.766c-1.183 0-2.157-1.086-2.157-2.42 0-1.334.955-2.42 2.157-2.42 1.21 0 2.176 1.095 2.157 2.42 0 1.334-.956 2.42-2.157 2.42Zm7.975 0c-1.183 0-2.157-1.086-2.157-2.42 0-1.334.955-2.42 2.157-2.42 1.21 0 2.176 1.095 2.157 2.42 0 1.334-.946 2.42-2.157 2.42Z"/></svg>
@@ -220,9 +231,18 @@ const peekSrc = url('/mascot/vani/vani-peek.png');
     border-radius: 0.6rem;
     color: #fff;
   }
+  .vani-contact__ic--chat { background: linear-gradient(135deg, #e8b84a, #c99a2e); }
   .vani-contact__ic--discord { background: #5865f2; }
   .vani-contact__ic--wa { background: #25d366; }
   .vani-contact__ic--mail { background: linear-gradient(135deg, #e8b84a, #c99a2e); }
+
+  /* Live Chat ditonjolkan sebagai kanal utama. */
+  .vani-contact__item--primary {
+    background: rgba(232, 184, 74, 0.1);
+    border: 1px solid rgba(232, 184, 74, 0.35);
+    margin-bottom: 0.35rem;
+  }
+  .vani-contact__item--primary:hover { background: rgba(232, 184, 74, 0.18); }
 
   .vani-contact__body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
   .vani-contact__label { font-size: 0.85rem; font-weight: 600; line-height: 1.2; }
