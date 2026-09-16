@@ -105,6 +105,30 @@ export const NOTIFICATION_TYPES = [
 
 export const DAY_LABELS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
+/** Tingkat OKR (mengikuti OkrLevel di bot). */
+export const OKR_LEVELS = [
+  { value: 'organisasi', label: 'Organisasi' },
+  { value: 'tim', label: 'Tim' },
+  { value: 'individu', label: 'Individu' },
+];
+
+/** Tipe Key Result (mengikuti KrType di bot). */
+export const KR_TYPES = [
+  { value: 'angka', label: 'Angka' },
+  { value: 'persen', label: 'Persen (%)' },
+  { value: 'boolean', label: 'Ya / Tidak' },
+  { value: 'milestone', label: 'Milestone' },
+];
+
+/** Label ramah status OKR (mengikuti OkrStatus di bot). */
+export const OKR_STATUS_LABEL: Record<string, string> = {
+  belum_dimulai: 'Belum dimulai',
+  sesuai_target: 'Sesuai target',
+  berisiko: 'Berisiko',
+  tidak_sesuai: 'Tidak sesuai',
+  selesai: 'Selesai',
+};
+
 /** Prefix ID (mengikuti store/id.ts bot) — dipakai saat membuat baris baru. */
 export function newWorkspaceId(prefix: string): string {
   const ALPHABET = '0123456789ABCDEFGHJKLMNPQRSTVWXYZ';

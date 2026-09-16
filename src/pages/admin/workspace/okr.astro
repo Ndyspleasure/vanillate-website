@@ -1,0 +1,422 @@
+---
+// OKR / Target Vanillate Workspace (Phase 3b).
+//   • Buat / assign / update progress OKR → antrean workspace_okr_commands
+//     (bot mengeksekusi & mencerminkan ke workspace_okrs). SSoT OKR di bot.
+//   • OKR berulang bulanan = konfigurasi workspace_okr_recurrences (bot sync &
+//     scheduler-nya men-spawn OKR tiap bulan). Pola sama seperti Tugas & Rutin.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="OKR · Workspace" active="ws-okr">
+  <AdminPageHeader
+    eyebrow="Vanillate Workspace"
+    title="Target / OKR"
+    description="Susun objective + key result, tugaskan ke staff/tim, dan perbarui progress. Bot mengeksekusi & mencerminkan hasilnya. OKR berulang bulanan otomatis dibuat scheduler bot."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-4xl space-y-10">
+    <!-- BUAT OKR -->
+    <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+      <h2 class="font-display text-lg font-semibold tracking-tightest mb-3">Buat OKR</h2>
+      <form id="form-buat" class="space-y-3">
+        <input id="o-obj" placeholder="Objective (mis. Tingkatkan kepuasan pemain)" class="w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+        <div class="grid sm:grid-cols-3 gap-2">
+          <select id="o-level" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm"></select>
+          <select id="o-owner" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm hidden"></select>
+          <select id="o-team" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm hidden"></select>
+          <input id="o-period" placeholder="Periode (mis. 2026-Q3)" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-xs font-medium">Key Results</p>
+            <button type="button" id="o-add-kr" class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-2.5 py-1 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">+ Key Result</button>
+          </div>
+          <div id="o-krs" class="space-y-2"></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="submit" id="btn-buat" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60">Buat & kirim ke bot</button>
+          <p id="buat-pesan" class="text-sm" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <!-- DAFTAR OKR -->
+    <section class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Daftar OKR</h2>
+        <button type="button" id="btn-refresh" class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Segarkan</button>
+      </div>
+      <div id="okr-body" class="space-y-3"></div>
+    </section>
+
+    <!-- OKR BERULANG BULANAN -->
+    <section class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">OKR berulang (bulanan)</h2>
+        <button type="button" id="rec-add" class="hidden text-xs rounded-lg bg-amber-500/90 px-3 py-1.5 font-semibold text-ink-950 hover:bg-amber-400">+ Template berulang</button>
+      </div>
+      <p class="text-sm text-ink-500 dark:text-cream-300/60">Tiap bulan pada tanggal yang dipilih, bot otomatis membuat OKR baru dari template ini (progress dimulai dari nol).</p>
+      <div id="rec-body" class="space-y-4"></div>
+      <p id="rec-pesan" class="text-sm" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- RIWAYAT PERINTAH -->
+    <section class="space-y-3">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Riwayat perintah</h2>
+      <div id="cmds-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+  import { OKR_LEVELS, KR_TYPES, OKR_STATUS_LABEL, newWorkspaceId } from '@/lib/workspace-admin';
+
+  const INPUT = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
+  let bolehEdit = false;
+  let members: any[] = [];
+  let teams: any[] = [];
+  const nameOf = (id: string) => members.find((m) => m.discord_id === id)?.display_name || id;
+  const teamOf = (id: string) => teams.find((t) => t.id === id)?.name || id;
+
+  document.addEventListener('admin:ready', (e) => {
+    bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
+    void muatSemua();
+  });
+
+  function pesan(el: HTMLElement, msg: string, ok = true) {
+    el.textContent = msg;
+    el.className = `text-sm ${ok ? 'text-teal-700 dark:text-teal-300' : 'text-red-600 dark:text-red-400'}`;
+  }
+
+  async function muatSemua() {
+    await muatRefs();
+    initForm();
+    await Promise.all([muatOkrs(), muatRecurrences(), muatCommands()]);
+  }
+
+  async function muatRefs() {
+    const supabase = getSupabase(); if (!supabase) return;
+    const [mem, tm] = await Promise.all([
+      supabase.from('workspace_members').select('discord_id, display_name').eq('active', true).order('display_name'),
+      supabase.from('workspace_teams').select('id, name').order('sort'),
+    ]);
+    members = mem.data ?? [];
+    teams = tm.data ?? [];
+  }
+
+  // ─── KR editor (dipakai form buat & template berulang) ─────────────────────
+  function krRow(kr: any = {}): string {
+    return `<div class="grid grid-cols-12 gap-1.5 items-center" data-krrow>
+      <input data-kf="text" placeholder="Key result" value="${esc(kr.text ?? '')}" class="col-span-5 rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-1.5 text-sm" />
+      <select data-kf="type" class="col-span-3 rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-1.5 text-sm">
+        ${KR_TYPES.map((t) => `<option value="${t.value}" ${kr.type === t.value ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}
+      </select>
+      <input data-kf="target" type="number" step="any" placeholder="Target" value="${kr.target ?? ''}" class="col-span-2 rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-1.5 text-sm" />
+      <input data-kf="unit" placeholder="Unit" value="${esc(kr.unit ?? '')}" class="col-span-1 rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-1.5 text-sm" />
+      <button type="button" data-kr-del class="col-span-1 text-red-600 dark:text-red-400 hover:opacity-70" aria-label="Hapus KR">✕</button>
+    </div>`;
+  }
+  function collectKrs(container: HTMLElement): any[] {
+    return Array.from(container.querySelectorAll('[data-krrow]')).map((row) => {
+      const v = (f: string) => (row.querySelector(`[data-kf="${f}"]`) as HTMLInputElement | HTMLSelectElement)?.value.trim() ?? '';
+      const target = parseFloat(v('target'));
+      return { text: v('text'), type: v('type'), target: Number.isFinite(target) ? target : undefined, unit: v('unit') || undefined };
+    }).filter((k) => k.text);
+  }
+  function wireKrEditor(container: HTMLElement, addBtn: HTMLElement) {
+    addBtn.addEventListener('click', () => container.insertAdjacentHTML('beforeend', krRow()));
+    container.addEventListener('click', (e) => {
+      const del = (e.target as HTMLElement).closest('[data-kr-del]');
+      if (del) del.closest('[data-krrow]')?.remove();
+    });
+  }
+
+  // ─── Form buat OKR ─────────────────────────────────────────────────────────
+  function initForm() {
+    const level = document.getElementById('o-level') as HTMLSelectElement;
+    level.innerHTML = OKR_LEVELS.map((l) => `<option value="${l.value}">${esc(l.label)}</option>`).join('');
+    const owner = document.getElementById('o-owner') as HTMLSelectElement;
+    owner.innerHTML = '<option value="">— pilih penanggung jawab —</option>' + members.map((m) => `<option value="${esc(m.discord_id)}">${esc(m.display_name || m.discord_id)}</option>`).join('');
+    const team = document.getElementById('o-team') as HTMLSelectElement;
+    team.innerHTML = '<option value="">— pilih tim —</option>' + teams.map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+    const syncLevel = () => {
+      owner.classList.toggle('hidden', level.value !== 'individu');
+      team.classList.toggle('hidden', level.value !== 'tim');
+    };
+    level.addEventListener('change', syncLevel);
+    syncLevel();
+    const krs = document.getElementById('o-krs') as HTMLElement;
+    krs.innerHTML = krRow();
+    wireKrEditor(krs, document.getElementById('o-add-kr')!);
+  }
+
+  async function enqueue(type: string, payload: any): Promise<boolean> {
+    const supabase = getSupabase(); if (!supabase) return false;
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+    const { error } = await supabase.from('workspace_okr_commands').insert({ type, payload, status: 'pending', created_by: uid });
+    if (error) { alert(pesanError(error)); return false; }
+    return true;
+  }
+
+  document.getElementById('form-buat')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!bolehEdit) return;
+    const msgEl = document.getElementById('buat-pesan')!;
+    const objective = (document.getElementById('o-obj') as HTMLInputElement).value.trim();
+    if (!objective) { pesan(msgEl, 'Objective wajib diisi.', false); return; }
+    const level = (document.getElementById('o-level') as HTMLSelectElement).value;
+    const ok = await enqueue('okr.create', {
+      objective,
+      level,
+      ownerId: level === 'individu' ? ((document.getElementById('o-owner') as HTMLSelectElement).value || null) : null,
+      teamId: level === 'tim' ? ((document.getElementById('o-team') as HTMLSelectElement).value || null) : null,
+      period: (document.getElementById('o-period') as HTMLInputElement).value.trim() || null,
+      keyResults: collectKrs(document.getElementById('o-krs')!),
+    });
+    if (ok) {
+      pesan(msgEl, 'Perintah dikirim. Bot membuat OKR dalam beberapa detik.');
+      (document.getElementById('form-buat') as HTMLFormElement).reset();
+      initForm();
+      setTimeout(() => { void muatOkrs(); void muatCommands(); }, 4000);
+    }
+  });
+
+  // ─── Daftar OKR (dari cermin) ──────────────────────────────────────────────
+  const LEVEL_LABEL: Record<string, string> = Object.fromEntries(OKR_LEVELS.map((l) => [l.value, l.label]));
+
+  async function muatOkrs() {
+    const body = document.getElementById('okr-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase(); if (!supabase) { body.innerHTML = stateBlock('error', 'Supabase belum dikonfigurasi.'); return; }
+    const { data, error } = await supabase.from('workspace_okrs').select('*').order('updated_at', { ascending: false }).limit(100);
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || !data.length) { body.innerHTML = stateBlock('empty', 'Belum ada OKR.'); return; }
+    body.innerHTML = data.map(okrCard).join('');
+  }
+
+  function okrCard(o: any): string {
+    const assignee = o.level === 'individu' ? (o.owner_id ? nameOf(o.owner_id) : '—') : o.level === 'tim' ? (o.team_id ? teamOf(o.team_id) : '—') : 'Organisasi';
+    const krs = (o.key_results || []).map((kr: any) => {
+      const tgt = kr.type === 'boolean' ? 1 : kr.target;
+      return `<div class="flex items-center gap-2 text-xs" data-kr="${esc(kr.id)}">
+        <span class="flex-1 truncate">${esc(kr.text)} <span class="text-ink-500 dark:text-cream-300/60">(${esc(kr.current ?? 0)}/${esc(tgt ?? 0)}${kr.unit ? ' ' + esc(kr.unit) : ''})</span></span>
+        ${bolehEdit ? `<input type="number" step="any" value="${kr.current ?? 0}" data-kr-current class="w-20 rounded border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-1.5 py-0.5" />
+        <button type="button" data-act="kr" class="rounded border border-ink-900/10 dark:border-cream-100/10 px-2 py-0.5 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Simpan</button>` : ''}
+      </div>`;
+    }).join('') || '<p class="text-xs text-ink-500 dark:text-cream-300/60">Tanpa key result.</p>';
+
+    const controls = bolehEdit ? `
+      <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-ink-900/5 dark:border-cream-100/5 pt-3">
+        <button type="button" data-act="assign" class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-2.5 py-1 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Tugaskan</button>
+        <button type="button" data-act="checkin" class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-2.5 py-1 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Check-in</button>
+        <select data-act="status" class="text-xs rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-1">
+          ${Object.entries(OKR_STATUS_LABEL).map(([v, l]) => `<option value="${v}" ${o.status === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}
+        </select>
+        <button type="button" data-act="delete" class="text-xs rounded-lg border border-red-500/40 text-red-600 dark:text-red-400 px-2.5 py-1 hover:bg-red-500/10">Hapus</button>
+      </div>
+      <div data-assignpanel class="hidden mt-2"></div>` : '';
+
+    return `<div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3" data-id="${esc(o.id)}" data-level="${esc(o.level)}">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-sm font-medium">${esc(o.objective)}</p>
+          <p class="text-xs text-ink-500 dark:text-cream-300/60">${esc(o.id)} · ${esc(LEVEL_LABEL[o.level] || o.level)} · ${esc(assignee)}${o.period ? ' · ' + esc(o.period) : ''} · ${esc(OKR_STATUS_LABEL[o.status] || o.status || '—')}</p>
+        </div>
+        <div class="text-right flex-none">
+          <p class="text-sm font-semibold text-amber-600 dark:text-amber-400">${esc(o.progress ?? 0)}%</p>
+        </div>
+      </div>
+      <div class="mt-1 h-1.5 rounded-full bg-ink-900/10 dark:bg-cream-100/10 overflow-hidden"><div class="h-full bg-amber-500" style="width:${Math.max(0, Math.min(100, o.progress ?? 0))}%"></div></div>
+      <div class="mt-2 space-y-1">${krs}</div>
+      ${controls}
+    </div>`;
+  }
+
+  document.getElementById('okr-body')?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-act]') as HTMLButtonElement | null;
+    if (!btn || !bolehEdit) return;
+    const card = btn.closest('[data-id]') as HTMLElement;
+    const id = card.dataset.id!;
+    const act = btn.dataset.act;
+
+    if (act === 'kr') {
+      const row = btn.closest('[data-kr]') as HTMLElement;
+      const current = parseFloat((row.querySelector('[data-kr-current]') as HTMLInputElement).value);
+      if (!Number.isFinite(current)) return;
+      if (await enqueue('okr.update_kr', { okrId: id, krId: row.dataset.kr, current })) setTimeout(() => { void muatOkrs(); void muatCommands(); }, 3000);
+      return;
+    }
+    if (act === 'checkin') {
+      const note = prompt('Catatan check-in (opsional):') ?? '';
+      if (await enqueue('okr.checkin', { okrId: id, note })) setTimeout(() => { void muatOkrs(); void muatCommands(); }, 3000);
+      return;
+    }
+    if (act === 'delete') {
+      if (confirm('Hapus OKR ini?') && await enqueue('okr.delete', { okrId: id })) setTimeout(() => { void muatOkrs(); void muatCommands(); }, 3000);
+      return;
+    }
+    if (act === 'assign') {
+      const panel = card.querySelector('[data-assignpanel]') as HTMLElement;
+      const level = card.dataset.level;
+      if (level === 'organisasi') { alert('OKR level organisasi tidak ditugaskan ke orang/tim.'); return; }
+      if (!panel.dataset.filled) {
+        const opts = level === 'individu'
+          ? '<option value="">— penanggung jawab —</option>' + members.map((m) => `<option value="${esc(m.discord_id)}">${esc(m.display_name || m.discord_id)}</option>`).join('')
+          : '<option value="">— tim —</option>' + teams.map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+        panel.innerHTML = `<div class="flex items-center gap-2"><select data-assignpick class="${INPUT}">${opts}</select><button type="button" data-act="assignsend" class="text-xs rounded-lg bg-amber-500 text-ink-950 px-2.5 py-1 font-semibold flex-none">Simpan</button></div>`;
+        panel.dataset.filled = '1';
+      }
+      panel.classList.toggle('hidden');
+      return;
+    }
+    if (act === 'assignsend') {
+      const panel = card.querySelector('[data-assignpanel]') as HTMLElement;
+      const val = (panel.querySelector('[data-assignpick]') as HTMLSelectElement).value || null;
+      const payload = card.dataset.level === 'individu' ? { okrId: id, ownerId: val } : { okrId: id, teamId: val };
+      if (await enqueue('okr.assign', payload)) setTimeout(() => { void muatOkrs(); void muatCommands(); }, 3000);
+      panel.classList.add('hidden');
+      return;
+    }
+  });
+
+  document.getElementById('okr-body')?.addEventListener('change', async (e) => {
+    const sel = e.target as HTMLSelectElement;
+    if (!bolehEdit || sel.dataset.act !== 'status') return;
+    const id = (sel.closest('[data-id]') as HTMLElement).dataset.id!;
+    if (await enqueue('okr.set_status', { okrId: id, status: sel.value })) setTimeout(() => { void muatOkrs(); void muatCommands(); }, 3000);
+  });
+
+  // ─── OKR berulang (config langsung ke workspace_okr_recurrences) ────────────
+  function recCard(row: any): string {
+    const dis = bolehEdit ? '' : 'disabled';
+    return `<div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3.5 space-y-3" data-id="${esc(row.id ?? '')}" data-new="${row.id ? '0' : '1'}">
+      <div class="flex items-center justify-between gap-2">
+        <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(row.id ?? '(baru)')}</span>
+        ${bolehEdit ? `<div class="flex gap-2">
+          <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" data-rf="active" ${row.active !== false ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 text-amber-500" ${dis}/> Aktif</label>
+          <button type="button" data-ract="save" class="rounded-lg bg-amber-500/90 px-3 py-1 text-xs font-semibold text-ink-950 hover:bg-amber-400">Simpan</button>
+          <button type="button" data-ract="del" class="rounded-lg border border-red-500/40 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10">Hapus</button>
+        </div>` : ''}
+      </div>
+      <input data-rf="objective" placeholder="Objective" value="${esc(row.objective ?? '')}" class="${INPUT}" ${dis} />
+      <div class="grid sm:grid-cols-3 gap-2">
+        <select data-rf="level" class="${INPUT}" ${dis}>
+          ${OKR_LEVELS.map((l) => `<option value="${l.value}" ${row.level === l.value ? 'selected' : ''}>${esc(l.label)}</option>`).join('')}
+        </select>
+        <input data-rf="day_of_month" type="number" min="1" max="31" placeholder="Tanggal spawn (1-31)" value="${esc(row.day_of_month ?? 1)}" class="${INPUT}" ${dis} />
+        <input data-rf="period_label" placeholder="Label periode (opsional)" value="${esc(row.period_label ?? '')}" class="${INPUT}" ${dis} />
+      </div>
+      <div class="grid sm:grid-cols-2 gap-2">
+        <select data-rf="owner" class="${INPUT}" ${dis}>
+          <option value="">Penanggung jawab (level individu)</option>
+          ${members.map((m) => `<option value="${esc(m.discord_id)}" ${row.owner_discord_id === m.discord_id ? 'selected' : ''}>${esc(m.display_name || m.discord_id)}</option>`).join('')}
+        </select>
+        <select data-rf="team" class="${INPUT}" ${dis}>
+          <option value="">Tim (level tim)</option>
+          ${teams.map((t) => `<option value="${esc(t.id)}" ${row.team_id === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <p class="text-xs font-medium">Key Results (template)</p>
+          ${bolehEdit ? '<button type="button" data-rec-addkr class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-2.5 py-1 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">+ Key Result</button>' : ''}
+        </div>
+        <div data-rec-krs class="space-y-2">${(row.key_results || []).map((kr: any) => krRow(kr)).join('')}</div>
+      </div>
+    </div>`;
+  }
+
+  async function muatRecurrences() {
+    const body = document.getElementById('rec-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase(); if (!supabase) { body.innerHTML = stateBlock('error', 'Supabase belum dikonfigurasi.'); return; }
+    const { data, error } = await supabase.from('workspace_okr_recurrences').select('*').order('sort', { ascending: true });
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (bolehEdit) document.getElementById('rec-add')!.classList.remove('hidden');
+    body.innerHTML = (data && data.length) ? data.map(recCard).join('') : stateBlock('empty', 'Belum ada template OKR berulang.');
+  }
+
+  function collectRec(card: HTMLElement) {
+    const v = (f: string) => (card.querySelector(`[data-rf="${f}"]`) as HTMLInputElement | HTMLSelectElement)?.value.trim() ?? '';
+    const day = parseInt(v('day_of_month'), 10);
+    return {
+      objective: v('objective'),
+      level: v('level'),
+      owner_discord_id: v('owner') || null,
+      team_id: v('team') || null,
+      day_of_month: Number.isFinite(day) ? Math.min(31, Math.max(1, day)) : 1,
+      period_label: v('period_label') || null,
+      key_results: collectKrs(card.querySelector('[data-rec-krs]') as HTMLElement),
+      active: (card.querySelector('[data-rf="active"]') as HTMLInputElement).checked,
+    };
+  }
+
+  document.getElementById('rec-add')?.addEventListener('click', () => {
+    const body = document.getElementById('rec-body')!;
+    if (body.querySelector('[data-new="1"]')) return;
+    const empty = body.querySelector('.py-16'); if (empty) empty.remove();
+    body.insertAdjacentHTML('afterbegin', recCard({ active: true, level: 'tim', day_of_month: 1, key_results: [{}] }));
+  });
+
+  document.getElementById('rec-body')?.addEventListener('click', async (e) => {
+    const addkr = (e.target as HTMLElement).closest('[data-rec-addkr]');
+    if (addkr) { (addkr.closest('[data-id]')!.querySelector('[data-rec-krs]') as HTMLElement).insertAdjacentHTML('beforeend', krRow()); return; }
+    const del = (e.target as HTMLElement).closest('[data-kr-del]');
+    if (del) { del.closest('[data-krrow]')?.remove(); return; }
+
+    const btn = (e.target as HTMLElement).closest('button[data-ract]') as HTMLButtonElement | null;
+    if (!btn || !bolehEdit) return;
+    const card = btn.closest('[data-id]') as HTMLElement;
+    const id = card.dataset.id!;
+    const isNew = card.dataset.new === '1';
+    const supabase = getSupabase(); if (!supabase) return;
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    if (btn.dataset.ract === 'del') {
+      if (isNew) { card.remove(); return; }
+      if (!confirm('Hapus template berulang ini? OKR yang sudah dibuat tidak terhapus.')) return;
+      const { error } = await supabase.from('workspace_okr_recurrences').delete().eq('id', id);
+      if (error) return pesan(document.getElementById('rec-pesan')!, pesanError(error), false);
+      card.remove(); pesan(document.getElementById('rec-pesan')!, 'Template dihapus.');
+      return;
+    }
+
+    const payload: any = { ...collectRec(card), updated_at: new Date().toISOString(), updated_by: uid };
+    if (!payload.objective) return pesan(document.getElementById('rec-pesan')!, 'Objective wajib diisi.', false);
+    if (isNew) {
+      const newId = newWorkspaceId('OKRR');
+      const { error } = await supabase.from('workspace_okr_recurrences').insert({ id: newId, ...payload });
+      if (error) return pesan(document.getElementById('rec-pesan')!, pesanError(error), false);
+      card.dataset.id = newId; card.dataset.new = '0';
+      (card.querySelector('.font-mono') as HTMLElement).textContent = newId;
+    } else {
+      const { error } = await supabase.from('workspace_okr_recurrences').update(payload).eq('id', id);
+      if (error) return pesan(document.getElementById('rec-pesan')!, pesanError(error), false);
+    }
+    pesan(document.getElementById('rec-pesan')!, 'Tersimpan. Bot menerapkannya dalam beberapa menit.');
+  });
+
+  // ─── Riwayat perintah ──────────────────────────────────────────────────────
+  async function muatCommands() {
+    const body = document.getElementById('cmds-body')!;
+    const supabase = getSupabase(); if (!supabase) return;
+    const { data, error } = await supabase.from('workspace_okr_commands').select('id, type, status, error, created_at').order('created_at', { ascending: false }).limit(15);
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || !data.length) { body.innerHTML = stateBlock('empty', 'Belum ada perintah.'); return; }
+    const badge = (s: string) => s === 'done' ? 'text-teal-700 dark:text-teal-300' : s === 'error' ? 'text-red-600 dark:text-red-400' : 'text-amber-700 dark:text-amber-400';
+    body.innerHTML = `<ul class="divide-y divide-ink-900/5 dark:divide-cream-100/5">${data.map((c: any) => `
+      <li class="px-4 py-2.5 text-sm flex flex-wrap items-center gap-x-2">
+        <code class="font-mono text-xs">${esc(c.type)}</code>
+        <span class="font-medium ${badge(c.status)}">${esc(c.status)}</span>
+        ${c.error ? `<span class="text-xs text-red-600 dark:text-red-400">${esc(c.error)}</span>` : ''}
+        <span class="ml-auto text-xs text-ink-500 dark:text-cream-300/60">${esc(fmtWaktu(c.created_at))}</span>
+      </li>`).join('')}</ul>`;
+  }
+
+  document.getElementById('btn-refresh')?.addEventListener('click', () => { void muatOkrs(); void muatCommands(); });
+</script>
