@@ -114,6 +114,9 @@ Semua di grup **🗂️ Vanillate Workspace** (`/admin/workspace/…`):
 | Halaman | Tabel | Isi |
 |---|---|---|
 | Ringkasan | — | Kartu navigasi produk |
+| Tugas | `workspace_tasks` (cermin) + `workspace_task_commands` | Buat & tugaskan (command-queue, §6) |
+| Tugas Berulang | `workspace_routines` | Template pekerjaan rutin; bot men-spawn tiap jadwal |
+| Target / OKR | `workspace_okrs` (cermin) + `workspace_okr_commands` + `workspace_okr_recurrences` | Buat/assign/progress OKR + OKR berulang bulanan (§7) |
 | Role & Izin | `workspace_roles` | Nama, rank, izin per-kategori, cakupan, wildcard `*` |
 | Tim | `workspace_teams` | Nama, deskripsi, ID ketua |
 | Jadwal Kerja | `workspace_schedules` | Template shift 7 hari + toleransi |
@@ -154,6 +157,32 @@ sementara bot tetap "mesin tugas" (reminder, eskalasi, transisi status).
 Di Discord, `/dashboard` menampilkan tugas ini (info) + aksi self-service pribadi;
 tak ada lagi pembuatan/penugasan di Discord.
 
-## 7. Tahap berikutnya (opsional)
+## 7. OKR / Target dari CMS (command-queue + mirror + berulang bulanan)
+
+Sejak Phase 3b, **OKR** dikelola dari `/admin/workspace/okr` dengan pola sama
+seperti Tugas, ditambah **template berulang bulanan** bergaya `workspace_routines`.
+
+```
+   /admin/workspace/okr                  Supabase                          Bot workspace
+   ────────────────────                  ────────                          ─────────────
+   INSERT perintah  ─(anon+RLS)─►  workspace_okr_commands  ◄─(service_role poll)─ operationsSync
+   (okr.create/assign/update_kr/…)  (pending)                              │ eksekusi via service OKR
+                                                                           ▼ (aktor = owner)
+   baca daftar  ◄─(anon+RLS)─  workspace_okrs (cermin) ◄──────────────────── mirror (bot terbitkan)
+
+   kelola template ─(anon+RLS)─►  workspace_okr_recurrences ─(service_role)─► configSync → store
+                                                                           ▼ scheduler bot
+                                                          spawn OKR baru tiap bulan (day_of_month)
+```
+
+- **Cermin** `workspace_okrs` diterbitkan bot (service_role); CMS membacanya. SSoT OKR di bot.
+- **Antrean** `workspace_okr_commands`: `okr.create` / `okr.assign` / `okr.update_kr` /
+  `okr.checkin` / `okr.set_status` / `okr.delete`. Aktor = **owner workspace**.
+- **Berulang bulanan** `workspace_okr_recurrences` = KONFIGURASI (bukan command): disinkron
+  configSync ke store lokal (menjaga `lastSpawnedPeriod`), lalu scheduler bot men-spawn OKR
+  baru tiap bulan pada `day_of_month` (progress mulai dari nol). Fitur `okr` harus `on`.
+- Tak ada env baru (memakai `WORKSPACE_OPS_SYNC_MS` & `WORKSPACE_CONFIG_SYNC_MS`).
+
+## 8. Tahap berikutnya (opsional)
 Menampilkan **absensi & statistik** operasional lain di dashboard website
 (mirror tambahan) — bisa mengikuti pola yang sama bila diperlukan.

@@ -534,3 +534,100 @@ drop policy if exists "ws editor kelola workspace_routines" on public.workspace_
 create policy "ws editor kelola workspace_routines" on public.workspace_routines
   for all to authenticated using (public.is_admin_editor()) with check (public.is_admin_editor());
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 14. OKR / TARGET — cermin + antrean perintah + template berulang (Phase 3b)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Pola sama seperti tugas (Phase 2): OKR SSoT tetap di bot. Bot MENERBITKAN
+-- cermin ke workspace_okrs; CMS mengelola lewat workspace_okr_commands. OKR
+-- berulang bulanan = KONFIGURASI (workspace_okr_recurrences) yang disinkron bot
+-- lalu di-spawn scheduler-nya (pola sama seperti workspace_routines).
+
+-- 14a. Cermin OKR (bot → Supabase, baca-saja untuk admin).
+create table if not exists public.workspace_okrs (
+  id           text primary key,       -- 'OKR-XXXXXX'
+  objective    text,
+  level        text,                   -- organisasi | tim | individu
+  status       text,                   -- belum_dimulai | sesuai_target | berisiko | tidak_sesuai | selesai
+  owner_id     text,                   -- Discord id (individu)
+  team_id      text,
+  project_ids  jsonb   not null default '[]'::jsonb,
+  key_results  jsonb   not null default '[]'::jsonb,  -- [{id,text,type,target,current,unit,milestones}]
+  checkins     jsonb   not null default '[]'::jsonb,
+  progress     integer not null default 0,            -- 0-100 (dihitung bot)
+  period       text,
+  created_by   text,
+  created_at   timestamptz,
+  updated_at   timestamptz not null default now()
+);
+comment on table public.workspace_okrs is
+  'Cermin OKR yang diterbitkan bot (service_role). CMS membacanya; perubahan lewat workspace_okr_commands. SSoT tetap di bot.';
+create index if not exists workspace_okrs_updated_idx on public.workspace_okrs (updated_at desc);
+
+-- 14b. Antrean perintah OKR (CMS → bot).
+create table if not exists public.workspace_okr_commands (
+  id           bigint generated always as identity primary key,
+  type         text not null,          -- 'okr.create' | 'okr.assign' | 'okr.update_kr'
+                                        -- | 'okr.checkin' | 'okr.set_status' | 'okr.delete'
+  payload      jsonb not null default '{}'::jsonb,
+  status       text not null default 'pending'
+                 check (status in ('pending', 'processing', 'done', 'error')),
+  result       jsonb,
+  error        text,
+  created_by   uuid references public.admin_users(id) on delete set null,
+  created_at   timestamptz not null default now(),
+  processed_at timestamptz
+);
+comment on table public.workspace_okr_commands is
+  'Antrean perintah dari CMS ke bot untuk OKR. Admin meng-INSERT pending; bot (service_role) mengeksekusi & menulis status/result. Bot memvalidasi setiap payload.';
+create index if not exists workspace_okr_commands_status_idx on public.workspace_okr_commands (status, created_at);
+create index if not exists workspace_okr_commands_recent_idx on public.workspace_okr_commands (created_at desc);
+
+-- 14c. Template OKR berulang bulanan — KONFIGURASI (CMS → bot).
+create table if not exists public.workspace_okr_recurrences (
+  id                text primary key,      -- 'OKRR-XXXXXX'
+  objective         text not null,
+  level             text not null default 'tim' check (level in ('organisasi','tim','individu')),
+  owner_discord_id  text,                  -- untuk level individu
+  team_id           text,                  -- untuk level tim
+  key_results       jsonb   not null default '[]'::jsonb, -- [{text,type,target,unit,milestones}]
+  day_of_month      integer not null default 1 check (day_of_month between 1 and 31),
+  period_label      text,                  -- awalan label periode opsional
+  active            boolean not null default true,
+  sort              integer not null default 100,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  updated_by        uuid references public.admin_users(id) on delete set null
+);
+comment on table public.workspace_okr_recurrences is
+  'Template OKR berulang bulanan. Bot sync ke lokal & scheduler men-spawn OKR tiap bulan (pada day_of_month). SSoT config di CMS.';
+create index if not exists workspace_okr_recurrences_sort_idx on public.workspace_okr_recurrences (sort);
+
+-- 14d. RLS
+alter table public.workspace_okrs             enable row level security;
+alter table public.workspace_okr_commands     enable row level security;
+alter table public.workspace_okr_recurrences  enable row level security;
+
+-- Cermin OKR: baca-saja admin (ditulis bot service_role).
+drop policy if exists "ws admin baca okrs" on public.workspace_okrs;
+create policy "ws admin baca okrs" on public.workspace_okrs
+  for select to authenticated using (public.is_admin());
+
+-- Antrean OKR: admin baca riwayat; editor menaruh perintah baru (pending, atas nama sendiri).
+drop policy if exists "ws admin baca okr_commands" on public.workspace_okr_commands;
+create policy "ws admin baca okr_commands" on public.workspace_okr_commands
+  for select to authenticated using (public.is_admin());
+drop policy if exists "ws editor tambah okr_commands" on public.workspace_okr_commands;
+create policy "ws editor tambah okr_commands" on public.workspace_okr_commands
+  for insert to authenticated
+  with check (public.is_admin_editor() and created_by = auth.uid() and status = 'pending');
+
+-- Template berulang: admin baca; editor kelola.
+drop policy if exists "ws admin baca okr_recurrences" on public.workspace_okr_recurrences;
+create policy "ws admin baca okr_recurrences" on public.workspace_okr_recurrences
+  for select to authenticated using (public.is_admin());
+drop policy if exists "ws editor kelola okr_recurrences" on public.workspace_okr_recurrences;
+create policy "ws editor kelola okr_recurrences" on public.workspace_okr_recurrences
+  for all to authenticated using (public.is_admin_editor()) with check (public.is_admin_editor());
+-- ═══════════════════════════════════════════════════════════════════════════
