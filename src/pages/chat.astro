@@ -1,0 +1,355 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Live Chat"
+  description="Ngobrol langsung dengan tim Vanillate. Login dengan Google, ceritakan kendalamu, dan tim kami akan membalas secara real-time."
+  noindex={true}
+>
+  <section class="mx-auto w-full max-w-3xl px-4 py-10 sm:py-14">
+    <header class="mb-6 text-center">
+      <h1 class="font-display text-3xl font-bold sm:text-4xl">Live Chat</h1>
+      <p class="mt-2 text-sm text-ink-500 dark:text-ink-400">
+        Terhubung langsung dengan tim support Vanillate. Balasan kami tampil di sini secara real-time,
+        dan kamu akan menerima email saat tiket dibalas atau ditutup.
+      </p>
+    </header>
+
+    <!-- Kartu utama: satu wadah, beberapa "panel" yang ditampilkan sesuai state. -->
+    <div
+      class="rounded-2xl border border-ink-200/70 bg-white/60 shadow-sm backdrop-blur dark:border-ink-800 dark:bg-ink-900/50"
+    >
+      <!-- STATE: Supabase belum dikonfigurasi -->
+      <div data-panel="unconfigured" hidden class="p-6 text-center text-sm text-ink-500 dark:text-ink-400">
+        Live chat belum aktif. Sementara ini hubungi kami lewat
+        <a class="text-amber-600 underline" href="/support">Support Center</a>.
+      </div>
+
+      <!-- STATE: memuat -->
+      <div data-panel="loading" class="flex items-center justify-center gap-3 p-10 text-sm text-ink-500 dark:text-ink-400">
+        <span class="h-4 w-4 animate-spin rounded-full border-2 border-ink-300 border-t-amber-500"></span>
+        Memuat…
+      </div>
+
+      <!-- STATE: belum login -->
+      <div data-panel="login" hidden class="p-8 text-center">
+        <p class="mb-5 text-sm text-ink-600 dark:text-ink-300">
+          Masuk dengan akun Google untuk memulai percakapan. Email-mu dipakai untuk mengirim
+          pemberitahuan balasan &amp; penutupan tiket.
+        </p>
+        <button
+          data-action="google-login"
+          class="inline-flex items-center justify-center gap-2 rounded-full border border-ink-300 bg-white px-6 py-3 text-sm font-semibold text-ink-800 shadow-sm transition hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100 dark:hover:bg-ink-700"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"
+            ><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 4.75c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.44 14.97.5 12 .5A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 4.75 12 4.75z"/></svg
+          >
+          Masuk dengan Google
+        </button>
+        <p data-el="login-error" hidden class="mt-4 text-sm text-red-500"></p>
+      </div>
+
+      <!-- STATE: sudah login, belum ada tiket → form mulai chat -->
+      <div data-panel="start" hidden class="p-6">
+        <div class="mb-4 flex items-center justify-between text-xs text-ink-500 dark:text-ink-400">
+          <span>Masuk sebagai <strong data-el="user-email"></strong></span>
+          <button data-action="logout" class="underline hover:text-ink-700 dark:hover:text-ink-200">Keluar</button>
+        </div>
+        <form data-el="start-form" class="space-y-4">
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="chat-subject">Topik</label>
+            <input
+              id="chat-subject"
+              name="subject"
+              type="text"
+              required
+              maxlength="120"
+              placeholder="Contoh: Kendala pembayaran, pertanyaan produk…"
+              class="w-full rounded-xl border border-ink-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-amber-500 dark:border-ink-700 dark:bg-ink-800"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="chat-first">Pesan pertama</label>
+            <textarea
+              id="chat-first"
+              name="message"
+              required
+              rows="4"
+              maxlength="2000"
+              placeholder="Ceritakan kendalamu selengkap mungkin…"
+              class="w-full resize-y rounded-xl border border-ink-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-amber-500 dark:border-ink-700 dark:bg-ink-800"
+            ></textarea>
+          </div>
+          <button
+            type="submit"
+            class="inline-flex w-full items-center justify-center rounded-full bg-amber-500 px-6 py-3 text-sm font-semibold text-ink-950 transition hover:bg-amber-400 disabled:opacity-60"
+          >
+            Mulai Chat
+          </button>
+          <p data-el="start-error" hidden class="text-sm text-red-500"></p>
+        </form>
+      </div>
+
+      <!-- STATE: chat aktif -->
+      <div data-panel="chat" hidden class="flex h-[70vh] max-h-[600px] flex-col">
+        <div class="flex items-center justify-between border-b border-ink-200/70 px-4 py-3 dark:border-ink-800">
+          <div class="min-w-0">
+            <p class="truncate text-sm font-semibold" data-el="chat-subject">Percakapan</p>
+            <p class="text-xs text-ink-500 dark:text-ink-400">
+              <span data-el="chat-status" class="inline-flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-green-500"></span> Terhubung
+              </span>
+            </p>
+          </div>
+          <button data-action="logout" class="text-xs text-ink-500 underline hover:text-ink-700 dark:hover:text-ink-200">Keluar</button>
+        </div>
+
+        <div data-el="messages" class="flex-1 space-y-3 overflow-y-auto p-4"></div>
+
+        <form data-el="send-form" class="flex items-end gap-2 border-t border-ink-200/70 p-3 dark:border-ink-800">
+          <textarea
+            data-el="send-input"
+            rows="1"
+            maxlength="2000"
+            placeholder="Tulis pesan…"
+            class="max-h-32 flex-1 resize-none rounded-xl border border-ink-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-amber-500 dark:border-ink-700 dark:bg-ink-800"
+          ></textarea>
+          <button
+            type="submit"
+            class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-ink-950 transition hover:bg-amber-400 disabled:opacity-60"
+            aria-label="Kirim"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- STATE: tiket ditutup -->
+      <div data-panel="closed" hidden class="p-8 text-center">
+        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/40">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2 class="text-lg font-semibold">Tiket ditutup</h2>
+        <p class="mx-auto mt-2 max-w-sm text-sm text-ink-500 dark:text-ink-400">
+          Terima kasih sudah menghubungi kami. Ringkasan percakapan telah kami arsipkan. Butuh bantuan lagi?
+        </p>
+        <button
+          data-action="new-chat"
+          class="mt-5 inline-flex items-center justify-center rounded-full bg-amber-500 px-6 py-3 text-sm font-semibold text-ink-950 transition hover:bg-amber-400"
+        >
+          Mulai Chat Baru
+        </button>
+      </div>
+    </div>
+
+    <p class="mt-4 text-center text-xs text-ink-400">
+      Dengan memulai chat, kamu setuju pesanmu diteruskan ke tim support kami di Discord untuk ditindaklanjuti.
+    </p>
+  </section>
+
+  <script>
+    import {
+      getChatSupabase,
+      getCustomer,
+      isChatConfigured,
+      signInWithGoogle,
+      signOut,
+    } from '@/lib/customer-auth';
+    import {
+      createTicket,
+      getMessages,
+      getOpenTicket,
+      sendMessage,
+      subscribeTicket,
+      type LiveChatMessage,
+      type LiveChatTicket,
+    } from '@/lib/live-chat';
+
+    const root = document.currentScript?.parentElement ?? document;
+    const panels = new Map<string, HTMLElement>();
+    root.querySelectorAll<HTMLElement>('[data-panel]').forEach((el) => panels.set(el.dataset.panel!, el));
+    const el = <T extends HTMLElement = HTMLElement>(name: string) =>
+      root.querySelector<T>(`[data-el="${name}"]`);
+
+    function show(name: string) {
+      panels.forEach((p, key) => (p.hidden = key !== name));
+    }
+
+    let ticket: LiveChatTicket | null = null;
+    let customerName = 'Customer';
+    let customerEmail = '';
+    let unsubscribe: (() => void) | null = null;
+    const seen = new Set<string>();
+
+    function fmtTime(iso: string): string {
+      try {
+        return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+      } catch {
+        return '';
+      }
+    }
+
+    function renderMessage(m: LiveChatMessage) {
+      if (seen.has(m.id)) return;
+      seen.add(m.id);
+      const box = el('messages');
+      if (!box) return;
+      const mine = m.sender_type === 'customer';
+      const wrap = document.createElement('div');
+      wrap.className = `flex ${mine ? 'justify-end' : 'justify-start'}`;
+      const bubble = document.createElement('div');
+      bubble.className = mine
+        ? 'max-w-[80%] rounded-2xl rounded-br-sm bg-amber-500 px-4 py-2 text-sm text-ink-950'
+        : m.sender_type === 'system'
+          ? 'max-w-[80%] rounded-2xl bg-ink-100 px-4 py-2 text-center text-xs italic text-ink-500 dark:bg-ink-800 dark:text-ink-400'
+          : 'max-w-[80%] rounded-2xl rounded-bl-sm bg-ink-100 px-4 py-2 text-sm dark:bg-ink-800';
+      if (!mine && m.sender_type === 'admin') {
+        const name = document.createElement('p');
+        name.className = 'mb-0.5 text-xs font-semibold text-amber-600';
+        name.textContent = m.sender_name;
+        bubble.appendChild(name);
+      }
+      const body = document.createElement('p');
+      body.className = 'whitespace-pre-wrap break-words';
+      body.textContent = m.content;
+      bubble.appendChild(body);
+      const time = document.createElement('p');
+      time.className = `mt-0.5 text-[10px] ${mine ? 'text-ink-800/70' : 'text-ink-400'}`;
+      time.textContent = fmtTime(m.created_at);
+      bubble.appendChild(time);
+      wrap.appendChild(bubble);
+      box.appendChild(wrap);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function setError(name: string, msg: string | null) {
+      const node = el(name);
+      if (!node) return;
+      node.hidden = !msg;
+      node.textContent = msg ?? '';
+    }
+
+    async function enterChat(t: LiveChatTicket) {
+      ticket = t;
+      seen.clear();
+      const box = el('messages');
+      if (box) box.innerHTML = '';
+      const subj = el('chat-subject');
+      if (subj) subj.textContent = t.subject || 'Percakapan';
+      show('chat');
+
+      const history = await getMessages(t.id);
+      history.forEach(renderMessage);
+
+      unsubscribe?.();
+      unsubscribe = subscribeTicket(
+        t.id,
+        (m) => renderMessage(m),
+        (status) => {
+          if (status === 'closed') {
+            unsubscribe?.();
+            unsubscribe = null;
+            ticket = null;
+            show('closed');
+          }
+        },
+      );
+    }
+
+    async function boot() {
+      if (!isChatConfigured) {
+        show('unconfigured');
+        return;
+      }
+      // Proses redirect OAuth bila ada (detectSessionInUrl menangani token di URL).
+      getChatSupabase();
+      const user = await getCustomer();
+      if (!user) {
+        show('login');
+        return;
+      }
+      customerEmail = user.email ?? '';
+      customerName =
+        (user.user_metadata?.full_name as string) ||
+        (user.user_metadata?.name as string) ||
+        customerEmail.split('@')[0] ||
+        'Customer';
+      const emailNode = el('user-email');
+      if (emailNode) emailNode.textContent = customerEmail;
+
+      const open = await getOpenTicket();
+      if (open) {
+        await enterChat(open);
+      } else {
+        show('start');
+      }
+    }
+
+    // ─── Event wiring ───────────────────────────────────────────────
+    root.querySelector('[data-action="google-login"]')?.addEventListener('click', async () => {
+      setError('login-error', null);
+      const redirectTo = window.location.origin + window.location.pathname;
+      const res = await signInWithGoogle(redirectTo);
+      if (!res.ok) setError('login-error', res.error ?? 'Gagal masuk. Coba lagi.');
+    });
+
+    root.querySelectorAll('[data-action="logout"]').forEach((btn) =>
+      btn.addEventListener('click', async () => {
+        unsubscribe?.();
+        await signOut();
+        window.location.reload();
+      }),
+    );
+
+    root.querySelector('[data-action="new-chat"]')?.addEventListener('click', () => show('start'));
+
+    el<HTMLFormElement>('start-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setError('start-error', null);
+      const form = e.currentTarget as HTMLFormElement;
+      const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const subject = (form.elements.namedItem('subject') as HTMLInputElement).value.trim();
+      const message = (form.elements.namedItem('message') as HTMLTextAreaElement).value.trim();
+      if (!subject || !message) return;
+      btn.disabled = true;
+      const { ticket: t, error } = await createTicket(customerName, customerEmail, subject, message);
+      btn.disabled = false;
+      if (error || !t) {
+        setError('start-error', error ?? 'Gagal memulai chat. Coba lagi.');
+        return;
+      }
+      form.reset();
+      await enterChat(t);
+    });
+
+    const sendForm = el<HTMLFormElement>('send-form');
+    const sendInput = el<HTMLTextAreaElement>('send-input');
+    sendInput?.addEventListener('input', () => {
+      sendInput.style.height = 'auto';
+      sendInput.style.height = Math.min(sendInput.scrollHeight, 128) + 'px';
+    });
+    sendInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendForm?.requestSubmit();
+      }
+    });
+    sendForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ticket || !sendInput) return;
+      const content = sendInput.value.trim();
+      if (!content) return;
+      sendInput.value = '';
+      sendInput.style.height = 'auto';
+      const { error } = await sendMessage(ticket.id, customerName, content);
+      if (error) {
+        // Kembalikan teks agar tidak hilang, tampilkan info singkat.
+        sendInput.value = content;
+        alert(error);
+      }
+    });
+
+    void boot();
+  </script>
+</BaseLayout>
