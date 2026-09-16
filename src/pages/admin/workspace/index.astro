@@ -32,6 +32,10 @@ const cards = [
   />
 
   <div class="px-6 lg:px-10 py-8 max-w-4xl">
+    <a href={url('/admin/workspace/status')} id="ws-status-badge" class="mb-4 inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+      <span class="h-2 w-2 rounded-full bg-ink-900/20 dark:bg-cream-100/20"></span>
+      <span class="text-ink-500 dark:text-cream-300/60">Memeriksa status bot…</span>
+    </a>
     <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4 mb-8">
       <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
         Di Discord, command bot kini <strong>hanya dashboard & laporan</strong> (tugas, absensi, laporan,
@@ -58,3 +62,34 @@ const cards = [
     </div>
   </div>
 </AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+
+  function rel(iso: string | null): string {
+    if (!iso) return '—';
+    const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 60) return `${s} dtk lalu`;
+    if (s < 3600) return `${Math.floor(s / 60)} mnt lalu`;
+    if (s < 86400) return `${Math.floor(s / 3600)} jam lalu`;
+    return `${Math.floor(s / 86400)} hr lalu`;
+  }
+
+  async function muatBadge() {
+    const badge = document.getElementById('ws-status-badge');
+    if (!badge) return;
+    const dot = badge.querySelector('span:first-child')!;
+    const text = badge.querySelector('span:last-child')!;
+    const supabase = getSupabase();
+    if (!supabase) { text.textContent = 'Status bot tak tersedia'; return; }
+    const { data } = await supabase.from('workspace_system_state').select('updated_at, heartbeat_interval_seconds, pending_commands').eq('id', 'workspace').maybeSingle();
+    if (!data) { dot.className = 'h-2 w-2 rounded-full bg-ink-900/20 dark:bg-cream-100/20'; text.textContent = 'Bot belum terhubung'; text.className = 'text-ink-500 dark:text-cream-300/60'; return; }
+    const hb = Number(data.heartbeat_interval_seconds) || 30;
+    const age = (Date.now() - new Date(data.updated_at).getTime()) / 1000;
+    if (age <= hb * 2.5) { dot.className = 'h-2 w-2 rounded-full bg-teal-500'; text.textContent = `Bot online · sync ${rel(data.updated_at)} · ${data.pending_commands ?? 0} antre`; text.className = 'text-teal-700 dark:text-teal-300'; }
+    else if (age <= hb * 10) { dot.className = 'h-2 w-2 rounded-full bg-amber-500'; text.textContent = `Bot degradasi · heartbeat ${rel(data.updated_at)}`; text.className = 'text-amber-700 dark:text-amber-400'; }
+    else { dot.className = 'h-2 w-2 rounded-full bg-red-500'; text.textContent = `Bot offline · sejak ${rel(data.updated_at)}`; text.className = 'text-red-600 dark:text-red-400'; }
+  }
+
+  document.addEventListener('admin:ready', () => void muatBadge());
+</script>

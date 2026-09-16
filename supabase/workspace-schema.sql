@@ -631,3 +631,32 @@ drop policy if exists "ws editor kelola okr_recurrences" on public.workspace_okr
 create policy "ws editor kelola okr_recurrences" on public.workspace_okr_recurrences
   for all to authenticated using (public.is_admin_editor()) with check (public.is_admin_editor());
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 15. STATUS SISTEM (workspace_system_state) — heartbeat bot → CMS
+-- ───────────────────────────────────────────────────────────────────────────
+-- Bot menerbitkan SATU baris (id='workspace') tiap ~30s: versi, uptime, waktu
+-- sync konfig/operasi terakhir, jumlah perintah tertunda, snapshot fitur. CMS
+-- membacanya untuk halaman "Status Sistem" — bila `updated_at` basi, bot mati/
+-- terputus. Ditulis bot (service_role); admin hanya membaca.
+create table if not exists public.workspace_system_state (
+  id                          text primary key default 'workspace',
+  bot_version                 text,
+  started_at                  timestamptz,
+  uptime_seconds              integer,
+  last_config_sync            timestamptz,
+  last_ops_sync               timestamptz,
+  pending_commands            integer not null default 0,
+  features                    jsonb   not null default '{}'::jsonb,
+  heartbeat_interval_seconds  integer,
+  updated_at                  timestamptz not null default now()
+);
+comment on table public.workspace_system_state is
+  'Heartbeat bot Vanillate Workspace (id=workspace). Ditulis bot (service_role) tiap ~30s; CMS membaca untuk halaman Status Sistem. updated_at basi = bot offline.';
+
+alter table public.workspace_system_state enable row level security;
+drop policy if exists "ws admin baca system_state" on public.workspace_system_state;
+create policy "ws admin baca system_state" on public.workspace_system_state
+  for select to authenticated using (public.is_admin());
+-- ═══════════════════════════════════════════════════════════════════════════

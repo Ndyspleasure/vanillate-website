@@ -113,7 +113,8 @@ Semua di grup **🗂️ Vanillate Workspace** (`/admin/workspace/…`):
 
 | Halaman | Tabel | Isi |
 |---|---|---|
-| Ringkasan | — | Kartu navigasi produk |
+| Ringkasan | — | Kartu navigasi produk + badge status bot |
+| Status Sistem | `workspace_system_state` (heartbeat) | Bot online/offline, uptime, sync terakhir, perintah antre, snapshot fitur (§8) |
 | Tugas | `workspace_tasks` (cermin) + `workspace_task_commands` | Buat & tugaskan (command-queue, §6) |
 | Tugas Berulang | `workspace_routines` | Template pekerjaan rutin; bot men-spawn tiap jadwal |
 | Target / OKR | `workspace_okrs` (cermin) + `workspace_okr_commands` + `workspace_okr_recurrences` | Buat/assign/progress OKR + OKR berulang bulanan (§7) |
@@ -183,6 +184,19 @@ seperti Tugas, ditambah **template berulang bulanan** bergaya `workspace_routine
   baru tiap bulan pada `day_of_month` (progress mulai dari nol). Fitur `okr` harus `on`.
 - Tak ada env baru (memakai `WORKSPACE_OPS_SYNC_MS` & `WORKSPACE_CONFIG_SYNC_MS`).
 
-## 8. Tahap berikutnya (opsional)
+## 8. Status Sistem (heartbeat bot → CMS)
+
+Bot menerbitkan satu baris `workspace_system_state` (id=`workspace`) tiap ~30s via
+service_role: `bot_version`, `uptime_seconds`, `last_config_sync`, `last_ops_sync`,
+`pending_commands`, snapshot `features`, `heartbeat_interval_seconds`. Halaman
+`/admin/workspace/status` (dan badge di Ringkasan) menghitung kesegaran dari
+`updated_at`: **online** (≤ 2.5× interval), **degradasi** (≤ 10×), atau **offline**.
+
+Manfaat: operator tak lagi buta — bila perintah tak kunjung diproses, status
+langsung menunjukkan bot mati/terputus, bukan sekadar "menunggu". Env opsional
+`WORKSPACE_HEALTH_MS` (default mengikuti `WORKSPACE_OPS_SYNC_MS`, 30000).
+
+## 9. Tahap berikutnya (opsional)
 Menampilkan **absensi & statistik** operasional lain di dashboard website
-(mirror tambahan) — bisa mengikuti pola yang sama bila diperlukan.
+(mirror tambahan) — bisa mengikuti pola yang sama bila diperlukan. Kandidat lain:
+**Realtime** (ganti polling), **audit terpadu**, dan **tautan admin↔Discord**.
