@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.59.0",
+    "date": "2026-09-16",
+    "title": "Live chat langsung dengan tim lewat website",
+    "highlights": [
+      "💬 Kini kamu bisa chat langsung dengan Tim Support lewat website vanillate.id — balasan tampil real-time",
+      "🔐 Masuk dengan Google untuk memulai sesi, dan terima email saat tiket dibalas atau ditutup",
+      "🎫 Setiap sesi ditangani rapi oleh tim lewat tiket khusus di Discord"
+    ]
+  },
+  {
     "version": "2.58.0",
     "date": "2026-09-16",
     "title": "Pusat Bantuan baru: FAQ dulu, langsung solusi",
