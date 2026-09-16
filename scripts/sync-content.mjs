@@ -9,7 +9,7 @@
 //   • site-content.json  ← tabel `site_content`      (banner pengumuman)
 //   • partnership.json   ← tabel `partnership_*`     (konten & HARGA halaman
 //                                                     publik /partnership)
-//   • products.json      ← tabel `products` + media & rilis
+//   • products.json      ← tabel `products` + media
 //   • pages.json         ← tabel `page_content`
 //   • faq.json           ← tabel `faq_categories` + `faqs` (seluruh panduan)
 //   • team.json          ← tabel `team_members`        (anggota tim aktif /team)
@@ -311,7 +311,7 @@ async function syncPartnership() {
   console.log(`  produk aktif: ${products.length} · kategori: ${categories.length} · custom link: ${hasil.links.length}`);
 }
 
-// ─── 3. Katalog produk (products / product_media / product_releases) ─────────
+// ─── 3. Katalog produk (products / product_media) ────────────────────────────
 
 /** URL berkas: pakai kolom `url` bila ada, jika kosong bangun dari path Storage publik. */
 function urlBerkas(u, storagePath, bucket) {
@@ -349,9 +349,9 @@ async function syncProducts() {
       ['id', 'slug', 'name', 'short_name', 'tagline', 'description', 'platform', 'status', 'category',
        'accent_color', 'icon', 'thumbnail_url', 'featured', 'verified', 'sort', 'features', 'long_intro',
        'commands', 'discord_client_id', 'discord_permissions', 'discord_scopes', 'discord_integration_type',
-       'invite_url', 'package_name', 'min_android', 'install_note', 'cta_label', 'cta_url',
+       'invite_url', 'cta_label', 'cta_url',
        'seo_title', 'seo_description', 'og_image_url'],
-      ['badge', 'badge_tone', 'cta_heading', 'cta_text', 'cta_note', 'faq', 'install_steps', 'faq_category_id'],
+      ['badge', 'badge_tone', 'cta_heading', 'cta_text', 'cta_note', 'faq', 'faq_category_id'],
       '&enabled=is.true&order=sort.asc',
     );
   } catch (err) {
@@ -361,19 +361,13 @@ async function syncProducts() {
 
   const kategoriFaq = await petaKategoriFaq();
 
-  // Media & rilis ditarik terpisah: bila tabelnya belum ada (schema lama),
-  // katalog tetap terbit tanpa media/rilis alih-alih gagal total.
+  // Media ditarik terpisah: bila tabelnya belum ada (schema lama), katalog tetap
+  // terbit tanpa media alih-alih gagal total.
   let mediaRaw = [];
-  let releaseRaw = [];
   try {
     mediaRaw = await ambil('product_media?select=product_id,kind,url,storage_path,alt,sort&order=sort.asc');
   } catch (err) {
     console.warn(`  ! product_media dilewati: ${err.message}`);
-  }
-  try {
-    releaseRaw = await ambil('product_releases?select=product_id,version,url,storage_path,file_size,sha256,min_android,release_notes,is_latest,created_at&published=is.true&order=created_at.desc');
-  } catch (err) {
-    console.warn(`  ! product_releases dilewati: ${err.message}`);
   }
 
   const mediaByProduct = new Map();
@@ -387,24 +381,15 @@ async function syncProducts() {
     mediaByProduct.set(m.product_id, list);
   }
 
-  // Rilis terbaru per produk: is_latest bila ada; jika tidak, yang paling baru
-  // (baris sudah urut created_at desc).
-  const latestByProduct = new Map();
-  for (const r of releaseRaw) {
-    const cur = latestByProduct.get(r.product_id);
-    if (!cur || (r.is_latest && !cur.is_latest)) latestByProduct.set(r.product_id, r);
-  }
-
   const products = prodRaw
     .map((p) => {
-      const rel = latestByProduct.get(p.id);
       return {
         slug: String(p.slug ?? ''),
         name: String(p.name ?? '').trim(),
         shortName: String(p.short_name ?? p.name ?? '').trim(),
         tagline: String(p.tagline ?? '').trim(),
         description: String(p.description ?? '').trim(),
-        platform: ['discord', 'android', 'web'].includes(p.platform) ? p.platform : 'discord',
+        platform: ['discord', 'web'].includes(p.platform) ? p.platform : 'discord',
         status: ['live', 'beta', 'preorder', 'coming-soon'].includes(p.status) ? p.status : 'live',
         category: String(p.category ?? '').trim(),
         color: String(p.accent_color ?? '').trim() || '#E8B84A',
@@ -425,13 +410,6 @@ async function syncProducts() {
           integrationType: String(p.discord_integration_type ?? '').trim(),
           inviteUrl: urlAman(p.invite_url, `invite ${p.slug}`),
         },
-        android: p.platform === 'android'
-          ? {
-              packageName: String(p.package_name ?? '').trim(),
-              minAndroid: String(p.min_android ?? '').trim(),
-              installNote: String(p.install_note ?? '').trim(),
-            }
-          : null,
         badge: String(p.badge ?? '').trim(),
         badgeTone: ['accent', 'info', 'success', 'warn', 'neutral'].includes(p.badge_tone) ? p.badge_tone : 'accent',
         // FAQ & langkah install: dibersihkan supaya entri setengah jadi dari CMS
@@ -442,7 +420,6 @@ async function syncProducts() {
               .filter((f) => f.q && f.a)
               .slice(0, 30)
           : [],
-        installSteps: daftarTeks(p.install_steps, 10),
         ctaHeading: String(p.cta_heading ?? '').trim(),
         ctaText: String(p.cta_text ?? '').trim(),
         ctaNote: String(p.cta_note ?? '').trim(),
@@ -455,16 +432,6 @@ async function syncProducts() {
         seoDescription: String(p.seo_description ?? '').trim(),
         ogImage: urlBerkas(p.og_image_url, '', 'product-media'),
         media: mediaByProduct.get(p.id) ?? [],
-        release: rel
-          ? {
-              version: String(rel.version ?? '').trim(),
-              url: urlBerkas(rel.url, rel.storage_path, 'product-apk'),
-              fileSize: Number.isFinite(Number(rel.file_size)) ? Number(rel.file_size) : null,
-              sha256: String(rel.sha256 ?? '').trim() || null,
-              minAndroid: String(rel.min_android ?? '').trim(),
-              releaseNotes: String(rel.release_notes ?? '').trim(),
-            }
-          : null,
       };
     })
     .filter((p) => p.slug && p.name);

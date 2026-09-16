@@ -5,7 +5,7 @@ import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
 import BotTag from '@components/BotTag.astro';
 import BotAvatar from '@components/BotAvatar.astro';
-import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, latestRelease, formatBytes, productImage, badgeClass } from '@data/bots';
+import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, webAppUrl, webCtaLabel, productImage, badgeClass } from '@data/bots';
 import FAQLink from '@components/FAQLink.astro';
 import { faqCategoryPath, faqCategoryUrl, faqCategoryFor, faqItems, faqsByCategory } from '@data/faq';
 import { site } from '@data/site';
@@ -31,25 +31,17 @@ const botFaqs = faqKategori
   : bot.faq.map((f) => ({ q: f.q, a: f.a }));
 const otherBots = getOtherBots(bot.slug, 3);
 
-const isAndroid = bot.platform === 'android';
-const release = latestRelease(bot);
+// Produk web: tautan aplikasi (mis. domain Netlify/Vercel) + label tombol.
+const isWeb = bot.platform === 'web';
+const webHref = webAppUrl(bot);
+const webLabel = webCtaLabel(bot);
 const screenshots = bot.media.filter((m) => m.kind === 'screenshot' || m.kind === 'banner');
-
-// Langkah pemasangan: dari CMS bila diisi, selain itu memakai langkah bawaan.
-const defaultInstallSteps = [
-  'Unduh berkas APK di atas.',
-  'Buka berkasnya; bila diminta, izinkan "Install dari sumber tak dikenal" untuk peramban atau pengelola berkas yang kamu pakai.',
-  'Lanjutkan pemasangan. Android bisa menampilkan pemeriksaan Play Protect — pilih lanjutkan untuk aplikasi tepercaya ini.',
-];
-const installSteps = bot.installSteps.length > 0 ? bot.installSteps : defaultInstallSteps;
 
 // CTA penutup: judul & teks bisa ditulis dari CMS. Bila kosong, dipakai kalimat
 // bawaan yang menyesuaikan platform produk.
-const defaultCtaText = isAndroid
-  ? 'Unduh langsung dan pasang di perangkatmu. Gratis, tanpa syarat berlangganan.'
-  : bot.platform === 'discord'
-    ? 'Tambahkan ke server Discord kamu. Gratis, tanpa syarat berlangganan.'
-    : 'Mulai pakai sekarang. Gratis, tanpa syarat berlangganan.';
+const defaultCtaText = bot.platform === 'discord'
+  ? 'Tambahkan ke server Discord kamu. Gratis, tanpa syarat berlangganan.'
+  : 'Buka aplikasinya langsung dari peramban. Gratis, tanpa syarat berlangganan.';
 const ctaHeading = bot.ctaHeading || `Coba ${bot.shortName} sekarang.`;
 const ctaText = bot.ctaText || defaultCtaText;
 
@@ -108,12 +100,12 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
             {heroInviteLabel}
           </Button>
         )}
-        {isAndroid && release && (
-          <Button href={release.url} variant="primary" size="lg" external>
-            {CTA.download} v{release.version}
+        {isWeb && webHref && !comingSoon && (
+          <Button href={webHref} variant="primary" size="lg" external>
+            {webLabel}
           </Button>
         )}
-        {isAndroid && !release && !comingSoon && (
+        {isWeb && !webHref && !comingSoon && (
           <Button href={site.links.discordSupport} variant="primary" size="lg" external>
             {CTA.notify}
           </Button>
@@ -140,55 +132,33 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
     </div>
   </section>
 
-  {isAndroid && (
+  {isWeb && (
     <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
       <div class="grid gap-12 md:grid-cols-3">
         <div class="md:col-span-1">
-          <p class="eyebrow mb-3">Unduh</p>
-          <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Pasang di Android.</h2>
+          <p class="eyebrow mb-3">Akses</p>
+          <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Buka di peramban.</h2>
           <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
-            Unduh APK resmi langsung dari sini. Cocokkan SHA-256 di bawah untuk memastikan berkasnya asli dan utuh.
+            Aplikasi web — tidak perlu memasang apa pun. Buka langsung lewat tautan, jalan di ponsel maupun desktop.
           </p>
         </div>
         <div class="md:col-span-2">
-          {release ? (
+          {webHref ? (
             <div class="rounded-2xl border p-6 space-y-5" style={`border-color: ${bot.color}40`}>
               <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p class="font-display text-xl font-semibold tracking-tightest">Versi {release.version}</p>
-                  <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60 mt-1">
-                    {formatBytes(release.fileSize)}{release.minAndroid ? ` · ${release.minAndroid}` : ''}
-                  </p>
+                  <p class="font-display text-xl font-semibold tracking-tightest">{bot.shortName}</p>
+                  <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60 mt-1 break-all">{webHref}</p>
                 </div>
-                <Button href={release.url} variant="primary" size="lg" external>{CTA.download} v{release.version}</Button>
+                <Button href={webHref} variant="primary" size="lg" external>{webLabel}</Button>
               </div>
-              {release.releaseNotes && (
-                <p class="text-sm text-ink-700 dark:text-cream-200 leading-relaxed">{release.releaseNotes}</p>
+              {bot.ctaNote && (
+                <p class="text-sm text-ink-700 dark:text-cream-200 leading-relaxed">{bot.ctaNote}</p>
               )}
-              {release.sha256 && (
-                <div>
-                  <p class="font-mono text-[11px] uppercase tracking-wider text-ink-500 dark:text-cream-300/60 mb-1.5">SHA-256</p>
-                  <code class="block break-all rounded-lg bg-cream-100/60 dark:bg-ink-900/60 border border-ink-900/5 dark:border-cream-100/5 p-3 font-mono text-[11px] text-ink-700 dark:text-cream-200">{release.sha256}</code>
-                </div>
-              )}
-              <div>
-                <p class="eyebrow mb-3">Cara install</p>
-                <ol class="space-y-2 text-sm text-ink-700 dark:text-cream-200">
-                  {installSteps.map((langkah, i) => (
-                    <li class="flex gap-3">
-                      <span class="font-mono text-amber-600 dark:text-amber-500 flex-none">{String(i + 1).padStart(2, '0')}</span>
-                      <span>{langkah}</span>
-                    </li>
-                  ))}
-                </ol>
-                {bot.androidInstallNote && (
-                  <p class="mt-3 text-sm text-ink-600 dark:text-cream-200/80">{bot.androidInstallNote}</p>
-                )}
-              </div>
             </div>
           ) : (
             <div class="rounded-2xl border border-dashed border-ink-900/15 dark:border-cream-100/15 p-8 text-center text-ink-500 dark:text-cream-300/60">
-              Rilis APK belum tersedia. Ikuti kabarnya di Discord — kami umumkan begitu siap.
+              Aplikasi belum tersedia. Ikuti kabarnya di Discord — kami umumkan begitu siap.
             </div>
           )}
         </div>
@@ -425,8 +395,8 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
             <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">{ctaHeading}</h2>
             <p class="text-ink-600 dark:text-cream-200/80 text-lg mb-8">{ctaText}</p>
             <div class="flex flex-wrap gap-3">
-              {(isAndroid && release) ? (
-                <Button href={release.url} variant="primary" size="lg" external>{CTA.download} v{release.version}</Button>
+              {(isWeb && webHref) ? (
+                <Button href={webHref} variant="primary" size="lg" external>{webLabel}</Button>
               ) : inviteUrl ? (
                 <Button href={inviteUrl} variant="primary" size="lg" external>{CTA.invite}</Button>
               ) : null}

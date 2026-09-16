@@ -28,11 +28,9 @@
         "integrationType": "0",
         "inviteUrl": ""
       },
-      "android": null,
       "badge": "",
       "badgeTone": "accent",
       "faq": [],
-      "installSteps": [],
       "ctaHeading": "",
       "ctaText": "",
       "ctaNote": "",
@@ -42,8 +40,7 @@
       "seoTitle": "Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord",
       "seoDescription": "Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.",
       "ogImage": "",
-      "media": [],
-      "release": null
+      "media": []
     }
   ]
 }

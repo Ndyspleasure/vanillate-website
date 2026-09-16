@@ -1,13 +1,13 @@
 ---
 // Admin — Katalog Produk (umbrella studio).
 //
-// CRUD produk Vanillate Studio + unggah media (foto/video/ikon) dan rilis APK
-// ke Supabase Storage. Data tersimpan ke tabel products / product_media /
-// product_releases, lalu ditarik saat build (scripts/sync-content.mjs) ke
-// halaman publik /products. File biner tinggal di Storage (bucket publik).
+// CRUD produk Vanillate Studio + unggah media (foto/video/ikon) ke Supabase
+// Storage. Data tersimpan ke tabel products / product_media, lalu ditarik saat
+// build (scripts/sync-content.mjs) ke halaman publik /products. Gambar tinggal
+// di Storage (bucket publik).
 //
-// Berbeda dari admin Partnership yang hanya mengedit baris tetap, halaman ini
-// membuat & menghapus produk, dan mengunggah berkas — kapabilitas baru.
+// Aplikasi web (mis. yang di-deploy ke Netlify/Vercel) cukup diisi tautannya —
+// tidak ada berkas aplikasi yang diunggah, jadi hemat kuota Storage.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
@@ -16,7 +16,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   <AdminPageHeader
     eyebrow="Katalog"
     title="Produk"
-    description="Kelola semua produk Vanillate Studio: Discord bot, aplikasi Android (APK), dan lainnya. Perubahan tampil di /products setelah build berikutnya."
+    description="Kelola semua produk Vanillate Studio: Discord bot, aplikasi web (cukup tempel tautannya), dan lainnya. Perubahan tampil di /products setelah build berikutnya."
   />
 
   <div id="produk-root" class="px-6 lg:px-10 py-8 max-w-4xl">
@@ -37,9 +37,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   const CHK = 'h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500';
 
   const MEDIA_BUCKET = 'product-media';
-  const APK_BUCKET = 'product-apk';
 
-  const PLATFORMS = [['discord', 'Discord bot'], ['android', 'Aplikasi Android (APK)'], ['web', 'Web / lainnya']];
+  const PLATFORMS = [['discord', 'Discord bot'], ['web', 'Aplikasi web (tautan)']];
   const STATUSES = [['live', 'Live'], ['beta', 'Beta'], ['preorder', 'Preorder'], ['coming-soon', 'Coming soon']];
   const TONES = [
     ['accent', 'Aksen produk'], ['info', 'Info (biru)'], ['success', 'Sukses (hijau)'],
@@ -80,18 +79,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     window.clearTimeout((toast as any)._t);
     (toast as any)._t = window.setTimeout(() => t.classList.add('hidden'), 4000);
   }
-  const bytes = (n: number | null) => {
-    if (!n && n !== 0) return '—';
-    if (n < 1024) return `${n} B`;
-    if (n < 1048576) return `${(n / 1024).toFixed(0)} KB`;
-    return `${(n / 1048576).toFixed(1)} MB`;
-  };
   const safeName = (s: string) => s.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
-  async function sha256(file: File): Promise<string> {
-    const buf = await file.arrayBuffer();
-    const hash = await crypto.subtle.digest('SHA-256', buf);
-    return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('');
-  }
   const publicUrl = (bucket: string, path: string) =>
     getSupabase()!.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
@@ -159,10 +147,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         id: null, slug: '', name: '', short_name: '', tagline: '', description: '',
         platform: 'discord', status: 'live', category: '', accent_color: '#E8B84A', icon: '',
         featured: false, verified: false, enabled: true, sort: 100,
-        features: [], long_intro: [], faq: [], install_steps: [],
+        features: [], long_intro: [], faq: [],
         badge: '', badge_tone: 'accent', thumbnail_url: '',
         discord_client_id: '', discord_permissions: '', discord_integration_type: '', invite_url: '',
-        package_name: '', min_android: '', install_note: '',
         cta_label: '', cta_url: '', cta_heading: '', cta_text: '', cta_note: '',
         faq_category_id: '', seo_title: '', seo_description: '',
       };
@@ -170,7 +157,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     listView().classList.add('hidden');
     editorView().classList.remove('hidden');
     renderEditor();
-    if (current.id) { void muatMedia(); void muatRilis(); }
+    if (current.id) void muatMedia();
     window.scrollTo({ top: 0 });
   }
 
@@ -241,20 +228,16 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           </div>
         </div>
 
-        <!-- Android -->
-        <div id="sec-android" class="space-y-4 rounded-xl bg-ink-900/[0.03] dark:bg-cream-100/[0.03] p-4 ${p.platform === 'android' ? '' : 'hidden'}">
-          <p class="font-mono text-xs uppercase tracking-wider text-ink-500 dark:text-cream-300/60">Aplikasi Android</p>
+        <!-- Aplikasi web -->
+        <div id="sec-web" class="space-y-4 rounded-xl bg-ink-900/[0.03] dark:bg-cream-100/[0.03] p-4 ${p.platform === 'web' ? '' : 'hidden'}">
+          <p class="font-mono text-xs uppercase tracking-wider text-ink-500 dark:text-cream-300/60">Aplikasi web</p>
           <div class="grid gap-4 sm:grid-cols-2">
-            ${field('f-package_name', 'Package name', inp('f-package_name', p.package_name, 'placeholder="com.vanillate.app"'))}
-            ${field('f-min_android', 'Minimum Android', inp('f-min_android', p.min_android, 'placeholder="Android 8.0"'))}
+            ${field('f-cta_url', 'Tautan aplikasi', inp('f-cta_url', p.cta_url, 'type="url" placeholder="https://namaapp.netlify.app"'), 'Alamat aplikasi/website — mis. domain Netlify atau Vercel. Tombol utama di halaman produk mengarah ke sini.')}
+            ${field('f-cta_label', 'Label tombol', inp('f-cta_label', p.cta_label, 'maxlength="40" placeholder="Buka Aplikasi"'), 'Kosongkan untuk memakai "Buka Aplikasi".')}
           </div>
-          ${field('f-install_note', 'Catatan pemasangan', ta('f-install_note', p.install_note, 2, 'maxlength="400"'), 'Mis. langkah aktifkan "Install dari sumber tak dikenal".')}
-          ${field('f-install_steps', 'Langkah install (satu per baris)', ta('f-install_steps', (p.install_steps || []).join('\n'), 3), 'Kosongkan untuk memakai langkah bawaan (unduh → izinkan sumber tak dikenal → pasang).')}
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-3">
-          ${field('f-cta_label', 'Label CTA (override)', inp('f-cta_label', p.cta_label, 'maxlength="40"'))}
-          ${field('f-cta_url', 'CTA URL (override)', inp('f-cta_url', p.cta_url, 'type="url"'))}
+        <div class="grid gap-4 sm:grid-cols-2">
           ${field('f-faq_category_id', 'Kategori FAQ (panduan)',
             sel('f-faq_category_id', p.faq_category_id || '', [
               ['', kategoriFaq.length ? '— tanpa panduan —' : '— belum ada kategori FAQ —'],
@@ -282,11 +265,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
         ${bolehEdit ? `<div class="flex items-center gap-3 pt-2">
           <button type="button" class="${BTN}" data-action="simpan-core">${nuevo ? 'Buat produk' : 'Simpan perubahan'}</button>
-          ${nuevo ? '<p class="text-sm text-ink-500 dark:text-cream-300/60">Simpan dulu untuk mengunggah media & APK.</p>' : ''}
+          ${nuevo ? '<p class="text-sm text-ink-500 dark:text-cream-300/60">Simpan dulu untuk mengunggah media.</p>' : ''}
         </div>` : '<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat.</p>'}
       </div>
 
-      ${p.id ? renderThumbShell() + renderMediaShell() + (p.platform === 'android' ? renderRilisShell() : '') : ''}
+      ${p.id ? renderThumbShell() + renderMediaShell() : ''}
     `;
     if (disabled) editorView().querySelectorAll('input,textarea,select').forEach((n) => ((n as any).disabled = true));
   }
@@ -304,7 +287,6 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       featured: c('f-featured'), verified: c('f-verified'), enabled: c('f-enabled'),
       sort: Number.isFinite(sortN) ? sortN : 100,
       features: lines('f-features'), long_intro: lines('f-long_intro'),
-      install_steps: lines('f-install_steps'),
       // "Pertanyaan | Jawaban" per baris. Baris tanpa "|" dilewati supaya
       // salah ketik tidak menghasilkan FAQ berisi jawaban kosong.
       faq: lines('f-faq')
@@ -322,8 +304,6 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       discord_permissions: v('f-discord_permissions') || null,
       discord_integration_type: v('f-discord_integration_type') || null,
       invite_url: v('f-invite_url') || null,
-      package_name: v('f-package_name') || null, min_android: v('f-min_android') || null,
-      install_note: v('f-install_note') || null,
       cta_label: v('f-cta_label') || null, cta_url: v('f-cta_url') || null,
       faq_category_id: v('f-faq_category_id') || null,
       seo_title: v('f-seo_title') || null, seo_description: v('f-seo_description') || null,
@@ -343,25 +323,23 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       if (error) { toast(pesanError(error), false); return; }
       toast('Tersimpan.');
       current = { ...current, ...meta };
-      renderEditor(); if (current.id) { void muatMedia(); if (current.platform === 'android') void muatRilis(); }
+      renderEditor(); if (current.id) void muatMedia();
     } else {
       const { data, error } = await supabase.from('products').insert(meta).select('*').maybeSingle();
       if (error) { toast(error.code === '23505' ? 'Slug sudah dipakai produk lain.' : pesanError(error), false); return; }
-      toast('Produk dibuat. Sekarang bisa unggah media & APK.');
+      toast('Produk dibuat. Sekarang bisa unggah media.');
       current = data;
-      renderEditor(); void muatMedia(); if (current.platform === 'android') void muatRilis();
+      renderEditor(); void muatMedia();
     }
   }
 
   async function hapusProduk() {
     if (!bolehEdit || !current?.id) return;
-    if (!window.confirm(`Hapus produk "${current.name}" beserta semua media & rilisnya? Tidak bisa dibatalkan.`)) return;
+    if (!window.confirm(`Hapus produk "${current.name}" beserta semua medianya? Tidak bisa dibatalkan.`)) return;
     const supabase = getSupabase()!;
     // Bersihkan berkas Storage lebih dulu (baris DB ikut terhapus via cascade).
-    for (const bucket of [MEDIA_BUCKET, APK_BUCKET]) {
-      const { data } = await supabase.storage.from(bucket).list(current.slug);
-      if (data?.length) await supabase.storage.from(bucket).remove(data.map((f) => `${current.slug}/${f.name}`));
-    }
+    const { data: berkas } = await supabase.storage.from(MEDIA_BUCKET).list(current.slug);
+    if (berkas?.length) await supabase.storage.from(MEDIA_BUCKET).remove(berkas.map((f) => `${current.slug}/${f.name}`));
     const { error } = await supabase.from('products').delete().eq('id', current.id);
     if (error) { toast(pesanError(error), false); return; }
     toast('Produk dihapus.');
@@ -435,7 +413,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     current.thumbnail_url = publik;
     toast('Gambar diperbarui.');
-    renderEditor(); void muatMedia(); if (current.platform === 'android') void muatRilis();
+    renderEditor(); void muatMedia();
   }
 
   async function hapusThumb() {
@@ -454,7 +432,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     current.thumbnail_url = '';
     toast('Gambar dihapus.');
-    renderEditor(); void muatMedia(); if (current.platform === 'android') void muatRilis();
+    renderEditor(); void muatMedia();
   }
 
   // ─── Media ─────────────────────────────────────────────────────────────────
@@ -545,105 +523,6 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     void muatMedia();
   }
 
-  // ─── Rilis APK ─────────────────────────────────────────────────────────────
-  function renderRilisShell() {
-    return `
-      <div class="mt-6 space-y-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
-        <h3 class="font-display text-lg font-semibold tracking-tightest">Rilis APK</h3>
-        <p class="text-sm text-ink-600 dark:text-cream-200/80">Unggah berkas <strong>.apk</strong>. SHA-256 dihitung otomatis dan ditampilkan di halaman unduh untuk verifikasi.</p>
-        ${bolehEdit ? `<div class="grid gap-3 sm:grid-cols-2">
-          ${field('r-version', 'Versi', inp('r-version', '', 'placeholder="1.0.0"'))}
-          ${field('r-min', 'Minimum Android', inp('r-min', '', 'placeholder="Android 8.0"'))}
-          <div class="sm:col-span-2">${field('r-notes', 'Catatan rilis', ta('r-notes', '', 2))}</div>
-          <div class="sm:col-span-2">${field('r-file', 'Berkas APK (≤250 MB)', `<input id="r-file" type="file" accept=".apk,application/vnd.android.package-archive" class="${INPUT}" />`)}</div>
-          <label class="flex items-center gap-2 text-sm font-medium sm:col-span-2"><input type="checkbox" id="r-latest" checked class="${CHK}" /> Jadikan versi terbaru</label>
-          <div class="sm:col-span-2"><button type="button" class="${BTN}" data-action="upload-rilis">Unggah rilis</button></div>
-        </div>` : ''}
-        <div id="rilis-list" class="space-y-2"></div>
-      </div>`;
-  }
-
-  async function muatRilis() {
-    const box = document.getElementById('rilis-list');
-    if (!box) return;
-    box.innerHTML = stateBlock('loading', '');
-    const supabase = getSupabase()!;
-    const { data, error } = await supabase.from('product_releases')
-      .select('id, version, storage_path, url, file_size, sha256, min_android, is_latest, created_at')
-      .eq('product_id', current.id).order('created_at', { ascending: false });
-    if (error) { box.innerHTML = stateBlock('error', pesanError(error)); return; }
-    const rows = data ?? [];
-    if (!rows.length) { box.innerHTML = `<p class="text-sm text-ink-500 dark:text-cream-300/60">Belum ada rilis.</p>`; return; }
-    box.innerHTML = rows.map((r: any) => `
-      <div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="font-display font-semibold">v${esc(r.version)}</span>
-          ${r.is_latest ? '<span class="rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 px-2 py-0.5 text-[0.65rem] font-mono uppercase tracking-wider">terbaru</span>' : ''}
-          <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60">${bytes(r.file_size)}${r.min_android ? ' · ' + esc(r.min_android) : ''}</span>
-          <span class="ml-auto flex items-center gap-3">
-            ${bolehEdit && !r.is_latest ? `<button type="button" class="text-sm text-amber-700 dark:text-amber-400 hover:underline" data-action="latest" data-id="${esc(r.id)}">Jadikan terbaru</button>` : ''}
-            ${bolehEdit ? `<button type="button" class="text-sm text-red-600 dark:text-red-400 hover:underline" data-action="hapus-rilis" data-id="${esc(r.id)}" data-path="${esc(r.storage_path)}">Hapus</button>` : ''}
-          </span>
-        </div>
-        <p class="mt-1 font-mono text-[0.7rem] text-ink-500 dark:text-cream-300/60 break-all">SHA-256: ${esc(r.sha256 || '—')}</p>
-      </div>`).join('');
-  }
-
-  async function uploadRilis() {
-    if (!bolehEdit) return;
-    const supabase = getSupabase()!;
-    const version = (document.getElementById('r-version') as HTMLInputElement).value.trim();
-    const min = (document.getElementById('r-min') as HTMLInputElement).value.trim();
-    const notes = (document.getElementById('r-notes') as HTMLTextAreaElement).value.trim();
-    const latest = (document.getElementById('r-latest') as HTMLInputElement).checked;
-    const fileEl = document.getElementById('r-file') as HTMLInputElement;
-    const file = fileEl.files?.[0];
-    if (!version) { toast('Isi nomor versi dulu.', false); return; }
-    if (!file) { toast('Pilih berkas APK.', false); return; }
-    if (file.size > 262144000) { toast('APK melebihi 250 MB.', false); return; }
-
-    toast('Menghitung checksum & mengunggah…');
-    const sha = await sha256(file);
-    const path = `${current.slug}/${safeName(version)}-${safeName(file.name)}`;
-    const up = await supabase.storage.from(APK_BUCKET).upload(path, file, {
-      contentType: 'application/vnd.android.package-archive', upsert: true,
-    });
-    if (up.error) { toast(up.error.message, false); return; }
-
-    // Jaga invariant "satu terbaru": lepas yang lama sebelum menandai yang baru.
-    if (latest) await supabase.from('product_releases').update({ is_latest: false }).eq('product_id', current.id).eq('is_latest', true);
-    const { error } = await supabase.from('product_releases').insert({
-      product_id: current.id, version, min_android: min || null, release_notes: notes || null,
-      storage_path: path, url: publicUrl(APK_BUCKET, path), file_size: file.size, sha256: sha,
-      is_latest: latest, created_by: uid,
-    });
-    if (error) { toast(pesanError(error), false); return; }
-    fileEl.value = '';
-    (document.getElementById('r-version') as HTMLInputElement).value = '';
-    toast('Rilis diunggah.');
-    void muatRilis();
-  }
-
-  async function jadikanTerbaru(id: string) {
-    if (!bolehEdit) return;
-    const supabase = getSupabase()!;
-    await supabase.from('product_releases').update({ is_latest: false }).eq('product_id', current.id).eq('is_latest', true);
-    const { error } = await supabase.from('product_releases').update({ is_latest: true }).eq('id', id);
-    if (error) { toast(pesanError(error), false); return; }
-    toast('Versi terbaru diperbarui.');
-    void muatRilis();
-  }
-
-  async function hapusRilis(id: string, path: string) {
-    if (!bolehEdit) return;
-    const supabase = getSupabase()!;
-    await supabase.storage.from(APK_BUCKET).remove([path]);
-    const { error } = await supabase.from('product_releases').delete().eq('id', id);
-    if (error) { toast(pesanError(error), false); return; }
-    toast('Rilis dihapus.');
-    void muatRilis();
-  }
-
   // ─── Delegasi event ──────────────────────────────────────────────────────────
   async function onClick(e: Event) {
     const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
@@ -658,9 +537,6 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (a === 'hapus-thumb') return void hapusThumb();
     if (a === 'upload-media') return void uploadMedia();
     if (a === 'hapus-media') return void hapusMedia(btn.dataset.id!, btn.dataset.path!);
-    if (a === 'upload-rilis') return void uploadRilis();
-    if (a === 'latest') return void jadikanTerbaru(btn.dataset.id!);
-    if (a === 'hapus-rilis') return void hapusRilis(btn.dataset.id!, btn.dataset.path!);
   }
 
   function onChange(e: Event) {
@@ -668,7 +544,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (el.id === 'f-platform') {
       const val = (el as HTMLSelectElement).value;
       document.getElementById('sec-discord')?.classList.toggle('hidden', val !== 'discord');
-      document.getElementById('sec-android')?.classList.toggle('hidden', val !== 'android');
+      document.getElementById('sec-web')?.classList.toggle('hidden', val !== 'web');
       return;
     }
     // Alt text & urutan media disimpan begitu selesai diubah — perubahan kecil

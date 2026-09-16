@@ -1,6 +1,6 @@
 ---
 import type { Bot } from '@data/bots';
-import { productPrimaryCta, latestRelease, formatBytes, badgeClass } from '@data/bots';
+import { productPrimaryCta, badgeClass } from '@data/bots';
 import { faqCategoryUrl } from '@data/faq';
 import BotTag from '@components/BotTag.astro';
 import BotAvatar from '@components/BotAvatar.astro';
@@ -12,9 +12,8 @@ export interface Props {
 }
 
 const { bot, featured = false } = Astro.props;
-// CTA utama sadar-platform: Discord → Undang, Android → Download APK, lainnya → Detail.
+// CTA utama sadar-platform: Discord → Undang, Web → Buka Aplikasi, lainnya → Detail.
 const cta = productPrimaryCta(bot);
-const release = latestRelease(bot);
 
 const statusLabel = {
   live: 'Live',
@@ -122,9 +121,6 @@ const dotClass = {
       >
         Panduan
       </a>
-    )}
-    {release && release.fileSize && (
-      <span class="font-mono text-[11px] text-ink-500 dark:text-cream-300/60">APK · {formatBytes(release.fileSize)}</span>
     )}
   </div>
 </article>
