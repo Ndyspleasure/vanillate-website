@@ -1,0 +1,112 @@
+---
+// Status Sistem Vanillate Workspace — heartbeat bot (workspace_system_state).
+// Baca-saja: bot menerbitkan baris ini tiap ~30s. Bila updated_at basi, bot
+// mati/terputus. Memberi operator "mata" ke jembatan bot↔CMS.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Status Sistem · Workspace" active="ws-status">
+  <AdminPageHeader
+    eyebrow="Vanillate Workspace"
+    title="Status Sistem"
+    description="Kesehatan bot & jembatan ke CMS. Bot mengirim heartbeat berkala; bila berhenti, status berubah menjadi offline."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-3xl space-y-6">
+    <div id="status-card" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-5"></div>
+    <div class="flex items-center gap-3">
+      <button type="button" id="btn-refresh" class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Segarkan</button>
+      <span class="text-xs text-ink-500 dark:text-cream-300/60">Diperbarui otomatis tiap 10 detik.</span>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+
+  const FEATURE_STYLE: Record<string, string> = {
+    on: 'bg-teal-500/15 text-teal-700 dark:text-teal-300',
+    off: 'bg-ink-900/10 dark:bg-cream-100/10 text-ink-500 dark:text-cream-300/60',
+    maintenance: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  };
+
+  function rel(iso: string | null): string {
+    if (!iso) return '—';
+    const secs = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+    if (secs < 60) return `${secs} dtk lalu`;
+    if (secs < 3600) return `${Math.floor(secs / 60)} mnt lalu`;
+    if (secs < 86400) return `${Math.floor(secs / 3600)} jam lalu`;
+    return `${Math.floor(secs / 86400)} hr lalu`;
+  }
+  function fmtUptime(secs: number | null): string {
+    if (!secs && secs !== 0) return '—';
+    const d = Math.floor(secs / 86400), h = Math.floor((secs % 86400) / 3600), m = Math.floor((secs % 3600) / 60);
+    if (d) return `${d}h ${h}j ${m}m`;
+    if (h) return `${h}j ${m}m`;
+    return `${m}m`;
+  }
+
+  function health(row: any): { dot: string; label: string; cls: string; note: string } {
+    const hb = Number(row.heartbeat_interval_seconds) || 30;
+    const age = (Date.now() - new Date(row.updated_at).getTime()) / 1000;
+    if (age <= hb * 2.5) return { dot: 'bg-teal-500', label: 'Online', cls: 'text-teal-700 dark:text-teal-300', note: `Heartbeat ${rel(row.updated_at)}.` };
+    if (age <= hb * 10) return { dot: 'bg-amber-500', label: 'Degradasi', cls: 'text-amber-700 dark:text-amber-400', note: `Heartbeat terlambat (${rel(row.updated_at)}). Bot mungkin sibuk atau baru saja terputus.` };
+    return { dot: 'bg-red-500', label: 'Offline', cls: 'text-red-600 dark:text-red-400', note: `Tidak ada heartbeat sejak ${rel(row.updated_at)}. Bot kemungkinan mati / terputus dari Supabase.` };
+  }
+
+  function statRow(label: string, value: string): string {
+    return `<div class="flex items-center justify-between py-2 border-t border-ink-900/5 dark:border-cream-100/5">
+      <span class="text-sm text-ink-500 dark:text-cream-300/60">${esc(label)}</span>
+      <span class="text-sm font-medium">${esc(value)}</span>
+    </div>`;
+  }
+
+  function render(row: any) {
+    const card = document.getElementById('status-card')!;
+    const h = health(row);
+    const feats = row.features && typeof row.features === 'object' ? row.features : {};
+    const chips = Object.keys(feats).length
+      ? Object.entries(feats).map(([k, v]) => `<span class="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs ${FEATURE_STYLE[String(v)] || FEATURE_STYLE.off}">${esc(k)}<span class="opacity-70">· ${esc(String(v))}</span></span>`).join(' ')
+      : '<span class="text-xs text-ink-500 dark:text-cream-300/60">—</span>';
+
+    card.innerHTML = `
+      <div class="flex items-center gap-3">
+        <span class="relative flex h-3 w-3"><span class="absolute inline-flex h-full w-full rounded-full ${h.dot} opacity-60 ${h.label === 'Online' ? 'animate-ping' : ''}"></span><span class="relative inline-flex h-3 w-3 rounded-full ${h.dot}"></span></span>
+        <span class="font-display text-xl font-semibold tracking-tightest ${h.cls}">Bot ${esc(h.label)}</span>
+        <span class="ml-auto text-xs text-ink-500 dark:text-cream-300/60">v${esc(row.bot_version || '—')}</span>
+      </div>
+      <p class="mt-1 text-sm text-ink-500 dark:text-cream-300/60">${esc(h.note)}</p>
+      <div class="mt-4">
+        ${statRow('Uptime', fmtUptime(row.uptime_seconds))}
+        ${statRow('Sync konfigurasi terakhir', rel(row.last_config_sync))}
+        ${statRow('Sync operasi terakhir', rel(row.last_ops_sync))}
+        ${statRow('Perintah tertunda (polling terakhir)', String(row.pending_commands ?? 0))}
+        ${statRow('Interval heartbeat', `${row.heartbeat_interval_seconds ?? 30} dtk`)}
+      </div>
+      <div class="mt-4 border-t border-ink-900/5 dark:border-cream-100/5 pt-3">
+        <p class="text-xs font-medium mb-2">Snapshot fitur</p>
+        <div class="flex flex-wrap gap-1.5">${chips}</div>
+      </div>`;
+  }
+
+  async function muat() {
+    const card = document.getElementById('status-card')!;
+    const supabase = getSupabase();
+    if (!supabase) { card.innerHTML = stateBlock('error', 'Supabase belum dikonfigurasi.'); return; }
+    const { data, error } = await supabase.from('workspace_system_state').select('*').eq('id', 'workspace').maybeSingle();
+    if (error) { card.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data) {
+      card.innerHTML = stateBlock('empty', 'Belum ada heartbeat. Pastikan bot berjalan dengan SUPABASE_URL & SUPABASE_SERVICE_ROLE_KEY, lalu tunggu ±30 detik.');
+      return;
+    }
+    render(data);
+  }
+
+  document.addEventListener('admin:ready', () => {
+    void muat();
+    const timer = setInterval(() => void muat(), 10_000);
+    window.addEventListener('beforeunload', () => clearInterval(timer));
+  });
+  document.getElementById('btn-refresh')?.addEventListener('click', () => void muat());
+</script>
