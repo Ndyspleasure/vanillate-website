@@ -6,8 +6,8 @@
       "discordUsername": "ndyspleasure",
       "position": "Founder & Operations manager",
       "description": "Pendiri sekaligus penggerak harian Vanillate Studio, dari arah produk sampai baris kode yang menjalankannya.",
-      "profileImage": "",
-      "profileType": "discord",
+      "profileImage": "https://lvfwopnvvqncopvathop.supabase.co/storage/v1/object/public/team-media/18df4628-0e27-4287-a040-043244f7685c/1789536207562-ChatGPT-Image-16-Sep-2026-12.23.05.png",
+      "profileType": "custom",
       "profileLink": "https://personal.andikurniawan.vanillate.id/",
       "displayOrder": 1
     },
@@ -19,7 +19,7 @@
       "description": "Wajah ramah Vanillate Studio. Vani menemani kamu di setiap sudut ekosistem, dari halaman ini sampai kanal komunitas.",
       "profileImage": "/VaniStaff.jpg",
       "profileType": "custom",
-      "profileLink": "",
+      "profileLink": "https://discord.com/oauth2/authorize?client_id=1513806760622817320&permissions=876173413440&integration_type=0&scope=bot+applications.commands",
       "displayOrder": 2
     },
     {
@@ -28,21 +28,10 @@
       "discordUsername": "ryujin_2521",
       "position": "Support Assistant (SA)",
       "description": "Mendukung operasional harian, menangani kebutuhan pengguna, serta memastikan proses support berjalan dengan baik.",
-      "profileImage": "",
-      "profileType": "discord",
-      "profileLink": "",
+      "profileImage": "https://lvfwopnvvqncopvathop.supabase.co/storage/v1/object/public/team-media/a5e144d7-d9a5-4f0d-be0a-f9901ae77a9b/1789536630161-sherin.jpg",
+      "profileType": "custom",
+      "profileLink": "https://www.tiktok.com/@ryujin2521",
       "displayOrder": 3
-    },
-    {
-      "id": "f4593467-4ecf-40a8-9f1d-d6e9e64f8783",
-      "name": "Muhammad Ghifari Ramadhan",
-      "discordUsername": "ntzee666",
-      "position": "Support Assistant (SA)",
-      "description": "Mendukung operasional harian, menangani kebutuhan pengguna, serta memastikan proses support berjalan dengan baik.",
-      "profileImage": "",
-      "profileType": "discord",
-      "profileLink": "",
-      "displayOrder": 4
     }
   ]
 }
