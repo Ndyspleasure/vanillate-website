@@ -491,3 +491,46 @@ create policy "ws editor tambah task_commands" on public.workspace_task_commands
   for insert to authenticated
   with check (public.is_admin_editor() and created_by = auth.uid() and status = 'pending');
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 13. TUGAS BERULANG (workspace_routines) — KONFIGURASI (CMS→bot)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Definisi pekerjaan rutin. Bot men-sync ke store lokal (jaga lastSpawnedDate)
+-- lalu scheduler-nya men-spawn tugas tiap jadwal. Pola sama seperti jadwal/
+-- automation. Penerima = Discord id (dari cermin workspace_members).
+create table if not exists public.workspace_routines (
+  id                      text primary key,     -- 'RTN-XXXXXX'
+  title                   text not null,
+  description             text,
+  task_type               text not null default 'biasa' check (task_type in ('biasa','absolute')),
+  priority                text not null default 'sedang',
+  frequency               text not null default 'harian',  -- harian|hari_kerja|mingguan|bulanan|hari_tertentu|interval
+  days_of_week            jsonb   not null default '[]'::jsonb,   -- [1..7] (1=Senin)
+  day_of_month            integer,
+  interval_days           integer,
+  time_of_day             text    not null default '09:00',      -- HH:mm
+  responsible_discord_id  text,
+  assignee_discord_ids    jsonb   not null default '[]'::jsonb,
+  team_id                 text,
+  due_offset_minutes      integer,
+  reminder_offsets        jsonb   not null default '[60]'::jsonb, -- menit sebelum deadline
+  reminder_notify_overdue boolean not null default false,
+  active                  boolean not null default true,
+  sort                    integer not null default 100,
+  created_at              timestamptz not null default now(),
+  updated_at              timestamptz not null default now(),
+  updated_by              uuid references public.admin_users(id) on delete set null
+);
+comment on table public.workspace_routines is
+  'Definisi pekerjaan rutin (tugas berulang). Bot sync ke lokal & scheduler men-spawn. Occurrence-nya jadi tugas biasa (tercermin di workspace_tasks).';
+create index if not exists workspace_routines_sort_idx on public.workspace_routines (sort);
+
+alter table public.workspace_routines enable row level security;
+drop policy if exists "ws admin baca workspace_routines" on public.workspace_routines;
+create policy "ws admin baca workspace_routines" on public.workspace_routines
+  for select to authenticated using (public.is_admin());
+drop policy if exists "ws editor kelola workspace_routines" on public.workspace_routines;
+create policy "ws editor kelola workspace_routines" on public.workspace_routines
+  for all to authenticated using (public.is_admin_editor()) with check (public.is_admin_editor());
+-- ═══════════════════════════════════════════════════════════════════════════

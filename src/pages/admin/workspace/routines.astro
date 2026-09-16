@@ -1,0 +1,176 @@
+---
+// Tugas Berulang (Routines) Vanillate Workspace — tabel workspace_routines.
+// Definisi; bot men-sync & scheduler-nya men-spawn tugas tiap jadwal.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Tugas Berulang · Workspace" active="ws-routines">
+  <AdminPageHeader
+    eyebrow="Vanillate Workspace"
+    title="Tugas Berulang"
+    description="Pekerjaan yang otomatis dibuat ulang tiap jadwal (harian, mingguan, bulanan, dsb). Bot men-spawn tugasnya; occurrence-nya muncul di halaman Tugas."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-3xl space-y-5">
+    <button type="button" id="ws-add" class="hidden rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">+ Tambah rutin</button>
+    <div id="ws-body" class="space-y-4"></div>
+    <p id="ws-pesan" class="text-sm" role="status" aria-live="polite"></p>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { newWorkspaceId, parseMinutes, DAY_LABELS } from '@/lib/workspace-admin';
+
+  let bolehEdit = false;
+  let members: any[] = [];
+  const INPUT = 'w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
+  const FREQ = [
+    { v: 'harian', l: 'Harian' }, { v: 'hari_kerja', l: 'Hari kerja (Sen–Jum)' },
+    { v: 'mingguan', l: 'Mingguan (pilih hari)' }, { v: 'hari_tertentu', l: 'Hari tertentu (pilih hari)' },
+    { v: 'bulanan', l: 'Bulanan (tanggal)' }, { v: 'interval', l: 'Interval (tiap N hari)' },
+  ];
+  const PRIO = ['rendah', 'sedang', 'tinggi', 'kritis'];
+
+  document.addEventListener('admin:ready', (e) => {
+    bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
+    void muat();
+  });
+
+  function pesan(msg: string, ok = true) {
+    const el = document.getElementById('ws-pesan')!;
+    el.textContent = msg;
+    el.className = `text-sm ${ok ? 'text-teal-700 dark:text-teal-300' : 'text-red-600 dark:text-red-400'}`;
+  }
+
+  function card(row: any): string {
+    const dis = bolehEdit ? '' : 'disabled';
+    const dow: number[] = Array.isArray(row.days_of_week) ? row.days_of_week : [];
+    const assignees: string[] = Array.isArray(row.assignee_discord_ids) ? row.assignee_discord_ids : [];
+    return `<div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3.5 space-y-3" data-id="${esc(row.id ?? '')}" data-new="${row.id ? '0' : '1'}">
+      <div class="flex items-center justify-between gap-2">
+        <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(row.id ?? '(baru)')}</span>
+        ${bolehEdit ? `<div class="flex gap-2">
+          <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" data-f="active" ${row.active !== false ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 text-amber-500" ${dis}/> Aktif</label>
+          <button type="button" data-act="save" class="rounded-lg bg-amber-500/90 px-3 py-1 text-xs font-semibold text-ink-950 hover:bg-amber-400">Simpan</button>
+          <button type="button" data-act="del" class="rounded-lg border border-red-500/40 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10">Hapus</button>
+        </div>` : ''}
+      </div>
+      <input data-f="title" placeholder="Judul tugas" value="${esc(row.title ?? '')}" class="${INPUT}" ${dis} />
+      <input data-f="description" placeholder="Deskripsi (opsional)" value="${esc(row.description ?? '')}" class="${INPUT}" ${dis} />
+      <div class="grid sm:grid-cols-3 gap-2">
+        <select data-f="task_type" class="${INPUT}" ${dis}>
+          <option value="biasa" ${row.task_type !== 'absolute' ? 'selected' : ''}>Biasa</option>
+          <option value="absolute" ${row.task_type === 'absolute' ? 'selected' : ''}>Absolute</option>
+        </select>
+        <select data-f="priority" class="${INPUT}" ${dis}>
+          ${PRIO.map((p) => `<option value="${p}" ${row.priority === p ? 'selected' : ''}>${p}</option>`).join('')}
+        </select>
+        <input data-f="time_of_day" type="time" value="${esc(row.time_of_day ?? '09:00')}" class="${INPUT}" ${dis} />
+      </div>
+      <div class="grid sm:grid-cols-3 gap-2 items-center">
+        <select data-f="frequency" class="${INPUT}" ${dis}>
+          ${FREQ.map((f) => `<option value="${f.v}" ${row.frequency === f.v ? 'selected' : ''}>${esc(f.l)}</option>`).join('')}
+        </select>
+        <input data-f="day_of_month" type="number" min="1" max="31" placeholder="Tanggal (bulanan)" value="${esc(row.day_of_month ?? '')}" class="${INPUT}" ${dis} />
+        <input data-f="interval_days" type="number" min="1" placeholder="Tiap N hari (interval)" value="${esc(row.interval_days ?? '')}" class="${INPUT}" ${dis} />
+      </div>
+      <div>
+        <p class="text-xs font-medium mb-1">Hari (untuk mingguan / hari tertentu)</p>
+        <div class="flex flex-wrap gap-2">
+          ${DAY_LABELS.map((d, i) => `<label class="flex items-center gap-1 text-xs"><input type="checkbox" data-dow="${i + 1}" ${dow.includes(i + 1) ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 text-amber-500" ${dis}/> ${esc(d.slice(0, 3))}</label>`).join('')}
+        </div>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-2">
+        <select data-f="responsible" class="${INPUT}" ${dis}>
+          <option value="">Penanggung jawab (opsional)</option>
+          ${members.map((m) => `<option value="${esc(m.discord_id)}" ${row.responsible_discord_id === m.discord_id ? 'selected' : ''}>${esc(m.display_name || m.discord_id)}</option>`).join('')}
+        </select>
+        <input data-f="due_offset_minutes" type="number" min="0" placeholder="Deadline: menit setelah dibuat (opsional)" value="${esc(row.due_offset_minutes ?? '')}" class="${INPUT}" ${dis} />
+      </div>
+      <div>
+        <p class="text-xs font-medium mb-1">Penerima</p>
+        <div class="grid sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto">
+          ${members.length ? members.map((m) => `<label class="flex items-center gap-2 text-sm"><input type="checkbox" data-assignee="${esc(m.discord_id)}" ${assignees.includes(m.discord_id) ? 'checked' : ''} class="h-4 w-4 rounded border-ink-900/20 text-amber-500" ${dis}/><span class="truncate">${esc(m.display_name || m.discord_id)}</span></label>`).join('') : '<p class="text-xs text-ink-500 dark:text-cream-300/60 col-span-full">Belum ada member tercermin (bot perlu berjalan).</p>'}
+        </div>
+      </div>
+      <input data-f="reminder_offsets" placeholder="Pengingat: menit sebelum deadline (mis. 60, 15)" value="${esc((row.reminder_offsets || [60]).join(', '))}" class="${INPUT}" ${dis} />
+    </div>`;
+  }
+
+  async function muat() {
+    const body = document.getElementById('ws-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Supabase belum dikonfigurasi.'); return; }
+    const mem = await supabase.from('workspace_members').select('discord_id, display_name').eq('active', true).order('display_name');
+    members = mem.data ?? [];
+    const { data, error } = await supabase.from('workspace_routines').select('*').order('sort', { ascending: true });
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (bolehEdit) document.getElementById('ws-add')!.classList.remove('hidden');
+    body.innerHTML = (data && data.length) ? data.map(card).join('') : stateBlock('empty', 'Belum ada tugas berulang.');
+  }
+
+  function collect(cardEl: HTMLElement) {
+    const v = (f: string) => (cardEl.querySelector(`[data-f="${f}"]`) as HTMLInputElement | HTMLSelectElement)?.value.trim() ?? '';
+    const num = (f: string) => { const n = parseInt(v(f), 10); return Number.isFinite(n) ? n : null; };
+    return {
+      title: v('title'),
+      description: v('description') || null,
+      task_type: v('task_type'),
+      priority: v('priority'),
+      frequency: v('frequency'),
+      time_of_day: v('time_of_day') || '09:00',
+      day_of_month: num('day_of_month'),
+      interval_days: num('interval_days'),
+      days_of_week: Array.from(cardEl.querySelectorAll<HTMLInputElement>('[data-dow]:checked')).map((i) => parseInt(i.dataset.dow!, 10)),
+      responsible_discord_id: v('responsible') || null,
+      assignee_discord_ids: Array.from(cardEl.querySelectorAll<HTMLInputElement>('[data-assignee]:checked')).map((i) => i.dataset.assignee),
+      due_offset_minutes: num('due_offset_minutes'),
+      reminder_offsets: parseMinutes(v('reminder_offsets')).length ? parseMinutes(v('reminder_offsets')) : [60],
+      active: (cardEl.querySelector('[data-f="active"]') as HTMLInputElement).checked,
+    };
+  }
+
+  document.getElementById('ws-add')?.addEventListener('click', () => {
+    const body = document.getElementById('ws-body')!;
+    if (body.querySelector('[data-new="1"]')) return;
+    const empty = body.querySelector('.py-16'); if (empty) empty.remove();
+    body.insertAdjacentHTML('afterbegin', card({ active: true, priority: 'sedang', frequency: 'harian', time_of_day: '09:00' }));
+  });
+
+  document.getElementById('ws-body')?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-act]') as HTMLButtonElement | null;
+    if (!btn || !bolehEdit) return;
+    const cardEl = btn.closest('[data-id]') as HTMLElement;
+    const id = cardEl.dataset.id!;
+    const isNew = cardEl.dataset.new === '1';
+    const supabase = getSupabase(); if (!supabase) return;
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+
+    if (btn.dataset.act === 'del') {
+      if (isNew) { cardEl.remove(); return; }
+      if (!confirm('Hapus rutin ini? Occurrence yang sudah dibuat tidak ikut terhapus.')) return;
+      const { error } = await supabase.from('workspace_routines').delete().eq('id', id);
+      if (error) return pesan(pesanError(error), false);
+      cardEl.remove(); pesan('Rutin dihapus.');
+      return;
+    }
+
+    const payload: any = { ...collect(cardEl), updated_at: new Date().toISOString(), updated_by: uid };
+    if (!payload.title) return pesan('Judul wajib diisi.', false);
+    if (isNew) {
+      const newId = newWorkspaceId('RTN');
+      const { error } = await supabase.from('workspace_routines').insert({ id: newId, ...payload });
+      if (error) return pesan(pesanError(error), false);
+      cardEl.dataset.id = newId; cardEl.dataset.new = '0';
+      (cardEl.querySelector('.font-mono') as HTMLElement).textContent = newId;
+    } else {
+      const { error } = await supabase.from('workspace_routines').update(payload).eq('id', id);
+      if (error) return pesan(pesanError(error), false);
+    }
+    pesan('Tersimpan. Bot menerapkannya dalam beberapa menit.');
+  });
+</script>
