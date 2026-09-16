@@ -392,3 +392,102 @@ drop policy if exists "ws editor hapus workspace_features" on public.workspace_f
 create policy "ws editor hapus workspace_features" on public.workspace_features
   for delete to authenticated using (public.is_admin_editor());
 -- ═══════════════════════════════════════════════════════════════════════════
+
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 12. OPERASIONAL TUGAS — MIRROR (bot→CMS) + ANTREAN PERINTAH (CMS→bot)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Pembuatan & penugasan tugas dilakukan dari CMS, TAPI bot tetap "mesin tugas"
+-- (reminder, eskalasi, transisi status). Polanya sama seperti bot_settings +
+-- bot_commands milik Sambung Kata:
+--   • workspace_members / workspace_tasks = CERMIN yang diterbitkan bot
+--     (service_role) agar CMS bisa menampilkan & memilih target penugasan.
+--   • workspace_task_commands = ANTREAN perintah CMS→bot. Admin meng-INSERT
+--     status 'pending'; bot (service_role) mengeksekusi lalu menulis status.
+-- Keamanan sama: browser hanya anon key + RLS; service_role hanya di server bot.
+
+-- 12a. Cermin anggota (untuk memilih penerima tugas di CMS).
+create table if not exists public.workspace_members (
+  discord_id      text primary key,
+  display_name    text,
+  role_ids        jsonb   not null default '[]'::jsonb,
+  team_ids        jsonb   not null default '[]'::jsonb,
+  primary_team_id text,
+  staff_status    text,
+  active          boolean not null default true,
+  updated_at      timestamptz not null default now()
+);
+comment on table public.workspace_members is
+  'Cermin anggota Discord yang diterbitkan bot (service_role) agar CMS bisa menugaskan. Sumber kebenaran tetap di bot.';
+create index if not exists workspace_members_active_idx on public.workspace_members (active, display_name);
+
+-- 12b. Cermin tugas (untuk menampilkan & mengelola dari CMS).
+create table if not exists public.workspace_tasks (
+  id            text primary key,
+  code          text,
+  title         text,
+  description   text,
+  type          text,
+  status        text,
+  priority      text,
+  creator_id    text,
+  responsible_id text,
+  assignee_ids  jsonb   not null default '[]'::jsonb,
+  team_id       text,
+  project_id    text,
+  labels        jsonb   not null default '[]'::jsonb,
+  start_at      timestamptz,
+  due_at        timestamptz,
+  completed_at  timestamptz,
+  archived      boolean not null default false,
+  created_at    timestamptz,
+  updated_at    timestamptz not null default now()
+);
+comment on table public.workspace_tasks is
+  'Cermin tugas yang diterbitkan bot (service_role). CMS membacanya; perubahan tugas lewat workspace_task_commands. SSoT tetap di bot.';
+create index if not exists workspace_tasks_status_idx on public.workspace_tasks (archived, status, due_at);
+
+-- 12c. Antrean perintah CMS→bot (buat/tugaskan/kelola tugas).
+create table if not exists public.workspace_task_commands (
+  id           bigint generated always as identity primary key,
+  type         text not null,          -- 'task.create' | 'task.assign' | 'task.set_deadline'
+                                        -- | 'task.set_priority' | 'task.set_status' | 'task.cancel' | 'task.delete'
+  payload      jsonb not null default '{}'::jsonb,
+  status       text not null default 'pending'
+                 check (status in ('pending', 'processing', 'done', 'error')),
+  result       jsonb,
+  error        text,
+  created_by   uuid references public.admin_users(id) on delete set null,
+  created_at   timestamptz not null default now(),
+  processed_at timestamptz
+);
+comment on table public.workspace_task_commands is
+  'Antrean perintah dari CMS ke bot untuk tugas. Admin meng-INSERT pending; bot (service_role) mengeksekusi & menulis status/result. Bot memvalidasi setiap payload.';
+create index if not exists workspace_task_commands_status_idx on public.workspace_task_commands (status, created_at);
+create index if not exists workspace_task_commands_recent_idx on public.workspace_task_commands (created_at desc);
+
+-- 12d. RLS
+alter table public.workspace_members       enable row level security;
+alter table public.workspace_tasks         enable row level security;
+alter table public.workspace_task_commands enable row level security;
+
+-- Cermin: baca-saja untuk admin (ditulis bot service_role).
+drop policy if exists "ws admin baca members" on public.workspace_members;
+create policy "ws admin baca members" on public.workspace_members
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "ws admin baca tasks" on public.workspace_tasks;
+create policy "ws admin baca tasks" on public.workspace_tasks
+  for select to authenticated using (public.is_admin());
+
+-- Antrean: admin baca riwayat; editor menaruh perintah baru (pending, atas nama sendiri).
+-- Status/result hanya ditulis bot (service_role) → tak ada policy UPDATE/DELETE utk authenticated.
+drop policy if exists "ws admin baca task_commands" on public.workspace_task_commands;
+create policy "ws admin baca task_commands" on public.workspace_task_commands
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "ws editor tambah task_commands" on public.workspace_task_commands;
+create policy "ws editor tambah task_commands" on public.workspace_task_commands
+  for insert to authenticated
+  with check (public.is_admin_editor() and created_by = auth.uid() and status = 'pending');
+-- ═══════════════════════════════════════════════════════════════════════════

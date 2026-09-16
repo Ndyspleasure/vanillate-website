@@ -1,0 +1,228 @@
+---
+// Tugas Vanillate Workspace — buat & tugaskan dari CMS (Phase 2).
+// Baca dari cermin workspace_tasks / workspace_members (diterbitkan bot).
+// Tulis lewat antrean workspace_task_commands; bot mengeksekusi & mencerminkan.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Tugas · Workspace" active="ws-tasks">
+  <AdminPageHeader
+    eyebrow="Vanillate Workspace"
+    title="Tugas"
+    description="Buat & tugaskan pekerjaan dari sini. Bot mengeksekusi (reminder, eskalasi, status tetap di bot) lalu mencerminkan hasilnya — muncul dalam beberapa detik."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-4xl space-y-8">
+    <!-- BUAT TUGAS -->
+    <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+      <h2 class="font-display text-lg font-semibold tracking-tightest mb-3">Buat tugas</h2>
+      <form id="form-buat" class="space-y-3">
+        <input id="t-title" placeholder="Judul tugas" class="w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+        <textarea id="t-desc" rows="2" placeholder="Deskripsi (opsional)" class="w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500"></textarea>
+        <div class="grid sm:grid-cols-3 gap-2">
+          <select id="t-type" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm">
+            <option value="biasa">Biasa</option>
+            <option value="absolute">Absolute</option>
+          </select>
+          <select id="t-prio" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm">
+            <option value="rendah">Rendah</option>
+            <option value="sedang" selected>Sedang</option>
+            <option value="tinggi">Tinggi</option>
+            <option value="kritis">Kritis</option>
+          </select>
+          <input id="t-due" type="datetime-local" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <p class="text-xs font-medium mb-1">Penerima (opsional)</p>
+          <div id="t-assignees" class="grid sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto"></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="submit" id="btn-buat" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60">Buat & kirim ke bot</button>
+          <p id="buat-pesan" class="text-sm" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <!-- DAFTAR TUGAS -->
+    <section class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Daftar tugas</h2>
+        <button type="button" id="btn-refresh" class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Segarkan</button>
+      </div>
+      <div id="tasks-body" class="space-y-2"></div>
+    </section>
+
+    <!-- RIWAYAT PERINTAH -->
+    <section class="space-y-3">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Riwayat perintah</h2>
+      <div id="cmds-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+
+  let bolehEdit = false;
+  let members: any[] = [];
+  const nameOf = (id: string) => members.find((m) => m.discord_id === id)?.display_name || id;
+
+  document.addEventListener('admin:ready', (e) => {
+    bolehEdit = ['owner', 'admin'].includes((e as CustomEvent).detail?.role);
+    void muatSemua();
+  });
+
+  async function muatSemua() {
+    await muatMembers();
+    await Promise.all([muatTasks(), muatCommands()]);
+  }
+
+  async function muatMembers() {
+    const supabase = getSupabase(); if (!supabase) return;
+    const { data } = await supabase.from('workspace_members').select('discord_id, display_name, active').eq('active', true).order('display_name');
+    members = data ?? [];
+    document.getElementById('t-assignees')!.innerHTML = members.length
+      ? members.map((m) => `<label class="flex items-center gap-2 text-sm"><input type="checkbox" data-assignee="${esc(m.discord_id)}" class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500" /><span class="truncate">${esc(m.display_name || m.discord_id)}</span></label>`).join('')
+      : '<p class="text-xs text-ink-500 dark:text-cream-300/60 col-span-full">Belum ada member tercermin. Pastikan bot berjalan & tersambung Supabase.</p>';
+  }
+
+  const PRIO = ['rendah', 'sedang', 'tinggi', 'kritis'];
+  const STATUS: Record<string, string> = {
+    belum_dimulai: 'Belum dimulai', sedang_dikerjakan: 'Dikerjakan', menunggu_pemeriksaan: 'Menunggu periksa',
+    selesai: 'Selesai', terlambat: 'Terlambat', ditunda: 'Ditunda', dibatalkan: 'Dibatalkan',
+  };
+
+  async function muatTasks() {
+    const body = document.getElementById('tasks-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase(); if (!supabase) { body.innerHTML = stateBlock('error', 'Supabase belum dikonfigurasi.'); return; }
+    const { data, error } = await supabase.from('workspace_tasks').select('*').eq('archived', false).order('updated_at', { ascending: false }).limit(100);
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || !data.length) { body.innerHTML = stateBlock('empty', 'Belum ada tugas.'); return; }
+    body.innerHTML = data.map(taskRow).join('');
+  }
+
+  function taskRow(t: any): string {
+    const assignees = (t.assignee_ids || []).map(nameOf).join(', ') || '—';
+    const controls = bolehEdit ? `
+      <div class="mt-2 flex flex-wrap items-center gap-2" data-id="${esc(t.id)}">
+        <button type="button" data-act="assign" class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-2.5 py-1 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Tugaskan</button>
+        <select data-act="prio" class="text-xs rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-1">
+          ${PRIO.map((p) => `<option value="${p}" ${t.priority === p ? 'selected' : ''}>${p}</option>`).join('')}
+        </select>
+        <select data-act="status" class="text-xs rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-2 py-1">
+          ${Object.entries(STATUS).map(([v, l]) => `<option value="${v}" ${t.status === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}
+        </select>
+        <button type="button" data-act="cancel" class="text-xs rounded-lg border border-amber-500/40 text-amber-700 dark:text-amber-400 px-2.5 py-1 hover:bg-amber-500/10">Batalkan</button>
+        <button type="button" data-act="delete" class="text-xs rounded-lg border border-red-500/40 text-red-600 dark:text-red-400 px-2.5 py-1 hover:bg-red-500/10">Hapus</button>
+      </div>
+      <div data-assignpanel class="hidden mt-2 grid sm:grid-cols-3 gap-1.5"></div>` : '';
+    return `<div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50/40 dark:bg-ink-900/20 px-4 py-3">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-sm font-medium">${esc(t.title)}</p>
+          <p class="text-xs text-ink-500 dark:text-cream-300/60">${esc(t.id)} · ${esc(STATUS[t.status] || t.status)} · prioritas ${esc(t.priority)}${t.due_at ? ' · tenggat ' + esc(fmtWaktu(t.due_at)) : ''}</p>
+          <p class="text-xs text-ink-500 dark:text-cream-300/60 mt-0.5">Penerima: ${esc(assignees)}</p>
+        </div>
+      </div>
+      ${controls}
+    </div>`;
+  }
+
+  async function muatCommands() {
+    const body = document.getElementById('cmds-body')!;
+    const supabase = getSupabase(); if (!supabase) return;
+    const { data, error } = await supabase.from('workspace_task_commands').select('id, type, status, error, created_at').order('created_at', { ascending: false }).limit(15);
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data || !data.length) { body.innerHTML = stateBlock('empty', 'Belum ada perintah.'); return; }
+    const badge = (s: string) => s === 'done' ? 'text-teal-700 dark:text-teal-300' : s === 'error' ? 'text-red-600 dark:text-red-400' : 'text-amber-700 dark:text-amber-400';
+    body.innerHTML = `<ul class="divide-y divide-ink-900/5 dark:divide-cream-100/5">${data.map((c: any) => `
+      <li class="px-4 py-2.5 text-sm flex flex-wrap items-center gap-x-2">
+        <code class="font-mono text-xs">${esc(c.type)}</code>
+        <span class="font-medium ${badge(c.status)}">${esc(c.status)}</span>
+        ${c.error ? `<span class="text-xs text-red-600 dark:text-red-400">${esc(c.error)}</span>` : ''}
+        <span class="ml-auto text-xs text-ink-500 dark:text-cream-300/60">${esc(fmtWaktu(c.created_at))}</span>
+      </li>`).join('')}</ul>`;
+  }
+
+  async function enqueue(type: string, payload: any): Promise<boolean> {
+    const supabase = getSupabase(); if (!supabase) return false;
+    const { data: sesi } = await supabase.auth.getSession();
+    const uid = sesi.session?.user.id ?? null;
+    const { error } = await supabase.from('workspace_task_commands').insert({ type, payload, status: 'pending', created_by: uid });
+    if (error) { alert(pesanError(error)); return false; }
+    return true;
+  }
+
+  function pesan(el: HTMLElement, msg: string, ok = true) {
+    el.textContent = msg;
+    el.className = `text-sm ${ok ? 'text-teal-700 dark:text-teal-300' : 'text-red-600 dark:text-red-400'}`;
+  }
+
+  // Buat tugas.
+  document.getElementById('form-buat')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!bolehEdit) return;
+    const msgEl = document.getElementById('buat-pesan')!;
+    const title = (document.getElementById('t-title') as HTMLInputElement).value.trim();
+    if (!title) { pesan(msgEl, 'Judul wajib diisi.', false); return; }
+    const due = (document.getElementById('t-due') as HTMLInputElement).value;
+    const assigneeIds = Array.from(document.querySelectorAll<HTMLInputElement>('#t-assignees [data-assignee]:checked')).map((i) => i.dataset.assignee);
+    const ok = await enqueue('task.create', {
+      title,
+      description: (document.getElementById('t-desc') as HTMLTextAreaElement).value.trim() || undefined,
+      type: (document.getElementById('t-type') as HTMLSelectElement).value,
+      priority: (document.getElementById('t-prio') as HTMLSelectElement).value,
+      assigneeIds,
+      dueAt: due ? new Date(due).toISOString() : null,
+    });
+    if (ok) {
+      pesan(msgEl, 'Perintah dikirim. Bot membuat tugas dalam beberapa detik.');
+      (document.getElementById('form-buat') as HTMLFormElement).reset();
+      setTimeout(() => { void muatTasks(); void muatCommands(); }, 4000);
+    }
+  });
+
+  // Aksi per tugas.
+  document.getElementById('tasks-body')?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-act]') as HTMLButtonElement | null;
+    if (!btn || !bolehEdit) return;
+    const wrap = btn.closest('[data-id]') as HTMLElement;
+    const id = wrap.dataset.id!;
+    const act = btn.dataset.act;
+
+    if (act === 'assign') {
+      const panel = wrap.parentElement!.querySelector('[data-assignpanel]') as HTMLElement;
+      if (!panel.dataset.filled) {
+        panel.innerHTML = members.map((m) => `<label class="flex items-center gap-2 text-sm"><input type="checkbox" data-pick="${esc(m.discord_id)}" class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500" /><span class="truncate">${esc(m.display_name || m.discord_id)}</span></label>`).join('')
+          + '<button type="button" data-act="assignsend" class="text-xs rounded-lg bg-amber-500 text-ink-950 px-2.5 py-1 font-semibold col-span-full w-max">Kirim penugasan</button>';
+        panel.dataset.filled = '1';
+      }
+      panel.classList.toggle('hidden');
+      return;
+    }
+    if (act === 'assignsend') {
+      const panel = wrap.parentElement!.querySelector('[data-assignpanel]') as HTMLElement;
+      const ids = Array.from(panel.querySelectorAll<HTMLInputElement>('[data-pick]:checked')).map((i) => i.dataset.pick);
+      if (!ids.length) return;
+      if (await enqueue('task.assign', { taskId: id, memberIds: ids })) setTimeout(muatTasks, 3000);
+      panel.classList.add('hidden');
+      return;
+    }
+    if (act === 'cancel') { if (confirm('Batalkan tugas ini?') && await enqueue('task.cancel', { taskId: id })) setTimeout(muatTasks, 3000); return; }
+    if (act === 'delete') { if (confirm('Hapus tugas ini?') && await enqueue('task.delete', { taskId: id })) setTimeout(muatTasks, 3000); return; }
+  });
+
+  document.getElementById('tasks-body')?.addEventListener('change', async (e) => {
+    const sel = e.target as HTMLSelectElement;
+    if (!bolehEdit || !sel.dataset.act) return;
+    const id = (sel.closest('[data-id]') as HTMLElement).dataset.id!;
+    if (sel.dataset.act === 'prio') await enqueue('task.set_priority', { taskId: id, priority: sel.value });
+    if (sel.dataset.act === 'status') await enqueue('task.set_status', { taskId: id, status: sel.value });
+    setTimeout(() => { void muatTasks(); void muatCommands(); }, 3000);
+  });
+
+  document.getElementById('btn-refresh')?.addEventListener('click', () => { void muatTasks(); void muatCommands(); });
+</script>
