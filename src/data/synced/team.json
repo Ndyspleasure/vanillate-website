@@ -32,6 +32,17 @@
       "profileType": "custom",
       "profileLink": "https://www.tiktok.com/@ryujin2521",
       "displayOrder": 3
+    },
+    {
+      "id": "afd8b1f5-5963-483d-812a-da67ed9b8acb",
+      "name": "Puji Thalita Calya Fadhilla",
+      "discordUsername": "jstfckngkid._",
+      "position": "Ambassador",
+      "description": "Membantu memperkenalkan dan meningkatkan awareness Vanillate Studio kepada komunitas dan audiens yang lebih luas.",
+      "profileImage": "https://lvfwopnvvqncopvathop.supabase.co/storage/v1/object/public/team-media/afd8b1f5-5963-483d-812a-da67ed9b8acb/1789613224890-vsvs.jpg",
+      "profileType": "custom",
+      "profileLink": "",
+      "displayOrder": 4
     }
   ]
 }
