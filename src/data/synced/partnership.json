@@ -65,7 +65,12 @@
       "ctaUrl": ""
     }
   ],
-  "links": [],
+  "links": [
+    {
+      "label": "testing",
+      "url": "https://vanillate.id/admin/partnership/settings/"
+    }
+  ],
   "content": {
     "cta": {
       "text": "Ceritakan rencana kamu, kami bantu menyesuaikan bentuk kerja samanya.",
