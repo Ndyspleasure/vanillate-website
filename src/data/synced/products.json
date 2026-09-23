@@ -14,7 +14,7 @@
       "thumbnail": "/bots/sambung-kata.png",
       "featured": true,
       "verified": true,
-      "sort": 10,
+      "sort": 1,
       "features": [],
       "longIntro": [],
       "commands": [],
@@ -39,6 +39,54 @@
       "faqCategory": "sambung-kata",
       "seoTitle": "Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord",
       "seoDescription": "Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.",
+      "ogImage": "",
+      "media": []
+    },
+    {
+      "slug": "vanillate-match",
+      "name": "Vanillate Match",
+      "shortName": "Vanillate Match",
+      "tagline": "Temukan orang baru, dapatkan Match, dan mulai pertemanan baru di Discord.",
+      "description": "Vanillate Match adalah aplikasi matchmaking berbasis Discord yang membantu kamu menemukan orang baru, saling menyukai, mendapatkan Match, dan mulai terhubung secara langsung di Discord.",
+      "platform": "discord",
+      "status": "live",
+      "category": "Social",
+      "color": "#E8B84A",
+      "icon": "sparkles",
+      "thumbnail": "https://lvfwopnvvqncopvathop.supabase.co/storage/v1/object/public/product-media/vanillate-match/thumb-1790143347794-Gemini_Generated_Image_354uy3354uy3354u.jpg",
+      "featured": true,
+      "verified": true,
+      "sort": 2,
+      "features": [
+        "Perluas koneksi dan temukan orang yang mungkin cocok denganmu.",
+        "Jelajahi berbagai profile dan berikan Like pada orang yang menarik perhatianmu.",
+        "Semua pengalaman matchmaking hadir langsung di Discord, tempat komunitasmu berada."
+      ],
+      "longIntro": [
+        "Temukan orang baru melalui sistem discovery yang dirancang untuk penggunaan privat di Discord. Dapatkan Match ketika kamu dan pengguna lain saling menyukai. Profile yang telah Match dapat dilihat secara langsung sehingga kamu bisa mengenal satu sama lain sebelum mulai terhubung di Discord."
+      ],
+      "commands": [],
+      "discord": {
+        "clientId": "1521948490803187903",
+        "permissions": "",
+        "scopes": [
+          "bot",
+          "applications.commands"
+        ],
+        "integrationType": "",
+        "inviteUrl": "https://discord.com/oauth2/authorize?client_id=1521948490803187903&permissions=274877926400&integration_type=0&scope=applications.commands+bot"
+      },
+      "badge": "Baru",
+      "badgeTone": "accent",
+      "faq": [],
+      "ctaHeading": "",
+      "ctaText": "",
+      "ctaNote": "",
+      "ctaLabel": "",
+      "ctaUrl": "",
+      "faqCategory": "",
+      "seoTitle": "",
+      "seoDescription": "",
       "ogImage": "",
       "media": []
     }
