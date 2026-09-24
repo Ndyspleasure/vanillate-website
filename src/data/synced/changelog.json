@@ -1,5 +1,32 @@
 [
   {
+    "version": "2.60.2",
+    "date": "2026-09-24",
+    "title": "Perbaikan koneksi voice Tebak Lagu",
+    "highlights": [
+      "🛠️ Memperbaiki kegagalan bot menyambung ke voice channel saat memulai Tebak Lagu"
+    ]
+  },
+  {
+    "version": "2.60.1",
+    "date": "2026-09-24",
+    "title": "Perbaikan Tebak Lagu",
+    "highlights": [
+      "🛠️ Memperbaiki Tebak Lagu yang salah menolak pemain dengan pesan \"masuk voice channel dulu\" padahal sudah berada di voice channel"
+    ]
+  },
+  {
+    "version": "2.60.0",
+    "date": "2026-09-24",
+    "title": "Game baru: Tebak Lagu! 🎵",
+    "highlights": [
+      "🎵 Game baru Tebak Lagu hadir di /game — dengarkan cuplikan lagu di voice channel dan tebak judulnya!",
+      "⚡ Skor mengikuti kecepatan menjawab: makin cepat benar, makin besar poinnya",
+      "🔒 Jawaban dikirim lewat form privat, jadi tak ada yang bisa menyontek jawabanmu",
+      "🎧 Tiap ronde bot memutar potongan dari bagian acak lagu supaya makin menantang"
+    ]
+  },
+  {
     "version": "2.59.1",
     "date": "2026-09-23",
     "title": "Privasi live chat: data dibersihkan setelah sesi selesai",
