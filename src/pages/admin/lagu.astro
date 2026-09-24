@@ -1,0 +1,420 @@
+---
+// Admin — Tebak Lagu (katalog lagu untuk game sampingan /game di bot).
+//
+// CRUD lagu + unggah file audio ke Supabase Storage bucket PRIVAT
+// `tebak-lagu-audio`. Data tersimpan ke tabel `bot_songs`; bot Sambung Kata
+// menariknya LIVE lewat service_role (src/services/songLibrary.js). Ini konten
+// read-only untuk bot — bukan progres pemain.
+//
+// ANTI-CONTEK: judul & jawaban yang diterima adalah KUNCI JAWABAN, hanya dibaca
+// admin login (RLS). File audio di bucket privat; preview memakai signed URL.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Tebak Lagu" active="lagu">
+  <AdminPageHeader
+    eyebrow="Sambung Kata"
+    title="Tebak Lagu"
+    description="Kelola daftar lagu yang diputar bot pada game Tebak Lagu (/game). Tambah lagu, unggah audio, dan atur jawaban yang diterima. Perubahan dibaca bot secara live."
+  />
+
+  <div id="lagu-root" class="px-6 lg:px-10 py-8 max-w-4xl">
+    <div id="list-view"></div>
+    <div id="editor-view" class="hidden"></div>
+    <p id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 hidden rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg z-50" role="status" aria-live="polite"></p>
+  </div>
+
+  <!-- Dialog konfirmasi hapus -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-[60]">
+    <div class="absolute inset-0 bg-ink-950/60 backdrop-blur-sm" data-confirm="cancel"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" class="w-full max-w-md rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 p-6 shadow-2xl">
+        <h2 id="confirm-title" class="font-display text-xl font-semibold tracking-tightest">Hapus lagu ini?</h2>
+        <p id="confirm-body" class="mt-2 text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Data lagu dan file audionya akan dihapus permanen.
+        </p>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" data-confirm="cancel" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Batal</button>
+          <button type="button" data-confirm="ok" class="rounded-xl bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-500 transition-colors">Hapus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+  const BTN = 'rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
+  const BTN2 = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors';
+
+  const BUCKET = 'tebak-lagu-audio';
+  const ALLOWED_TYPES = ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/x-m4a', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/x-wav'];
+  const MAX_BYTES = 20 * 1024 * 1024; // 20 MB (sesuai batas bucket)
+  const DIFFICULTY: [string, string][] = [['easy', 'Mudah'], ['normal', 'Normal'], ['hard', 'Sulit']];
+
+  let bolehEdit = false;
+  let uid: string | null = null;
+  let current: any = null;              // lagu yang sedang diedit (null di daftar)
+  let daftar: any[] = [];
+  let pendingFile: File | null = null;  // file audio dipilih tapi belum tersimpan
+  let pendingDuration: number | null = null;
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const listView = () => $('list-view');
+  const editorView = () => $('editor-view');
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    uid = profile?.id ?? null;
+    void muatDaftar();
+    $('lagu-root').addEventListener('click', onClick);
+    $('lagu-root').addEventListener('change', onChange);
+  });
+
+  // ─── Util ──────────────────────────────────────────────────────────────────
+  function toast(pesan: string, ok = true) {
+    const t = $('toast');
+    t.textContent = pesan;
+    t.className = `fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg z-50 ${
+      ok ? 'bg-teal-600 text-white' : 'bg-red-600 text-white'
+    }`;
+    window.clearTimeout((toast as any)._t);
+    (toast as any)._t = window.setTimeout(() => t.classList.add('hidden'), 4000);
+  }
+  const safeName = (s: string) => s.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
+  const nowISO = () => new Date().toISOString();
+  const fmtDurasi = (d: any) => {
+    const n = Number(d);
+    if (!Number.isFinite(n) || n <= 0) return '—';
+    const m = Math.floor(n / 60), s = Math.round(n % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  /** Baca durasi (detik) file audio via elemen <audio>, best-effort. */
+  function bacaDurasi(file: File): Promise<number | null> {
+    return new Promise((resolve) => {
+      try {
+        const url = URL.createObjectURL(file);
+        const a = new Audio();
+        a.preload = 'metadata';
+        a.onloadedmetadata = () => { const d = a.duration; URL.revokeObjectURL(url); resolve(Number.isFinite(d) ? d : null); };
+        a.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+        a.src = url;
+      } catch { resolve(null); }
+    });
+  }
+
+  /** Parse textarea jawaban → array bersih (dipisah baris atau koma), tanpa duplikat. */
+  function parseJawaban(raw: string, title: string): string[] {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    const titleKey = title.trim().toLowerCase();
+    for (const bagian of raw.split(/[\n,]/)) {
+      const t = bagian.trim();
+      if (!t) continue;
+      const key = t.toLowerCase();
+      if (key === titleKey) continue;  // judul utama otomatis diterima bot
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(t);
+    }
+    return out;
+  }
+
+  // ─── Daftar lagu ─────────────────────────────────────────────────────────────
+  async function muatDaftar() {
+    current = null;
+    pendingFile = null;
+    pendingDuration = null;
+    editorView().classList.add('hidden');
+    const box = listView();
+    box.classList.remove('hidden');
+    box.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) { box.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+
+    const { data, error } = await supabase.from('bot_songs')
+      .select('id, title, artist, difficulty, active, duration_seconds, accepted_answers, storage_path')
+      .order('created_at', { ascending: false });
+    if (error) { box.innerHTML = stateBlock('error', pesanError(error)); return; }
+
+    daftar = (data ?? []) as any[];
+
+    const baris = (m: any) => {
+      const nonaktif = !m.active;
+      const jumlahAlias = Array.isArray(m.accepted_answers) ? m.accepted_answers.length : 0;
+      return `
+        <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4">
+          <div class="h-11 w-11 flex-none grid place-items-center rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-gradient-to-b from-cream-100 to-cream-50 dark:from-ink-800 dark:to-ink-950 text-lg">🎵</div>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="font-display font-semibold tracking-tightest truncate">${esc(m.title)}</p>
+              ${nonaktif
+                ? '<span class="rounded-full bg-ink-500/15 text-ink-500 dark:text-cream-300/60 px-2 py-0.5 text-[0.65rem] font-mono uppercase tracking-wider">nonaktif</span>'
+                : '<span class="rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 px-2 py-0.5 text-[0.65rem] font-mono uppercase tracking-wider">aktif</span>'}
+            </div>
+            <p class="font-mono text-xs text-ink-500 dark:text-cream-300/60 truncate">
+              ${m.artist ? esc(m.artist) + ' · ' : ''}${esc(m.difficulty || 'normal')} · ⏱ ${fmtDurasi(m.duration_seconds)} · ${jumlahAlias} alias
+            </p>
+          </div>
+          ${bolehEdit ? `<button type="button" class="${BTN2} !px-2.5" data-action="preview" data-id="${esc(m.id)}" title="Putar preview">▶️</button>` : ''}
+          <button type="button" class="${BTN2}" data-action="edit" data-id="${esc(m.id)}">${bolehEdit ? 'Edit' : 'Lihat'}</button>
+        </div>`;
+    };
+
+    const aktifCount = daftar.filter((d) => d.active).length;
+    box.innerHTML = `
+      <div class="mb-6 flex items-center justify-between gap-3">
+        <p class="text-sm text-ink-600 dark:text-cream-200/80">${daftar.length} lagu · <strong>${aktifCount}</strong> aktif dipakai bot.</p>
+        ${bolehEdit ? `<button type="button" class="${BTN}" data-action="tambah">+ Tambah lagu</button>` : ''}
+      </div>
+      <div class="space-y-3">
+        ${daftar.length ? daftar.map(baris).join('') : stateBlock('empty', 'Belum ada lagu. Tambahkan lagu pertama untuk mengaktifkan game Tebak Lagu.')}
+      </div>
+      <audio id="preview-audio" class="hidden"></audio>`;
+  }
+
+  // ─── Editor ──────────────────────────────────────────────────────────────────
+  async function bukaEditor(id: string | null) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    pendingFile = null;
+    pendingDuration = null;
+
+    if (id) {
+      const { data, error } = await supabase.from('bot_songs').select('*').eq('id', id).maybeSingle();
+      if (error || !data) { toast(pesanError(error), false); return; }
+      current = data;
+    } else {
+      current = {
+        id: null, title: '', artist: '', accepted_answers: [], difficulty: 'normal',
+        min_start_seconds: 0, max_start_seconds: null, duration_seconds: null,
+        storage_path: '', active: true,
+      };
+    }
+    listView().classList.add('hidden');
+    editorView().classList.remove('hidden');
+    renderEditor();
+    window.scrollTo({ top: 0 });
+  }
+
+  function renderEditor() {
+    const m = current;
+    const ro = !bolehEdit;
+    const aliasText = Array.isArray(m.accepted_answers) ? m.accepted_answers.join('\n') : '';
+    const diffOpts = DIFFICULTY.map(([v, l]) =>
+      `<option value="${v}" ${m.difficulty === v ? 'selected' : ''}>${l}</option>`).join('');
+
+    editorView().innerHTML = `
+      <div class="mb-6 flex items-center gap-3">
+        <button type="button" class="${BTN2}" data-action="kembali">← Kembali</button>
+        <h2 class="font-display text-xl font-semibold tracking-tightest">${m.id ? (ro ? 'Detail Lagu' : 'Edit Lagu') : 'Tambah Lagu'}</h2>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Judul lagu <span class="text-red-500">*</span></label>
+          <input id="f-title" class="${INPUT}" value="${esc(m.title || '')}" placeholder="mis. Adu Rayu" ${ro ? 'disabled' : ''} />
+          <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Judul kanonik ini otomatis diterima sebagai jawaban benar.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Artis / penyanyi</label>
+          <input id="f-artist" class="${INPUT}" value="${esc(m.artist || '')}" placeholder="mis. Yovie Widianto, Tulus, Glenn Fredly" ${ro ? 'disabled' : ''} />
+          <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Opsional. Ditampilkan saat jawaban dibuka.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Jawaban lain yang diterima</label>
+          <textarea id="f-alias" rows="3" class="${INPUT}" placeholder="Satu per baris, mis.:&#10;adu rayu&#10;adurayu" ${ro ? 'disabled' : ''}>${esc(aliasText)}</textarea>
+          <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Alias/variasi ejaan judul (satu per baris atau dipisah koma). Judul utama tak perlu ditulis ulang.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Tingkat kesulitan</label>
+            <select id="f-difficulty" class="${INPUT}" ${ro ? 'disabled' : ''}>${diffOpts}</select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Status</label>
+            <select id="f-active" class="${INPUT}" ${ro ? 'disabled' : ''}>
+              <option value="1" ${m.active ? 'selected' : ''}>Aktif (dipakai bot)</option>
+              <option value="0" ${!m.active ? 'selected' : ''}>Nonaktif</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Mulai acak minimal (detik)</label>
+            <input id="f-min" type="number" min="0" step="1" class="${INPUT}" value="${m.min_start_seconds ?? 0}" ${ro ? 'disabled' : ''} />
+            <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Lewati intro. Biarkan 0 bila tak perlu.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Mulai acak maksimal (detik)</label>
+            <input id="f-max" type="number" min="0" step="1" class="${INPUT}" value="${m.max_start_seconds ?? ''}" placeholder="otomatis (durasi − 20)" ${ro ? 'disabled' : ''} />
+            <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Kosongkan untuk otomatis.</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">File audio ${m.id ? '' : '<span class="text-red-500">*</span>'}</label>
+          <div class="rounded-xl border border-dashed border-ink-900/20 dark:border-cream-100/20 p-4">
+            ${m.storage_path ? `
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-sm text-ink-600 dark:text-cream-200/80 truncate">📁 ${esc(m.storage_path.split('/').pop() || m.storage_path)}</span>
+                <span class="text-xs text-ink-500 dark:text-cream-300/60">⏱ ${fmtDurasi(m.duration_seconds)}</span>
+                ${bolehEdit ? `<button type="button" class="${BTN2} !px-2.5 !py-1 text-xs ml-auto" data-action="preview" data-id="${esc(m.id)}">▶️ Preview</button>` : ''}
+              </div>` : ''}
+            ${ro ? '' : `
+              <input id="f-file" type="file" accept="${ALLOWED_TYPES.join(',')}" class="block w-full text-sm text-ink-600 dark:text-cream-200/80 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-ink-950 hover:file:bg-amber-400" />
+              <p id="f-file-info" class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">${m.id ? 'Pilih file baru hanya bila ingin mengganti audio.' : 'MP3/M4A/OGG/WAV, maksimal 20 MB.'}</p>`}
+          </div>
+        </div>
+
+        ${ro ? '' : `
+          <div class="flex items-center gap-3 pt-2">
+            <button type="button" class="${BTN}" data-action="simpan">💾 Simpan</button>
+            ${m.id ? `<button type="button" class="rounded-xl bg-red-600/10 text-red-600 dark:text-red-400 px-4 py-2.5 text-sm font-semibold hover:bg-red-600/20 transition-colors" data-action="hapus">Hapus</button>` : ''}
+          </div>`}
+      </div>`;
+  }
+
+  // ─── Simpan ──────────────────────────────────────────────────────────────────
+  async function simpan() {
+    const supabase = getSupabase();
+    if (!supabase || !bolehEdit) return;
+
+    const title = ($('f-title') as HTMLInputElement).value.trim();
+    if (!title) { toast('Judul lagu wajib diisi.', false); return; }
+    if (!current.id && !pendingFile) { toast('File audio wajib diunggah untuk lagu baru.', false); return; }
+
+    const artist = ($('f-artist') as HTMLInputElement).value.trim() || null;
+    const accepted = parseJawaban(($('f-alias') as HTMLTextAreaElement).value, title);
+    const difficulty = ($('f-difficulty') as HTMLSelectElement).value;
+    const active = ($('f-active') as HTMLSelectElement).value === '1';
+    const minStart = Math.max(0, Number(($('f-min') as HTMLInputElement).value) || 0);
+    const maxRaw = ($('f-max') as HTMLInputElement).value.trim();
+    const maxStart = maxRaw === '' ? null : Math.max(0, Number(maxRaw) || 0);
+
+    const btn = document.querySelector('[data-action="simpan"]') as HTMLButtonElement | null;
+    if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan…'; }
+
+    try {
+      let storagePath = current.storage_path || '';
+      let duration = current.duration_seconds ?? null;
+      let oldPath = '';
+
+      // Unggah file baru bila ada.
+      if (pendingFile) {
+        if (!ALLOWED_TYPES.includes(pendingFile.type)) throw new Error('Format audio tidak didukung.');
+        if (pendingFile.size > MAX_BYTES) throw new Error('Ukuran file melebihi 20 MB.');
+        const key = (crypto as any).randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const path = `${key}/${safeName(pendingFile.name)}`;
+        const up = await supabase.storage.from(BUCKET).upload(path, pendingFile, { contentType: pendingFile.type, upsert: false });
+        if (up.error) throw up.error;
+        oldPath = current.storage_path || '';
+        storagePath = path;
+        if (pendingDuration != null) duration = Math.round(pendingDuration);
+      }
+
+      const meta: Record<string, any> = {
+        title, artist, accepted_answers: accepted, difficulty, active,
+        min_start_seconds: minStart, max_start_seconds: maxStart,
+        storage_path: storagePath, duration_seconds: duration,
+        updated_at: nowISO(),
+      };
+
+      if (current.id) {
+        const { error } = await supabase.from('bot_songs').update(meta).eq('id', current.id);
+        if (error) throw error;
+      } else {
+        meta.created_by = uid;
+        const { error } = await supabase.from('bot_songs').insert(meta);
+        if (error) throw error;
+      }
+
+      // Hapus file lama setelah update berhasil (best-effort).
+      if (oldPath && oldPath !== storagePath) {
+        await supabase.storage.from(BUCKET).remove([oldPath]).catch(() => {});
+      }
+
+      toast('Lagu tersimpan. ✅');
+      await muatDaftar();
+    } catch (err: any) {
+      toast(pesanError(err), false);
+      if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan'; }
+    }
+  }
+
+  async function hapus() {
+    const supabase = getSupabase();
+    if (!supabase || !current?.id) return;
+    const path = current.storage_path;
+    const { error } = await supabase.from('bot_songs').delete().eq('id', current.id);
+    if (error) { toast(pesanError(error), false); return; }
+    if (path) await supabase.storage.from(BUCKET).remove([path]).catch(() => {});
+    toast('Lagu dihapus.');
+    hideConfirm();
+    await muatDaftar();
+  }
+
+  // ─── Preview audio (signed URL, bucket privat) ───────────────────────────────
+  async function preview(id: string) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const row = daftar.find((d) => String(d.id) === String(id)) || current;
+    const path = row?.storage_path;
+    if (!path) { toast('Belum ada file audio.', false); return; }
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 120);
+    if (error || !data?.signedUrl) { toast(pesanError(error) || 'Gagal membuat URL preview.', false); return; }
+    let audio = document.getElementById('preview-audio') as HTMLAudioElement | null;
+    if (!audio) { audio = new Audio(); audio.id = 'preview-audio'; document.body.appendChild(audio); }
+    audio.src = data.signedUrl;
+    audio.play().catch(() => toast('Gagal memutar audio.', false));
+    toast('Memutar preview…');
+  }
+
+  // ─── Confirm modal ────────────────────────────────────────────────────────────
+  function showConfirm() { $('confirm-modal').classList.remove('hidden'); }
+  function hideConfirm() { $('confirm-modal').classList.add('hidden'); }
+  $('confirm-modal').addEventListener('click', (e) => {
+    const el = (e.target as HTMLElement).closest('[data-confirm]') as HTMLElement | null;
+    if (!el) return;
+    if (el.dataset.confirm === 'cancel') hideConfirm();
+    else if (el.dataset.confirm === 'ok') void hapus();
+  });
+
+  // ─── Events ───────────────────────────────────────────────────────────────────
+  async function onClick(e: Event) {
+    const el = (e.target as HTMLElement).closest('button[data-action]') as HTMLButtonElement | null;
+    if (!el) return;
+    const act = el.dataset.action;
+    if (act === 'tambah') return void bukaEditor(null);
+    if (act === 'edit') return void bukaEditor(el.dataset.id!);
+    if (act === 'kembali') return void muatDaftar();
+    if (act === 'simpan') return void simpan();
+    if (act === 'hapus') return showConfirm();
+    if (act === 'preview') return void preview(el.dataset.id!);
+  }
+
+  async function onChange(e: Event) {
+    const el = e.target as HTMLElement;
+    if (el.id !== 'f-file') return;
+    const input = el as HTMLInputElement;
+    const file = input.files?.[0] || null;
+    pendingFile = file;
+    pendingDuration = null;
+    const info = document.getElementById('f-file-info');
+    if (!file) { if (info) info.textContent = 'MP3/M4A/OGG/WAV, maksimal 20 MB.'; return; }
+    if (file.size > MAX_BYTES) { if (info) { info.textContent = '⚠️ Ukuran melebihi 20 MB.'; } pendingFile = null; input.value = ''; return; }
+    pendingDuration = await bacaDurasi(file);
+    if (info) info.textContent = `Dipilih: ${file.name}${pendingDuration ? ` · durasi ${fmtDurasi(pendingDuration)}` : ''}`;
+  }
+</script>

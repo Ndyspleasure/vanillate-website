@@ -386,6 +386,7 @@ pemeriksaan jalan ada di tab Actions.
 | `src/pages/admin/games.astro` | **Monitor game** live (akhiri game mode klasik) |
 | `src/pages/admin/promo.astro` | **Manajemen promo** (daftar + analitik + nyalakan/matikan) |
 | `src/pages/admin/kata.astro` | **Moderasi kata** (terima/tolak usulan Word Collection) |
+| `src/pages/admin/lagu.astro` | **Tebak Lagu** — kelola katalog lagu (upload audio + kunci jawaban) |
 | `src/pages/admin/faq/index.astro` | **FAQ** — tulis & kelola seluruh panduan |
 | `src/pages/admin/faq/categories.astro` | **Kategori FAQ** — struktur panduan |
 | `src/utils/markdown.ts` | Renderer jawaban FAQ (dipakai situs publik & pratinjau CMS) |
@@ -1015,3 +1016,49 @@ Mengikuti pola modul CMS lain: **owner/admin** boleh membuat, mengubah, dan
 menghapus; **viewer** hanya melihat (form dinonaktifkan di panel, dan RLS yang
 menolak di database). Setiap perubahan mencatat `updated_by` dan `updated_at`,
 sama seperti tabel konten lainnya.
+
+---
+
+## 17. Tebak Lagu — katalog lagu game sampingan
+
+Halaman **`/admin/lagu`** mengelola daftar lagu untuk game sampingan **Tebak
+Lagu** di bot (`/game`). Arah datanya sama seperti bagian 11 (**website → bot**):
+admin menaruh lagu di sini, bot menariknya **live** lewat service_role
+(`src/services/songLibrary.js` di repo `sambung-kata-bot`). Ini **konten
+read-only** untuk bot — skor & ronde game tetap in-memory (tidak menyentuh DB).
+
+### Tabel & Storage (schema bagian 17)
+
+| Objek | Peran |
+|---|---|
+| `bot_songs` | Metadata lagu: `title` (jawaban utama), `accepted_answers[]` (alias), `artist`, `storage_path`, `duration_seconds`, `min/max_start_seconds`, `difficulty`, `active`. |
+| Bucket `tebak-lagu-audio` | **PRIVAT** — menyimpan file audio. Bukan publik seperti `product-media`/`team-media`. |
+
+> ⚠️ **Anti-contek.** `title` & `accepted_answers` adalah **kunci jawaban**, dan
+> file audionya bisa jadi bocoran judul. Karena itu RLS `bot_songs` hanya
+> mengizinkan admin login membaca, dan bucket audionya **privat** (tak ada URL
+> publik). Bot mengambil audio lewat service_role sebagai **signed URL**
+> berumur pendek; admin memutar preview juga lewat signed URL.
+
+### Alur admin
+
+1. Buka **/admin/lagu → + Tambah lagu**.
+2. Isi judul, (opsional) artis, jawaban lain yang diterima, tingkat kesulitan,
+   dan batas offset acak (opsional).
+3. Unggah file audio (MP3/M4A/OGG/WAV, ≤20 MB). Durasi terdeteksi otomatis.
+4. Simpan. Lagu **aktif** langsung masuk pool bot pada tarikan berikutnya
+   (± 5 menit, tanpa restart bot).
+
+### Izin
+
+Sama seperti modul CMS lain: **owner/admin** boleh tambah/ubah/hapus + upload;
+**viewer** hanya melihat (RLS menolak tulis di database). Setiap baris mencatat
+`created_by` & `updated_at`.
+
+### Sisi bot (repo `sambung-kata-bot`)
+
+Aktif otomatis begitu `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` terisi (env
+yang sama dengan Website Sync). Selain itu bot butuh **stack voice**
+(`@discordjs/voice`, `ffmpeg`, `libsodium-wrappers`) untuk masuk voice channel &
+memutar cuplikan. Tanpa keduanya, game menolak start dengan pesan jelas (tidak
+crash). Detail modul ada di `docs/tebak-lagu.md` pada repo bot.
