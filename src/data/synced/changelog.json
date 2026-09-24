@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.60.3",
+    "date": "2026-09-24",
+    "title": "Peningkatan stabilitas & pemulihan otomatis",
+    "highlights": [
+      "🛠️ Sistem pemulihan otomatis diperbaiki — bot kini bisa menerapkan perbaikan kecil lebih cepat saat ada gangguan",
+      "⚙️ Proses rilis di balik layar dibuat lebih stabil & konsisten",
+      "📢 Info status bot ditampilkan lebih akurat"
+    ]
+  },
+  {
     "version": "2.60.2",
     "date": "2026-09-24",
     "title": "Perbaikan koneksi voice Tebak Lagu",
