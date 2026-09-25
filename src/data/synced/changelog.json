@@ -1,5 +1,24 @@
 [
   {
+    "version": "2.60.5",
+    "date": "2026-09-25",
+    "title": "Tebak Lagu makin seru: ronde nonstop & lebih responsif",
+    "highlights": [
+      "🔁 Ronde Tebak Lagu kini berjalan nonstop dengan urutan lagu diacak ulang tiap putaran",
+      "⏩ Langsung lanjut ke ronde berikutnya begitu semua pemain menjawab benar",
+      "⏱️ Waktu menjawab diperpanjang jadi 40 detik",
+      "🛑 Host bisa menghentikan game kapan saja, dan game berhenti otomatis bila sepi"
+    ]
+  },
+  {
+    "version": "2.60.4",
+    "date": "2026-09-24",
+    "title": "Tebak Lagu kini bisa tanpa voice channel",
+    "highlights": [
+      "🎵 Tebak Lagu punya mode baru: bot mengirim cuplikan lagu sebagai file di thread, jadi bisa dimainkan tanpa harus masuk voice channel"
+    ]
+  },
+  {
     "version": "2.60.3",
     "date": "2026-09-24",
     "title": "Peningkatan stabilitas & pemulihan otomatis",
