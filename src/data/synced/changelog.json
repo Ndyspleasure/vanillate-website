@@ -1,5 +1,13 @@
 [
   {
+    "version": "2.60.6",
+    "date": "2026-09-25",
+    "title": "Tebak Lagu: pengingat cara menjawab",
+    "highlights": [
+      "🔔 Bot kini mengingatkan pemain untuk menjawab lewat tombol Tebak Lagu bila mengetik di chat, agar jawaban terhitung & tetap rahasia"
+    ]
+  },
+  {
     "version": "2.60.5",
     "date": "2026-09-25",
     "title": "Tebak Lagu makin seru: ronde nonstop & lebih responsif",
