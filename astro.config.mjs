@@ -17,9 +17,13 @@ export default defineConfig({
     // Halaman /admin dikeluarkan dari sitemap: itu area internal,
     // bukan halaman yang ingin ditemukan lewat pencarian.
     sitemap({
-      // /admin internal; /bots & /docs hanya stub redirect (ke /products dan /faq).
+      // /admin internal; /bots & /docs hanya stub redirect (ke /products dan /faq),
+      // begitu juga slug lama produk yang sudah diganti.
       filter: (page) =>
-        !page.includes('/admin') && !page.includes('/bots') && !page.includes('/docs'),
+        !page.includes('/admin') &&
+        !page.includes('/bots') &&
+        !page.includes('/docs') &&
+        !page.includes('/products/vanillatehandsigncamera'),
     }),
   ],
   build: {
