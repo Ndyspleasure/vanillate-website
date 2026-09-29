@@ -43,22 +43,37 @@
       "media": []
     },
     {
-      "slug": "vanillatehandsigncamera",
+      "slug": "hand-sign-camera",
       "name": "Vanillate Hand Sign Camera",
-      "shortName": "Vanillate Hand Sign Camera",
-      "tagline": "",
-      "description": "",
+      "shortName": "Hand Sign Camera",
+      "tagline": "Tunjukkan gestur tangan ke kamera, lihat efeknya hidup seketika.",
+      "description": "Kamera web yang membaca gestur tanganmu secara real-time dan mengubah setiap gestur menjadi efek visualnya sendiri. Ada 16 gestur, dari jempol, peace, sampai love dua tangan, dan dua tangan bisa dipakai sekaligus dengan efek masing-masing. Semua berjalan langsung di peramban tanpa instal dan tanpa akun, dan video kamera tidak pernah dikirim ke server.",
       "platform": "web",
       "status": "live",
-      "category": "",
+      "category": "Kamera Interaktif",
       "color": "#E8B84A",
       "icon": "sparkles",
-      "thumbnail": "",
+      "thumbnail": "https://vanillate-hand-sign-camera.netlify.app/icons/icon-512.png",
       "featured": true,
       "verified": false,
       "sort": 2,
-      "features": [],
-      "longIntro": [],
+      "features": [
+        "16 gestur tangan, masing-masing dengan efek visual berbeda",
+        "Dua tangan sekaligus: tiap tangan punya gestur dan efeknya sendiri",
+        "Gestur dua tangan: Heart Hands dan Double Palm",
+        "Gestur gerak: lambaikan tangan untuk efek riak air",
+        "Panduan gestur beranimasi, termasuk hitungan jari 1 sampai 10",
+        "Tutorial interaktif yang lanjut otomatis saat gestur terdeteksi",
+        "Rekam klip video lengkap dengan efeknya",
+        "Privat: diproses di perangkat, video tidak diunggah",
+        "Bisa offline setelah kunjungan pertama dan dipasang sebagai aplikasi",
+        "Mode demo tanpa kamera untuk melihat semua efek"
+      ],
+      "longIntro": [
+        "Vanillate Hand Sign Camera melacak 21 titik di setiap tangan langsung dari kamera, lalu mencocokkannya dengan bentuk 16 gestur berkali-kali per detik. Begitu gestur dikenali, efeknya muncul di atas video: tinju memancarkan gelombang kejut, peace sign melukis jejak pelangi, jari telunjuk menembakkan laser, dan dua tangan membentuk hati raksasa yang berdetak.",
+        "Semuanya terjadi di perangkatmu. Tidak perlu akun, tidak ada yang diunduh selain aplikasinya, dan video kamera tidak pernah dikirim ke server. Setelah dibuka sekali, aplikasi tetap bisa dipakai tanpa koneksi internet.",
+        "Buka di ponsel untuk mencoba cepat, atau di komputer untuk tampilan lengkap ala code editor: source code aplikasi yang bergerak, koordinat titik tangan secara live, dan log pelacakan di satu layar."
+      ],
       "commands": [],
       "discord": {
         "clientId": "",
@@ -72,15 +87,36 @@
       },
       "badge": "Baru",
       "badgeTone": "success",
-      "faq": [],
+      "faq": [
+        {
+          "q": "Apa itu Vanillate Hand Sign Camera?",
+          "a": "Aplikasi kamera web gratis dari Vanillate Studio yang mengenali 16 gestur tangan secara real-time dan menampilkan efek visual berbeda untuk setiap gestur."
+        },
+        {
+          "q": "Apakah perlu instal aplikasi atau membuat akun?",
+          "a": "Tidak. Cukup buka di peramban modern di komputer atau ponsel, lalu izinkan akses kamera. Kamu juga bisa menambahkannya ke layar utama sebagai aplikasi."
+        },
+        {
+          "q": "Apakah video kamera saya diunggah?",
+          "a": "Tidak. Pelacakan tangan dan pengenalan gestur berjalan di perangkatmu. Video tidak pernah dikirim ke server, dan rekaman langsung tersimpan di perangkatmu."
+        },
+        {
+          "q": "Gestur apa saja yang dikenali?",
+          "a": "Open Palm, Fist, Peace Sign, Pointing, Thumbs Up, Thumbs Down, OK, Rock On, Pinch, Call Me, Three, Four, I Love You, Wave, serta gestur dua tangan Heart Hands dan Double Palm."
+        },
+        {
+          "q": "Bagaimana kalau tidak punya kamera?",
+          "a": "Pakai mode demo. Tangan animasi dijalankan lewat pengenal gestur dan efek yang sama, jadi semua efek tetap bisa dilihat tanpa kamera."
+        }
+      ],
       "ctaHeading": "",
       "ctaText": "",
-      "ctaNote": "",
+      "ctaNote": "Gratis. Butuh kamera dan peramban modern, atau coba mode demo tanpa kamera.",
       "ctaLabel": "Buka Aplikasi",
       "ctaUrl": "https://vanillate-hand-sign-camera.netlify.app/",
       "faqCategory": "",
-      "seoTitle": "",
-      "seoDescription": "",
+      "seoTitle": "Hand Sign Camera, Kamera Gestur Tangan Online",
+      "seoDescription": "Kamera web gratis yang mengenali 16 gestur tangan dan mengubahnya jadi efek visual real-time. Dua tangan sekaligus, tanpa instal, video tidak diunggah.",
       "ogImage": "",
       "media": []
     }
