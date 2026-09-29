@@ -35,11 +35,12 @@ segera dibahas terpisah di [`PIPELINE-TERBIT.md`](./PIPELINE-TERBIT.md).
 |---|---|---|
 | `config-data/shop.json` | `src/data/synced/shop.json` | Tabel harga shop (token `{{shop-table}}` di jawaban FAQ) |
 | `config-data/bot-info.json` | `src/data/synced/bot-info.json` | Fitur & command di katalog/detail bot |
-| `version.json` | `src/data/synced/version.json` | Versi bot di halaman `/status` |
-| `CHANGELOG.json` | `src/data/synced/changelog.json` | Changelog di `/status` |
+| `version.json` | `src/data/synced/version.json` | Versi bot di halaman `/changelog` |
+| `CHANGELOG.json` | `src/data/synced/changelog.json` | Timeline di `/changelog` |
 
 `src/data/synced/_status.json` dibuat oleh workflow untuk mencatat kapan & dari
-commit mana sinkron terakhir (ditampilkan di halaman **`/status`**).
+commit mana sinkron terakhir (ringkasannya tampil di bagian **Status data**
+halaman `/changelog`).
 
 ---
 
@@ -61,7 +62,7 @@ Repo bot **privat**, jadi Actions website butuh token untuk membacanya
    - **Secret:** tempel token tadi.
 
 Selesai. Workflow otomatis memakainya. Tanpa secret ini, sync **gagal dengan
-aman** (tidak ada data yang berubah / rusak; halaman `/status` tetap
+aman** (tidak ada data yang berubah / rusak; halaman `/changelog` tetap
 menampilkan data terakhir yang baik).
 
 > Jika suatu saat repo bot dijadikan **publik**, token tidak wajib lagi (boleh
@@ -78,7 +79,7 @@ menampilkan data terakhir yang baik).
    repo website → tab **Actions** → workflow **“Sync data dari bot repo”** →
    **Run workflow**.
 3. Bila ada perubahan, website commit data baru & re-deploy otomatis. Cek
-   hasilnya di halaman **/status**.
+   hasilnya di bagian **Status data** halaman **/changelog**.
 
 Untuk versi & changelog, cukup rilis versi baru di bot seperti biasa
 (`version.json` + `CHANGELOG.json` ter-update) — website mengikutinya sendiri.
@@ -107,8 +108,11 @@ Untuk versi & changelog, cukup rilis versi baru di bot seperti biasa
 
 ## 6. Status & log
 
-- **Halaman publik:** [`/status`](https://vanillate.id/status) — waktu sinkron
-  terakhir, commit sumber, versi bot, changelog, dan rincian per file.
+- **Halaman publik:** bagian *Status data* di
+  [`/changelog`](https://vanillate.id/changelog/#status-data) — waktu data
+  terakhir berubah, jumlah file berhasil, dan status per data (shop, fitur &
+  command, versi, changelog). Nama repo sumber & commit sengaja tidak
+  ditampilkan. URL lama `/status` diarahkan ke bagian ini.
 - **File status:** `src/data/synced/_status.json` (di-commit tiap sinkron yang
   mengubah data).
 - **Log run:** repo website → tab **Actions** → workflow *Sync data dari bot
@@ -157,7 +161,7 @@ Repo website → Actions → workflow *Sync data dari bot repo* → menu **⋯**
 | Job sync merah, log `401/403` | Token kedaluwarsa atau rate-limit. Perbarui token. |
 | Data tidak berubah di web | Belum ada perubahan data (deploy memang dilewati), atau workflow belum jalan — picu manual dari Actions. |
 | Job sync merah, log `! [rejected] … (fetch first)` | `main` maju saat run berjalan dan ketiga percobaan rebase+push gagal (jarang). Jalankan ulang run-nya. |
-| `/status` menunjukkan “Perlu perhatian” | Salah satu file gagal disinkron; website memakai data lama. Cek log run. |
+| Status data di `/changelog` menunjukkan “Perlu perhatian” | Salah satu file gagal disinkron; website memakai data lama. Cek log run. |
 
 ---
 
