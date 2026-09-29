@@ -119,6 +119,84 @@
       "seoDescription": "Kamera web gratis yang mengenali 16 gestur tangan dan mengubahnya jadi efek visual real-time. Dua tangan sekaligus, tanpa instal, video tidak diunggah.",
       "ogImage": "",
       "media": []
+    },
+    {
+      "slug": "science",
+      "name": "Vanillate Science",
+      "shortName": "Vanillate Science",
+      "tagline": "Masukkan soalnya. Lihat cara dan buktinya.",
+      "description": "Kalkulator matematika dan sains berbahasa Indonesia yang tidak hanya memberi jawaban, tetapi juga langkah penyelesaian yang benar-benar dihitung dan verifikasi independen untuk setiap hasil. Dari aljabar, kalkulus, dan matriks sampai fisika, kimia, statistika, keuangan, dan konversi satuan. Semua dihitung oleh mesin matematika deterministik langsung di peramban, tanpa AI generatif dan tanpa akun.",
+      "platform": "web",
+      "status": "live",
+      "category": "Kalkulator & Belajar",
+      "color": "#4338CA",
+      "icon": "lightbulb",
+      "thumbnail": "",
+      "featured": true,
+      "verified": false,
+      "sort": 3,
+      "features": [
+        "Langkah penyelesaian dari operasi yang benar-benar dilakukan mesin, lengkap dengan aturan dan alasannya",
+        "Verifikasi independen untuk setiap hasil: substitusi, turunan balik, uji numerik, analisis dimensi",
+        "Aljabar, persamaan, pertidaksamaan, sistem persamaan, bilangan kompleks, dan matriks",
+        "Kalkulus: turunan, integral tentu dan tak tentu, limit, deret Taylor, notasi sigma",
+        "113 rumus fisika, kimia, astronomi, teknik, dan geometri dengan satuan dan analisis dimensi",
+        "Statistika, keuangan (cicilan KPR, NPV, IRR), ilmu komputer, dan konversi ratusan satuan",
+        "Lima tingkat penjelasan, dari Dasar untuk pemula sampai Expert",
+        "Cek Pekerjaan Saya: temukan baris pertama yang salah di pengerjaanmu",
+        "Kalkulator grafik untuk fungsi, kurva polar, dan parametrik",
+        "Gratis, tanpa akun, dan semua perhitungan berjalan di perangkatmu"
+      ],
+      "longIntro": [
+        "Vanillate Science menghitung dengan pecahan eksak, bukan desimal yang dibulatkan diam-diam: 0,1 + 0,2 tepat 3/10, dan akar ditulis sebagai √2, bukan 1,414. Setiap soal diurai, diselesaikan dengan metode yang dipilih secara deterministik, lalu hasilnya diperiksa ulang dengan cara lain sebelum ditampilkan.",
+        "Hasil dibagi ke tab Jawaban, Langkah, Penjelasan, Verifikasi, Grafik, dan Metode Lain. Setiap hasil membawa status verifikasi yang jujur, dan bila sebuah soal belum didukung, sistem mengatakannya alih-alih menebak.",
+        "Punya pengerjaan sendiri? Tempelkan langkah-langkahnya ke Cek Pekerjaan Saya, dan sistem akan menunjukkan baris pertama yang keliru beserta alasannya."
+      ],
+      "commands": [],
+      "discord": {
+        "clientId": "",
+        "permissions": "",
+        "scopes": [
+          "bot",
+          "applications.commands"
+        ],
+        "integrationType": "",
+        "inviteUrl": ""
+      },
+      "badge": "Baru",
+      "badgeTone": "success",
+      "faq": [
+        {
+          "q": "Apa itu Vanillate Science?",
+          "a": "Kalkulator matematika dan sains gratis dari Vanillate Studio yang menampilkan jawaban, langkah penyelesaian, penjelasan, dan verifikasi untuk setiap soal."
+        },
+        {
+          "q": "Apakah hasilnya dibuat oleh AI?",
+          "a": "Tidak. Semua perhitungan dilakukan oleh mesin matematika deterministik, sehingga soal yang sama selalu memberi hasil yang sama, dan setiap hasil diperiksa ulang dengan metode independen."
+        },
+        {
+          "q": "Soal apa saja yang bisa dikerjakan?",
+          "a": "Aritmetika dan pecahan, aljabar, persamaan dan pertidaksamaan, sistem persamaan, bilangan kompleks, matriks, turunan, integral, limit, deret, statistika dan peluang, rumus fisika, kimia, astronomi, teknik, geometri, keuangan, ilmu komputer, serta konversi satuan."
+        },
+        {
+          "q": "Apakah perlu akun atau instal aplikasi?",
+          "a": "Tidak. Cukup buka di peramban. Riwayat dan favorit tersimpan di perangkatmu sendiri dan tidak dikirim ke server."
+        },
+        {
+          "q": "Bagaimana cara menulis soal?",
+          "a": "Tulis seperti di buku dengan keyboard biasa, misalnya x^2 - 5x + 6 = 0, turunan x^3 sin(x), atau integral x^2 dari 0 sampai 1. Kolom input menampilkan pratinjau cara soal dibaca, dan ada tombol simbol matematika untuk ponsel."
+        }
+      ],
+      "ctaHeading": "",
+      "ctaText": "",
+      "ctaNote": "Gratis, tanpa akun. Berjalan di peramban modern di komputer maupun ponsel.",
+      "ctaLabel": "Buka Kalkulator",
+      "ctaUrl": "https://science.vanillate.id/",
+      "faqCategory": "",
+      "seoTitle": "Vanillate Science, Kalkulator Matematika & Sains dengan Langkah",
+      "seoDescription": "Kalkulator matematika dan sains gratis berbahasa Indonesia dengan langkah penyelesaian dan verifikasi: aljabar, kalkulus, matriks, fisika, kimia, statistika, keuangan, dan satuan. Tanpa AI generatif, tanpa akun.",
+      "ogImage": "",
+      "media": []
     }
   ]
 }
