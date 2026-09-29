@@ -153,8 +153,8 @@ berurutan (beberapa menit lebih lama) — pertukaran yang sepadan.
 `src/data/synced/_status.json` **hanya di-commit saat file datanya berubah** —
 kalau tidak, tiap sync akan melahirkan commit kosong tiap jam. Artinya:
 
-> Waktu di `/status` dan `/admin` adalah **kapan data terakhir berubah**, bukan
-> kapan terakhir diperiksa.
+> Waktu di bagian Status data `/changelog` dan di `/admin` adalah **kapan data
+> terakhir berubah**, bukan kapan terakhir diperiksa.
 
 Jadi tulisan “Data terakhir berubah: kemarin” itu **normal** selama bot memang
 belum merilis apa pun. Untuk memastikan pemeriksaannya jalan, lihat tab
@@ -199,5 +199,5 @@ kalau frekuensi edit CMS sudah tinggi.
 | `scripts/sync-content.mjs` | Query Supabase + sanitasi nilai dari CMS |
 | `scripts/sync-data.mjs` | Fetch file repo bot + validasi bentuk, pertahankan last-good |
 | `src/data/synced/*.json` | Hasil sync — **jangan diedit manual**, akan tertimpa |
-| `src/pages/status.astro` | Halaman `/status` publik |
+| `src/pages/changelog.astro` | Halaman `/changelog` publik, termasuk bagian Status data |
 | `src/pages/admin/dashboard.astro` | Kartu status sinkronisasi di panel |

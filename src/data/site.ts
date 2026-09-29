@@ -26,14 +26,14 @@ export const site = {
   },
 } as const;
 
-// Nav studio yang ramping. Item level-produk (FAQ, Changelog, Partnership)
-// sengaja diturunkan ke footer & halaman produk — nav utama bicara atas nama
-// studio, bukan satu produk.
+// Nav studio yang ramping — nav utama bicara atas nama studio, bukan satu
+// produk. Item level-produk (Changelog, Partnership) sengaja diturunkan ke
+// footer & halaman produk. Changelog hanya ditautkan dari halaman produk utama
+// (lihat CHANGELOG_PRODUCT di @data/bots).
 export const nav = [
   { label: 'Beranda', href: '/' },
   { label: 'Produk', href: '/products' },
   { label: 'FAQ', href: '/faq' },
-  { label: 'Changelog', href: '/changelog' },
   { label: 'Tentang', href: '/about' },
   { label: 'Support', href: '/support' },
 ];

@@ -3,21 +3,30 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Icon from '@components/Icon.astro';
 import Button from '@components/Button.astro';
 import Vani from '@components/mascot/Vani.astro';
-import { getFeaturedBot, buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import { getChangelogBot, buildInviteUrl, inviteCtaLabel } from '@data/bots';
 import { faqCategoryUrl, faqIndexUrl } from '@data/faq';
 import changelog from '@data/synced/changelog.json';
 import version from '@data/synced/version.json';
+import status from '@data/synced/_status.json';
+import shop from '@data/synced/shop.json';
+import botInfo from '@data/synced/bot-info.json';
 import { inlineMarkdown } from '@utils/inline';
 import { url } from '@utils/url';
 
 // Halaman Changelog publik. Datanya di-bake dari data tersinkron
 // (src/data/synced/changelog.json) yang ditarik otomatis dari repo bot,
 // jadi riwayat pembaruan selalu mengikuti versi bot yang sedang berjalan.
+//
+// Bagian "Status data" di bawah timeline menggantikan halaman /status lama,
+// yang dulu mengulang changelog yang sama. Nama repo sumber sengaja tidak
+// ditampilkan: situs publik tidak menautkan repository.
 
 type Entry = { version: string; date: string; title: string; highlights: string[] };
 const entries = changelog as Entry[];
 
-const bot = getFeaturedBot();
+// Changelog ini milik produk utama; halaman ini tidak ada di nav utama dan
+// ditautkan dari halaman produknya.
+const bot = getChangelogBot();
 const inviteUrl = buildInviteUrl(bot);
 // Panduan produk ini ada di FAQ. URL-nya dibangun lewat helper, jadi tidak ada
 // alamat FAQ yang tertanam di halaman.
@@ -53,6 +62,45 @@ function monthKey(d: string): string {
 
 const latest = entries[0];
 const totalReleases = entries.length;
+
+// ─── Status sinkronisasi ───────────────────────────────────────────────────
+// Nilainya di-bake saat build dan ikut diperbarui setiap kali GitHub Actions
+// menyinkron data baru & re-deploy.
+const s = status as any;
+const syncOk = s.ok === true || s.seeded === true;
+const files: any[] = Array.isArray(s.files) ? s.files : [];
+
+function fmtDateTime(iso: string | null): string | null {
+  if (!iso) return null;
+  try {
+    return new Intl.DateTimeFormat('id-ID', {
+      dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Jakarta',
+    }).format(new Date(iso)) + ' WIB';
+  } catch {
+    return iso;
+  }
+}
+
+const lastSynced = fmtDateTime(s.lastSyncedAt);
+
+// Satu kartu per file yang disinkron, dicocokkan lewat `name` di _status.json.
+// Yang tampil hanya label & isinya — path file di repo sumber tidak ikut.
+const syncedItems = [
+  { file: 'shop', label: 'Harga shop', value: `${shop.items.length} item` },
+  { file: 'botInfo', label: 'Fitur & command', value: `${botInfo.features.length} fitur · ${botInfo.commands.length} command` },
+  { file: 'version', label: 'Versi bot', value: `v${version.version}` },
+  { file: 'changelog', label: 'Changelog', value: `${totalReleases} rilis` },
+].map((it) => {
+  const f = files.find((x) => x.name === it.file);
+  return { ...it, ok: f ? f.ok === true : syncOk, keptLastGood: f?.keptLastGood === true };
+});
+
+const syncSteps = [
+  ['Sumber kebenaran di repo bot', 'Data game (harga shop, fitur, command, versi, changelog) tinggal di repository bot, bukan diketik ulang di website.'],
+  ['Ditarik otomatis', 'GitHub Actions website berjalan terjadwal tiap jam + bisa dipicu manual, menarik data terbaru dari repo bot.'],
+  ['Divalidasi sebelum dipakai', 'Tiap file diperiksa bentuknya. File yang rusak diabaikan — website tetap memakai data terakhir yang baik, jadi tidak pernah corrupt.'],
+  ['Deploy hanya bila berubah', 'Kalau ada perubahan, website commit data baru lalu re-deploy ke vanillate.id. Kalau tidak, tidak ada deploy sia-sia.'],
+];
 ---
 
 <BaseLayout
@@ -67,6 +115,10 @@ const totalReleases = entries.length;
     <div class="container-page relative">
       <div class="grid items-center gap-10 lg:grid-cols-[1fr_auto]">
         <div class="min-w-0">
+      <a href={url(`/products/${bot.slug}`)} class="mb-8 flex w-fit items-center gap-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        {bot.name}
+      </a>
       <p class="eyebrow mb-6 animate-fade-up inline-flex items-center gap-2">
         <Icon name="history" class="h-4 w-4" /> Changelog
       </p>
@@ -87,6 +139,10 @@ const totalReleases = entries.length;
         <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
           <Icon name="calendar" class="h-4 w-4 text-ink-500 dark:text-cream-300/70" /> Terakhir {fmtDate(latest.date)}
         </span>
+        <a href="#status-data" class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm transition-colors hover:border-amber-500/40">
+          <span class={`h-2 w-2 rounded-full ${syncOk ? 'bg-teal-500' : 'bg-red-500'}`} aria-hidden="true"></span>
+          {syncOk ? 'Data sinkron' : 'Data perlu perhatian'}
+        </a>
       </div>
         </div>
         <div class="hidden lg:flex justify-self-end">
@@ -153,6 +209,90 @@ const totalReleases = entries.length;
         );
       })}
     </ol>
+  </section>
+
+  <!-- STATUS DATA (dulu halaman /status terpisah) -->
+  <section id="status-data" class="container-page py-14 border-t border-ink-900/10 dark:border-cream-100/10 scroll-mt-24">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">Status data</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Selalu sinkron dengan bot.</h2>
+        <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed">
+          Data game (harga shop, fitur, command, versi, changelog) memakai
+          <strong>repository bot sebagai sumber kebenaran</strong>. Setiap perubahan
+          di sana ditarik otomatis lalu website re-deploy — tanpa update manual.
+        </p>
+      </div>
+      <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
+        <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 md:p-8">
+          <div class="flex flex-wrap items-center gap-3 mb-6">
+            <span class={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium ${syncOk ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
+              <span class={`h-2 w-2 rounded-full ${syncOk ? 'bg-teal-500' : 'bg-red-500'}`}></span>
+              {syncOk ? 'Sinkron' : 'Perlu perhatian'}
+            </span>
+            {s.seeded && (
+              <span class="inline-flex items-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 px-4 py-1.5 text-sm">
+                Data awal (menunggu sinkronisasi otomatis pertama)
+              </span>
+            )}
+          </div>
+
+          <dl class="grid gap-6 sm:grid-cols-2">
+            <div>
+              <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Data terakhir berubah</dt>
+              <dd class="font-display text-lg font-semibold">{lastSynced ?? '—'}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">File berhasil</dt>
+              <dd class="font-display text-lg font-semibold">{s.okCount ?? 0} / {s.total ?? syncedItems.length}</dd>
+            </div>
+          </dl>
+
+          <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+            {syncedItems.map((it) => (
+              <li class="flex gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-4">
+                <span class={`mt-2 h-1.5 w-1.5 flex-none rounded-full ${it.ok ? 'bg-teal-500' : 'bg-red-500'}`} aria-hidden="true"></span>
+                <div class="min-w-0">
+                  <p class="font-display font-semibold">{it.value}</p>
+                  <p class="mt-0.5 text-xs text-ink-500 dark:text-cream-300/60">
+                    {it.label}{!it.ok && (it.keptLastGood ? ' · gagal diperbarui, memakai data terakhir yang baik' : ' · gagal diperbarui')}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <p class="mt-6 text-sm text-ink-500 dark:text-cream-300/60">
+            Pemeriksaan berjalan otomatis tiap jam. Waktu di atas adalah kapan data
+            terakhir benar-benar <em>berubah</em>, bukan kapan terakhir diperiksa —
+            jadi wajar bila terlihat lama saat bot memang belum merilis apa pun.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEKANISME SINKRONISASI -->
+  <section class="container-page pt-14 pb-24 border-t border-ink-900/10 dark:border-cream-100/10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div class="md:col-span-1 reveal">
+        <p class="eyebrow mb-3">Mekanisme</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">Cara sinkronisasinya.</h2>
+      </div>
+      <div class="md:col-span-2 reveal" style="--reveal-delay: 80ms">
+        <ol class="space-y-4">
+          {syncSteps.map((step, i) => (
+            <li class="flex gap-4 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+              <span class="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-amber-500/10 font-mono text-sm font-bold text-amber-600 dark:text-amber-400">{i + 1}</span>
+              <div>
+                <h3 class="font-display font-semibold mb-1">{step[0]}</h3>
+                <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">{step[1]}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
   </section>
 
   <!-- CTA -->
