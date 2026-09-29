@@ -54,8 +54,7 @@ vanillate-website/
 │   │   │   ├── index.astro         /faq (pusat panduan + pencarian)
 │   │   │   └── [category]/         /faq/[kategori] & /faq/[kategori]/[slug]
 │   │   ├── docs/                   Stub redirect: /docs → /faq (URL lama)
-│   │   ├── changelog.astro         /changelog (riwayat versi + status sinkronisasi data)
-│   │   ├── status.astro            Stub redirect: /status → /changelog#status-data (URL lama)
+│   │   ├── changelog.astro         /changelog (riwayat versi + status data, khusus Sambung Kata)
 │   │   ├── admin/                  Panel admin (butuh login, noindex) — lihat docs/ADMIN-CMS.md
 │   │   │   ├── index.astro         /admin (login username + password)
 │   │   │   ├── dashboard.astro     /admin/dashboard (ringkasan)

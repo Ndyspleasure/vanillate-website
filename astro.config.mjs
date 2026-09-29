@@ -18,15 +18,12 @@ export default defineConfig({
     // bukan halaman yang ingin ditemukan lewat pencarian.
     sitemap({
       // /admin internal; /bots & /docs hanya stub redirect (ke /products dan /faq),
-      // begitu juga slug lama produk yang sudah diganti dan /status (kini bagian
-      // dari /changelog). /status dicocokkan persis supaya slug lain yang
-      // kebetulan diawali "status" tidak ikut terbuang.
+      // begitu juga slug lama produk yang sudah diganti.
       filter: (page) =>
         !page.includes('/admin') &&
         !page.includes('/bots') &&
         !page.includes('/docs') &&
-        !page.includes('/products/vanillatehandsigncamera') &&
-        page !== `${SITE_URL}/status/`,
+        !page.includes('/products/vanillatehandsigncamera'),
     }),
   ],
   build: {

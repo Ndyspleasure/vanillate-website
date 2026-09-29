@@ -3,7 +3,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Icon from '@components/Icon.astro';
 import Button from '@components/Button.astro';
 import Vani from '@components/mascot/Vani.astro';
-import { getFeaturedBot, buildInviteUrl, inviteCtaLabel } from '@data/bots';
+import { getChangelogBot, buildInviteUrl, inviteCtaLabel } from '@data/bots';
 import { faqCategoryUrl, faqIndexUrl } from '@data/faq';
 import changelog from '@data/synced/changelog.json';
 import version from '@data/synced/version.json';
@@ -24,7 +24,9 @@ import { url } from '@utils/url';
 type Entry = { version: string; date: string; title: string; highlights: string[] };
 const entries = changelog as Entry[];
 
-const bot = getFeaturedBot();
+// Changelog ini milik produk utama; halaman ini tidak ada di nav utama dan
+// ditautkan dari halaman produknya.
+const bot = getChangelogBot();
 const inviteUrl = buildInviteUrl(bot);
 // Panduan produk ini ada di FAQ. URL-nya dibangun lewat helper, jadi tidak ada
 // alamat FAQ yang tertanam di halaman.
@@ -113,6 +115,10 @@ const syncSteps = [
     <div class="container-page relative">
       <div class="grid items-center gap-10 lg:grid-cols-[1fr_auto]">
         <div class="min-w-0">
+      <a href={url(`/products/${bot.slug}`)} class="mb-8 flex w-fit items-center gap-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        {bot.name}
+      </a>
       <p class="eyebrow mb-6 animate-fade-up inline-flex items-center gap-2">
         <Icon name="history" class="h-4 w-4" /> Changelog
       </p>

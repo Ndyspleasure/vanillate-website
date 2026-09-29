@@ -286,6 +286,15 @@ export function getFeaturedBot(): Bot {
   return bots.find((b) => b.featured) ?? bots[0];
 }
 
+// Produk pemilik /changelog. Versi & changelog disinkron dari repo bot Sambung
+// Kata, jadi hanya produk utama ini yang menautkannya. Sengaja memakai slug,
+// bukan flag `featured`, karena flag itu bisa terpasang di banyak produk.
+export const CHANGELOG_PRODUCT = 'sambung-kata';
+
+export function getChangelogBot(): Bot {
+  return bots.find((b) => b.slug === CHANGELOG_PRODUCT) ?? getFeaturedBot();
+}
+
 /** Produk lain selain `slug`, untuk section cross-link di halaman detail & FAQ. */
 export function getOtherBots(slug: string, limit = 3): Bot[] {
   return bots.filter((b) => b.slug !== slug).slice(0, limit);

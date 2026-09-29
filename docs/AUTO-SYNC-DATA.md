@@ -112,7 +112,7 @@ Untuk versi & changelog, cukup rilis versi baru di bot seperti biasa
   [`/changelog`](https://vanillate.id/changelog/#status-data) — waktu data
   terakhir berubah, jumlah file berhasil, dan status per data (shop, fitur &
   command, versi, changelog). Nama repo sumber & commit sengaja tidak
-  ditampilkan. URL lama `/status` diarahkan ke bagian ini.
+  ditampilkan. Halaman `/status` lama sudah dihapus; isinya dilebur ke sini.
 - **File status:** `src/data/synced/_status.json` (di-commit tiap sinkron yang
   mengubah data).
 - **Log run:** repo website → tab **Actions** → workflow *Sync data dari bot

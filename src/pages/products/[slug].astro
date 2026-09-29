@@ -5,7 +5,7 @@ import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
 import BotTag from '@components/BotTag.astro';
 import BotAvatar from '@components/BotAvatar.astro';
-import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, webAppUrl, webCtaLabel, productImage, badgeClass } from '@data/bots';
+import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, webAppUrl, webCtaLabel, productImage, badgeClass, CHANGELOG_PRODUCT } from '@data/bots';
 import FAQLink from '@components/FAQLink.astro';
 import { faqCategoryPath, faqCategoryUrl, faqCategoryFor, faqItems, faqsByCategory } from '@data/faq';
 import { site } from '@data/site';
@@ -30,6 +30,8 @@ const botFaqs = faqKategori
   ? faqItems(faqKategori.slug, 8)
   : bot.faq.map((f) => ({ q: f.q, a: f.a }));
 const otherBots = getOtherBots(bot.slug, 3);
+// Changelog hanya milik produk utama (datanya dari repo bot Sambung Kata).
+const hasChangelog = bot.slug === CHANGELOG_PRODUCT;
 
 // Produk web: tautan aplikasi (mis. domain Netlify/Vercel) + label tombol.
 const isWeb = bot.platform === 'web';
@@ -123,6 +125,12 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
         {faqKategori && (
           <Button href={faqCategoryPath(faqKategori.slug)} variant="secondary" size="lg">
             {CTA.guide}
+          </Button>
+        )}
+        {hasChangelog && (
+          <Button href="/changelog" variant="ghost" size="lg">
+            <Icon name="history" class="h-4 w-4" />
+            Changelog
           </Button>
         )}
       </div>

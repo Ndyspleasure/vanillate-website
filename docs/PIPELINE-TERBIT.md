@@ -200,5 +200,4 @@ kalau frekuensi edit CMS sudah tinggi.
 | `scripts/sync-data.mjs` | Fetch file repo bot + validasi bentuk, pertahankan last-good |
 | `src/data/synced/*.json` | Hasil sync — **jangan diedit manual**, akan tertimpa |
 | `src/pages/changelog.astro` | Halaman `/changelog` publik, termasuk bagian Status data |
-| `src/pages/status.astro` | Stub redirect URL lama `/status` → `/changelog#status-data` |
 | `src/pages/admin/dashboard.astro` | Kartu status sinkronisasi di panel |
