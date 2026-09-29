@@ -226,9 +226,9 @@ type Copy = {
 export const content: Record<Locale, Copy> = {
   // ═══════════════════════════════════════ INDONESIA (canonical) ═══════════
   id: {
-    metaTitle: 'Andi Kurniawan, Mahasiswa, Profesional, Founder dan Developer',
+    metaTitle: 'Andi Kurniawan, Mahasiswa Manajemen, Psikolog, Profesional, Founder dan Developer',
     metaDescription:
-      'Andi Kurniawan adalah mahasiswa, profesional, founder Vanillate Studio, dan developer yang berbasis di Bekasi, Indonesia. Berkarya di bidang management, data, teknologi, dan pengembangan produk digital.',
+      'Andi Kurniawan adalah mahasiswa manajemen, psikolog, profesional, founder Vanillate Studio, dan developer yang berbasis di Bekasi, Indonesia. Berkarya di bidang management, data, teknologi, dan pengembangan produk digital.',
     nav: { about: 'Tentang', work: 'Karya', vanillate: 'Vanillate', contact: 'Kontak' },
     a11y: {
       skip: 'Lewati ke konten utama',
@@ -237,7 +237,7 @@ export const content: Record<Locale, Copy> = {
       menu: 'Buka menu navigasi',
     },
     hero: {
-      roles: ['Mahasiswa', 'Profesional', 'Founder', 'Developer'],
+      roles: ['Mahasiswa Manajemen', 'Psikolog', 'Profesional', 'Founder', 'Developer'],
       lead: 'Saya suka membangun produk digital. Biasanya berawal dari satu ide dan baris kode pertama, lalu tumbuh jadi sesuatu yang benar-benar dipakai orang.',
       ctaPrimary: 'Lihat Karya',
       ctaSecondary: 'LinkedIn',
@@ -247,7 +247,7 @@ export const content: Record<Locale, Copy> = {
       eyebrow: 'Mengenal Andi',
       title: 'Dari management ke data, teknologi, lalu membangun.',
       body: 'Saya mulai dari dunia management, lalu penasaran dengan data, dan akhirnya keterusan di teknologi. Sekarang sebagian besar waktu saya habis buat membuat dan merawat produk lewat Vanillate Studio.',
-      identity: ['Mahasiswa', 'Profesional', 'Founder', 'Developer'],
+      identity: ['Mahasiswa Manajemen', 'Psikolog', 'Profesional', 'Founder', 'Developer'],
       stats: [
         { value: '2+', label: 'Tahun Pengalaman' },
         { value: '2026', label: 'Vanillate Studio' },
@@ -333,9 +333,9 @@ export const content: Record<Locale, Copy> = {
     career: {
       eyebrow: 'Ke Mana Arah Berikutnya?',
       title: 'Arah dan perkembangan.',
-      now: { label: 'Sekarang', items: ['Mahasiswa', 'Profesional', 'Founder'] },
+      now: { label: 'Sekarang', items: ['Mahasiswa Manajemen', 'Psikolog', 'Profesional', 'Founder'] },
       focus: { label: 'Fokus', items: ['Management', 'Data', 'Technology', 'Leadership'] },
-      next: { label: 'Berikutnya', items: ['HR dan Team Lead'] },
+      next: { label: 'Berikutnya', items: ['HR, Administrasi, dan Team Lead'] },
     },
     contact: {
       eyebrow: 'Kontak',
@@ -399,9 +399,9 @@ export const content: Record<Locale, Copy> = {
 
   // ═══════════════════════════════════════════════ ENGLISH ════════════════
   en: {
-    metaTitle: 'Andi Kurniawan, Student, Professional, Founder and Developer',
+    metaTitle: 'Andi Kurniawan, Management Student, Psychologist, Professional, Founder and Developer',
     metaDescription:
-      'Andi Kurniawan is a student, professional, founder of Vanillate Studio, and developer based in Bekasi, Indonesia. Working across management, data, technology, and digital product development.',
+      'Andi Kurniawan is a management student, psychologist, professional, founder of Vanillate Studio, and developer based in Bekasi, Indonesia. Working across management, data, technology, and digital product development.',
     nav: { about: 'About', work: 'Work', vanillate: 'Vanillate', contact: 'Contact' },
     a11y: {
       skip: 'Skip to main content',
@@ -410,7 +410,7 @@ export const content: Record<Locale, Copy> = {
       menu: 'Open navigation menu',
     },
     hero: {
-      roles: ['Student', 'Professional', 'Founder', 'Developer'],
+      roles: ['Management Student', 'Psychologist', 'Professional', 'Founder', 'Developer'],
       lead: 'I like building digital products. It usually starts with one idea and a line of code, then grows into something people actually use.',
       ctaPrimary: 'View Work',
       ctaSecondary: 'LinkedIn',
@@ -420,7 +420,7 @@ export const content: Record<Locale, Copy> = {
       eyebrow: 'Meet Andi',
       title: 'From management to data, technology, then building.',
       body: 'I started out in management, got curious about data, and ended up hooked on technology. These days most of my time goes into building and maintaining products through Vanillate Studio.',
-      identity: ['Student', 'Professional', 'Founder', 'Developer'],
+      identity: ['Management Student', 'Psychologist', 'Professional', 'Founder', 'Developer'],
       stats: [
         { value: '2+', label: 'Years of Experience' },
         { value: '2026', label: 'Vanillate Studio' },
@@ -506,9 +506,9 @@ export const content: Record<Locale, Copy> = {
     career: {
       eyebrow: "Where To Next?",
       title: 'Direction and growth.',
-      now: { label: 'Now', items: ['Student', 'Professional', 'Founder'] },
+      now: { label: 'Now', items: ['Management Student', 'Psychologist', 'Professional', 'Founder'] },
       focus: { label: 'Focus', items: ['Management', 'Data', 'Technology', 'Leadership'] },
-      next: { label: 'Next', items: ['HR and Team Lead'] },
+      next: { label: 'Next', items: ['HR, Administration, and Team Lead'] },
     },
     contact: {
       eyebrow: 'Contact',
