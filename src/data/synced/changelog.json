@@ -1,5 +1,35 @@
 [
   {
+    "version": "2.63.1",
+    "date": "2026-10-01",
+    "title": "Peningkatan Streak Harian",
+    "highlights": [
+      "✍️ Kata-kata hari ini yang kamu edit kini tersimpan dalam versi terbarunya",
+      "🛠️ Persiapan fitur sosial berikutnya untuk Streak Harian"
+    ]
+  },
+  {
+    "version": "2.63.0",
+    "date": "2026-10-01",
+    "title": "Hub Sosial baru: Counting & Streak Harian",
+    "highlights": [
+      "🤝 Command baru /sosial: lihat hitungan server, streak harianmu, dan leaderboard komunitas",
+      "🔢 Counting: hitung bareng satu server di channel khusus — boleh pakai hitungan seperti 2+2 atau 3x4",
+      "🔥 Streak Harian: tulis kata-kata hari ini (minimal 5 kata) setiap hari untuk menjaga streak",
+      "⚙️ Admin server mengaktifkan fitur sosial lewat /pengaturan → 🤝 Sosial"
+    ]
+  },
+  {
+    "version": "2.62.0",
+    "date": "2026-10-01",
+    "title": "Info fitur khusus owner & admin server langsung lewat DM",
+    "highlights": [
+      "📬 Owner & admin server kini bisa menerima info fitur baru yang berhubungan dengan server Discord mereka lewat DM",
+      "🏷️ Setiap DM info server menyebut nama server penerima, jadi jelas kenapa pesan itu datang",
+      "🔕 Tombol Berhenti Info Server di setiap DM (dan 🔔 untuk mengaktifkannya lagi)"
+    ]
+  },
+  {
     "version": "2.61.0",
     "date": "2026-10-01",
     "title": "Admin server kini bisa mengatur channel khusus untuk setiap game",
