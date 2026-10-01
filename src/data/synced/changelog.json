@@ -1,5 +1,26 @@
 [
   {
+    "version": "2.61.0",
+    "date": "2026-10-01",
+    "title": "Admin server kini bisa mengatur channel khusus untuk setiap game",
+    "highlights": [
+      "⚙️ Command baru /pengaturan untuk admin server: tentukan channel Sambung Kata & tiap game di /game",
+      "📍 Pemain yang membuka game di channel lain otomatis diarahkan ke channel yang benar",
+      "🌐 Server yang belum mengatur apa pun tetap bisa bermain di channel mana saja seperti biasa"
+    ]
+  },
+  {
+    "version": "2.60.8",
+    "date": "2026-10-01",
+    "title": "Tutorial pemain baru kini lebih jelas",
+    "highlights": [
+      "🎓 Materi /tutorial ditulis ulang dan langsung menyebut command, tombol, serta aturan main yang sebenarnya",
+      "✍️ Ada contoh cara menjawab beserta penjelasan nyawa, kesempatan, dan batas waktu",
+      "🎮 Saran mode untuk pemula, plus Game Hub lewat /game untuk mencoba game lain",
+      "🛠️ Pesan sesi tutorial yang kedaluwarsa kini menjelaskan bahwa materi yang sudah dibaca tetap tersimpan"
+    ]
+  },
+  {
     "version": "2.60.7",
     "date": "2026-09-25",
     "title": "Tebak Lagu lebih stabil",
