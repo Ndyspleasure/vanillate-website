@@ -1,5 +1,31 @@
 [
   {
+    "version": "2.65.0",
+    "date": "2026-10-02",
+    "title": "Social Hub: tampilan baru, pelindung & pengingat streak",
+    "highlights": [
+      "🤝 /sosial kini jadi Social Hub — semua info sosial tampil rapi dalam kartu",
+      "🔥 Menu baru Streak Saya: status streak, 7 hari terakhir, & progres menuju milestone",
+      "🛡️ Pelindung streak: 2 per minggu, otomatis menyelamatkan streak saat kamu terlewat sehari",
+      "🔔 Pengingat otomatis saat streak-mu belum tercatat (20.00 & 23.00 WIB)",
+      "🧹 Streak yang putus dihapus datanya setelah 3 hari bila tidak dilanjutkan",
+      "🔢 Pesan Counting (reset & angka dihapus) kini lebih jelas"
+    ]
+  },
+  {
+    "version": "2.64.0",
+    "date": "2026-10-02",
+    "title": "Perbaikan Werewolf, UNO & Tebak Lagu + DM yang lebih menghargai pilihanmu",
+    "highlights": [
+      "🔮 Werewolf: Peramal kini hanya bisa menerawang satu pemain per malam, dan jatah kemampuan Mode Lanjutan tidak bisa lagi dipakai gratis",
+      "🃏 UNO: bisa berhenti main walau ditemani bot, tombol Lewati wajib ambil kartu dulu, dan meja tidak macet lagi saat ada yang keluar ketika hitung mundur",
+      "🎵 Tebak Lagu: pemain yang sedang di voice channel kini bisa bergabung",
+      "👑 Host yang keluar lobby otomatis digantikan pemain lain, jadi lobby tetap bisa dimulai",
+      "🛡️ Klik ganda saat memulai game tidak lagi membuat dua ruang (Golden Key aman)",
+      "🔕 DM pengumuman kini punya tombol berhenti — hanya info darurat penting yang tetap dikirim"
+    ]
+  },
+  {
     "version": "2.63.1",
     "date": "2026-10-01",
     "title": "Peningkatan Streak Harian",
