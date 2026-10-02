@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.66.0",
+    "date": "2026-10-02",
+    "title": "Pemantauan Social Hub untuk tim developer",
+    "highlights": [
+      "🤝 Tim developer kini bisa memantau status Counting & Streak Harian di setiap server",
+      "🛠️ Masalah channel sosial (channel terhapus atau izin bot kurang) kini lebih cepat terdeteksi & dibantu perbaikannya"
+    ]
+  },
+  {
     "version": "2.65.0",
     "date": "2026-10-02",
     "title": "Social Hub: tampilan baru, pelindung & pengingat streak",
