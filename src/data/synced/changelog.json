@@ -1,5 +1,17 @@
 [
   {
+    "version": "2.67.0",
+    "date": "2026-10-02",
+    "title": "Streak Harian kini selalu merespons + ajakan menulis tiap pagi",
+    "highlights": [
+      "⏳ Pesan yang belum mencatat streak kini ditandai ⏳ — bot tidak lagi mendiamkanmu saat kamu masih mencari kata-kata",
+      "✍️ Pengingat \"Streak Belum Tercatat\" muncul setiap kali tulisanmu kurang dari 5 kata dan bertahan lebih lama",
+      "📝 Cukup edit pesanmu hari itu jadi minimal 5 kata — streak langsung tercatat",
+      "🌅 Setiap pagi pukul 07.00 WIB ada ajakan menulis kata-kata hari ini untuk semua member, tanpa mention",
+      "🖼️ Bot kini memberi tahu bila kata-kata terkirim sebagai gambar, stiker, atau pesan terusan"
+    ]
+  },
+  {
     "version": "2.66.0",
     "date": "2026-10-02",
     "title": "Pemantauan Social Hub untuk tim developer",
