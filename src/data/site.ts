@@ -27,8 +27,8 @@ export const site = {
 } as const;
 
 // Nav studio yang ramping — nav utama bicara atas nama studio, bukan satu
-// produk. Item level-produk (Changelog, Partnership) sengaja diturunkan ke
-// footer & halaman produk. Changelog hanya ditautkan dari halaman produk utama
+// produk. Item level-produk (Changelog, Dashboard, Partnership) sengaja
+// diturunkan ke footer & halaman produk. Changelog hanya ditautkan dari halaman produk utama
 // (lihat CHANGELOG_PRODUCT di @data/bots).
 export const nav = [
   { label: 'Beranda', href: '/' },
@@ -36,8 +36,6 @@ export const nav = [
   { label: 'FAQ', href: '/faq' },
   { label: 'Tentang', href: '/about' },
   { label: 'Support', href: '/support' },
-  // Vanillate Dashboard: admin server mengatur bot lewat login Discord.
-  { label: 'Dashboard', href: '/dashboard' },
 ];
 
 // Angka komunitas untuk social proof di beranda.

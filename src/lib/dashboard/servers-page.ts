@@ -34,6 +34,9 @@ interface PageConfig {
   clientId: string;
   permissions: string;
   privacyUrl: string;
+  /** Halaman produk pemilik dashboard (dashboard tidak ada di menu utama). */
+  productUrl: string;
+  productName: string;
 }
 
 export function mountServersPage(cfg: PageConfig): void {
@@ -42,6 +45,12 @@ export function mountServersPage(cfg: PageConfig): void {
   let query = '';
 
   const redirectTo = () => `${location.origin}/dashboard/`;
+
+  /** Tautan balik ke halaman produk — satu-satunya pintu masuk dashboard selain footer. */
+  const productLink = () => `
+    <a href="${esc(cfg.productUrl)}" class="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900 dark:text-cream-300 dark:hover:text-cream-50">
+      ${icon('arrow-left')} ${esc(cfg.productName)}
+    </a>`;
   const serverUrl = (id: string) => `/dashboard/server/?id=${encodeURIComponent(id)}`;
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -58,9 +67,10 @@ export function mountServersPage(cfg: PageConfig): void {
   function renderLogin(enabled: boolean | null): void {
     const disabled = enabled === false;
     root.innerHTML = `
+      <div class="mx-auto mb-8 max-w-5xl">${productLink()}</div>
       <div class="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
-          <p class="eyebrow">Vanillate Dashboard</p>
+          <p class="eyebrow flex items-center gap-2">${icon('layout-dashboard', 'h-3.5 w-3.5')} Vanillate Dashboard</p>
           <h1 class="mt-3 font-display text-4xl font-semibold leading-tight sm:text-5xl">Atur bot Vanillate di server Discord-mu.</h1>
           <p class="mt-4 max-w-xl text-base leading-relaxed text-ink-600 dark:text-cream-300">
             Masuk dengan Discord untuk memilih fitur yang aktif dan channel tiap fitur di server tempat kamu menjadi admin.
@@ -141,6 +151,7 @@ export function mountServersPage(cfg: PageConfig): void {
       .join('');
 
     root.innerHTML = `
+      <div class="mb-6">${productLink()}</div>
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
           ${
@@ -149,7 +160,7 @@ export function mountServersPage(cfg: PageConfig): void {
               : `<span class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-amber-500/20">${icon('user', 'h-5 w-5')}</span>`
           }
           <div>
-            <p class="eyebrow">Vanillate Dashboard</p>
+            <p class="eyebrow flex items-center gap-2">${icon('layout-dashboard', 'h-3.5 w-3.5')} Vanillate Dashboard</p>
             <h1 class="font-display text-2xl font-semibold">Halo, ${esc(user.name)}</h1>
           </div>
         </div>

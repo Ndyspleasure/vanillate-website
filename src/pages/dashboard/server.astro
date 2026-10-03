@@ -3,9 +3,9 @@
 // ID server dibaca di browser (situs statis, tanpa rute dinamis); akses
 // diverifikasi di server oleh RPC guild_dashboard_get. Lihat docs/DASHBOARD-SERVER.md.
 import BaseLayout from '@layouts/BaseLayout.astro';
-import { bots } from '@data/bots';
+import { getDashboardBot } from '@data/bots';
 
-const bot = bots.find((b) => b.slug === 'sambung-kata');
+const bot = getDashboardBot();
 ---
 
 <BaseLayout

@@ -2,6 +2,9 @@
 
 Admin server Discord masuk dengan **Discord** di `vanillate.id/dashboard`, memilih
 server yang boleh dikelolanya, lalu mengatur fitur & channel bot Vanillate.
+Pintu masuknya — seperti Changelog — tombol **Dashboard** di halaman produk
+Vanillate Sambung Kata (`DASHBOARD_PRODUCT` di `src/data/bots.ts`) dan tautan
+footer; sengaja tidak di menu utama studio.
 Website adalah **control plane**; bot adalah **executor**.
 
 > Implementasi dari *Vanillate Dashboard — Server Configuration Specification*
