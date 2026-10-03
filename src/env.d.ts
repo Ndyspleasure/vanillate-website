@@ -13,6 +13,12 @@ interface ImportMetaEnv {
    * Opsional: bila kosong, dipakai nilai fallback di src/data/support.ts.
    */
   readonly PUBLIC_SUPPORT_EMAIL?: string;
+
+  /**
+   * OAuth Client ID (Web) Google untuk tombol resmi "Sign in with Google" di /chat.
+   * Opsional: bila kosong, login memakai redirect OAuth Supabase.
+   */
+  readonly PUBLIC_GOOGLE_CLIENT_ID?: string;
 }
 
 interface ImportMeta {

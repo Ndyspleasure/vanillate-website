@@ -82,11 +82,27 @@ Skema itu membuat tabel `admin_users`, `bot_logs`, `bot_stats`, `bot_guilds`,
 |---|---|---|
 | `PUBLIC_SUPABASE_URL` | Project URL | Build website |
 | `PUBLIC_SUPABASE_ANON_KEY` | anon public key | Build website |
+| `PUBLIC_GOOGLE_CLIENT_ID` | OAuth Client ID (Web) Google — opsional | Tombol "Sign in with Google" di `/chat` |
 | `SUPABASE_URL` | Project URL (sama) | Workflow sync konten |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key | Workflow sync konten |
 
 Tanpa dua secret pertama, website tetap ter-build dengan aman — halaman `/admin`
 otomatis menampilkan panduan setup, bukan error.
+
+`PUBLIC_GOOGLE_CLIENT_ID` membuat login Live Chat memakai tombol resmi Google,
+sehingga layar "Pilih akun" menampilkan `vanillate.id` (atau "Vanillate Studio"
+setelah verifikasi brand), bukan `<project>.supabase.co`. Urutan setup:
+
+1. Google Cloud Console → **Google Auth Platform → Clients** → client Web yang
+   dipakai provider Google di Supabase → **Authorized JavaScript origins**:
+   tambahkan `https://vanillate.id`. Isi secret **sesudah** langkah ini, karena
+   tanpa origin tersebut tombol Google menolak login.
+2. Salin Client ID yang sama (juga terlihat di Supabase → Authentication →
+   Providers → Google) ke secret `PUBLIC_GOOGLE_CLIENT_ID`, lalu deploy ulang.
+3. Opsional: **Branding** → nama "Vanillate Studio", logo, domain `vanillate.id`,
+   lalu ajukan verifikasi agar nama brand yang tampil.
+
+Bila secret kosong, login tetap memakai redirect OAuth Supabase.
 
 ### Pengembangan lokal
 

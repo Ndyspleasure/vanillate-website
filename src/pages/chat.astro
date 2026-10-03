@@ -38,6 +38,9 @@ import BaseLayout from '@layouts/BaseLayout.astro';
           Masuk dengan akun Google untuk memulai percakapan. Email-mu dipakai untuk mengirim
           pemberitahuan balasan &amp; penutupan tiket.
         </p>
+        <!-- Tombol resmi Google (diisi JS bila PUBLIC_GOOGLE_CLIENT_ID ada). -->
+        <div data-el="google-button" hidden class="hidden min-h-[44px] justify-center"></div>
+        <!-- Fallback: redirect OAuth Supabase. -->
         <button
           data-action="google-login"
           class="inline-flex items-center justify-center gap-2 rounded-full border border-ink-300 bg-white px-6 py-3 text-sm font-semibold text-ink-800 shadow-sm transition hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100 dark:hover:bg-ink-700"
@@ -92,7 +95,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       </div>
 
       <!-- STATE: chat aktif -->
-      <div data-panel="chat" hidden class="flex h-[70vh] max-h-[600px] flex-col">
+      <div data-panel="chat" hidden class="hidden flex h-[70vh] max-h-[600px] flex-col">
         <div class="flex items-center justify-between border-b border-ink-200/70 px-4 py-3 dark:border-ink-800">
           <div class="min-w-0">
             <p class="truncate text-sm font-semibold" data-el="chat-subject">Percakapan</p>
@@ -152,7 +155,9 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     import {
       getChatSupabase,
       getCustomer,
+      hasGoogleButton,
       isChatConfigured,
+      renderGoogleButton,
       signInWithGoogle,
       signOut,
     } from '@/lib/customer-auth';
@@ -172,8 +177,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     const el = <T extends HTMLElement = HTMLElement>(name: string) =>
       root.querySelector<T>(`[data-el="${name}"]`);
 
+    // Class `flex` mengalahkan atribut `hidden`, jadi panel juga di-toggle lewat class
+    // Tailwind `hidden` — tanpa ini "Memuat…" & panel chat (Terhubung/Tulis pesan) ikut tampil.
     function show(name: string) {
-      panels.forEach((p, key) => (p.hidden = key !== name));
+      panels.forEach((p, key) => {
+        const visible = key === name;
+        p.hidden = !visible;
+        p.classList.toggle('hidden', !visible);
+      });
     }
 
     let ticket: LiveChatTicket | null = null;
@@ -257,6 +268,33 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       );
     }
 
+    /** Pakai tombol resmi Google bila tersedia; tombol fallback disembunyikan. */
+    async function setupGoogleButton() {
+      const holder = el('google-button');
+      const fallback = root.querySelector<HTMLElement>('[data-action="google-login"]');
+      if (!hasGoogleButton || !holder || !fallback) return;
+      const toggleFallback = (visible: boolean) => {
+        fallback.hidden = !visible;
+        fallback.classList.toggle('hidden', !visible);
+      };
+      toggleFallback(false);
+      const rendered = await renderGoogleButton(holder, async (res) => {
+        if (!res.ok) {
+          setError('login-error', res.error ?? 'Gagal masuk. Coba lagi.');
+          return;
+        }
+        setError('login-error', null);
+        show('loading');
+        await boot();
+      });
+      if (!rendered) {
+        toggleFallback(true);
+        return;
+      }
+      holder.hidden = false;
+      holder.classList.replace('hidden', 'flex');
+    }
+
     async function boot() {
       if (!isChatConfigured) {
         show('unconfigured');
@@ -267,6 +305,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       const user = await getCustomer();
       if (!user) {
         show('login');
+        await setupGoogleButton();
         return;
       }
       customerEmail = user.email ?? '';

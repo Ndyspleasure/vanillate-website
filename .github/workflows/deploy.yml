@@ -45,6 +45,9 @@ jobs:
           # menampilkan panduan setup.
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
           PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          # Client ID Google (publik) untuk tombol resmi "Sign in with Google" di
+          # /chat. Kosong = login memakai redirect OAuth Supabase seperti biasa.
+          PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.PUBLIC_GOOGLE_CLIENT_ID }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
