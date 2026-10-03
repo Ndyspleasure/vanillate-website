@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.68.0",
+    "date": "2026-10-03",
+    "title": "Vanillate Dashboard — atur bot di server-mu langsung dari website",
+    "highlights": [
+      "🖥️ Admin server kini bisa masuk dengan Discord di vanillate.id/dashboard (tombol Dashboard di halaman Vanillate Sambung Kata) untuk mengatur bot tanpa command",
+      "🎮 Nyalakan/matikan tiap game (Sambung Kata, Werewolf, Pengacara, UNO, Tebak Lagu) dan kunci game ke channel khusus dari website",
+      "🤝 Aktifkan Counting & Streak Harian di channel pilihanmu langsung dari Social Hub di website",
+      "✅ Status sinkronisasi jelas: kamu tahu kapan bot sudah menerapkan perubahan, dan apa yang perlu diperbaiki bila izin bot kurang atau channel terhapus",
+      "📜 Setiap perubahan tercatat di Riwayat — termasuk yang dibuat lewat /pengaturan di Discord, jadi website & Discord selalu sama",
+      "⛔ Game yang dimatikan admin kini tampil nonaktif di /game dengan pesan yang jelas"
+    ]
+  },
+  {
     "version": "2.67.0",
     "date": "2026-10-02",
     "title": "Streak Harian kini selalu merespons + ajakan menulis tiap pagi",
