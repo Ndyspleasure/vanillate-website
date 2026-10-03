@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 
-const lastUpdated = '6 July 2026';
+const lastUpdated = '3 October 2026';
 
 // Daftar isi ringkas — sekaligus penanda nomor & judul tiap section.
 const toc = [
@@ -105,6 +105,17 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Gameplay-related server data</span></li>
         </ul>
 
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 text-ink-900 dark:text-cream-50">Vanillate Dashboard (Website Login with Discord)</h3>
+        <p class="mb-3">
+          When you sign in to the Vanillate Dashboard at vanillate.id/dashboard to configure our bots for a Discord server, we additionally process:
+        </p>
+        <ul class="space-y-2 pl-0 list-none mb-6">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Your Discord User ID, username, avatar, and the email address associated with your Discord account (stored by our authentication provider to maintain your login)</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>The list of Discord servers you belong to and your permissions in them, read with the <span class="font-mono text-sm">guilds</span> scope only to determine which servers you may manage. Only servers you can manage are stored, and this list is re-verified regularly</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>A Discord access token with the <span class="font-mono text-sm">identify</span> and <span class="font-mono text-sm">guilds</span> scopes, stored server-side (never shown to other users) for up to 7 days or until you sign out</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>A record of configuration changes you save (who changed what, and when) so server administrators can audit their settings</span></li>
+        </ul>
+
         <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 text-ink-900 dark:text-cream-50">Technical Data</h3>
         <ul class="space-y-2 pl-0 list-none mb-6">
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Error logs</span></li>
@@ -113,7 +124,7 @@ const toc = [
         </ul>
 
         <p>
-          We do not collect passwords, payment information, email addresses, direct messages unrelated to Service functionality, or other sensitive personal information.
+          Apart from the email address tied to a website sign-in (Live Chat or the Vanillate Dashboard), we do not collect passwords, payment information, email addresses, direct messages unrelated to Service functionality, or other sensitive personal information. The Vanillate Dashboard cannot read your messages or act on your behalf in Discord.
         </p>
       </section>
 
@@ -176,6 +187,7 @@ const toc = [
         <ul class="space-y-2 pl-0 list-none mb-4">
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>A server removes one of our bots</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>A user submits a valid deletion request</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>You sign out of the Vanillate Dashboard (your stored Discord access token and server access list are deleted immediately)</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>The data is no longer required for operational purposes</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>We determine that retention is no longer necessary</span></li>
         </ul>

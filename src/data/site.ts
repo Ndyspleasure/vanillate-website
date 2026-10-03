@@ -36,6 +36,8 @@ export const nav = [
   { label: 'FAQ', href: '/faq' },
   { label: 'Tentang', href: '/about' },
   { label: 'Support', href: '/support' },
+  // Vanillate Dashboard: admin server mengatur bot lewat login Discord.
+  { label: 'Dashboard', href: '/dashboard' },
 ];
 
 // Angka komunitas untuk social proof di beranda.

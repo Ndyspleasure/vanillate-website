@@ -8,7 +8,9 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "node --experimental-strip-types --test tests/dashboard-model.test.ts tests/dashboard-discord.test.ts",
+    "test:sql": "bash scripts/test-guild-dashboard-sql.sh"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.2.1",

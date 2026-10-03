@@ -55,6 +55,7 @@ vanillate-website/
 │   │   │   └── [category]/         /faq/[kategori] & /faq/[kategori]/[slug]
 │   │   ├── docs/                   Stub redirect: /docs → /faq (URL lama)
 │   │   ├── changelog.astro         /changelog (riwayat versi + status data, khusus Sambung Kata)
+│   │   ├── dashboard/              Vanillate Dashboard: admin server login Discord & atur bot — lihat docs/DASHBOARD-SERVER.md
 │   │   ├── admin/                  Panel admin (butuh login, noindex) — lihat docs/ADMIN-CMS.md
 │   │   │   ├── index.astro         /admin (login username + password)
 │   │   │   ├── dashboard.astro     /admin/dashboard (ringkasan)
@@ -85,6 +86,7 @@ vanillate-website/
 ├── docs/ADMIN-CMS.md               Panduan panel admin & CMS
 ├── docs/AUTO-SYNC-DATA.md          Sinkronisasi data repo bot → website
 ├── docs/PIPELINE-TERBIT.md         Alur & waktu tayang: edit → sync → build → Pages
+├── docs/DASHBOARD-SERVER.md        Vanillate Dashboard: login Discord, konfigurasi server, sinkronisasi bot
 └── README.md                        (file ini)
 ```
 
@@ -445,3 +447,13 @@ tidak pernah menyentuh browser.
 
 Setup lengkap, kontrak data untuk repo bot, dan batasan modelnya ada di
 **[docs/ADMIN-CMS.md](docs/ADMIN-CMS.md)**.
+
+### Vanillate Dashboard (`/dashboard`)
+
+Berbeda dari `/admin` (tim studio), `/dashboard` untuk **admin server Discord**:
+login dengan Discord, pilih server yang boleh dikelola (diverifikasi ke Discord
+oleh Edge Function `dashboard-discord`), lalu atur fitur & channel bot. Simpan
+lewat RPC Postgres yang memeriksa akses server-side, menaikkan revisi, dan
+mencatat audit; bot menarik revisi, memvalidasi ulang di Discord, lalu
+menerapkannya. Arsitektur, setup provider Discord, dan tes ada di
+**[docs/DASHBOARD-SERVER.md](docs/DASHBOARD-SERVER.md)**.

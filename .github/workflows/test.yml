@@ -1,0 +1,45 @@
+name: Test
+
+# Penjaga Vanillate Dashboard di setiap PR & push ke main:
+#   • npm test      → model dashboard + logika Edge Function dashboard-discord
+#   • npm run test:sql → skema & RPC guild_* di Postgres sekali-pakai (otorisasi,
+#                        validasi simpan, revisi, audit, alur bot)
+#   • npm run build → situs tetap ter-build
+# Tidak men-deploy apa pun (deploy tetap lewat deploy.yml saat merge ke main).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit test (model & Edge Function)
+        run: npm test
+
+      - name: Tes SQL guild dashboard (Postgres lokal)
+        run: npm run test:sql
+
+      - name: Build
+        run: npm run build
