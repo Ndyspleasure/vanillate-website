@@ -295,6 +295,15 @@ export function getChangelogBot(): Bot {
   return bots.find((b) => b.slug === CHANGELOG_PRODUCT) ?? getFeaturedBot();
 }
 
+// Produk yang dikelola Vanillate Dashboard (/dashboard, bot_slug yang sama di
+// Supabase). Seperti Changelog, tautannya hanya di halaman produk ini & footer
+// — tidak di menu utama studio.
+export const DASHBOARD_PRODUCT = 'sambung-kata';
+
+export function getDashboardBot(): Bot | undefined {
+  return bots.find((b) => b.slug === DASHBOARD_PRODUCT);
+}
+
 /** Produk lain selain `slug`, untuk section cross-link di halaman detail & FAQ. */
 export function getOtherBots(slug: string, limit = 3): Bot[] {
   return bots.filter((b) => b.slug !== slug).slice(0, limit);

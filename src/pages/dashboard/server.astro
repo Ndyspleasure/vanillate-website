@@ -1,0 +1,40 @@
+---
+// /dashboard/server/?id=<guildId> — konfigurasi satu server Discord.
+// ID server dibaca di browser (situs statis, tanpa rute dinamis); akses
+// diverifikasi di server oleh RPC guild_dashboard_get. Lihat docs/DASHBOARD-SERVER.md.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getDashboardBot } from '@data/bots';
+
+const bot = getDashboardBot();
+---
+
+<BaseLayout
+  title="Pengaturan Server"
+  description="Atur fitur, channel, dan status sinkronisasi bot Vanillate di server Discord-mu."
+  noindex={true}
+>
+  <section class="container-page py-8 sm:py-12">
+    <div data-dashboard="server" data-client-id={bot?.clientId ?? ''} data-permissions={bot?.permissions ?? '0'}>
+      <div class="flex items-center justify-center gap-3 py-20 text-sm text-ink-500" role="status">
+        <span class="h-5 w-5 animate-spin rounded-full border-2 border-amber-500/30 border-t-amber-500"></span>
+        Memuat konfigurasi server…
+      </div>
+      <noscript>
+        <p class="py-10 text-center text-sm">Dashboard membutuhkan JavaScript. Aktifkan JavaScript lalu muat ulang halaman.</p>
+      </noscript>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountServerPage } from '../../lib/dashboard/server-page';
+
+  const root = document.querySelector<HTMLElement>('[data-dashboard="server"]');
+  if (root) {
+    mountServerPage({
+      root,
+      clientId: root.dataset.clientId ?? '',
+      permissions: root.dataset.permissions ?? '0',
+    });
+  }
+</script>

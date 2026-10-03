@@ -1,0 +1,53 @@
+---
+// /dashboard — Vanillate Dashboard: login Discord + daftar server.
+// Situs statis: halaman ini hanya kerangka. Data & otorisasi ada di Supabase
+// (Edge Function dashboard-discord + RPC guild_*). Lihat docs/DASHBOARD-SERVER.md.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getDashboardBot } from '@data/bots';
+import { site } from '@data/site';
+
+// Bot yang dikelola dashboard (bot_slug 'sambung-kata'): client ID & izin
+// undangan diambil dari katalog produk, bukan ditulis ulang di sini.
+const bot = getDashboardBot();
+---
+
+<BaseLayout
+  title="Dashboard"
+  description="Masuk dengan Discord untuk mengatur fitur dan channel bot Vanillate di server Discord-mu."
+  noindex={true}
+>
+  <section class="container-page py-10 sm:py-16">
+    <div
+      data-dashboard="servers"
+      data-client-id={bot?.clientId ?? ''}
+      data-permissions={bot?.permissions ?? '0'}
+      data-privacy-url={site.legal.privacyUrl}
+      data-product-url={bot ? `/products/${bot.slug}` : '/products'}
+      data-product-name={bot?.name ?? 'Vanillate'}
+    >
+      <div class="flex items-center justify-center gap-3 py-20 text-sm text-ink-500" role="status">
+        <span class="h-5 w-5 animate-spin rounded-full border-2 border-amber-500/30 border-t-amber-500"></span>
+        Memuat dashboard…
+      </div>
+      <noscript>
+        <p class="py-10 text-center text-sm">Dashboard membutuhkan JavaScript. Aktifkan JavaScript lalu muat ulang halaman.</p>
+      </noscript>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountServersPage } from '../../lib/dashboard/servers-page';
+
+  const root = document.querySelector<HTMLElement>('[data-dashboard="servers"]');
+  if (root) {
+    mountServersPage({
+      root,
+      clientId: root.dataset.clientId ?? '',
+      permissions: root.dataset.permissions ?? '0',
+      privacyUrl: root.dataset.privacyUrl ?? '/privacy',
+      productUrl: root.dataset.productUrl ?? '/products',
+      productName: root.dataset.productName ?? 'Vanillate',
+    });
+  }
+</script>

@@ -5,7 +5,7 @@ import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
 import BotTag from '@components/BotTag.astro';
 import BotAvatar from '@components/BotAvatar.astro';
-import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, webAppUrl, webCtaLabel, productImage, badgeClass, CHANGELOG_PRODUCT } from '@data/bots';
+import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, webAppUrl, webCtaLabel, productImage, badgeClass, CHANGELOG_PRODUCT, DASHBOARD_PRODUCT } from '@data/bots';
 import FAQLink from '@components/FAQLink.astro';
 import { faqCategoryPath, faqCategoryUrl, faqCategoryFor, faqItems, faqsByCategory } from '@data/faq';
 import { site } from '@data/site';
@@ -32,6 +32,8 @@ const botFaqs = faqKategori
 const otherBots = getOtherBots(bot.slug, 3);
 // Changelog hanya milik produk utama (datanya dari repo bot Sambung Kata).
 const hasChangelog = bot.slug === CHANGELOG_PRODUCT;
+// Vanillate Dashboard: admin server mengatur bot ini dari website.
+const hasDashboard = bot.slug === DASHBOARD_PRODUCT;
 
 // Produk web: tautan aplikasi (mis. domain Netlify/Vercel) + label tombol.
 const isWeb = bot.platform === 'web';
@@ -125,6 +127,12 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
         {faqKategori && (
           <Button href={faqCategoryPath(faqKategori.slug)} variant="secondary" size="lg">
             {CTA.guide}
+          </Button>
+        )}
+        {hasDashboard && (
+          <Button href="/dashboard" variant="ghost" size="lg">
+            <Icon name="layout-dashboard" class="h-4 w-4" />
+            Dashboard
           </Button>
         )}
         {hasChangelog && (
