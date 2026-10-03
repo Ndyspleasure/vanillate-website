@@ -92,7 +92,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       </div>
 
       <!-- STATE: chat aktif -->
-      <div data-panel="chat" hidden class="flex h-[70vh] max-h-[600px] flex-col">
+      <div data-panel="chat" hidden class="hidden flex h-[70vh] max-h-[600px] flex-col">
         <div class="flex items-center justify-between border-b border-ink-200/70 px-4 py-3 dark:border-ink-800">
           <div class="min-w-0">
             <p class="truncate text-sm font-semibold" data-el="chat-subject">Percakapan</p>
@@ -172,8 +172,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     const el = <T extends HTMLElement = HTMLElement>(name: string) =>
       root.querySelector<T>(`[data-el="${name}"]`);
 
+    // Class `flex` mengalahkan atribut `hidden`, jadi panel juga di-toggle lewat class
+    // Tailwind `hidden` — tanpa ini "Memuat…" & panel chat (Terhubung/Tulis pesan) ikut tampil.
     function show(name: string) {
-      panels.forEach((p, key) => (p.hidden = key !== name));
+      panels.forEach((p, key) => {
+        const visible = key === name;
+        p.hidden = !visible;
+        p.classList.toggle('hidden', !visible);
+      });
     }
 
     let ticket: LiveChatTicket | null = null;
