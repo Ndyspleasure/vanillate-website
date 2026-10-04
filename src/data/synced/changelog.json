@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.68.1",
+    "date": "2026-10-04",
+    "title": "Vanillate Dashboard lebih andal & aman",
+    "highlights": [
+      "🛡️ Perubahan dari admin yang sudah tidak berwenang tidak bisa lagi ikut terbawa lewat /pengaturan",
+      "💾 Pengaturan yang kamu ubah lewat /pengaturan tidak lagi hilang atau kembali ke pengaturan lama saat sinkronisasi bermasalah",
+      "🔁 Bot yang diundang lagi ke server tetap membawa pengaturan lamanya ke dashboard",
+      "🧩 Satu fitur yang bermasalah (mis. channel-nya dihapus) tidak lagi menahan perubahan fitur lain"
+    ]
+  },
+  {
     "version": "2.68.0",
     "date": "2026-10-03",
     "title": "Vanillate Dashboard — atur bot di server-mu langsung dari website",
