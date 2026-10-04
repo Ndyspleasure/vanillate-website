@@ -151,6 +151,7 @@ test('displayStatus: Active hanya bila bot sudah menerapkan', () => {
   assert.equal(displayStatus({ bot: { ...bot, installed: false }, config: cfg(), dirty: true }), 'NOT_INSTALLED');
   assert.equal(displayStatus({ bot, config: cfg(), dirty: true }), 'DRAFT');
   assert.equal(displayStatus({ bot, config: cfg(), saving: true }), 'SAVING');
+  assert.equal(displayStatus({ bot, config: cfg(), dirty: true, saving: true }), 'SAVING', 'menyimpan mengalahkan draft');
   assert.equal(displayStatus({ bot, config: null }), 'ACTIVE');
 });
 
@@ -176,6 +177,7 @@ test('audit & waktu ditampilkan dalam bahasa manusia (WIB)', () => {
     'Sambung Kata · Channel khusus: tidak diatur → #sambung-kata',
   );
   assert.equal(formatAuditChange({ path: 'SOCIAL_COUNT.enabled', from: false, to: true }, ctx), 'Counting · Status: OFF → ON');
+  assert.equal(formatAuditChange({ previous_actor_id: '100000000000000002', previous_actor_name: 'budi' }, ctx), 'Sebelumnya atas nama budi');
   assert.match(formatWib('2026-10-03T17:30:00Z'), /4 Okt 2026.*00[.:]30 WIB/);
 });
 

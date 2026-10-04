@@ -384,8 +384,8 @@ export const STATUS_META: Record<SyncStatus, { label: string; tone: Tone; hint: 
 };
 
 /**
- * Status yang ditampilkan. Urutan prioritas: bot tidak ada → draft lokal →
- * sedang menyimpan → bot offline → status dari database. Status "Aktif"
+ * Status yang ditampilkan. Urutan prioritas: bot tidak ada → sedang
+ * menyimpan → draft lokal → bot offline → status dari database. Status "Aktif"
  * hanya muncul bila bot SUDAH menerapkan revisi tersimpan.
  */
 export function displayStatus(input: {
@@ -397,8 +397,9 @@ export function displayStatus(input: {
 }): SyncStatus {
   const { bot, config } = input;
   if (!bot.installed) return 'NOT_INSTALLED';
-  if (input.dirty) return 'DRAFT';
+  // Selama menyimpan, draft masih berbeda dari base sampai data baru dimuat.
   if (input.saving) return 'SAVING';
+  if (input.dirty) return 'DRAFT';
   if (!bot.online) return 'BOT_OFFLINE';
   if (!config) return 'ACTIVE';
   if (config.sync_status === 'NEEDS_ATTENTION') return 'NEEDS_ATTENTION';
@@ -462,7 +463,9 @@ export function describeIssue(issue: Issue, ctx: TextContext): string {
     case 'BOT_NOT_IN_GUILD':
       return 'Bot sudah tidak berada di server ini. Undang bot lagi untuk menerapkan konfigurasi.';
     case 'ACTOR_FORBIDDEN':
-      return 'Bot menolak perubahan ini karena penyimpannya tidak lagi punya izin Manage Server di server ini. Minta admin lain menyimpan ulang.';
+      return 'Bot menolak perubahan ini karena penyimpannya tidak lagi punya izin Manage Server di server ini. Admin lain bisa menekan Retry Sync untuk menyetujui & menerapkannya, atau mengubah lalu menyimpan ulang.';
+    case 'APPLY_FAILED':
+      return 'Bot gagal menerapkan konfigurasi ini. Konfigurasi lama tetap berlaku — coba Retry Sync sebentar lagi.';
     case 'UNKNOWN_FEATURE':
       return `Fitur ${issue.feature ?? ''} tidak dikenal oleh bot versi ini.`.replace(/\s+/g, ' ');
     case 'UNKNOWN_PURPOSE':
@@ -571,6 +574,7 @@ export const AUDIT_ACTION: Record<string, string> = {
   'sync.applied': 'Bot menerapkan revisi',
   'sync.failed': 'Bot gagal menerapkan revisi',
   'sync.resync_requested': 'Meminta Retry Sync',
+  'sync.reauthorized': 'Menyetujui revisi tertunda (Retry Sync)',
 };
 
 function show(value: unknown, isChannel: boolean, ctx: TextContext): string {
@@ -582,7 +586,10 @@ function show(value: unknown, isChannel: boolean, ctx: TextContext): string {
 
 /** Satu baris perubahan audit, mis. "Sambung Kata · Channel khusus: #a → #b". */
 export function formatAuditChange(change: unknown, ctx: TextContext): string {
-  const c = change as { path?: string; from?: unknown; to?: unknown };
+  const c = change as { path?: string; from?: unknown; to?: unknown; previous_actor_id?: string; previous_actor_name?: string | null };
+  if (c?.previous_actor_id !== undefined) {
+    return `Sebelumnya atas nama ${c.previous_actor_name ?? c.previous_actor_id ?? '—'}`;
+  }
   if (!c?.path) return describeIssue(change as Issue, ctx);
   const [fk, field, sub] = c.path.split('.');
   const f = ctx.registry.find((x) => x.key === fk);

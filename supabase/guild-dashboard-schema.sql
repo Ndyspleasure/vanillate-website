@@ -955,8 +955,25 @@ begin
     perform public.guild_dashboard_fail('NO_CONFIG');
   end if;
 
-  -- Satu permintaan per 10 detik cukup; klik beruntun tidak menambah antrean.
-  if v_cfg.resync_requested_at is null or v_cfg.resync_requested_at < now() - interval '10 seconds' then
+  -- Revisi website yang belum diterapkan: admin yang menekan Retry Sync ikut
+  -- menyetujuinya, jadi bot memeriksa izin admin ini — bukan penyimpan awal
+  -- yang mungkin sudah kehilangan Manage Server (ACTOR_FORBIDDEN).
+  if v_cfg.current_revision > v_cfg.applied_revision and v_cfg.updated_source = 'web'
+     and v_cfg.updated_by is distinct from v_me.discord_id then
+    update public.guild_config c
+    set updated_by = v_me.discord_id, updated_by_name = v_me.display_name
+    where c.id = v_cfg.id;
+    perform public.guild_config_audit_add(p_bot_slug, p_guild_id, v_me.discord_id, v_me.display_name,
+      'web', v_cfg.current_revision, 'sync.reauthorized',
+      jsonb_build_array(jsonb_build_object('previous_actor_id', v_cfg.updated_by,
+        'previous_actor_name', v_cfg.updated_by_name)));
+  end if;
+
+  -- Klik beruntun tidak menambah antrean: permintaan yang belum dilayani bot
+  -- tidak diperbarui selama 10 detik. Yang sudah dilayani boleh diulang kapan saja.
+  if v_cfg.resync_requested_at is null
+     or v_cfg.resync_requested_at < now() - interval '10 seconds'
+     or v_cfg.resync_requested_at <= coalesce(v_cfg.attempted_at, '-infinity'::timestamptz) then
     update public.guild_config c set resync_requested_at = now() where c.id = v_cfg.id;
     perform public.guild_config_audit_add(p_bot_slug, p_guild_id, v_me.discord_id, v_me.display_name,
       'web', v_cfg.current_revision, 'sync.resync_requested', '[]'::jsonb);
@@ -983,7 +1000,8 @@ begin
   values (p_bot_slug, p_guild_id, now(), auth.uid())
   on conflict (bot_slug, guild_id) do update
     set requested_at = now(), requested_by = auth.uid()
-    where s.requested_at is null or s.requested_at < now() - interval '5 seconds';
+    where s.requested_at is null or s.requested_at < now() - interval '5 seconds'
+       or s.requested_at <= coalesce(s.refreshed_at, '-infinity'::timestamptz);
 
   return jsonb_build_object('ok', true, 'requested_at', now(),
     'bot_online', public.guild_dashboard_bot_online(p_bot_slug));
@@ -1097,7 +1115,10 @@ end;
 $$;
 
 -- Hasil percobaan bot.
---   p_kind = 'apply'  → hasil menerapkan p_revision (ok / gagal + issues)
+--   p_kind = 'apply'  → hasil menerapkan p_revision. ok + issues = diterapkan,
+--                       tapi fitur yang bermasalah tetap memakai pengaturan
+--                       lamanya (issues jadi laporan kesehatan). Gagal = revisi
+--                       tidak diterapkan sama sekali (mis. ACTOR_FORBIDDEN).
 --   p_kind = 'health' → pemeriksaan ulang revisi yang sudah diterapkan
 -- issues: [{ code, feature?, purpose?, channel_id?, missing?, detail? }]
 create or replace function public.guild_bot_report(
@@ -1250,9 +1271,12 @@ begin
     attempted_revision = case when v_synced then c.current_revision + 1 else c.attempted_revision end,
     attempted_at       = case when v_synced then now() else c.attempted_at end,
     last_error         = case when v_synced then null else c.last_error end,
-    updated_by         = p_actor_id,
-    updated_by_name    = p_actor_name,
-    updated_source     = 'discord',
+    -- Revisi website yang belum diterapkan tetap atas nama penyimpannya, supaya
+    -- bot tetap memeriksa izin orang itu (ACTOR_FORBIDDEN) sebelum menerapkan
+    -- gabungannya. Admin Discord-nya tetap tercatat di audit 'config.discord'.
+    updated_by         = case when not v_synced and c.updated_source = 'web' then c.updated_by else p_actor_id end,
+    updated_by_name    = case when not v_synced and c.updated_source = 'web' then c.updated_by_name else p_actor_name end,
+    updated_source     = case when not v_synced and c.updated_source = 'web' then 'web' else 'discord' end,
     updated_at         = now()
   where c.id = v_cfg.id
   returning c.current_revision into v_rev;
@@ -1265,8 +1289,9 @@ end;
 $$;
 
 -- Impor konfigurasi lama dari bot (dibuat lewat /pengaturan sebelum dashboard
--- ada). Hanya untuk server yang BELUM punya baris guild_config — tidak pernah
--- menimpa konfigurasi yang sudah dikelola dashboard.
+-- ada). Hanya untuk server yang BELUM punya konfigurasi (tanpa baris
+-- guild_config, atau baris kosong di revisi 0 — mis. dari simpan tanpa
+-- perubahan) — tidak pernah menimpa konfigurasi yang sudah dikelola dashboard.
 --   p_items = [{ "guild_id", "features": { KEY: { enabled } },
 --                "channels": [{ feature_key, purpose, channel_id }] }]
 create or replace function public.guild_bot_import(p_bot_slug text, p_items jsonb)
@@ -1297,7 +1322,8 @@ begin
     if v_gid is null or v_gid !~ '^[0-9]{15,22}$' then
       v_skipped := v_skipped + 1; continue;
     end if;
-    if exists (select 1 from public.guild_config c where c.bot_slug = p_bot_slug and c.guild_id = v_gid) then
+    if exists (select 1 from public.guild_config c
+               where c.bot_slug = p_bot_slug and c.guild_id = v_gid and c.current_revision > 0) then
       v_skipped := v_skipped + 1; continue;
     end if;
 
@@ -1323,12 +1349,17 @@ begin
       v_skipped := v_skipped + 1; continue;
     end if;
 
-    insert into public.guild_config
+    insert into public.guild_config as c
       (bot_slug, guild_id, current_revision, applied_revision, attempted_revision,
        attempted_at, applied_at, updated_by, updated_by_name, updated_source)
     values
       (p_bot_slug, v_gid, 1, 1, 1, now(), now(), 'bot', 'Impor dari /pengaturan', 'import')
-    on conflict (bot_slug, guild_id) do nothing;
+    on conflict (bot_slug, guild_id) do update set
+      current_revision = 1, applied_revision = 1, attempted_revision = 1,
+      attempted_at = now(), applied_at = now(), last_error = null, health = '[]'::jsonb,
+      updated_by = 'bot', updated_by_name = 'Impor dari /pengaturan', updated_source = 'import',
+      updated_at = now()
+    where c.current_revision = 0;
     if not found then
       v_skipped := v_skipped + 1; continue;
     end if;

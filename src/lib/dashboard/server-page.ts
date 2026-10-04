@@ -92,10 +92,20 @@ export function mountServerPage(cfg: PageConfig): void {
   let audit: AuditRow[] | null = null;
   let auditDone = false;
   let auditLoading = false;
+  let auditError = false;
   let syncWatchUntil = 0;
-  let refreshWatch: { since: number; until: number } | null = null;
+  // Selesai saat refreshed_at snapshot berubah dari nilai sebelum permintaan
+  // (dibandingkan dengan nilai dari server, bukan jam browser).
+  let refreshWatch: { prev: string | null; until: number } | null = null;
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let remoteChanged = false;
+  // Revisi tempat draft dibuat. Dikirim saat simpan, jadi perubahan dari tempat
+  // lain selama mengedit selalu ditolak STALE_REVISION (bukan ditimpa diam-diam).
+  let baseRevision = 0;
+  // Selisih jam server − jam browser (server_time dari guild_dashboard_get).
+  let clockSkew = 0;
+  let deferredRender = false;
+  let selectFocusAt = 0;
 
   // Dibaca lewat fungsi: TypeScript tidak tahu load() mengubah `data`.
   const current = (): GuildData | null => data;
@@ -104,6 +114,7 @@ export function mountServerPage(cfg: PageConfig): void {
   const changes = () => (data ? diffStates(base, draft, data.registry) : []);
   const dirty = () => changes().length > 0;
   const editable = () => Boolean(data?.bot.installed);
+  const serverNow = () => Date.now() + clockSkew;
 
   function parseTab(hash: string): Tab {
     const id = hash.replace(/^#/, '') as Tab;
@@ -114,20 +125,28 @@ export function mountServerPage(cfg: PageConfig): void {
 
   function applyData(next: GuildData, { keepDraft }: { keepDraft: boolean }): void {
     const wasDirty = data ? dirty() : false;
-    const prevRevision = data?.config?.revision ?? 0;
+    const nextRevision = next.config?.revision ?? 0;
     data = next;
+    const serverTime = Date.parse(next.server_time);
+    if (Number.isFinite(serverTime)) clockSkew = serverTime - Date.now();
     const serverState = normalizeState(next.state, next.registry);
     if (!keepDraft || !wasDirty) {
       base = serverState;
       draft = cloneState(serverState);
+      baseRevision = nextRevision;
       remoteChanged = false;
-    } else if ((next.config?.revision ?? 0) === prevRevision) {
+    } else if (nextRevision === baseRevision) {
       base = serverState;
       // Fitur baru di registry (bot baru diperbarui) ikut masuk ke draft.
-      for (const k of Object.keys(serverState)) if (!draft[k]) draft[k] = JSON.parse(JSON.stringify(serverState[k]));
+      for (const k of Object.keys(serverState)) if (!draft[k]) draft[k] = cloneState({ [k]: serverState[k] })[k];
     } else {
-      // Ada yang menyimpan di tempat lain saat user sedang mengedit: draft
-      // dipertahankan, simpan akan ditolak STALE_REVISION sampai dimuat ulang.
+      // Ada yang menyimpan di tempat lain saat user sedang mengedit: draft &
+      // base dipertahankan (simpan ditolak STALE_REVISION sampai dimuat ulang).
+      // Fitur baru di registry tetap dilengkapi supaya tampilan tidak rusak.
+      for (const k of Object.keys(serverState)) {
+        if (!base[k]) base[k] = cloneState({ [k]: serverState[k] })[k];
+        if (!draft[k]) draft[k] = cloneState({ [k]: serverState[k] })[k];
+      }
       remoteChanged = true;
     }
     if (next.config && next.config.revision <= next.config.applied_revision) justSaved = false;
@@ -145,54 +164,109 @@ export function mountServerPage(cfg: PageConfig): void {
     }
   }
 
+  /** Bot belum memproses revisi tersimpan atau permintaan Retry Sync. */
+  function waitingForBot(): boolean {
+    const c = data?.config;
+    if (!c) return false;
+    if (c.revision > c.applied_revision && c.sync_status !== 'NEEDS_ATTENTION') return true;
+    if (!c.resync_requested_at) return false;
+    const attempted = Date.parse(c.attempted_at ?? '');
+    return !Number.isFinite(attempted) || Date.parse(c.resync_requested_at) > attempted;
+  }
+
   function schedulePoll(): void {
     if (pollTimer) clearTimeout(pollTimer);
     const now = Date.now();
     let delay = IDLE_POLL_MS;
-    const cfgInfo = data?.config;
-    const pending = cfgInfo && cfgInfo.revision > cfgInfo.applied_revision && cfgInfo.sync_status !== 'NEEDS_ATTENTION';
     if (refreshWatch && now < refreshWatch.until) delay = FAST_POLL_MS;
-    else if (pending) delay = now < syncWatchUntil ? FAST_POLL_MS : SLOW_POLL_MS;
+    else if (waitingForBot()) delay = now < syncWatchUntil ? FAST_POLL_MS : SLOW_POLL_MS;
     pollTimer = setTimeout(poll, delay);
   }
 
-  async function poll(): Promise<void> {
-    if (document.hidden) return schedulePoll();
-    const before = data;
-    await load(true);
-    if (!data) return schedulePoll();
+  /** Bot belum juga mengambil revisi tersimpan setelah SYNC_TIMEOUT_MS (jam server). */
+  function syncTimedOut(): boolean {
+    const c = data?.config;
+    return Boolean(c && data?.bot.online && c.revision > c.applied_revision && c.sync_status !== 'NEEDS_ATTENTION'
+      && c.attempted_revision !== c.revision && Date.parse(c.updated_at) < serverNow() - SYNC_TIMEOUT_MS);
+  }
 
-    if (refreshWatch) {
-      const at = Date.parse(data.snapshot?.refreshed_at ?? '');
-      if (Number.isFinite(at) && at >= refreshWatch.since) {
-        refreshWatch = null;
-        toast('Data channel dari Discord diperbarui.', 'success');
-      } else if (Date.now() > refreshWatch.until) {
-        refreshWatch = null;
-        toast(data.bot.online ? 'Bot belum mengirim data channel. Coba lagi sebentar lagi.' : 'Bot sedang offline — data channel diperbarui saat bot online.', 'warning', 6000);
+  /** Isi yang ditampilkan (tanpa stempel waktu yang berubah tiap permintaan). */
+  const renderSignature = () =>
+    JSON.stringify({ data: data ? { ...data, server_time: null, bot: { ...data.bot, last_heartbeat_at: null } } : null, pageError, timedOut: syncTimedOut() });
+
+  /** Riwayat bertambah saat revisi/percobaan/permintaan berubah → muat ulang. */
+  const auditSignature = (c: GuildData['config'] | undefined) =>
+    c ? `${c.revision}|${c.applied_revision}|${c.attempted_at ?? ''}|${c.resync_requested_at ?? ''}` : '';
+
+  async function poll(): Promise<void> {
+    if (pollTimer) clearTimeout(pollTimer);
+    pollTimer = null;
+    try {
+      if (document.hidden) return;
+      const before = data;
+      const beforeSig = renderSignature();
+      const watching = refreshWatch;
+      const wasRemote = remoteChanged;
+      await load(true);
+      if (!data) return;
+
+      if (refreshWatch) {
+        if ((data.snapshot?.refreshed_at ?? null) !== refreshWatch.prev) {
+          refreshWatch = null;
+          toast('Data channel dari Discord diperbarui.', 'success');
+        } else if (Date.now() > refreshWatch.until) {
+          refreshWatch = null;
+          toast(data.bot.online ? 'Bot belum mengirim data channel. Coba lagi sebentar lagi.' : 'Bot sedang offline — data channel diperbarui saat bot online.', 'warning', 6000);
+        }
       }
+      const was = before?.config;
+      const now = data.config;
+      if (was && now && was.applied_revision < now.applied_revision && now.applied_revision >= now.revision) {
+        toast(now.sync_status === 'ACTIVE' ? `Revisi ${now.applied_revision} sudah diterapkan bot.` : 'Revisi diterapkan, tapi ada yang perlu diperhatikan.', now.sync_status === 'ACTIVE' ? 'success' : 'warning');
+      }
+      const justApplied = Boolean(was && now && was.applied_revision < now.applied_revision);
+      if (was && now && !justApplied && now.sync_status === 'NEEDS_ATTENTION' && was.sync_status !== 'NEEDS_ATTENTION') {
+        toast('Bot menemukan masalah saat menerapkan konfigurasi. Lihat bagian Perlu perhatian.', 'danger', 6000);
+      }
+      if (now && now.revision > (was?.revision ?? 0) && was && !justSaved && now.updated_source !== 'web') {
+        toast('Konfigurasi baru saja diubah dari Discord (/pengaturan).', 'info', 6000);
+      }
+      if (audit !== null && auditSignature(was) !== auditSignature(now)) {
+        audit = null;
+        auditDone = false;
+      }
+      // Tidak ada yang berubah → jangan gambar ulang (fokus tetap di tempatnya),
+      // kecuali gambar ulang yang tertunda sudah melewati batas 15 detik.
+      const deferExpired = deferredRender && Date.now() - selectFocusAt >= 15000;
+      if (!deferExpired && renderSignature() === beforeSig && refreshWatch === watching && remoteChanged === wasRemote) return;
+      // Dropdown channel sedang dipakai: tunda gambar ulang (mengganti
+      // elemennya menutup daftar pilihan di tengah jalan) — paling lama 15 dtk.
+      const active = document.activeElement;
+      if (active instanceof HTMLSelectElement && root.contains(active) && Date.now() - selectFocusAt < 15000) {
+        deferredRender = true;
+        return;
+      }
+      renderAll();
+    } finally {
+      schedulePoll();
     }
-    const was = before?.config;
-    const now = data.config;
-    if (was && now && was.applied_revision < now.applied_revision && now.applied_revision >= now.revision) {
-      toast(now.sync_status === 'ACTIVE' ? `Revisi ${now.applied_revision} sudah diterapkan bot.` : 'Revisi diterapkan, tapi ada yang perlu diperhatikan.', now.sync_status === 'ACTIVE' ? 'success' : 'warning');
-    }
-    if (was && now && now.sync_status === 'NEEDS_ATTENTION' && was.sync_status !== 'NEEDS_ATTENTION') {
-      toast('Bot menemukan masalah saat menerapkan konfigurasi. Lihat bagian Perlu perhatian.', 'danger', 6000);
-    }
-    if (now && now.revision > (was?.revision ?? 0) && was && !justSaved && now.updated_source !== 'web') {
-      toast('Konfigurasi baru saja diubah dari Discord (/pengaturan).', 'info', 6000);
-    }
-    renderAll();
-    schedulePoll();
   }
 
   // ─── Render: kerangka ────────────────────────────────────────────────────
 
+  /** Selector untuk memulihkan fokus setelah innerHTML diganti. */
+  function focusSelector(el: HTMLElement | null): string | null {
+    if (!el || !root.contains(el)) return null;
+    if (el.dataset.focus) return `[data-focus="${CSS.escape(el.dataset.focus)}"]`;
+    if (el.id) return `#${CSS.escape(el.id)}`;
+    if (el.dataset.action) return `[data-action="${CSS.escape(el.dataset.action)}"]`;
+    return null;
+  }
+
   function renderAll(): void {
+    deferredRender = false;
     if (!data) return renderError();
-    const active = document.activeElement as HTMLElement | null;
-    const focusKey = active?.dataset?.focus;
+    const focusSel = focusSelector(document.activeElement as HTMLElement | null);
 
     root.innerHTML = `
       <a href="/dashboard/" class="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900 dark:text-cream-300 dark:hover:text-cream-50">
@@ -211,8 +285,8 @@ export function mountServerPage(cfg: PageConfig): void {
       <section id="panel" role="tabpanel" aria-labelledby="tab-${tab}" class="mt-6 pb-28">${panelHtml()}</section>
       ${saveBarHtml()}`;
     wireAvatars(root);
-    if (focusKey) root.querySelector<HTMLElement>(`[data-focus="${CSS.escape(focusKey)}"]`)?.focus();
-    if (tab === 'audit-log' && audit === null && !auditLoading) void loadAudit();
+    if (focusSel) root.querySelector<HTMLElement>(focusSel)?.focus();
+    if (tab === 'audit-log' && audit === null && !auditLoading && !auditError) void loadAudit();
   }
 
   function renderError(): void {
@@ -327,7 +401,7 @@ export function mountServerPage(cfg: PageConfig): void {
     if (remoteChanged) {
       out.push({ text: `Konfigurasi server ini diubah di tempat lain (revisi ${c?.revision ?? '?'}) saat kamu sedang mengedit. Muat versi terbaru sebelum menyimpan.`, tone: 'warning', action: 'reload-latest' });
     }
-    if (c && c.revision > c.applied_revision && c.sync_status !== 'NEEDS_ATTENTION' && d.bot.online && c.attempted_revision !== c.revision && Date.parse(c.updated_at) < Date.now() - SYNC_TIMEOUT_MS) {
+    if (syncTimedOut()) {
       out.push({ text: describeError('SYNC_TIMEOUT'), tone: 'warning' });
     }
     return out;
@@ -529,7 +603,7 @@ export function mountServerPage(cfg: PageConfig): void {
             <div class="${CARD} p-5">
               <div class="flex items-center justify-between gap-3">
                 <h2 class="flex items-center gap-2 font-display text-lg font-semibold">${icon(sec.ic, 'h-5 w-5 text-amber-600')} ${sec.title}</h2>
-                <button type="button" data-tab="${sec.id}" class="text-sm font-medium text-amber-700 hover:underline dark:text-amber-300">Atur →</button>
+                <button type="button" data-tab="${sec.id}" data-focus="go-${sec.id}" class="text-sm font-medium text-amber-700 hover:underline dark:text-amber-300">Atur →</button>
               </div>
               <ul class="mt-4 divide-y divide-ink-900/5 dark:divide-cream-100/5">
                 ${list
@@ -571,7 +645,7 @@ export function mountServerPage(cfg: PageConfig): void {
           <td class="py-3 pr-4 text-ink-600 dark:text-cream-300/80">${esc(p.label)}</td>
           <td class="py-3 pr-4 font-mono text-xs">${id ? esc(channelLabel(ctx(), id)) : '—'}</td>
           <td class="py-3 pr-4">${status}</td>
-          <td class="py-3 text-right"><button type="button" data-tab="${sectionTab}" class="text-xs font-medium text-amber-700 hover:underline dark:text-amber-300">Ubah</button></td>
+          <td class="py-3 text-right"><button type="button" data-tab="${sectionTab}" data-focus="edit-${esc(f.key)}-${esc(p.key)}" class="text-xs font-medium text-amber-700 hover:underline dark:text-amber-300">Ubah</button></td>
         </tr>`;
       }),
     );
@@ -592,6 +666,10 @@ export function mountServerPage(cfg: PageConfig): void {
   const SOURCE_LABEL: Record<string, string> = { web: 'Website', discord: 'Discord', import: 'Impor', bot: 'Bot' };
 
   function auditHtml(): string {
+    if (audit === null && auditError) {
+      return `<div class="text-sm text-ink-600 dark:text-cream-300">Gagal memuat riwayat.
+        <button type="button" data-action="audit-retry" class="ml-1 font-medium text-amber-700 underline dark:text-amber-300">Coba lagi</button></div>`;
+    }
     if (audit === null) return loadingBlock('Memuat riwayat…');
     if (!audit.length) return `<p class="text-sm text-ink-500">Belum ada riwayat perubahan untuk server ini.</p>`;
     return `
@@ -629,8 +707,11 @@ export function mountServerPage(cfg: PageConfig): void {
       const rows = await auditList(guildId, before, 20);
       audit = more && audit ? [...audit, ...rows] : rows;
       auditDone = rows.length < 20;
+      auditError = false;
     } catch (err) {
-      audit = audit ?? [];
+      // Gagal memuat halaman pertama → tampilkan error + Coba lagi (bukan
+      // "belum ada riwayat"). Gagal "muat lebih banyak" → daftar lama tetap.
+      if (!more || audit === null) auditError = true;
       toast(describeError(err instanceof DashboardError ? err.code : 'NETWORK'), 'danger');
     } finally {
       auditLoading = false;
@@ -678,13 +759,15 @@ export function mountServerPage(cfg: PageConfig): void {
     attemptIssues = [];
     renderAll();
     try {
-      const res = await saveConfig(guildId, data.config?.revision ?? 0, buildSavePayload(draft, data.registry));
+      const res = await saveConfig(guildId, baseRevision, buildSavePayload(draft, data.registry));
       saving = false;
       if (!res.changed) {
         toast('Tidak ada perubahan yang perlu disimpan.', 'info');
       } else {
         justSaved = true;
         syncWatchUntil = Date.now() + SYNC_TIMEOUT_MS;
+        audit = null;
+        auditDone = false;
         toast(`Tersimpan sebagai revisi ${res.revision}. Menunggu bot menerapkan…`, 'success');
       }
       await load(false);
@@ -731,14 +814,16 @@ export function mountServerPage(cfg: PageConfig): void {
 
   async function discordRefresh(): Promise<void> {
     try {
+      const prev = data?.snapshot?.refreshed_at ?? null;
       const r = await requestDiscordRefresh(guildId);
-      refreshWatch = { since: Date.now() - 2000, until: Date.now() + REFRESH_TIMEOUT_MS };
+      refreshWatch = { prev, until: Date.now() + REFRESH_TIMEOUT_MS };
       if (!r.bot_online) toast('Bot sedang offline — data channel diperbarui saat bot online.', 'warning');
       renderAll();
       if (pollTimer) clearTimeout(pollTimer);
       pollTimer = setTimeout(poll, FAST_POLL_MS);
     } catch (err) {
       toast(describeError(err instanceof DashboardError ? err.code : 'NETWORK'), 'danger');
+      schedulePoll();
     }
   }
 
@@ -786,6 +871,10 @@ export function mountServerPage(cfg: PageConfig): void {
       case 'audit-more':
         void loadAudit(true);
         break;
+      case 'audit-retry':
+        auditError = false;
+        renderAll();
+        break;
       case 'reload':
         root.innerHTML = loadingBlock();
         void load(false).then(() => {
@@ -810,6 +899,18 @@ export function mountServerPage(cfg: PageConfig): void {
     else delete draft[key].channels[purpose];
     attemptIssues = attemptIssues.filter((i) => i.feature !== key);
     renderAll();
+  });
+
+  // Gambar ulang yang ditunda selama dropdown channel dipakai.
+  root.addEventListener('focusin', (e) => {
+    if (e.target instanceof HTMLSelectElement) selectFocusAt = Date.now();
+  });
+  root.addEventListener('focusout', () => {
+    if (!deferredRender) return;
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (deferredRender && !(a instanceof HTMLSelectElement && root.contains(a))) renderAll();
+    }, 0);
   });
 
   window.addEventListener('hashchange', () => {
@@ -853,7 +954,7 @@ export function mountServerPage(cfg: PageConfig): void {
 
     // Data channel belum ada / basi → minta bot menerbitkan ulang otomatis.
     const at = Date.parse(loaded.snapshot?.refreshed_at ?? '');
-    if (loaded.bot.installed && (!Number.isFinite(at) || Date.now() - at > STALE_SNAPSHOT_MS)) await discordRefresh();
+    if (loaded.bot.installed && (!Number.isFinite(at) || serverNow() - at > STALE_SNAPSHOT_MS)) await discordRefresh();
     else schedulePoll();
   })();
 }
