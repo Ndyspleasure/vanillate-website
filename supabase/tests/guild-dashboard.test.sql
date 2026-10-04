@@ -6,7 +6,8 @@
 --  Cakupan: otorisasi (anon / tanpa identitas Discord / tanpa akses / akses
 --  basi / user lain), validasi simpan, revisi & optimistic concurrency, audit,
 --  RLS tabel, alur bot (poll → apply ok/gagal → resync → health), perubahan
---  dari Discord, impor, registry, snapshot & refresh.
+--  dari Discord, impor, registry, snapshot & refresh, ACTOR_FORBIDDEN & Retry
+--  Sync oleh admin lain, apply sebagian.
 -- ════════════════════════════════════════════════════════════════════════════
 
 \set ON_ERROR_STOP on
@@ -409,5 +410,156 @@ set role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', false);
 select tests.throws($$select public.guild_bot_get_configs('sambung-kata')$$, 'permission denied', 'user tidak bisa membaca konfigurasi semua server');
 reset role;
+
+-- ─── Revisi web dari admin yang kehilangan izin (ACTOR_FORBIDDEN) ──────────
+-- Server tim: A & B sama-sama admin. B menyimpan, lalu kehilangan Manage Server.
+insert into public.bot_guilds (guild_id, name, is_active) values ('900000000000000007', 'Server Tim', true);
+insert into public.guild_dashboard_access (user_id, guild_id, discord_user_id, guild_name, verified_at) values
+  ('11111111-1111-1111-1111-111111111111', '900000000000000007', '100000000000000001', 'Server Tim', now()),
+  ('22222222-2222-2222-2222-222222222222', '900000000000000007', '100000000000000002', 'Server Tim', now());
+
+create or replace function tests.pending_item(p_guild text)
+returns jsonb language sql as $$
+  select e from jsonb_array_elements(public.guild_bot_poll('sambung-kata') -> 'pending') e
+  where e ->> 'guild_id' = p_guild limit 1
+$$;
+
+set role service_role;
+select public.guild_bot_publish_snapshot('sambung-kata', $json$[{
+  "guild_id":"900000000000000007","guild_name":"Server Tim","channels":[
+    {"id":"800000000000000071","name":"sambung-kata","type":0,"perms":"3072"}]}]$json$::jsonb);
+reset role;
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', false);
+select public.guild_config_save('900000000000000007', 0, '{"SAMBUNG_KATA":{"enabled":false}}', '[]');
+reset role;
+set role service_role;
+select public.guild_bot_report('sambung-kata', '900000000000000007', 1, false, '[{"code":"ACTOR_FORBIDDEN"}]');
+select tests.ok((
+  select (r ->> 'revision')::int = 2 and not (r ->> 'applied')::boolean
+  from (select public.guild_bot_record_local_change('sambung-kata', '900000000000000007',
+    '100000000000000009', 'admin-discord',
+    '[{"feature_key":"SAMBUNG_KATA","channels":{"game_channel":"800000000000000071"}}]') r) x
+), 'perubahan Discord di atas revisi web yang ditolak tidak menandai berlaku');
+select tests.ok((
+  select i ->> 'updated_source' = 'web' and i ->> 'updated_by' = '100000000000000002'
+     and (i ->> 'revision')::int = 2 and i -> 'features' -> 'SAMBUNG_KATA' ->> 'enabled' = 'false'
+  from (select tests.pending_item('900000000000000007') i) x
+), 'revisi gabungan tetap atas nama penyimpan web → bot memeriksa izinnya lagi');
+reset role;
+select tests.ok((
+  select a.actor_id = '100000000000000009' and a.source = 'discord'
+  from public.guild_config_audit a
+  where a.guild_id = '900000000000000007' and a.action = 'config.discord'
+), 'admin Discord tetap tercatat di audit');
+
+-- Admin lain (A) menekan Retry Sync → revisi tertunda kini atas nama A.
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', false);
+select tests.ok((public.guild_config_request_resync('900000000000000007') ->> 'ok')::boolean, 'admin lain meminta Retry Sync');
+reset role;
+select tests.ok((
+  select updated_by = '100000000000000001' and updated_by_name = 'Andi' and updated_source = 'web'
+  from public.guild_config where guild_id = '900000000000000007'
+), 'Retry Sync oleh admin lain mengambil alih revisi web tertunda');
+select tests.ok((
+  select a.actor_id = '100000000000000001' and a.revision = 2
+     and a.changed_fields -> 0 ->> 'previous_actor_id' = '100000000000000002'
+  from public.guild_config_audit a
+  where a.guild_id = '900000000000000007' and a.action = 'sync.reauthorized'
+), 'pengambilalihan revisi tercatat di audit');
+set role service_role;
+select tests.ok((
+  select (i ->> 'resync')::boolean and i ->> 'updated_by' = '100000000000000001'
+  from (select tests.pending_item('900000000000000007') i) x
+), 'bot menerima revisi atas nama admin yang meminta Retry Sync');
+select public.guild_bot_report('sambung-kata', '900000000000000007', 2, true, '[]');
+reset role;
+
+-- Retry Sync yang sudah dilayani bot boleh diulang segera (bukan dibuang diam-diam).
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', false);
+select public.guild_config_request_resync('900000000000000007');
+reset role;
+select tests.ok((
+  select updated_by = '100000000000000001' from public.guild_config where guild_id = '900000000000000007'
+), 'Retry Sync revisi yang sudah berlaku tidak mengubah penyimpan');
+set role service_role;
+select tests.ok((
+  select (i ->> 'resync')::boolean from (select tests.pending_item('900000000000000007') i) x
+), 'Retry Sync segera setelah dilayani bot tetap diteruskan');
+select public.guild_bot_report('sambung-kata', '900000000000000007', 2, true, '[]');
+reset role;
+
+-- Apply sebagian: diterapkan (ok) + masalah fitur → applied naik, tampil sebagai kesehatan.
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', false);
+select public.guild_config_save('900000000000000007', 2, '{"SAMBUNG_KATA":{"enabled":true}}', '[]');
+reset role;
+set role service_role;
+select tests.ok((
+  select r ->> 'sync_status' = 'NEEDS_ATTENTION' and (r ->> 'applied_revision')::int = 3
+  from (select public.guild_bot_report('sambung-kata', '900000000000000007', 3, true,
+    '[{"code":"MISSING_PERMISSIONS","feature":"SAMBUNG_KATA","missing":["Send Messages"]}]') r) x
+), 'diterapkan dengan masalah fitur → applied naik, NEEDS_ATTENTION lewat kesehatan');
+reset role;
+select tests.ok((
+  select last_error is null and health @> '[{"code":"MISSING_PERMISSIONS"}]'
+  from public.guild_config where guild_id = '900000000000000007'
+), 'masalah fitur disimpan sebagai kesehatan, bukan kegagalan apply');
+
+-- Refresh Discord Data yang sudah dilayani boleh diulang segera.
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', false);
+select public.guild_dashboard_request_refresh('900000000000000007');
+reset role;
+set role service_role;
+select public.guild_bot_publish_snapshot('sambung-kata', $json$[{
+  "guild_id":"900000000000000007","guild_name":"Server Tim","channels":[]}]$json$::jsonb);
+reset role;
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', false);
+select public.guild_dashboard_request_refresh('900000000000000007');
+reset role;
+set role service_role;
+select tests.ok((
+  select public.guild_bot_poll('sambung-kata') -> 'refresh' ? '900000000000000007'
+), 'Refresh Discord Data segera setelah dilayani tetap diteruskan');
+reset role;
+
+-- ─── Impor tetap jalan untuk baris kosong revisi 0 ──────────────────────────
+insert into public.bot_guilds (guild_id, name, is_active) values ('900000000000000008', 'Server Kosong', true);
+insert into public.guild_dashboard_access (user_id, guild_id, discord_user_id, guild_name, verified_at) values
+  ('11111111-1111-1111-1111-111111111111', '900000000000000008', '100000000000000001', 'Server Kosong', now());
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', false);
+select tests.ok((
+  select not (r ->> 'changed')::boolean
+  from (select public.guild_config_save('900000000000000008', 0, '{}', '[]') r) x
+), 'simpan tanpa perubahan');
+reset role;
+select tests.ok((
+  select current_revision = 0 from public.guild_config where guild_id = '900000000000000008'
+), 'simpan tanpa perubahan meninggalkan baris kosong revisi 0');
+set role service_role;
+select tests.ok((
+  select (r ->> 'imported')::int = 1
+  from (select public.guild_bot_import('sambung-kata',
+    '[{"guild_id":"900000000000000008","features":{"SAMBUNG_KATA":{"enabled":false}}}]'::jsonb) r) x
+), 'baris kosong revisi 0 tidak menghalangi impor pengaturan lama');
+select tests.ok((
+  select (r ->> 'imported')::int = 0 and (r ->> 'skipped')::int = 1
+  from (select public.guild_bot_import('sambung-kata',
+    '[{"guild_id":"900000000000000008","features":{"SAMBUNG_KATA":{"enabled":true}}}]'::jsonb) r) x
+), 'impor tidak pernah menimpa konfigurasi yang sudah ada');
+reset role;
+select tests.ok((
+  select current_revision = 1 and applied_revision = 1 and updated_source = 'import' and sync_status = 'ACTIVE'
+  from public.guild_config where guild_id = '900000000000000008'
+), 'server dari baris kosong diimpor di revisi 1, ACTIVE');
+select tests.ok((
+  select enabled = false from public.guild_feature_config
+  where guild_id = '900000000000000008' and feature_key = 'SAMBUNG_KATA'
+), 'nilai impor tersimpan');
 
 select 'SEMUA TES LULUS' as hasil;

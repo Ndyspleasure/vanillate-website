@@ -219,12 +219,15 @@ export function mountServersPage(cfg: PageConfig): void {
 
   // ─── Alur ────────────────────────────────────────────────────────────────
 
-  async function load(force = false): Promise<void> {
+  /** @returns true bila daftar server berhasil dimuat. */
+  async function load(force = false): Promise<boolean> {
     try {
       data = await fetchServers(force);
       renderServers();
+      return true;
     } catch (err) {
       handleError(err);
+      return false;
     }
   }
 
@@ -312,8 +315,7 @@ export function mountServersPage(cfg: PageConfig): void {
     } else if (action === 'refresh') {
       btn.disabled = true;
       btn.innerHTML = `${icon('refresh-cw', 'h-4 w-4 animate-spin')} Menyegarkan…`;
-      await load(true);
-      toast('Daftar server diperbarui dari Discord.', 'success');
+      if (await load(true)) toast('Daftar server diperbarui dari Discord.', 'success');
     } else if (action === 'retry') {
       root.innerHTML = loadingBlock();
       await load(true);

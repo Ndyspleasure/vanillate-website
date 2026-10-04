@@ -55,8 +55,11 @@ Setiap RPC user memanggil `guild_dashboard_assert_access(guild_id)`:
    atau Manage Server. Lebih tua → `ACCESS_STALE`; website memverifikasi ulang
    otomatis lalu mengulang permintaan.
 4. Simpan butuh bot terpasang (`bot_guilds.is_active`) → `BOT_NOT_INSTALLED`.
-5. Bot memeriksa lagi saat menerapkan: penyimpan masih Manage Server?
-   (`ACTOR_FORBIDDEN` bila tidak).
+5. Bot memeriksa lagi saat menerapkan: penyimpan revisi website yang belum
+   berlaku masih Manage Server? (`ACTOR_FORBIDDEN` bila tidak). Perubahan dari
+   Discord yang menumpuk di atas revisi itu tidak menghapus pemeriksaan ini —
+   revisi gabungannya tetap atas nama penyimpan website. Admin lain yang
+   menekan **Retry Sync** mengambil alih (menyetujui) revisi itu.
 
 `guild_id`/`channel_id` dari browser tidak pernah dipercaya: channel baru harus
 ada di snapshot Discord terbaru dari bot dengan tipe yang benar.
@@ -82,10 +85,18 @@ fitur sosial) — website dan database tidak perlu diubah (spesifikasi §25).
 ```
 Draft (DRAFT) → Simpan (SAVING) → guild_config_save:
    cek akses → cek revisi (STALE_REVISION bila basi) → validasi → tulis → revisi N+1 → audit
-→ SAVED/SYNCING → bot poll (±5 dtk) → validasi di Discord
+→ SAVED/SYNCING → bot poll (±5 dtk) → cek penyimpan → validasi di Discord
    ├─ lolos  → terapkan → applied = N+1 → ACTIVE
-   └─ gagal  → konfigurasi lama tetap berlaku → NEEDS_ATTENTION (+ detail masalah)
+   ├─ gagal pada fitur yang DIUBAH revisi ini (atau penyimpan bukan admin lagi,
+   │  bot tidak di server) → revisi tidak diterapkan, konfigurasi lama tetap
+   │  berlaku → NEEDS_ATTENTION (+ detail masalah)
+   └─ masalah hanya pada fitur yang TIDAK diubah (mis. channel lamanya dihapus)
+      → perubahan lain tetap diterapkan, fitur itu memakai pengaturan lamanya →
+      applied = N+1 → NEEDS_ATTENTION (+ detail, sebagai laporan kesehatan)
 ```
+
+Kontrak ini sama dengan validasi simpan di database: channel tersimpan yang
+kini bermasalah tidak menahan perubahan fitur lain.
 
 | Status | Arti |
 |---|---|
@@ -98,10 +109,18 @@ Draft (DRAFT) → Simpan (SAVING) → guild_config_save:
 | `BOT_OFFLINE` | Heartbeat bot > 90 detik |
 | `NOT_INSTALLED` | Bot tidak ada di server |
 
-**Retry Sync** meminta bot memuat & menerapkan ulang revisi terbaru.
+**Retry Sync** meminta bot memuat & menerapkan ulang revisi terbaru (untuk
+revisi website yang belum berlaku, sekaligus atas nama admin yang menekannya).
 **Refresh Discord Data** meminta bot menerbitkan ulang daftar channel & izin.
+Keduanya bisa diulang segera setelah bot melayani permintaan sebelumnya.
 Revisi yang gagal diulang otomatis tiap 10 menit, jadi memperbaiki izin di
 Discord cukup — tanpa wajib menekan tombol.
+
+Halaman server memakai jam server (`server_time`) untuk batas waktu, tidak
+menggambar ulang bila tidak ada yang berubah (fokus keyboard & dropdown yang
+sedang dibuka aman), dan menyimpan dengan revisi tempat draft dibuat — jadi
+perubahan dari tempat lain selama mengedit selalu ditolak `STALE_REVISION`,
+tidak pernah tertimpa diam-diam.
 
 Perubahan dari `/pengaturan` di Discord tetap berlaku dan tercatat sebagai
 revisi baru (sumber "Discord") — dashboard & bot selalu sama.
