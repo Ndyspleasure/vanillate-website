@@ -183,9 +183,16 @@ export function mountServerPage(cfg: PageConfig): void {
     pollTimer = setTimeout(poll, delay);
   }
 
+  /** Bot belum juga mengambil revisi tersimpan setelah SYNC_TIMEOUT_MS (jam server). */
+  function syncTimedOut(): boolean {
+    const c = data?.config;
+    return Boolean(c && data?.bot.online && c.revision > c.applied_revision && c.sync_status !== 'NEEDS_ATTENTION'
+      && c.attempted_revision !== c.revision && Date.parse(c.updated_at) < serverNow() - SYNC_TIMEOUT_MS);
+  }
+
   /** Isi yang ditampilkan (tanpa stempel waktu yang berubah tiap permintaan). */
   const renderSignature = () =>
-    JSON.stringify({ data: data ? { ...data, server_time: null, bot: { ...data.bot, last_heartbeat_at: null } } : null, pageError });
+    JSON.stringify({ data: data ? { ...data, server_time: null, bot: { ...data.bot, last_heartbeat_at: null } } : null, pageError, timedOut: syncTimedOut() });
 
   /** Riwayat bertambah saat revisi/percobaan/permintaan berubah → muat ulang. */
   const auditSignature = (c: GuildData['config'] | undefined) =>
@@ -217,7 +224,8 @@ export function mountServerPage(cfg: PageConfig): void {
       if (was && now && was.applied_revision < now.applied_revision && now.applied_revision >= now.revision) {
         toast(now.sync_status === 'ACTIVE' ? `Revisi ${now.applied_revision} sudah diterapkan bot.` : 'Revisi diterapkan, tapi ada yang perlu diperhatikan.', now.sync_status === 'ACTIVE' ? 'success' : 'warning');
       }
-      if (was && now && now.sync_status === 'NEEDS_ATTENTION' && was.sync_status !== 'NEEDS_ATTENTION') {
+      const justApplied = Boolean(was && now && was.applied_revision < now.applied_revision);
+      if (was && now && !justApplied && now.sync_status === 'NEEDS_ATTENTION' && was.sync_status !== 'NEEDS_ATTENTION') {
         toast('Bot menemukan masalah saat menerapkan konfigurasi. Lihat bagian Perlu perhatian.', 'danger', 6000);
       }
       if (now && now.revision > (was?.revision ?? 0) && was && !justSaved && now.updated_source !== 'web') {
@@ -227,8 +235,10 @@ export function mountServerPage(cfg: PageConfig): void {
         audit = null;
         auditDone = false;
       }
-      // Tidak ada yang berubah → jangan gambar ulang (fokus tetap di tempatnya).
-      if (renderSignature() === beforeSig && refreshWatch === watching && remoteChanged === wasRemote) return;
+      // Tidak ada yang berubah → jangan gambar ulang (fokus tetap di tempatnya),
+      // kecuali gambar ulang yang tertunda sudah melewati batas 15 detik.
+      const deferExpired = deferredRender && Date.now() - selectFocusAt >= 15000;
+      if (!deferExpired && renderSignature() === beforeSig && refreshWatch === watching && remoteChanged === wasRemote) return;
       // Dropdown channel sedang dipakai: tunda gambar ulang (mengganti
       // elemennya menutup daftar pilihan di tengah jalan) — paling lama 15 dtk.
       const active = document.activeElement;
@@ -391,7 +401,7 @@ export function mountServerPage(cfg: PageConfig): void {
     if (remoteChanged) {
       out.push({ text: `Konfigurasi server ini diubah di tempat lain (revisi ${c?.revision ?? '?'}) saat kamu sedang mengedit. Muat versi terbaru sebelum menyimpan.`, tone: 'warning', action: 'reload-latest' });
     }
-    if (c && c.revision > c.applied_revision && c.sync_status !== 'NEEDS_ATTENTION' && d.bot.online && c.attempted_revision !== c.revision && Date.parse(c.updated_at) < serverNow() - SYNC_TIMEOUT_MS) {
+    if (syncTimedOut()) {
       out.push({ text: describeError('SYNC_TIMEOUT'), tone: 'warning' });
     }
     return out;
