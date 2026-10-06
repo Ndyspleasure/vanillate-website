@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.68.2",
+    "date": "2026-10-06",
+    "title": "Perbaikan pelindung streak harian",
+    "highlights": [
+      "🛡️ Pelindung streak yang terpakai untuk hari Minggu kini langsung mengurangi jatah pelindung minggu ini",
+      "🔥 Meteran pelindung di Streak Harian sekarang selalu menampilkan sisa yang benar"
+    ]
+  },
+  {
     "version": "2.68.1",
     "date": "2026-10-04",
     "title": "Vanillate Dashboard lebih andal & aman",
