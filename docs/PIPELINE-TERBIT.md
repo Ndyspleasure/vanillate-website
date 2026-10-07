@@ -185,6 +185,7 @@ kalau frekuensi edit CMS sudah tinggi.
 | Job sync merah, log `404` / `401` / `403` | `BOT_REPO_TOKEN` salah, kedaluwarsa, atau kurang izin | Perbarui secret (lihat `AUTO-SYNC-DATA.md` bagian 3) |
 | Workflow hijau tapi isi tidak berubah | Memang tidak ada perubahan data | Cek nilainya di Supabase; kalau field-nya belum ikut disinkron, tambahkan di `scripts/sync-*.mjs` |
 | Panel admin kosong / angka nol | Bot belum menulis ke Supabase | Cek `SUPABASE_URL` & `SUPABASE_SERVICE_ROLE_KEY` di server bot, lalu `/admin/logs` |
+| Tidak ada sync yang jalan berjam-jam; run baru langsung *cancelled* | Satu run menahan antrean `pages` (bagian 11) | Batalkan run yang `waiting`/`in_progress` paling lama; `unstick-pages.yml` melakukannya otomatis |
 | Setting di `/admin/kontrol` tidak berefek di bot | Bot belum menarik, atau env bot kosong | Tunggu ≤60 detik; kalau tetap, cek log bot `[RemoteConfig] Aktif` |
 
 ---
@@ -196,8 +197,29 @@ kalau frekuensi edit CMS sudah tinggi.
 | `.github/workflows/sync-content.yml` | Supabase → `site-content.json`, `partnership.json`, `products.json`, `pages.json`, `faq.json` → build & deploy |
 | `.github/workflows/sync-data.yml` | Repo bot → `shop/bot-info/version/changelog.json` → build & deploy |
 | `.github/workflows/deploy.yml` | Build & deploy tiap push ke `main` |
+| `.github/workflows/unstick-pages.yml` | Tiap 30 menit membatalkan run antrean `pages` yang macet > 45 menit (bagian 11) |
 | `scripts/sync-content.mjs` | Query Supabase + sanitasi nilai dari CMS |
 | `scripts/sync-data.mjs` | Fetch file repo bot + validasi bentuk, pertahankan last-good |
 | `src/data/synced/*.json` | Hasil sync — **jangan diedit manual**, akan tertimpa |
 | `src/pages/changelog.astro` | Halaman `/changelog` publik, termasuk bagian Status data |
 | `src/pages/admin/dashboard.astro` | Kartu status sinkronisasi di panel |
+
+---
+
+## 11. Antrean `pages` macet
+
+`sync-content`, `sync-data` dan `deploy` berbagi concurrency group `pages`.
+Satu run yang tertahan, misalnya menunggu gerbang environment `github-pages`,
+menahan semua run sesudahnya. Pada 6–7 Oktober 2026 hal ini membuat konten CMS
+tidak terbit selama ~21 jam.
+
+Pengamannya ada dua:
+
+- Setiap job punya `timeout-minutes: 20`.
+- `unstick-pages.yml` berjalan tiap 30 menit dan membatalkan run ketiga
+  workflow itu yang masih `waiting`/`queued`/`in_progress` lebih dari 45 menit,
+  sehingga jadwal berikutnya bisa jalan.
+
+Kalau run sering tertahan di gerbang environment, periksa Settings →
+Environments → `github-pages` (reviewer wajib, wait timer, atau aturan
+branch deployment).
