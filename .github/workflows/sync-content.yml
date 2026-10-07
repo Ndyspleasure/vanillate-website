@@ -38,6 +38,8 @@ concurrency:
 
 jobs:
   sync-and-deploy:
+    # Batas waktu: job macet tidak boleh menahan antrean `pages` (lihat unstick-pages.yml).
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     environment:
       name: github-pages
