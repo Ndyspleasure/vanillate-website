@@ -21,6 +21,8 @@ concurrency:
 
 jobs:
   build:
+    # Batas waktu: job macet tidak boleh menahan antrean `pages` (lihat unstick-pages.yml).
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -55,6 +57,8 @@ jobs:
           path: ./dist
 
   deploy:
+    # Batas waktu: job macet tidak boleh menahan antrean `pages` (lihat unstick-pages.yml).
+    timeout-minutes: 20
     needs: build
     runs-on: ubuntu-latest
     environment:

@@ -1,0 +1,45 @@
+name: Buka antrean Pages yang macet
+
+# Workflow sync-content, sync-data dan deploy berbagi concurrency group `pages`.
+# Kalau satu run tertahan (misalnya menunggu gerbang environment `github-pages`),
+# semua sync berikutnya hanya mengantre lalu dibatalkan, dan konten tidak pernah
+# terbit. Ini pernah terjadi 6–7 Oktober 2026: satu run tertahan ~21 jam.
+#
+# `timeout-minutes` tidak menolong di sini karena waktu tunggu di gerbang
+# environment tidak dihitung. Workflow ini membatalkan run ketiga workflow itu
+# yang masih `waiting`, `queued` atau `in_progress` lebih dari 45 menit, supaya
+# jadwal berikutnya bisa jalan. Ia sengaja TIDAK memakai group `pages`.
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  unstick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Batalkan run yang macet lebih dari 45 menit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BATAS_MENIT: '45'
+        run: |
+          batas=$(date -u -d "-${BATAS_MENIT} minutes" +%s)
+          for wf in sync-content.yml sync-data.yml deploy.yml; do
+            for status in waiting queued in_progress; do
+              gh api "repos/${REPO}/actions/workflows/${wf}/runs?status=${status}&per_page=50" \
+                --jq '.workflow_runs[] | "\(.id) \(.run_started_at // .created_at)"' |
+              while read -r id mulai; do
+                if [ "$(date -u -d "$mulai" +%s)" -lt "$batas" ]; then
+                  echo "! Membatalkan ${wf} run ${id} (${status} sejak ${mulai})"
+                  gh api -X POST "repos/${REPO}/actions/runs/${id}/cancel" >/dev/null || true
+                fi
+              done
+            done
+          done
+          echo "✓ Selesai memeriksa antrean Pages."
