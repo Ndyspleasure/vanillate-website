@@ -197,6 +197,84 @@
       "seoDescription": "Kalkulator matematika dan sains gratis berbahasa Indonesia dengan langkah penyelesaian dan verifikasi: aljabar, kalkulus, matriks, fisika, kimia, statistika, keuangan, dan satuan. Tanpa AI generatif, tanpa akun.",
       "ogImage": "",
       "media": []
+    },
+    {
+      "slug": "convert",
+      "name": "Vanillate Convert",
+      "shortName": "Convert",
+      "tagline": "Ubah format file langsung di peramban, tanpa unggah dan tanpa akun.",
+      "description": "Konverter dan alat file dari Vanillate Studio. Ubah gambar, data, subtitle, dan arsip ke format lain, atau rapikan JSON, kompres gambar, dan gabungkan gambar jadi PDF. Konversi yang tersedia berjalan langsung di peramban, jadi file tidak pernah meninggalkan perangkatmu. Setiap format dikenali dari isi filenya, bukan sekadar ekstensi, dan setiap konversi diberi label status yang jujur.",
+      "platform": "web",
+      "status": "beta",
+      "category": "Konverter File",
+      "color": "#7A4D0F",
+      "icon": "refresh-cw",
+      "thumbnail": "https://convert.vanillate.id/icon.svg",
+      "featured": true,
+      "verified": false,
+      "sort": 4,
+      "features": [
+        "200+ konversi yang berjalan langsung di peramban, tanpa unggah",
+        "Gambar: JPG, PNG, WebP, AVIF, GIF, BMP, ICO, TIFF, dan gambar ke PDF",
+        "Data: JSON, YAML, TOML, XML, CSV, TSV, NDJSON, INI, hingga XLSX dan tabel HTML",
+        "Subtitle: SRT, VTT, ASS, SBV, TTML, dan lainnya, plus geser waktu subtitle",
+        "Arsip: buat ZIP, ekstrak dan kemas ulang ZIP, TAR, dan TGZ",
+        "Alat: format dan minify JSON/XML, Base64, URL encode, kompres dan ubah ukuran gambar",
+        "Format dikenali dari isi file, bukan hanya ekstensi",
+        "Status jujur di setiap konversi: Stabil, Didukung, Terbatas, atau Eksperimental",
+        "Dua bahasa: Indonesia dan Inggris",
+        "Gratis, tanpa akun, tanpa iklan"
+      ],
+      "longIntro": [
+        "Vanillate Convert membaca filemu langsung di peramban, mengenali formatnya dari isi file, lalu menawarkan hanya konversi yang benar-benar bisa dilakukan. Pilih format tujuan, atur opsi bila perlu, dan unduh hasilnya.",
+        "Konversi yang tersedia saat ini berjalan sepenuhnya di perangkatmu: file diproses di memori peramban dan tidak diunggah ke server mana pun.",
+        "Setiap konversi punya halaman sendiri dengan penjelasan kualitas hasil, batasan, dan status yang jujur, jadi kamu tahu apa yang akan terjadi sebelum mengonversi."
+      ],
+      "commands": [],
+      "discord": {
+        "clientId": "",
+        "permissions": "",
+        "scopes": [
+          "bot",
+          "applications.commands"
+        ],
+        "integrationType": "",
+        "inviteUrl": ""
+      },
+      "badge": "Baru",
+      "badgeTone": "success",
+      "faq": [
+        {
+          "q": "Apa itu Vanillate Convert?",
+          "a": "Konverter dan alat file gratis dari Vanillate Studio untuk mengubah gambar, data, subtitle, dan arsip ke format lain langsung di peramban."
+        },
+        {
+          "q": "Apakah file saya diunggah ke server?",
+          "a": "Tidak. Konversi yang tersedia saat ini berjalan sepenuhnya di peramban. File diproses di perangkatmu dan tidak dikirim ke server."
+        },
+        {
+          "q": "Apakah perlu akun atau instal aplikasi?",
+          "a": "Tidak. Cukup buka convert.vanillate.id di peramban modern, pilih file, lalu konversi."
+        },
+        {
+          "q": "Format apa saja yang didukung?",
+          "a": "Gambar (JPG, PNG, WebP, AVIF, GIF, BMP, ICO, TIFF), data (JSON, YAML, TOML, XML, CSV, TSV, NDJSON, INI), subtitle (SRT, VTT, ASS, SBV, TTML, dan lainnya), serta arsip ZIP, TAR, dan TGZ. Daftar lengkapnya ada di halaman Format."
+        },
+        {
+          "q": "Kenapa statusnya Beta?",
+          "a": "Konversi di peramban sudah bisa dipakai. Konversi yang butuh server, seperti dokumen Office, PDF ke gambar, audio, dan video, sedang disiapkan dan akan muncul setelah aktif."
+        }
+      ],
+      "ctaHeading": "",
+      "ctaText": "",
+      "ctaNote": "Gratis. Berjalan di peramban modern, tanpa akun dan tanpa unggah.",
+      "ctaLabel": "Buka Vanillate Convert",
+      "ctaUrl": "https://convert.vanillate.id/",
+      "faqCategory": "",
+      "seoTitle": "Vanillate Convert, Konverter File Online Gratis Tanpa Unggah",
+      "seoDescription": "Ubah gambar, data, subtitle, dan arsip ke format lain langsung di peramban. 200+ konversi gratis, tanpa akun, dan file tidak diunggah ke server.",
+      "ogImage": "",
+      "media": []
     }
   ]
 }
