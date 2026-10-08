@@ -64,6 +64,7 @@ vanillate-website/
 │   │   │   ├── server.astro        /admin/server (daftar server Discord)
 │   │   │   ├── pemain.astro        /admin/pemain (daftar pemain)
 │   │   │   ├── faq/                /admin/faq (pertanyaan) & /admin/faq/categories
+│   │   │   ├── after-dark.astro    /admin/after-dark (tantangan game 18+ After Dark)
 │   │   │   └── konten.astro        /admin/konten (editor konten)
 │   │   └── 404.astro               /404 (custom error page)
 │   ├── lib/                        Kode khusus panel admin (jalan di browser)

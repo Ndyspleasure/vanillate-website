@@ -1078,3 +1078,20 @@ yang sama dengan Website Sync). Selain itu bot butuh **stack voice**
 (`@discordjs/voice`, `ffmpeg`, `libsodium-wrappers`) untuk masuk voice channel &
 memutar cuplikan. Tanpa keduanya, game menolak start dengan pesan jelas (tidak
 crash). Detail modul ada di `docs/tebak-lagu.md` pada repo bot.
+
+## 18. After Dark (18+) — tantangan game
+
+Menu **After Dark (18+)** (`/admin/after-dark`) menggantikan halaman `/editor` di
+dalam game After Dark (repo `18`). Alamat `/editor` lama dialihkan ke sini.
+
+- **Tabel:** `after_dark_challenges` di project Supabase yang sama. Skema & RLS
+  ada di repo game (`supabase/migrations`), bukan di `supabase/schema.sql` situs ini.
+- **Tayang:** tanpa build. Game membaca baris `published = true` setiap kali
+  dibuka. Matikan **Terbit** untuk menyimpan sebagai draf (hanya terlihat admin).
+- **Akses:** `owner`/`admin` boleh tambah/ubah/hapus, `viewer` hanya melihat.
+  Daftar lama `after_dark_admins` tetap berlaku.
+- **Teks:** isi Bahasa Indonesia dan/atau English, maksimal 600 karakter.
+  Placeholder yang dikenal hanya `{active}` (pemain yang giliran) dan
+  `{partner}` (pasangannya). Batasan kolom di form sama dengan constraint tabel
+  dan validasi game; baris yang tidak lolos validasi game dilewati.
+- Tantangan bawaan game (di kode, `src/content/packs`) tidak tampil di sini.

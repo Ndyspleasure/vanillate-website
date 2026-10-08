@@ -1,0 +1,421 @@
+---
+// Admin — tantangan After Dark (game 18+, repo terpisah).
+//
+// Pengganti halaman /editor di dalam game. Tantangan disimpan di tabel
+// `after_dark_challenges` (skema & RLS ada di repo game, supabase/migrations).
+// Game membaca baris yang published = true saat dibuka, jadi perubahan di sini
+// langsung tayang tanpa build ulang. Draf hanya terlihat oleh admin.
+//
+// RLS: owner/admin boleh menulis, viewer hanya melihat. Batasan kolom di bawah
+// sama dengan constraint tabel dan validasi di game; baris yang tidak lolos
+// validasi game akan dilewati, jadi jangan longgarkan sebelah saja.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="After Dark (18+)" active="after-dark">
+  <AdminPageHeader
+    eyebrow="After Dark · 18+"
+    title="Tantangan"
+    description="Tantangan game After Dark. Yang berstatus Terbit langsung muncul untuk semua pemain saat game dibuka; Draf hanya terlihat di sini."
+  />
+
+  <div class="px-6 lg:px-10 py-8 space-y-6 max-w-4xl">
+    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Pakai <code class="font-mono text-xs">{'{active}'}</code> untuk pemain yang sedang giliran dan
+        <code class="font-mono text-xs">{'{partner}'}</code> untuk pasangannya. Isi minimal satu bahasa; jika salah satu
+        kosong, game menampilkan bahasa yang ada. Tantangan bawaan (di kode game) tidak tampil di sini.
+      </p>
+    </div>
+
+    <section id="ad-form" class="hidden rounded-2xl border border-amber-500/40 p-5 space-y-4" aria-labelledby="ad-form-title"></section>
+
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="text-sm">
+        <span class="block font-medium mb-1.5">Level</span>
+        <select id="f-level" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm">
+          <option value="all">Semua</option>
+          <option value="1">L1</option><option value="2">L2</option><option value="3">L3</option>
+          <option value="4">L4</option><option value="5">L5</option>
+          <option value="final">Babak final</option>
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="block font-medium mb-1.5">Status</span>
+        <select id="f-status" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm">
+          <option value="all">Semua</option>
+          <option value="published">Terbit</option>
+          <option value="draft">Draf</option>
+        </select>
+      </label>
+      <label class="text-sm flex-1 min-w-[12rem]">
+        <span class="block font-medium mb-1.5">Cari</span>
+        <input id="f-cari" type="search" placeholder="Teks atau id" class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm" />
+      </label>
+      <button type="button" id="btn-tambah"
+        class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">
+        + Tantangan baru
+      </button>
+    </div>
+
+    <p id="ad-info" class="text-sm text-ink-500 dark:text-cream-300/60"></p>
+    <p id="ad-pesan" class="text-sm" role="status" aria-live="polite"></p>
+    <div id="ad-body" class="space-y-3"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+
+  const TABLE = 'after_dark_challenges';
+  const KOLOM = 'id, level, category, duration, players, reward, pool, props, cooldown, text_id, text_en, published, updated_at';
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+  const MAX_TEKS = 600;
+
+  // Harus sama dengan constraint tabel dan tipe di game (src/types/game.ts).
+  const LEVEL: Record<number, { nama: string; poin: number }> = {
+    1: { nama: 'Pembuka', poin: 1 },
+    2: { nama: 'Memanas', poin: 2 },
+    3: { nama: 'Intens', poin: 2 },
+    4: { nama: 'Lanjutan', poin: 3 },
+    5: { nama: 'Puncak', poin: 3 },
+  };
+  const KATEGORI: Record<string, string> = {
+    talk: 'Obrolan', kiss: 'Ciuman', touch: 'Sentuhan', tease: 'Godaan', massage: 'Pijat',
+    undress: 'Membuka pakaian', sensation: 'Permainan sensasi', fantasy: 'Fantasi', roleplay: 'Roleplay',
+  };
+  const PEMAIN: Record<string, string> = { active: 'Pemain yang giliran', partner: 'Pasangan', both: 'Berdua' };
+  const DEK: Record<string, string> = {
+    standard: 'Standar (selalu)', special: 'Spesial (chemistry 50%+)',
+    advanced: 'Lanjutan (chemistry 75%+)', final: 'Babak final',
+  };
+  const PROPERTI: Record<string, string> = {
+    blindfold: 'Penutup mata', ice: 'Es batu', oil: 'Minyak pijat', feather: 'Bulu',
+    music: 'Musik', lingerie: 'Lingerie', restraint: 'Pengikat lembut', toy: 'Mainan',
+  };
+
+  type Tantangan = {
+    id: string;
+    level: number;
+    category: string;
+    duration: number;
+    players: string;
+    reward: number | string;
+    pool: string;
+    props: string[] | null;
+    cooldown: number | null;
+    text_id: string | null;
+    text_en: string | null;
+    published: boolean;
+    updated_at?: string | null;
+  };
+
+  let bolehEdit = false;
+  let semua: Tantangan[] = [];
+  /** Tantangan yang sedang diubah; null = form tertutup. */
+  let sedang: { data: Tantangan; baru: boolean } | null = null;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    const tambah = document.getElementById('btn-tambah') as HTMLButtonElement;
+    tambah.disabled = !bolehEdit;
+    if (!bolehEdit) {
+      tambah.classList.add('opacity-50', 'cursor-not-allowed');
+      lapor('Peran kamu hanya bisa melihat.');
+    }
+    tambah.addEventListener('click', () => bukaForm(kosong(), true));
+    for (const id of ['f-level', 'f-status']) document.getElementById(id)!.addEventListener('change', tampilkan);
+    document.getElementById('f-cari')!.addEventListener('input', tampilkan);
+    document.getElementById('ad-body')!.addEventListener('click', onAksi);
+    document.getElementById('ad-form')!.addEventListener('click', onAksiForm);
+    document.getElementById('ad-form')!.addEventListener('input', onInputForm);
+    void muat();
+  });
+
+  function lapor(teks: string, sukses = false) {
+    const pesan = document.getElementById('ad-pesan')!;
+    pesan.textContent = teks;
+    pesan.className = sukses ? 'text-sm text-teal-700 dark:text-teal-300' : 'text-sm text-red-600 dark:text-red-400';
+  }
+
+  function idBaru(): string {
+    const acak = Math.floor(Math.random() * 36 ** 4).toString(36).padStart(4, '0');
+    return `cms_${Date.now().toString(36)}${acak}`;
+  }
+
+  function kosong(): Tantangan {
+    const f = (document.getElementById('f-level') as HTMLSelectElement).value;
+    const final = f === 'final';
+    const level = final ? 5 : Number(f) || 1;
+    return {
+      id: idBaru(), level, category: 'tease', duration: 0,
+      players: final ? 'both' : 'active', reward: LEVEL[level].poin,
+      pool: final ? 'final' : 'standard', props: [], cooldown: null,
+      text_id: '', text_en: '', published: true,
+    };
+  }
+
+  async function muat() {
+    const body = document.getElementById('ad-body')!;
+    body.innerHTML = stateBlock('loading', '');
+    const supabase = getSupabase();
+    if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+
+    const { data, error } = await supabase.from(TABLE).select(KOLOM)
+      .order('level', { ascending: true }).order('id', { ascending: true }).limit(2000);
+    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
+    semua = (data ?? []) as Tantangan[];
+    tampilkan();
+  }
+
+  function cocok(t: Tantangan): boolean {
+    const level = (document.getElementById('f-level') as HTMLSelectElement).value;
+    const status = (document.getElementById('f-status') as HTMLSelectElement).value;
+    const cari = (document.getElementById('f-cari') as HTMLInputElement).value.trim().toLowerCase();
+    if (level === 'final' && t.pool !== 'final') return false;
+    if (level !== 'all' && level !== 'final' && (t.pool === 'final' || t.level !== Number(level))) return false;
+    if (status === 'published' && !t.published) return false;
+    if (status === 'draft' && t.published) return false;
+    if (cari && ![t.id, t.text_id ?? '', t.text_en ?? ''].some((s) => s.toLowerCase().includes(cari))) return false;
+    return true;
+  }
+
+  function tampilkan() {
+    const body = document.getElementById('ad-body')!;
+    const terlihat = semua.filter(cocok);
+    const terbit = semua.filter((t) => t.published).length;
+    document.getElementById('ad-info')!.textContent =
+      `${fmtAngka(semua.length)} tantangan · ${fmtAngka(terbit)} terbit · ${fmtAngka(semua.length - terbit)} draf` +
+      (terlihat.length !== semua.length ? ` · ${fmtAngka(terlihat.length)} cocok filter` : '');
+    body.innerHTML = terlihat.length
+      ? terlihat.map(kartu).join('')
+      : stateBlock('empty', semua.length ? 'Tidak ada tantangan yang cocok dengan filter.' : 'Belum ada tantangan. Tambahkan satu untuk mulai.');
+  }
+
+  function tag(teks: string, warna = 'bg-ink-900/5 dark:bg-cream-100/10') {
+    return `<span class="rounded-full ${warna} px-2 py-0.5 text-[0.7rem] font-medium">${esc(teks)}</span>`;
+  }
+
+  function kartu(t: Tantangan): string {
+    const teks = (kode: string, isi: string | null) => `
+      <p class="text-sm leading-relaxed"><span class="mr-2 font-mono text-[0.7rem] text-ink-400 dark:text-cream-300/40">${kode}</span>${
+        isi?.trim() ? esc(isi) : `<em class="text-ink-400 dark:text-cream-300/40">Belum ada teks</em>`}</p>`;
+    return `
+      <article class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4 space-y-2">
+        <div class="flex flex-wrap items-center gap-1.5">
+          ${tag(`L${t.level} · ${LEVEL[t.level]?.nama ?? ''}`, 'bg-amber-500/15 text-amber-700 dark:text-amber-300')}
+          ${t.published ? tag('Terbit', 'bg-teal-500/15 text-teal-700 dark:text-teal-300') : tag('Draf', 'bg-ink-500/15 text-ink-500 dark:text-cream-300/60')}
+          ${t.pool !== 'standard' ? tag(DEK[t.pool] ?? t.pool) : ''}
+          ${tag(KATEGORI[t.category] ?? t.category)}
+          ${tag(PEMAIN[t.players] ?? t.players)}
+          ${t.duration > 0 ? tag(`${t.duration} detik`) : ''}
+          ${tag(`${Number(t.reward)} poin`)}
+          ${(t.props ?? []).map((p) => tag(PROPERTI[p] ?? p)).join('')}
+        </div>
+        ${teks('ID', t.text_id)}
+        ${teks('EN', t.text_en)}
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <span class="font-mono text-[0.7rem] text-ink-400 dark:text-cream-300/40">${esc(t.id)} · ${esc(fmtWaktu(t.updated_at))}</span>
+          ${bolehEdit ? `
+            <span class="space-x-2">
+              <button type="button" data-ubah="${esc(t.id)}" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Ubah</button>
+              <button type="button" data-salin="${esc(t.id)}" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Salin</button>
+              <button type="button" data-hapus="${esc(t.id)}" class="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">Hapus</button>
+            </span>` : ''}
+        </div>
+      </article>`;
+  }
+
+  // ── Form ─────────────────────────────────────────────────────────────────
+
+  function pilihan(nama: string, opsi: Record<string, string>, nilai: string) {
+    return `<select id="t-${nama}" class="${INPUT}">${Object.entries(opsi)
+      .map(([v, l]) => `<option value="${esc(v)}" ${v === nilai ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+  }
+
+  function bidang(nama: string, label: string, isi: string, bantuan = '') {
+    return `<div>
+      <label class="block text-sm font-medium mb-1.5" for="t-${nama}">${esc(label)}</label>
+      ${isi}
+      ${bantuan ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(bantuan)}</p>` : ''}
+    </div>`;
+  }
+
+  function bukaForm(data: Tantangan, baru: boolean) {
+    if (!bolehEdit) return;
+    sedang = { data, baru };
+    const form = document.getElementById('ad-form')!;
+    const levelOpsi = Object.fromEntries(Object.entries(LEVEL).map(([l, v]) => [l, `L${l} · ${v.nama}`]));
+    form.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="ad-form-title" class="font-display text-lg font-semibold tracking-tightest">${baru ? 'Tantangan baru' : 'Ubah tantangan'}</h2>
+        <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(data.id)}</span>
+      </div>
+      ${bidang('text_id', 'Teks (Bahasa Indonesia)', `<textarea id="t-text_id" rows="3" maxlength="${MAX_TEKS}" class="${INPUT}">${esc(data.text_id ?? '')}</textarea>`)}
+      ${bidang('text_en', 'Teks (English)', `<textarea id="t-text_en" rows="3" maxlength="${MAX_TEKS}" class="${INPUT}">${esc(data.text_en ?? '')}</textarea>`)}
+      <div id="t-pratinjau" class="rounded-xl bg-ink-900/5 dark:bg-cream-100/5 px-4 py-3 text-sm"></div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        ${bidang('level', 'Level', pilihan('level', levelOpsi, String(data.level)))}
+        ${bidang('pool', 'Dek', pilihan('pool', DEK, data.pool), 'Babak final: biasanya level 5, berdua.')}
+        ${bidang('category', 'Kategori', pilihan('category', KATEGORI, data.category))}
+        ${bidang('players', 'Siapa yang melakukan', pilihan('players', PEMAIN, data.players))}
+        ${bidang('duration', 'Timer (detik, 0 = tanpa timer)', `<input id="t-duration" type="number" min="0" max="3600" step="1" value="${esc(data.duration)}" class="${INPUT}" />`)}
+        ${bidang('reward', 'Poin hadiah', `<input id="t-reward" type="number" min="0" max="10" step="0.5" value="${esc(Number(data.reward))}" class="${INPUT}" />`)}
+        ${bidang('cooldown', 'Cooldown (giliran, opsional)', `<input id="t-cooldown" type="number" min="0" max="100" step="1" value="${esc(data.cooldown ?? '')}" class="${INPUT}" />`, 'Kosongkan untuk memakai aturan bawaan.')}
+      </div>
+      <fieldset>
+        <legend class="block text-sm font-medium mb-1.5">Butuh properti</legend>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          ${Object.entries(PROPERTI).map(([v, l]) => `
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" data-prop="${esc(v)}" ${(data.props ?? []).includes(v) ? 'checked' : ''}
+                class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+              ${esc(l)}
+            </label>`).join('')}
+        </div>
+      </fieldset>
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <label class="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" id="t-published" ${data.published ? 'checked' : ''}
+            class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+          Terbit (tampil di game)
+        </label>
+        <span class="space-x-2">
+          <button type="button" data-batal class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Batal</button>
+          <button type="button" data-simpan class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">Simpan</button>
+        </span>
+      </div>
+      <p id="t-galat" class="text-sm text-red-600 dark:text-red-400" role="alert"></p>`;
+    form.classList.remove('hidden');
+    pratinjau();
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    (document.getElementById('t-text_id') as HTMLTextAreaElement).focus();
+  }
+
+  function tutupForm() {
+    sedang = null;
+    const form = document.getElementById('ad-form')!;
+    form.classList.add('hidden');
+    form.innerHTML = '';
+  }
+
+  const nilai = (id: string) => (document.getElementById(`t-${id}`) as HTMLInputElement).value;
+
+  function pratinjau() {
+    const isi = (s: string) => esc(s.trim()).replace(/\{active\}/g, '<strong>Dimas</strong>').replace(/\{partner\}/g, '<strong>Sari</strong>');
+    const id = nilai('text_id');
+    const en = nilai('text_en');
+    document.getElementById('t-pratinjau')!.innerHTML = `
+      <p class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40 mb-1">Pratinjau (giliran Dimas, pasangan Sari)</p>
+      ${id.trim() || en.trim()
+        ? `${id.trim() ? `<p>${isi(id)}</p>` : ''}${en.trim() ? `<p class="mt-1 text-ink-500 dark:text-cream-300/60">${isi(en)}</p>` : ''}`
+        : '<p class="text-ink-400 dark:text-cream-300/40">Tulis teks untuk melihat pratinjau.</p>'}`;
+  }
+
+  function onInputForm(e: Event) {
+    const el = e.target as HTMLElement;
+    if (el.id === 't-text_id' || el.id === 't-text_en') pratinjau();
+    // Poin hadiah mengikuti level selama belum diubah manual.
+    if (el.id === 't-level' && sedang) {
+      const lama = LEVEL[sedang.data.level]?.poin;
+      const baru = Number(nilai('level'));
+      const reward = document.getElementById('t-reward') as HTMLInputElement;
+      if (Number(reward.value) === lama) reward.value = String(LEVEL[baru].poin);
+      sedang.data.level = baru;
+    }
+  }
+
+  /** Baca form dan periksa dengan aturan yang sama seperti tabel dan game. */
+  function bacaForm(): { baris?: Omit<Tantangan, 'updated_at'>; galat?: string } {
+    if (!sedang) return {};
+    const text_id = nilai('text_id').trim();
+    const text_en = nilai('text_en').trim();
+    if (!text_id && !text_en) return { galat: 'Tulis teks tantangan minimal dalam satu bahasa.' };
+    if (text_id.length > MAX_TEKS || text_en.length > MAX_TEKS) return { galat: `Teks maksimal ${MAX_TEKS} karakter.` };
+    const asing = [text_id, text_en].join(' ').match(/\{[^}]*\}/g)?.filter((p) => p !== '{active}' && p !== '{partner}');
+    if (asing?.length) return { galat: `Placeholder tidak dikenal: ${[...new Set(asing)].join(', ')}. Pakai {active} atau {partner}.` };
+
+    const duration = Number(nilai('duration') || 0);
+    const reward = Number(nilai('reward'));
+    const cooldownTeks = nilai('cooldown').trim();
+    const cooldown = cooldownTeks === '' ? null : Number(cooldownTeks);
+    if (!Number.isInteger(duration) || duration < 0 || duration > 3600) return { galat: 'Timer harus bilangan bulat 0–3600 detik.' };
+    if (!Number.isFinite(reward) || reward < 0 || reward > 10 || Math.round(reward * 10) !== reward * 10) {
+      return { galat: 'Poin hadiah 0–10, maksimal satu angka di belakang koma.' };
+    }
+    if (cooldown !== null && (!Number.isInteger(cooldown) || cooldown < 0 || cooldown > 100)) {
+      return { galat: 'Cooldown harus bilangan bulat 0–100 giliran.' };
+    }
+
+    const props = [...document.querySelectorAll<HTMLInputElement>('#ad-form input[data-prop]')]
+      .filter((c) => c.checked).map((c) => c.dataset.prop!);
+    return {
+      baris: {
+        id: sedang.data.id,
+        level: Number(nilai('level')),
+        category: nilai('category'),
+        duration,
+        players: nilai('players'),
+        reward,
+        pool: nilai('pool'),
+        props,
+        cooldown,
+        text_id: text_id || null,
+        text_en: text_en || null,
+        published: (document.getElementById('t-published') as HTMLInputElement).checked,
+      },
+    };
+  }
+
+  async function onAksiForm(e: Event) {
+    const el = (e.target as HTMLElement).closest('button[data-batal], button[data-simpan]') as HTMLButtonElement | null;
+    if (!el || !sedang) return;
+    if (el.hasAttribute('data-batal')) { tutupForm(); return; }
+
+    const galatEl = document.getElementById('t-galat')!;
+    const { baris, galat } = bacaForm();
+    if (!baris) { galatEl.textContent = galat ?? ''; return; }
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+    el.disabled = true;
+    const { id, ...isi } = baris;
+    const { error } = sedang.baru
+      ? await supabase.from(TABLE).insert(baris)
+      : await supabase.from(TABLE).update(isi).eq('id', id);
+    el.disabled = false;
+    if (error) {
+      galatEl.textContent = error.code === '23505' ? 'Id ini sudah dipakai. Tutup form lalu coba lagi.' : pesanError(error);
+      return;
+    }
+    lapor(baris.published ? 'Tersimpan dan terbit. Pemain melihatnya saat membuka game berikutnya.' : 'Tersimpan sebagai draf.', true);
+    tutupForm();
+    void muat();
+  }
+
+  async function onAksi(e: Event) {
+    const el = (e.target as HTMLElement).closest('button[data-ubah], button[data-salin], button[data-hapus]') as HTMLButtonElement | null;
+    if (!el || !bolehEdit) return;
+    const id = el.dataset.ubah ?? el.dataset.salin ?? el.dataset.hapus!;
+    const t = semua.find((x) => x.id === id);
+    if (!t) return;
+
+    if (el.hasAttribute('data-ubah')) { bukaForm({ ...t, props: [...(t.props ?? [])] }, false); return; }
+    if (el.hasAttribute('data-salin')) { bukaForm({ ...t, id: idBaru(), props: [...(t.props ?? [])], published: false }, true); return; }
+
+    const cuplikan = (t.text_id || t.text_en || '').slice(0, 80);
+    if (!window.confirm(`Hapus tantangan ini?\n\n"${cuplikan}"\n\nTantangan tidak akan muncul lagi di game. Tidak bisa dibatalkan.`)) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    el.disabled = true;
+    const { error } = await supabase.from(TABLE).delete().eq('id', id);
+    if (error) { el.disabled = false; lapor(pesanError(error)); return; }
+    if (sedang?.data.id === id) tutupForm();
+    lapor('Tantangan dihapus.', true);
+    void muat();
+  }
+</script>
