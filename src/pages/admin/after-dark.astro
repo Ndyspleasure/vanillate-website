@@ -32,6 +32,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         Kategori <strong>Tantangan Risiko</strong> eksklusif untuk 5 kotak Risiko di papan: selalu berdua,
         level bebas (levelnya hanya penanda intensitas), dan tidak pernah muncul di kotak lain.
       </p>
+      <p class="mt-2 text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        Dek <strong>Naik level</strong>: setiap kali chemistry mencapai level baru (20% L2, 40% L3, 60% L4, 80% L5),
+        game menampilkan info naik level lalu satu tantangan naik level untuk level itu (diundi jika ada beberapa).
+        Selalu berdua, tanpa filter jenis kelamin, tidak menambah chemistry. Buat minimal satu per level; level tanpa
+        tantangan naik level hanya menampilkan info.
+      </p>
     </div>
 
     <section id="ad-form" class="hidden rounded-2xl border border-amber-500/40 p-5 space-y-4" aria-labelledby="ad-form-title"></section>
@@ -45,6 +51,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           <option value="4">L4</option><option value="5">L5</option>
           <option value="final">Babak final</option>
           <option value="dare">Tantangan Risiko</option>
+          <option value="levelup">Naik level</option>
         </select>
       </label>
       <label class="text-sm">
@@ -96,10 +103,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   };
   /** Kategori eksklusif kotak Risiko: selalu berdua, level bebas. */
   const RISIKO = 'dare';
+  /** Dek tantangan naik level: L2–L5, berdua, tanpa filter jenis kelamin. */
+  const NAIK = 'levelup';
   const PEMAIN: Record<string, string> = { active: 'Pemain yang giliran', partner: 'Pasangan', both: 'Berdua' };
   const DEK: Record<string, string> = {
     standard: 'Standar (selalu)', special: 'Spesial (chemistry 40%+)',
     advanced: 'Lanjutan (chemistry 60%+)', final: 'Babak final',
+    levelup: 'Naik level (saat chemistry mencapai level baru)',
   };
   const KELAMIN: Record<string, string> = { female: 'Cewek', male: 'Cowok' };
   /** Peran dalam teks: penantang = {active}, yang ditantang = {partner}. */
@@ -169,11 +179,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const f = (document.getElementById('f-level') as HTMLSelectElement).value;
     const final = f === 'final';
     const risiko = f === RISIKO;
-    const level = final ? 5 : Number(f) || (risiko ? 3 : 1);
+    const naik = f === NAIK;
+    const level = final ? 5 : Number(f) || (risiko ? 3 : naik ? 2 : 1);
     return {
       id: idBaru(), level, category: risiko ? RISIKO : 'tease', duration: 0,
-      players: final || risiko ? 'both' : 'active', reward: LEVEL[level].poin,
-      pool: final ? 'final' : 'standard', props: [], active_genders: [], partner_genders: [], cooldown: null,
+      players: final || risiko || naik ? 'both' : 'active', reward: LEVEL[level].poin,
+      pool: final ? 'final' : naik ? NAIK : 'standard', props: [], active_genders: [], partner_genders: [], cooldown: null,
       text_id: '', text_en: '', published: true,
     };
   }
@@ -197,7 +208,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const cari = (document.getElementById('f-cari') as HTMLInputElement).value.trim().toLowerCase();
     if (level === 'final' && t.pool !== 'final') return false;
     if (level === RISIKO && t.category !== RISIKO) return false;
-    if (level !== 'all' && level !== 'final' && level !== RISIKO && (t.pool === 'final' || t.category === RISIKO || t.level !== Number(level))) return false;
+    if (level === NAIK && t.pool !== NAIK) return false;
+    if (level !== 'all' && level !== 'final' && level !== RISIKO && level !== NAIK
+      && (t.pool === 'final' || t.pool === NAIK || t.category === RISIKO || t.level !== Number(level))) return false;
     if (status === 'published' && !t.published) return false;
     if (status === 'draft' && t.published) return false;
     if (cari && ![t.id, t.text_id ?? '', t.text_en ?? ''].some((s) => s.toLowerCase().includes(cari))) return false;
@@ -210,7 +223,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const terbit = semua.filter((t) => t.published).length;
     document.getElementById('ad-info')!.textContent =
       `${fmtAngka(semua.length)} tantangan · ${fmtAngka(terbit)} terbit · ${fmtAngka(semua.length - terbit)} draf` +
-      (terlihat.length !== semua.length ? ` · ${fmtAngka(terlihat.length)} cocok filter` : '');
+      (terlihat.length !== semua.length ? ` · ${fmtAngka(terlihat.length)} cocok filter` : '') +
+      ` · naik level terbit: ${[2, 3, 4, 5].map((l) => {
+        const n = semua.filter((t) => t.published && t.pool === NAIK && t.level === l).length;
+        return `L${l} ${n ? fmtAngka(n) : '0 (belum ada)'}`;
+      }).join(', ')}`;
     body.innerHTML = terlihat.length
       ? terlihat.map(kartu).join('')
       : stateBlock('empty', semua.length ? 'Tidak ada tantangan yang cocok dengan filter.' : 'Belum ada tantangan. Tambahkan satu untuk mulai.');
@@ -229,9 +246,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         <div class="flex flex-wrap items-center gap-1.5">
           ${t.category === RISIKO
             ? tag('Risiko · level bebas', 'bg-amber-500/25 text-amber-800 dark:text-amber-200')
-            : tag(`L${t.level} · ${LEVEL[t.level]?.nama ?? ''}`, 'bg-amber-500/15 text-amber-700 dark:text-amber-300')}
+            : t.pool === NAIK
+              ? tag(`Naik ke L${t.level}`, 'bg-violet-500/20 text-violet-700 dark:text-violet-300')
+              : tag(`L${t.level} · ${LEVEL[t.level]?.nama ?? ''}`, 'bg-amber-500/15 text-amber-700 dark:text-amber-300')}
           ${t.published ? tag('Terbit', 'bg-teal-500/15 text-teal-700 dark:text-teal-300') : tag('Draf', 'bg-ink-500/15 text-ink-500 dark:text-cream-300/60')}
-          ${t.pool !== 'standard' ? tag(DEK[t.pool] ?? t.pool) : ''}
+          ${t.pool !== 'standard' && t.pool !== NAIK ? tag(DEK[t.pool] ?? t.pool) : ''}
           ${tag(KATEGORI[t.category] ?? t.category)}
           ${tag(PEMAIN[t.players] ?? t.players)}
           ${t.duration > 0 ? tag(`${t.duration} detik`) : ''}
@@ -285,7 +304,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <div id="t-pratinjau" class="rounded-xl bg-ink-900/5 dark:bg-cream-100/5 px-4 py-3 text-sm"></div>
       <div class="grid gap-4 sm:grid-cols-2">
         ${bidang('level', 'Level', pilihan('level', levelOpsi, String(data.level)))}
-        ${bidang('pool', 'Dek', pilihan('pool', DEK, data.pool), 'Babak final: biasanya level 5, berdua.')}
+        ${bidang('pool', 'Dek', pilihan('pool', DEK, data.pool), 'Babak final: biasanya level 5, berdua. Naik level: level = level yang baru dicapai (L2–L5), berdua.')}
         ${bidang('category', 'Kategori', pilihan('category', KATEGORI, data.category), 'Tantangan Risiko: hanya di kotak Risiko, selalu berdua, level bebas.')}
         ${bidang('players', 'Siapa yang melakukan', pilihan('players', PEMAIN, data.players))}
         ${bidang('duration', 'Timer (detik, 0 = tanpa timer)', `<input id="t-duration" type="number" min="0" max="3600" step="1" value="${esc(data.duration)}" class="${INPUT}" />`)}
@@ -366,6 +385,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (el.id === 't-category' && nilai('category') === RISIKO) {
       (document.getElementById('t-players') as HTMLSelectElement).value = 'both';
     }
+    // Tantangan naik level selalu berdua dan untuk siapa saja.
+    if (el.id === 't-pool' && nilai('pool') === NAIK) {
+      (document.getElementById('t-players') as HTMLSelectElement).value = 'both';
+      for (const c of document.querySelectorAll<HTMLInputElement>('#ad-form input[data-kelamin]')) c.checked = false;
+      const lv = document.getElementById('t-level') as HTMLSelectElement;
+      if (lv.value === '1') { lv.value = '2'; lv.dispatchEvent(new Event('input', { bubbles: true })); }
+    }
     // Poin hadiah mengikuti level selama belum diubah manual.
     if (el.id === 't-level' && sedang) {
       const lama = LEVEL[sedang.data.level]?.poin;
@@ -393,6 +419,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       return { galat: 'Tantangan Risiko tidak bisa masuk dek Babak final.' };
     }
 
+    if (nilai('pool') === NAIK) {
+      if (nilai('level') === '1') return { galat: 'Tantangan naik level hanya untuk L2–L5 (level yang baru dicapai).' };
+      if (nilai('players') !== 'both') return { galat: 'Tantangan naik level selalu dilakukan berdua. Pilih "Berdua".' };
+      if (nilai('category') === RISIKO) return { galat: 'Tantangan Risiko tidak bisa masuk dek Naik level.' };
+    }
+
     const duration = Number(nilai('duration') || 0);
     const reward = Number(nilai('reward'));
     const cooldownTeks = nilai('cooldown').trim();
@@ -415,6 +447,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     };
     const active_genders = kelamin('active_genders');
     const partner_genders = kelamin('partner_genders');
+    if (nilai('pool') === NAIK && (active_genders.length || partner_genders.length)) {
+      return { galat: 'Tantangan naik level untuk siapa saja: kosongkan jenis kelamin.' };
+    }
     if (active_genders.length && partner_genders.length && active_genders[0] === partner_genders[0]) {
       return { galat: 'Penantang dan yang ditantang tidak bisa sama: pasangan di game selalu satu cewek dan satu cowok.' };
     }
