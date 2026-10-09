@@ -70,6 +70,10 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">
         + Tantangan baru
       </button>
+      <button type="button" id="btn-hapus-semua"
+        class="rounded-xl border border-red-500/40 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        Hapus semua
+      </button>
     </div>
 
     <p id="ad-info" class="text-sm text-ink-500 dark:text-cream-300/60"></p>
@@ -156,6 +160,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       lapor('Peran kamu hanya bisa melihat.');
     }
     tambah.addEventListener('click', () => bukaForm(kosong(), true));
+    document.getElementById('btn-hapus-semua')!.addEventListener('click', () => void hapusSemua());
     for (const id of ['f-level', 'f-status']) document.getElementById(id)!.addEventListener('change', tampilkan);
     document.getElementById('f-cari')!.addEventListener('input', tampilkan);
     document.getElementById('ad-body')!.addEventListener('click', onAksi);
@@ -228,6 +233,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         const n = semua.filter((t) => t.published && t.pool === NAIK && t.level === l).length;
         return `L${l} ${n ? fmtAngka(n) : '0 (belum ada)'}`;
       }).join(', ')}`;
+    const hapus = document.getElementById('btn-hapus-semua') as HTMLButtonElement;
+    hapus.disabled = !bolehEdit || !terlihat.length;
+    hapus.textContent = terlihat.length === semua.length
+      ? `Hapus semua (${fmtAngka(terlihat.length)})`
+      : `Hapus semua yang cocok filter (${fmtAngka(terlihat.length)})`;
     body.innerHTML = terlihat.length
       ? terlihat.map(kartu).join('')
       : stateBlock('empty', semua.length ? 'Tidak ada tantangan yang cocok dengan filter.' : 'Belum ada tantangan. Tambahkan satu untuk mulai.');
@@ -518,6 +528,39 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (error) { el.disabled = false; lapor(pesanError(error)); return; }
     if (sedang?.data.id === id) tutupForm();
     lapor('Tantangan dihapus.', true);
+    void muat();
+  }
+
+  /** Menghapus semua tantangan yang tampil (semua jika filter kosong). */
+  async function hapusSemua() {
+    if (!bolehEdit) return;
+    const target = semua.filter(cocok);
+    if (!target.length) return;
+    const lingkup = target.length === semua.length ? 'SEMUA tantangan' : 'semua tantangan yang cocok dengan filter';
+    const ketik = window.prompt(
+      `Hapus ${lingkup}: ${fmtAngka(target.length)} tantangan (${fmtAngka(target.filter((t) => t.published).length)} terbit)?\n\n`
+      + 'Tantangan tidak akan muncul lagi di game. Tidak bisa dibatalkan.\n\nKetik HAPUS untuk lanjut.',
+    );
+    if (ketik?.trim() !== 'HAPUS') { if (ketik !== null) lapor('Dibatalkan: ketik HAPUS untuk menghapus.'); return; }
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const tombol = document.getElementById('btn-hapus-semua') as HTMLButtonElement;
+    tombol.disabled = true;
+    // Dipecah per 100 id supaya URL permintaan tidak terlalu panjang.
+    let terhapus = 0;
+    for (let i = 0; i < target.length; i += 100) {
+      const ids = target.slice(i, i + 100).map((t) => t.id);
+      const { error } = await supabase.from(TABLE).delete().in('id', ids);
+      if (error) {
+        lapor(`${fmtAngka(terhapus)} tantangan terhapus, lalu gagal: ${pesanError(error)}`);
+        void muat();
+        return;
+      }
+      terhapus += ids.length;
+    }
+    if (sedang && target.some((t) => t.id === sedang!.data.id)) tutupForm();
+    lapor(`${fmtAngka(terhapus)} tantangan dihapus.`, true);
     void muat();
   }
 </script>
