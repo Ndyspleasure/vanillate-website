@@ -77,7 +77,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
 
   const TABLE = 'after_dark_challenges';
-  const KOLOM = 'id, level, category, duration, players, reward, pool, props, cooldown, text_id, text_en, published, updated_at';
+  const KOLOM = 'id, level, category, duration, players, reward, pool, props, active_genders, partner_genders, cooldown, text_id, text_en, published, updated_at';
   const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
   const MAX_TEKS = 600;
 
@@ -101,6 +101,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     standard: 'Standar (selalu)', special: 'Spesial (chemistry 40%+)',
     advanced: 'Lanjutan (chemistry 60%+)', final: 'Babak final',
   };
+  const KELAMIN: Record<string, string> = { female: 'Cewek', male: 'Cowok' };
+  /** Peran dalam teks: penantang = {active}, yang ditantang = {partner}. */
+  const PERAN = {
+    active_genders: 'Penantang ({active})',
+    partner_genders: 'Ditantang ({partner})',
+  } as const;
+  type Peran = keyof typeof PERAN;
   const PROPERTI: Record<string, string> = {
     blindfold: 'Penutup mata', ice: 'Es batu', oil: 'Minyak pijat', feather: 'Bulu',
     music: 'Musik', lingerie: 'Lingerie', restraint: 'Pengikat lembut', toy: 'Mainan',
@@ -115,6 +122,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     reward: number | string;
     pool: string;
     props: string[] | null;
+    active_genders: string[] | null;
+    partner_genders: string[] | null;
     cooldown: number | null;
     text_id: string | null;
     text_en: string | null;
@@ -164,7 +173,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     return {
       id: idBaru(), level, category: risiko ? RISIKO : 'tease', duration: 0,
       players: final || risiko ? 'both' : 'active', reward: LEVEL[level].poin,
-      pool: final ? 'final' : 'standard', props: [], cooldown: null,
+      pool: final ? 'final' : 'standard', props: [], active_genders: [], partner_genders: [], cooldown: null,
       text_id: '', text_en: '', published: true,
     };
   }
@@ -227,6 +236,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           ${tag(PEMAIN[t.players] ?? t.players)}
           ${t.duration > 0 ? tag(`${t.duration} detik`) : ''}
           ${tag(`${Number(t.reward)} poin`)}
+          ${(Object.keys(PERAN) as Peran[]).map((peran) => (t[peran]?.length === 1
+            ? tag(`${PERAN[peran].split(' ')[0]}: ${KELAMIN[t[peran]![0]] ?? t[peran]![0]}`, 'bg-pink-500/15 text-pink-700 dark:text-pink-300')
+            : '')).join('')}
           ${(t.props ?? []).map((p) => tag(PROPERTI[p] ?? p)).join('')}
         </div>
         ${teks('ID', t.text_id)}
@@ -281,7 +293,25 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${bidang('cooldown', 'Cooldown (giliran, opsional)', `<input id="t-cooldown" type="number" min="0" max="100" step="1" value="${esc(data.cooldown ?? '')}" class="${INPUT}" />`, 'Kosongkan untuk memakai aturan bawaan.')}
       </div>
       <fieldset>
-        <legend class="block text-sm font-medium mb-1.5">Butuh properti</legend>
+        <legend class="block text-sm font-medium mb-1.5">Jenis kelamin</legend>
+        <div class="grid gap-3 sm:grid-cols-2">
+          ${(Object.keys(PERAN) as Peran[]).map((peran) => `
+            <div>
+              <p class="text-xs font-medium text-ink-500 dark:text-cream-300/60 mb-1">${esc(PERAN[peran])}</p>
+              <div class="flex flex-wrap gap-x-4 gap-y-2">
+                ${Object.entries(KELAMIN).map(([v, l]) => `
+                  <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" data-kelamin="${peran}" value="${esc(v)}" ${(data[peran] ?? []).includes(v) ? 'checked' : ''}
+                      class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+                    ${esc(l)}
+                  </label>`).join('')}
+              </div>
+            </div>`).join('')}
+        </div>
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Kosongkan (atau centang keduanya) = siapa saja. Pasangan di game selalu satu cewek dan satu cowok; saat Tukar Peran, perannya ikut tertukar.</p>
+      </fieldset>
+      <fieldset>
+        <legend class="block text-sm font-medium mb-1.5">Properti (info untuk pemain)</legend>
         <div class="flex flex-wrap gap-x-4 gap-y-2">
           ${Object.entries(PROPERTI).map(([v, l]) => `
             <label class="flex items-center gap-2 text-sm">
@@ -377,6 +407,17 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     const props = [...document.querySelectorAll<HTMLInputElement>('#ad-form input[data-prop]')]
       .filter((c) => c.checked).map((c) => c.dataset.prop!);
+    // Dua-duanya dicentang sama dengan siapa saja, jadi disimpan kosong.
+    const kelamin = (peran: Peran) => {
+      const dipilih = [...document.querySelectorAll<HTMLInputElement>(`#ad-form input[data-kelamin="${peran}"]`)]
+        .filter((c) => c.checked).map((c) => c.value);
+      return dipilih.length === 1 ? dipilih : [];
+    };
+    const active_genders = kelamin('active_genders');
+    const partner_genders = kelamin('partner_genders');
+    if (active_genders.length && partner_genders.length && active_genders[0] === partner_genders[0]) {
+      return { galat: 'Penantang dan yang ditantang tidak bisa sama: pasangan di game selalu satu cewek dan satu cowok.' };
+    }
     return {
       baris: {
         id: sedang.data.id,
@@ -387,6 +428,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         reward,
         pool: nilai('pool'),
         props,
+        active_genders,
+        partner_genders,
         cooldown,
         text_id: text_id || null,
         text_en: text_en || null,
@@ -428,8 +471,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const t = semua.find((x) => x.id === id);
     if (!t) return;
 
-    if (el.hasAttribute('data-ubah')) { bukaForm({ ...t, props: [...(t.props ?? [])] }, false); return; }
-    if (el.hasAttribute('data-salin')) { bukaForm({ ...t, id: idBaru(), props: [...(t.props ?? [])], published: false }, true); return; }
+    if (el.hasAttribute('data-ubah')) { bukaForm({ ...t, props: [...(t.props ?? [])], active_genders: [...(t.active_genders ?? [])], partner_genders: [...(t.partner_genders ?? [])] }, false); return; }
+    if (el.hasAttribute('data-salin')) { bukaForm({ ...t, id: idBaru(), props: [...(t.props ?? [])], active_genders: [...(t.active_genders ?? [])], partner_genders: [...(t.partner_genders ?? [])], published: false }, true); return; }
 
     const cuplikan = (t.text_id || t.text_en || '').slice(0, 80);
     if (!window.confirm(`Hapus tantangan ini?\n\n"${cuplikan}"\n\nTantangan tidak akan muncul lagi di game. Tidak bisa dibatalkan.`)) return;
