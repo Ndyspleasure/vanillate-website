@@ -24,7 +24,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
       <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
         Pakai <code class="font-mono text-xs">{'{active}'}</code> untuk pemain yang sedang giliran dan
-        <code class="font-mono text-xs">{'{partner}'}</code> untuk pasangannya. Isi minimal satu bahasa; jika salah satu
+        <code class="font-mono text-xs">{'{partner}'}</code> untuk pasangannya. Pakai
+        <code class="font-mono text-xs">{'{cewe}'}</code> dan <code class="font-mono text-xs">{'{cowo}'}</code> untuk nama
+        pemain cewek dan cowok, siapa pun yang sedang giliran. Isi minimal satu bahasa; jika salah satu
         kosong, game menampilkan bahasa yang ada. Tantangan bawaan (di kode game) tidak tampil di sini.
       </p>
       <p class="mt-2 text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
@@ -116,6 +118,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     levelup: 'Naik level (saat chemistry mencapai level baru)',
   };
   const KELAMIN: Record<string, string> = { female: 'Cewek', male: 'Cowok' };
+  /** Placeholder yang dikenal game: peran ({active}/{partner}) dan kelamin ({cewe}/{cowo}). */
+  const PLACEHOLDER = ['{active}', '{partner}', '{cewe}', '{cowo}'];
   /** Peran dalam teks: penantang = {active}, yang ditantang = {partner}. */
   const PERAN = {
     active_genders: 'Penantang ({active})',
@@ -419,8 +423,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const text_en = nilai('text_en').trim();
     if (!text_id && !text_en) return { galat: 'Tulis teks tantangan minimal dalam satu bahasa.' };
     if (text_id.length > MAX_TEKS || text_en.length > MAX_TEKS) return { galat: `Teks maksimal ${MAX_TEKS} karakter.` };
-    const asing = [text_id, text_en].join(' ').match(/\{[^}]*\}/g)?.filter((p) => p !== '{active}' && p !== '{partner}');
-    if (asing?.length) return { galat: `Placeholder tidak dikenal: ${[...new Set(asing)].join(', ')}. Pakai {active} atau {partner}.` };
+    const asing = [text_id, text_en].join(' ').match(/\{[^}]*\}/g)?.filter((p) => !PLACEHOLDER.includes(p));
+    if (asing?.length) return { galat: `Placeholder tidak dikenal: ${[...new Set(asing)].join(', ')}. Pakai ${PLACEHOLDER.join(', ')}.` };
 
     if (nilai('category') === RISIKO && nilai('players') !== 'both') {
       return { galat: 'Tantangan Risiko selalu dilakukan berdua. Pilih "Berdua".' };
