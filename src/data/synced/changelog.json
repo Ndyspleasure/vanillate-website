@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.68.3",
+    "date": "2026-10-11",
+    "title": "Info fitur di website vanillate.id diperbarui",
+    "highlights": [
+      "🌐 Daftar fitur di website kini mencantumkan UNO, Tebak Lagu, Social Hub (Counting & Streak Harian), dan Vanillate Dashboard",
+      "📜 Daftar command di website ditambah /sosial dan /pengaturan"
+    ]
+  },
+  {
     "version": "2.68.2",
     "date": "2026-10-06",
     "title": "Perbaikan pelindung streak harian",
