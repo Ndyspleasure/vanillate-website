@@ -291,7 +291,7 @@ export const content: Record<Locale, Copy> = {
     vanillate: {
       eyebrow: 'Founder Vanillate Studio',
       title: 'Membangun produk digital untuk komunitas Indonesia.',
-      role: 'Founder dan Owner',
+      role: 'Owner',
       lead: 'Membangun produk digital yang menghadirkan pengalaman baru bagi komunitas dan pengguna Indonesia.',
       storyTitle: 'Berawal dari Satu Ide',
       story: [
@@ -464,7 +464,7 @@ export const content: Record<Locale, Copy> = {
     vanillate: {
       eyebrow: 'Founder of Vanillate Studio',
       title: 'Building digital products for Indonesian communities.',
-      role: 'Founder and Owner',
+      role: 'Owner',
       lead: 'Building digital products that bring new experiences to Indonesian communities and users.',
       storyTitle: 'It Started With One Idea',
       story: [
