@@ -275,6 +275,90 @@
       "seoDescription": "Ubah gambar, data, subtitle, dan arsip ke format lain langsung di peramban. 200+ konversi gratis, tanpa akun, dan file tidak diunggah ke server.",
       "ogImage": "",
       "media": []
+    },
+    {
+      "slug": "play",
+      "name": "Vanillate Play",
+      "shortName": "Vanillate Play",
+      "tagline": "Main game pakai seluruh tubuhmu. Tantang pasangan, teman, atau keluarga di depan kamera.",
+      "description": "Platform game gerak di peramban: kamera mengubah tubuhmu menjadi controller. Ada 36 game, dari Body Boxing, Dance Battle, Mirror Battle, sampai Motion Race, dengan mode duo, couple, solo, dan party untuk 3–4 pemain. Pelacakan tubuh berjalan langsung di perangkat, tanpa instal dan tanpa akun, dan video kamera tidak pernah dikirim ke server.",
+      "platform": "web",
+      "status": "live",
+      "category": "Game Gerak",
+      "color": "#FF4D8D",
+      "icon": "swords",
+      "thumbnail": "https://vanillate-play.vercel.app/icons/icon-512.png",
+      "featured": true,
+      "verified": false,
+      "sort": 5,
+      "features": [
+        "36 game gerak: tinju, dansa, balapan, sepak bola, basket, freeze, dan banyak lagi",
+        "Dibuat untuk berdua: mode versus, couple, dan co-op",
+        "Mode party untuk 3–4 pemain dalam satu kamera",
+        "Koleksi pesta: beberapa game berturut-turut dengan satu papan skor",
+        "Tingkat kesulitan Mudah, Normal, dan Sulit di setiap game",
+        "Tutorial singkat yang mengecek setiap gerakan sebelum main",
+        "Angkat tangan untuk mulai dan main lagi, tanpa menyentuh layar",
+        "Klip ulangan detik-detik terakhir (opsional) dan kartu hasil untuk dibagikan",
+        "Mode kreator: layar vertikal 9:16 untuk rekam atau streaming",
+        "Privat: pelacakan tubuh di perangkat, video tidak diunggah",
+        "Bisa dimainkan dengan keyboard tanpa kamera",
+        "Bahasa Indonesia dan Inggris, bisa dipasang sebagai aplikasi"
+      ],
+      "longIntro": [
+        "Vanillate Play membaca gerakan seluruh tubuh lewat kamera laptop, tablet, atau ponsel. Lompat, jongkok, condong, pukul, tendang, atau berpose: setiap gerakan menjadi tombol di dalam game. Pemain dikenali dan dikalibrasi otomatis begitu berdiri di depan kamera.",
+        "Sebagian besar game dirancang untuk dimainkan berdua: adu tinju, adu pose, adu reaksi, atau kompak bersama di mode couple. Untuk 3–4 pemain ada mode party, dan koleksi seperti Party Night atau Date Night merangkai beberapa game dengan satu papan skor.",
+        "Semuanya berjalan di peramban. Tidak perlu akun atau instal, model pelacakan berjalan di perangkatmu, dan video kamera tidak pernah dikirim ke server. Tidak ada kamera? Setiap game tetap bisa dimainkan dengan keyboard."
+      ],
+      "commands": [],
+      "discord": {
+        "clientId": "",
+        "permissions": "",
+        "scopes": [
+          "bot",
+          "applications.commands"
+        ],
+        "integrationType": "",
+        "inviteUrl": ""
+      },
+      "badge": "Baru",
+      "badgeTone": "success",
+      "faq": [
+        {
+          "q": "Apa itu Vanillate Play?",
+          "a": "Platform game gerak gratis dari Vanillate Studio. Kamera membaca gerakan tubuhmu dan menjadikannya kontrol di 36 game, dengan mode duo, couple, solo, dan party."
+        },
+        {
+          "q": "Apakah perlu instal aplikasi atau membuat akun?",
+          "a": "Tidak. Buka di peramban modern, izinkan kamera, lalu berdiri di depan kamera. Kamu juga bisa memasangnya ke layar utama sebagai aplikasi."
+        },
+        {
+          "q": "Apakah video kamera saya diunggah?",
+          "a": "Tidak. Pelacakan tubuh berjalan di perangkatmu dan video tidak pernah dikirim ke server. Klip ulangan hanya direkam bila kamu menyalakannya, dan tetap di perangkat sampai kamu sendiri membagikannya."
+        },
+        {
+          "q": "Berapa orang yang bisa bermain?",
+          "a": "Satu sampai empat orang dalam satu kamera. Sebagian besar game dibuat untuk berdua, dan mode party mendukung 3–4 pemain."
+        },
+        {
+          "q": "Butuh ruang seberapa luas?",
+          "a": "Sekitar 2–3 meter di depan kamera, dengan kamera kira-kira setinggi dada dan cahaya dari depan. Untuk game yang memakai kaki, seluruh tubuh perlu terlihat."
+        },
+        {
+          "q": "Bagaimana kalau tidak punya kamera?",
+          "a": "Setiap game bisa dimainkan dengan keyboard. Gerakan pemain disimulasikan lewat mesin gerak yang sama."
+        }
+      ],
+      "ctaHeading": "",
+      "ctaText": "",
+      "ctaNote": "Gratis. Butuh kamera dan peramban modern, sekitar 2–3 meter ruang di depan kamera. Bisa juga dimainkan dengan keyboard.",
+      "ctaLabel": "Main Sekarang",
+      "ctaUrl": "https://vanillate-play.vercel.app/",
+      "faqCategory": "",
+      "seoTitle": "Vanillate Play, Game Gerak Pakai Kamera untuk Berdua",
+      "seoDescription": "Main 36 game pakai seluruh tubuhmu lewat kamera: tinju, dansa, balapan, dan lainnya. Mode duo, couple, dan party 3–4 pemain. Gratis, tanpa instal, video tidak diunggah.",
+      "ogImage": "https://vanillate-play.vercel.app/og-image.png",
+      "media": []
     }
   ]
 }
