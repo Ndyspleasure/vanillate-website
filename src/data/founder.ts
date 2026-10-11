@@ -10,15 +10,15 @@ export const founder = {
   name: 'Andi Kurniawan',
   nickname: 'Ndyspleasure',
   initials: 'AK',
-  role: 'Founder & Owner',
-  roleFull: 'Founder & Owner Vanillate Studio',
+  role: 'Owner',
+  roleFull: 'Owner Vanillate Studio',
   location: 'Bekasi, Indonesia',
 
   // Gambar Founder: PNG dengan background transparan (hanya objek Founder,
   // tanpa background/gradient/shadow). Background & efek dibuat oleh website
   // pada layer terpisah. File diletakkan di public/founder/andi-kurniawan.png.
   image: '/founder/andi-kurniawan.png',
-  imageAlt: 'Andi Kurniawan, Founder & Owner Vanillate Studio',
+  imageAlt: 'Andi Kurniawan, Owner Vanillate Studio',
 
   // Ringkasan singkat untuk kartu di /about.
   short:
@@ -30,7 +30,7 @@ export const founder = {
 
   // Peran di Vanillate — beberapa paragraf.
   roleInVanillate: [
-    'Sebagai Founder & Owner, Andi memegang arah studio secara menyeluruh, mulai dari keputusan produk, prioritas pengembangan, sampai operasional harian yang menjaga semuanya tetap berjalan.',
+    'Sebagai Owner, Andi memegang arah studio secara menyeluruh, mulai dari keputusan produk, prioritas pengembangan, sampai operasional harian yang menjaga semuanya tetap berjalan.',
     'Ia terlibat langsung di banyak lini: merancang pengalaman produk, menulis dan meninjau kode, mengelola data, serta menjaga hubungan dengan komunitas yang memakai produk Vanillate setiap hari.',
   ],
 
@@ -48,7 +48,7 @@ export const founder = {
 
   // Pengalaman / kapasitas.
   experience: [
-    { label: 'Founder & Owner', org: 'Vanillate Studio', period: '2026 — Kini' },
+    { label: 'Owner', org: 'Vanillate Studio', period: '2026 — Kini' },
     { label: 'Operations & Product', org: 'Vanillate Studio', period: '2026 — Kini' },
     { label: 'Developer', org: 'Vanillate Studio', period: '2026 — Kini' },
   ],
