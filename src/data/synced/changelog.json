@@ -1,5 +1,26 @@
 [
   {
+    "version": "2.69.1",
+    "date": "2026-10-12",
+    "title": "Giliran setelah event jadi lebih rapi",
+    "highlights": [
+      "🛠️ Setelah cerita event selesai, ajakan giliran kini cukup muncul sekali (tidak dobel lagi) lengkap dengan tombol boost",
+      "⏱️ Pemain yang mendapat giliran setelah event tetap mendapat waktu menjawab penuh",
+      "🔒 Peningkatan keamanan pada sistem website Vanillate"
+    ]
+  },
+  {
+    "version": "2.69.0",
+    "date": "2026-10-12",
+    "title": "AI Challenger makin ganas: serangan beruntun saat terdesak",
+    "highlights": [
+      "🤖 AI Challenger kini membalas dengan rentetan 1–10 kata sekali giliran, makin banyak saat HP-nya makin habis",
+      "🏆 AI yang kehabisan kata sampai nyawanya habis kini dihitung kalah, jadi semua pemain tetap dapat bonus x2",
+      "✨ Bonus EXP x2 dari event (AI Challenger, Lost Signal, kontrak Merchant) kini benar-benar masuk ke akunmu",
+      "📊 Kabar terkini pertarungan AI kini muncul rutin setiap 30 luka"
+    ]
+  },
+  {
     "version": "2.68.3",
     "date": "2026-10-11",
     "title": "Info fitur di website vanillate.id diperbarui",
