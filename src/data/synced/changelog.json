@@ -1,5 +1,13 @@
 [
   {
+    "version": "2.69.2",
+    "date": "2026-10-14",
+    "title": "Peningkatan keamanan bot",
+    "highlights": [
+      "🔒 Pengamanan data rahasia bot diperketat supaya bot tetap aman dan stabil"
+    ]
+  },
+  {
     "version": "2.69.1",
     "date": "2026-10-12",
     "title": "Giliran setelah event jadi lebih rapi",
