@@ -1,5 +1,45 @@
 [
   {
+    "version": "2.71.0",
+    "date": "2026-10-14",
+    "title": "Asisten AI di Pusat Bantuan — tanya apa saja soal bot",
+    "highlights": [
+      "🤖 Tombol baru **Tanya Asisten** di `/support`: tulis pertanyaanmu, asisten menjawab dari FAQ & panduan bot",
+      "🎧 Bila asisten belum tahu jawabannya, kamu langsung diarahkan ke Tim Support",
+      "🔒 Jawaban hanya terlihat olehmu dan bisa dipakai juga lewat DM"
+    ]
+  },
+  {
+    "version": "2.70.2",
+    "date": "2026-10-14",
+    "title": "FAQ Pusat Bantuan di DM kini lebih rapi",
+    "highlights": [
+      "📖 FAQ di DM bot kini menampilkan daftar pertanyaan saja — tidak lagi jadi tembok teks",
+      "👇 Pilih pertanyaan dari menu \"Lihat jawaban…\" untuk membaca jawabannya satu per satu",
+      "⬅️ Tombol Kembali ke FAQ & 🎧 Hubungi Tim Support selalu tersedia di setiap jawaban",
+      "📝 Jawaban FAQ ditulis ulang jadi poin & langkah singkat yang mudah diikuti"
+    ]
+  },
+  {
+    "version": "2.70.1",
+    "date": "2026-10-14",
+    "title": "Perbaikan restart & update bot",
+    "highlights": [
+      "🛠️ Perbaikan restart bot dari panel developer yang sebelumnya gagal — update kini lebih cepat sampai ke pemain",
+      "🛡️ Pemulihan otomatis saat update bermasalah kini lebih andal"
+    ]
+  },
+  {
+    "version": "2.70.0",
+    "date": "2026-10-14",
+    "title": "Update & restart bot lebih cepat dan aman",
+    "highlights": [
+      "🚀 Update bot kini bisa dipasang langsung dari panel developer — waktu offline saat update jadi jauh lebih singkat",
+      "🛡️ Bila versi baru bermasalah, bot otomatis kembali ke versi sebelumnya sehingga tetap bisa dimainkan",
+      "🔄 Restart bot kini lebih terkontrol dengan peringatan saat ada game yang sedang berjalan"
+    ]
+  },
+  {
     "version": "2.69.2",
     "date": "2026-10-14",
     "title": "Peningkatan keamanan bot",
