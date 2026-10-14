@@ -1,5 +1,47 @@
 [
   {
+    "version": "2.73.2",
+    "date": "2026-10-14",
+    "title": "Alur FAQ Pusat Bantuan lebih terarah",
+    "highlights": [
+      "❓ Pilih pertanyaan FAQ dulu — halaman utama FAQ kini lebih ringkas",
+      "🤖 Tombol Tanya Asisten muncul di halaman jawaban bila jawabannya belum cukup",
+      "🎧 Tim Support tetap bisa dihubungi lewat obrolan asisten"
+    ]
+  },
+  {
+    "version": "2.73.1",
+    "date": "2026-10-14",
+    "title": "Asisten Support kini menjawab lebih cepat",
+    "highlights": [
+      "⚡ Tanya Asisten membalas jauh lebih cepat — tidak perlu menunggu lama lagi",
+      "💬 Tanda \"sedang mengetik\" tetap tampil sampai jawaban asisten terkirim",
+      "🛠️ Perbaikan asisten yang kadang bilang tidak bisa menjawab padahal jawabannya ada"
+    ]
+  },
+  {
+    "version": "2.73.0",
+    "date": "2026-10-14",
+    "title": "Ngobrol langsung dengan Asisten Support di DM",
+    "highlights": [
+      "🤖 Tombol Tanya Asisten kini membuka obrolan langsung di DM — cukup ketik pertanyaanmu, asisten membalas seperti chat dengan Tim Support",
+      "💬 Asisten memahami pertanyaan lanjutan dalam satu obrolan",
+      "⏱️ Obrolan ditutup otomatis bila tidak ada balasan selama 2 menit, atau akhiri kapan saja dengan tombol 🚫",
+      "🎧 Butuh bantuan manusia? Tekan Hubungi Tim Support — riwayat obrolan ikut diteruskan, jadi tidak perlu mengulang cerita"
+    ]
+  },
+  {
+    "version": "2.72.0",
+    "date": "2026-10-14",
+    "title": "FAQ Pusat Bantuan lebih lengkap & tombol FAQ di DM sambutan",
+    "highlights": [
+      "📚 FAQ Pusat Bantuan (/support) kini berisi 25 pertanyaan dengan penjelasan jauh lebih detail",
+      "🎮 Pertanyaan baru: aturan main, mode, boost & harga shop, class, quest, dungeon, event PvP, Social Hub, dan lainnya",
+      "🧠 Tips & strategi supaya lebih sering menang",
+      "❓ DM sambutan pemain baru kini punya tombol FAQ & Bantuan — Tim Support tetap bisa dihubungi dari sana"
+    ]
+  },
+  {
     "version": "2.71.0",
     "date": "2026-10-14",
     "title": "Asisten AI di Pusat Bantuan — tanya apa saja soal bot",
