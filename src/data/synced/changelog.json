@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.73.3",
+    "date": "2026-10-15",
+    "title": "Asisten Support lebih pintar & panduan diperbaiki",
+    "highlights": [
+      "🤖 Asisten AI Support kini bisa menjawab lebih banyak pertanyaan: waktu giliran, awalan 2–3 huruf, isi Mystery Box, Win Streak, Leaderboard, dan Battle Skill",
+      "📖 Panduan /help & FAQ diperbaiki: waktu habis langsung mengurangi 1 nyawa, giliran 30 detik, event hanya muncul di PvP",
+      "🔤 Penjelasan awalan kata kini lebih jelas — bisa 1–3 huruf terakhir kata sebelumnya"
+    ]
+  },
+  {
     "version": "2.73.2",
     "date": "2026-10-14",
     "title": "Alur FAQ Pusat Bantuan lebih terarah",
