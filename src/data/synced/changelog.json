@@ -1,5 +1,31 @@
 [
   {
+    "version": "2.74.0",
+    "date": "2026-10-17",
+    "title": "Tukar Kata-Kata: terima kata-kata hari ini dari teman",
+    "highlights": [
+      "💌 Setelah streak tercatat, kamu menerima kata-kata hari ini dari seorang teman secara acak",
+      "🔄 Kata-katamu juga akan dikirim ke satu teman — tanpa nama, sekali saja, dan tidak pernah kembali ke dirimu sendiri",
+      "🧹 Kata-kata yang sudah terkirim otomatis dihapus dari bot"
+    ]
+  },
+  {
+    "version": "2.73.6",
+    "date": "2026-10-17",
+    "title": "Pemantauan Kata-Kata Hari Ini oleh tim",
+    "highlights": [
+      "🛡️ Tim kini bisa memantau kata-kata hari ini & antrean Tukar Kata-Kata agar tetap aman dan tidak pernah terkirim ke penulisnya sendiri"
+    ]
+  },
+  {
+    "version": "2.73.5",
+    "date": "2026-10-17",
+    "title": "Pengingat Streak Harian lebih andal",
+    "highlights": [
+      "🔔 Pengingat streak & ajakan pagi yang sempat gagal terkirim karena gangguan Discord kini dicoba lagi otomatis, jadi kamu tetap diingatkan sebelum streak putus"
+    ]
+  },
+  {
     "version": "2.73.4",
     "date": "2026-10-17",
     "title": "Perbaikan pengingat Streak Harian & tautan bantuan di DM",
