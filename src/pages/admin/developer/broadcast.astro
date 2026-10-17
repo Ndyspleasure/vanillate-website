@@ -1,0 +1,237 @@
+---
+// Panel Developer — Broadcast DM (pengganti /developer › 📡 Broadcast).
+//
+// Draft, pratinjau, dan konfirmasi terjadi di sini; bot menerima draft LENGKAP
+// lewat perintah `broadcast.send`, memvalidasi ulang, lalu mengirim lewat
+// broadcastService (dedup, opt-out, banned, jeda antar-DM, audiens server
+// divalidasi ulang per penerima). Progress ditulis bot ke bot_commands.progress.
+// Audiens 🚨 darurat (mengabaikan opt-out) khusus owner — dijaga bot.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Broadcast DM" active="dev-broadcast">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="Broadcast DM"
+    description="Kirim DM resmi ke pemain atau owner/admin server, lengkap dengan tombol custom dan polling. Selalu uji ke satu ID dulu sebelum mengirim massal."
+  />
+
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <div id="bc-root" class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]"></div>
+    <div id="bc-track"></div>
+    <div id="bc-history"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc } from '@/lib/admin-ui';
+  import { fmtWaktu, fmtAngka } from '@/lib/admin-auth';
+  import { bacaSnapshot, bacaPerintah, kirimPerintah, riwayatPerintah } from '@/lib/dev-panel/client';
+  import { estimateMinutes, isFinal, mediaKind, parsePollOptions, previewHeader, validateBroadcast, type BroadcastDraft } from '@/lib/dev-panel/model';
+  import { fieldHtml, notice, pill, progressBar, section, statusTone, table, KELAS } from '@/lib/dev-panel/ui';
+
+  let role = 'viewer';
+  let audiences: any[] = [];
+  let delayMs = 1200;
+
+  document.addEventListener('admin:ready', async (e) => {
+    role = (e as CustomEvent).detail?.role ?? 'viewer';
+    const snap = (await bacaSnapshot('broadcast')).data;
+    audiences = snap?.audiences ?? [];
+    delayMs = snap?.dmDelayMs ?? 1200;
+    render();
+    void muatRiwayat();
+    setInterval(() => void muatRiwayat(), 15_000);
+  });
+
+  const aud = (key: string) => audiences.find((a) => a.key === key);
+
+  function render() {
+    const root = document.getElementById('bc-root')!;
+    if (role !== 'owner' && role !== 'admin') {
+      root.innerHTML = notice('info', 'Peran kamu hanya bisa melihat riwayat broadcast di bawah.');
+      return;
+    }
+    if (!audiences.length) {
+      root.innerHTML = notice('warn', 'Bot belum mengirim daftar audiens (snapshot broadcast). Pastikan bot v3 berjalan, lalu muat ulang.');
+      return;
+    }
+    const opsi = audiences.map((a) => ({
+      value: a.key,
+      label: `${a.label}${a.count !== null && a.count !== undefined ? ` — ${fmtAngka(a.count)} penerima` : ''}${a.emergency && role !== 'owner' ? ' (khusus owner)' : ''}`,
+    }));
+
+    root.innerHTML = `
+      <form id="bc-form" class="${KELAS.kartu} space-y-4">
+        ${fieldHtml({ name: 'audience', label: 'Audiens', type: 'select', options: opsi, value: 'test' }, 'bc-')}
+        <div id="bc-target-wrap">${fieldHtml({ name: 'targetUser', label: 'Penerima test (Player ID / Discord ID)', placeholder: 'mis. #A3K9' }, 'bc-')}</div>
+        <div id="bc-aud-info" class="text-xs ${KELAS.muted}"></div>
+        ${fieldHtml({ name: 'title', label: 'Judul embed (opsional)' }, 'bc-')}
+        ${fieldHtml({ name: 'message', label: 'Isi pesan', type: 'textarea', rows: 6, required: true, help: 'Maks. 4000 karakter. Markdown Discord didukung.' }, 'bc-')}
+        <div class="grid gap-4 sm:grid-cols-2">
+          ${fieldHtml({ name: 'color', label: 'Warna hex (opsional)', placeholder: '57F287' }, 'bc-')}
+          ${fieldHtml({ name: 'mediaUrl', label: 'URL media (opsional)', placeholder: 'https://… gambar / video / tautan' }, 'bc-')}
+          ${fieldHtml({ name: 'customLabel', label: 'Teks tombol custom (opsional)', placeholder: 'mis. Lihat Promo' }, 'bc-')}
+          ${fieldHtml({ name: 'customUrl', label: 'URL tombol custom', placeholder: 'https://…' }, 'bc-')}
+        </div>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="bc-poll-on" class="h-4 w-4 accent-amber-500" /> Sertakan polling</label>
+        <div id="bc-poll" class="hidden space-y-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-4">
+          ${fieldHtml({ name: 'pollQuestion', label: 'Pertanyaan polling' }, 'bc-')}
+          ${fieldHtml({ name: 'pollOptions', label: 'Opsi (satu per baris, 2–5)', type: 'textarea', rows: 4 }, 'bc-')}
+          ${fieldHtml({ name: 'pollHours', label: 'Durasi (jam, desimal boleh — 1.5 = 1 jam 30 menit)', type: 'number', value: '24' }, 'bc-')}
+          <p class="text-xs ${KELAS.muted}">Polling dibuat saat broadcast dikirim; hasil otomatis diumumkan ke channel polling saat waktu habis. Pantau di halaman Polling.</p>
+        </div>
+        <div id="bc-errors"></div>
+        <div class="flex flex-wrap items-center gap-3 pt-1">
+          <button type="submit" id="bc-send" class="${KELAS.tombol}">Kirim</button>
+          <p class="text-xs" role="status" aria-live="polite" id="bc-status"></p>
+        </div>
+      </form>
+      <div class="space-y-3">
+        <p class="text-xs font-medium ${KELAS.muted}">Pratinjau DM (perkiraan tampilan Discord)</p>
+        <div id="bc-preview"></div>
+      </div>`;
+
+    const form = document.getElementById('bc-form') as HTMLFormElement;
+    form.addEventListener('input', perbarui);
+    form.addEventListener('change', perbarui);
+    document.getElementById('bc-poll-on')!.addEventListener('change', () => {
+      document.getElementById('bc-poll')!.classList.toggle('hidden', !(document.getElementById('bc-poll-on') as HTMLInputElement).checked);
+      perbarui();
+    });
+    form.addEventListener('submit', kirim);
+    perbarui();
+  }
+
+  function nilai(name: string): string {
+    const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`#bc-form [name="${name}"]`);
+    return String(el?.value ?? '').trim();
+  }
+
+  function draft(): BroadcastDraft {
+    const pollOn = (document.getElementById('bc-poll-on') as HTMLInputElement | null)?.checked;
+    return {
+      audience: nilai('audience'),
+      targetUser: nilai('targetUser'),
+      title: nilai('title'),
+      message: nilai('message'),
+      color: nilai('color'),
+      mediaUrl: nilai('mediaUrl'),
+      customLabel: nilai('customLabel'),
+      customUrl: nilai('customUrl'),
+      poll: pollOn ? {
+        question: nilai('pollQuestion'),
+        options: parsePollOptions(nilai('pollOptions')),
+        durationHours: Number(nilai('pollHours').replace(',', '.')),
+      } : null,
+    };
+  }
+
+  function perbarui() {
+    const d = draft();
+    const a = aud(d.audience);
+    document.getElementById('bc-target-wrap')!.classList.toggle('hidden', !a?.test);
+    const info: string[] = [];
+    if (a && !a.test && a.count !== null) info.push(`${fmtAngka(a.count)} penerima · jeda ${delayMs} ms · ±${estimateMinutes(a.count, delayMs)} menit`);
+    if (a?.server) info.push('Kategori server: DM menyebut nama server tiap penerima; izin owner/admin dicek ulang saat kirim.');
+    if (a?.emergency) info.push('🚨 Tetap terkirim ke pemain yang sudah menonaktifkan DM. Pakai hanya untuk informasi penting.');
+    document.getElementById('bc-aud-info')!.textContent = info.join(' ');
+    (document.getElementById('bc-send') as HTMLButtonElement).textContent = a?.test ? 'Kirim test' : 'Kirim broadcast';
+
+    const errs = validateBroadcast(d, { test: Boolean(a?.test) });
+    if (a?.emergency && role !== 'owner') errs.push('Audiens info darurat khusus owner.');
+    document.getElementById('bc-errors')!.innerHTML = errs.length && d.message ? notice('warn', errs.join(' ')) : '';
+    renderPreview(d, Boolean(a?.emergency), Boolean(a?.server));
+  }
+
+  function renderPreview(d: BroadcastDraft, emergency: boolean, server: boolean) {
+    const h = previewHeader(d, { emergency, server });
+    const media = mediaKind(d.mediaUrl);
+    const tombol = ['🔗 Discord Server', '🌐 Website', '💬 Chat dengan Agent'];
+    if (d.customLabel && d.customUrl) tombol.push(`📝 ${d.customLabel}`);
+    if (!emergency && !server) tombol.push('🔕 Berhenti terima DM');
+    if (server) tombol.push('🔕 Berhenti Info Server');
+    const poll = d.poll ? `<div class="mt-3 rounded-lg border-l-4 border-sky-500 bg-ink-900/40 p-3">
+        <p class="text-sm font-semibold">📊 ${esc(d.poll.question || 'Pertanyaan polling')}</p>
+        <div class="mt-2 flex flex-wrap gap-2">${d.poll.options.map((o) => `<span class="rounded bg-ink-700 px-2 py-1 text-xs">${esc(o)}</span>`).join('')}</div>
+        <p class="mt-2 text-[0.7rem] text-cream-300/60">Berakhir ${esc(d.poll.durationHours || '?')} jam setelah dikirim</p>
+      </div>` : '';
+    document.getElementById('bc-preview')!.innerHTML = `
+      <div class="rounded-xl bg-[#313338] p-4 text-cream-50 text-sm">
+        ${media === 'link' ? `<p class="mb-2 text-sky-300 break-all">${esc(d.mediaUrl)}</p>` : ''}
+        <div class="rounded border-l-4 bg-[#2b2d31] p-3" style="border-color:${esc(h.color)}">
+          ${h.title ? `<p class="font-semibold">${esc(h.title)}</p>` : ''}
+          <p class="mt-1 whitespace-pre-line">${esc(d.message || 'Isi pesan…')}</p>
+          ${server ? `<p class="mt-2 text-xs font-semibold">📌 Kenapa saya menerima pesan ini?</p><p class="text-xs text-cream-300/70">Kamu owner/admin di <em>(nama server tiap penerima)</em>.</p>` : ''}
+          ${media === 'image' ? `<img src="${esc(d.mediaUrl)}" alt="" class="mt-2 max-h-48 rounded" onerror="this.remove()" />` : ''}
+          <p class="mt-2 text-[0.7rem] text-cream-300/60">${esc(h.footer)}</p>
+        </div>
+        ${poll}
+        <div class="mt-3 flex flex-wrap gap-2">${tombol.map((t) => `<span class="rounded bg-[#4e5058] px-3 py-1 text-xs">${esc(t)}</span>`).join('')}</div>
+      </div>`;
+  }
+
+  async function kirim(e: Event) {
+    e.preventDefault();
+    const d = draft();
+    const a = aud(d.audience);
+    const st = document.getElementById('bc-status')!;
+    const errs = validateBroadcast(d, { test: Boolean(a?.test) });
+    if (errs.length) { st.textContent = errs.join(' '); st.className = 'text-xs text-red-600 dark:text-red-400'; return; }
+    if (!a?.test) {
+      const kata = a?.emergency ? 'DARURAT' : 'BROADCAST';
+      const jawab = window.prompt(`Kirim ke ${a?.label ?? d.audience} (${fmtAngka(a?.count)} penerima)? Pesan yang terkirim tidak bisa ditarik. Ketik ${kata} untuk melanjutkan:`);
+      if (jawab !== kata) { st.textContent = 'Dibatalkan.'; st.className = `text-xs ${KELAS.muted}`; return; }
+    }
+    const payload: Record<string, unknown> = { ...d };
+    if (!a?.test) delete payload.targetUser;
+    if (!d.poll) delete payload.poll;
+    const btn = document.getElementById('bc-send') as HTMLButtonElement;
+    btn.disabled = true;
+    st.textContent = 'Mengirim ke antrean…';
+    const o = await kirimPerintah('broadcast.send', payload, { wait: false });
+    btn.disabled = false;
+    if (!o.ok || !o.id) { st.textContent = o.error ?? 'Gagal.'; st.className = 'text-xs text-red-600 dark:text-red-400'; return; }
+    st.textContent = `Masuk antrean (#${o.id}). Progress tampil di bawah.`;
+    st.className = 'text-xs text-teal-700 dark:text-teal-300';
+    void pantau(o.id);
+  }
+
+  let pantauId: number | null = null;
+  async function pantau(id: number) {
+    pantauId = id;
+    const el = document.getElementById('bc-track')!;
+    while (pantauId === id) {
+      const row = await bacaPerintah(id);
+      if (!row) break;
+      const r = row.result ?? {};
+      el.innerHTML = section(`Broadcast #${id}`, `<div class="${KELAS.kartu} space-y-3">
+        <div class="flex items-center gap-2">${pill(row.status, statusTone(row.status))}<span class="text-xs ${KELAS.muted}">${esc(row.payload?.audience ?? '')}</span></div>
+        ${progressBar(row.progress)}
+        ${row.status === 'done' ? notice('ok', `Selesai: ${r.sent} terkirim, ${r.failed} gagal${r.skipped ? `, ${r.skipped} dilewati` : ''} dari ${r.total} target unik${r.dupRemoved ? ` (dedup −${r.dupRemoved})` : ''} · ${r.durationS} dtk${r.pollId ? ` · polling #${r.pollId} aktif` : ''}.`) : ''}
+        ${row.status === 'done' && r.errors ? `<pre class="text-xs whitespace-pre-wrap">${esc(r.errors)}</pre>` : ''}
+        ${row.status === 'done' && r.skips ? `<pre class="text-xs whitespace-pre-wrap">${esc(r.skips)}</pre>` : ''}
+        ${row.status === 'error' ? notice('error', row.error ?? 'Gagal.') : ''}
+      </div>`);
+      if (isFinal(row.status)) { void muatRiwayat(); break; }
+      await new Promise((res) => setTimeout(res, 3000));
+    }
+  }
+
+  async function muatRiwayat() {
+    const el = document.getElementById('bc-history')!;
+    const { rows, error } = await riwayatPerintah(['broadcast.send'], 15);
+    if (error) { el.innerHTML = notice('error', error); return; }
+    el.innerHTML = section('Riwayat broadcast', table(['#', 'Audiens', 'Judul / pesan', 'Status', 'Hasil', 'Waktu', ''], rows.map((r: any) => [
+      esc(r.id),
+      esc(r.payload?.audience ?? '—'),
+      `<span class="text-xs">${esc(r.payload?.title || String(r.payload?.message ?? '').slice(0, 60))}</span>`,
+      pill(r.status, statusTone(r.status)),
+      `<span class="text-xs">${r.status === 'done' ? esc(`${r.result?.sent ?? 0} terkirim · ${r.result?.failed ?? 0} gagal`) : r.status === 'error' ? esc(r.error ?? '') : progressBar(r.progress)}</span>`,
+      `<span class="text-xs whitespace-nowrap">${esc(fmtWaktu(r.created_at))}</span>`,
+      isFinal(r.status) ? '' : `<button type="button" data-track="${esc(r.id)}" class="${KELAS.tombolNetral}">Pantau</button>`,
+    ]), 'Belum ada broadcast.'));
+    el.querySelectorAll<HTMLButtonElement>('[data-track]').forEach((b) => b.addEventListener('click', () => void pantau(Number(b.dataset.track))));
+  }
+</script>

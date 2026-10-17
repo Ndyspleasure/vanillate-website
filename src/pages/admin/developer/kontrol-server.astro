@@ -1,0 +1,188 @@
+---
+// Panel Developer — Kontrol Server (KHUSUS OWNER). Pengganti /developer ›
+// 🖥️ Kontrol Bot, 📊 Database › 💾 Backup & 🧹 Cleanup Log.
+//
+// Semua perintah di sini bertipe `sys.*`: ditolak trigger database untuk
+// non-owner DAN diperiksa ulang bot dari admin_users. Restart/update
+// menghentikan bot sebentar; hasil akhirnya ditulis bot setelah hidup lagi.
+// Backup diunggah bot ke bucket privat `bot-backups`; unduhan memakai signed
+// URL 10 menit (hanya owner yang lolos RLS storage), dihapus otomatis 24 jam.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Kontrol Server" active="dev-server">
+  <AdminPageHeader
+    eyebrow="Panel Developer · khusus owner"
+    title="Kontrol Server"
+    description="Restart, update kode dari origin/main, backup database, dan bersihkan log lama di server bot."
+  />
+
+  <div class="px-6 lg:px-10 py-8 max-w-4xl space-y-10" id="ks-root"></div>
+</AdminLayout>
+
+<script>
+  import { esc } from '@/lib/admin-ui';
+  import { getSupabase } from '@/lib/supabase';
+  import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
+  import { fmtBytes } from '@/lib/dev-panel/model';
+  import { formCard, notice, pasangAksi, pill, section, table, KELAS } from '@/lib/dev-panel/ui';
+
+  const BUCKET = 'bot-backups';
+
+  document.addEventListener('admin:ready', async (e) => {
+    const profile = (e as CustomEvent).detail;
+    const root = document.getElementById('ks-root')!;
+    if (profile?.role !== 'owner') {
+      root.innerHTML = notice('warn', 'Halaman ini khusus owner. Peran kamu tidak bisa menjalankan aksi server.');
+      return;
+    }
+    const sys = (await bacaSnapshot('system')).data;
+    const pm2 = sys?.control?.pm2;
+    const games = sys?.overview?.activeGames ?? 0;
+
+    root.innerHTML = [
+      section('Kontrol Bot', `<div class="${KELAS.kartu} space-y-4">
+        <div class="flex flex-wrap items-center gap-2 text-sm">
+          Versi <strong>v${esc(sys?.version?.version ?? '?')}</strong>
+          ${pm2 ? pill(`PM2: ${sys?.control?.pm2App ?? ''}`, 'ok') : pill('PM2 tidak terdeteksi', 'bad')}
+          ${games ? pill(`${games} game berjalan — akan terputus saat restart`, 'warn') : pill('tidak ada game berjalan', 'muted')}
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button type="button" id="ks-check" class="${KELAS.tombol}">Cek update</button>
+          <button type="button" id="ks-restart" class="${KELAS.tombolBahaya}">Restart bot</button>
+        </div>
+        <div id="ks-out" class="space-y-3"></div>
+      </div>`, 'Update = git fetch → pratinjau → fast-forward ke SHA yang dipratinjau → restart. Dependensi dipasang saat boot bila berubah; gagal boot → rollback otomatis.'),
+      section('Backup database', `<div class="${KELAS.kartu} space-y-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" id="ks-backup" class="${KELAS.tombol}">Buat backup sekarang</button>
+          <p id="ks-backup-status" class="text-xs" role="status" aria-live="polite"></p>
+        </div>
+        <div id="ks-backup-list"></div>
+      </div>`, 'Salinan SQLite yang konsisten (online backup), dikompres gzip. Berisi data pemain — unduh hanya ke perangkat yang aman. Berkas dihapus otomatis setelah 24 jam.'),
+      section('Bersihkan log', formCard({
+        id: 'ks-cleanup', title: 'Hapus file log lama di server', danger: true, submit: 'Bersihkan', ownerOnly: true,
+        fields: [{ name: 'days', label: 'Hapus yang lebih tua dari (hari)', type: 'number', value: '7', required: true }],
+      })),
+    ].join('');
+
+    pasangAksi(document.getElementById('ks-cleanup') as HTMLFormElement, {
+      type: 'sys.logs.cleanup',
+      confirm: (p) => `Hapus file log yang lebih tua dari ${p.days} hari?`,
+      success: (o) => `${o.result?.deleted ?? 0} file log dihapus.`,
+    });
+    document.getElementById('ks-check')!.addEventListener('click', cekUpdate);
+    document.getElementById('ks-restart')!.addEventListener('click', restart);
+    document.getElementById('ks-backup')!.addEventListener('click', backup);
+    void daftarBackup();
+  });
+
+  const out = () => document.getElementById('ks-out')!;
+
+  async function cekUpdate(ev: Event) {
+    const b = ev.currentTarget as HTMLButtonElement;
+    b.disabled = true;
+    out().innerHTML = notice('info', 'git fetch origin main…');
+    const o = await kirimPerintah('sys.bot.updateCheck', {}, { timeoutMs: 90_000 });
+    b.disabled = false;
+    if (!o.ok) { out().innerHTML = notice('error', o.error ?? 'Gagal cek update.'); return; }
+    const c = o.result;
+    if (!c.ahead) {
+      out().innerHTML = notice('ok', `Sudah versi terbaru: produksi ${String(c.head).slice(0, 8)} (v${c.fromVersion}) sama dengan origin/main.`)
+        + (c.blockers?.length ? notice('warn', `Catatan: ${c.blockers.join(' · ')}`) : '');
+      return;
+    }
+    const commits = (c.commits ?? []).map((x: string) => [`<code class="text-xs">${esc(x.slice(0, 7))}</code>`, esc(x.slice(8))]);
+    const sisa = c.ahead > (c.commits?.length ?? 0) ? `<p class="text-xs ${KELAS.muted}">…dan ${c.ahead - c.commits.length} commit lain.</p>` : '';
+    out().innerHTML = `
+      <p class="text-sm"><strong>Update tersedia: v${esc(c.fromVersion)} → v${esc(c.toVersion)}</strong> · ${esc(String(c.head).slice(0, 8))} → ${esc(String(c.remote).slice(0, 8))} · ${esc(c.ahead)} commit</p>
+      ${table(['Commit', 'Pesan'], commits)}${sisa}
+      ${c.depsChanged ? notice('warn', 'Dependensi berubah — npm ci dijalankan saat boot (bot offline lebih lama, ±1–3 menit).') : notice('info', 'Dependensi tidak berubah.')}
+      ${c.activeGames ? notice('warn', `${c.activeGames} game sedang berjalan dan akan terputus.`) : ''}
+      ${c.blockers?.length ? notice('error', `Tidak bisa update: ${c.blockers.join(' · ')}`) : ''}
+      <div class="flex items-center gap-3">
+        <button type="button" id="ks-update" data-sha="${esc(c.remote)}" class="${KELAS.tombol}" ${c.blockers?.length ? 'disabled' : ''}>Update &amp; Restart sekarang</button>
+        <p id="ks-update-status" class="text-xs" role="status" aria-live="polite"></p>
+      </div>`;
+    document.getElementById('ks-update')?.addEventListener('click', update);
+  }
+
+  /** Pantau perintah restart/update sampai bot hidup lagi dan menutupnya. */
+  async function tungguDeferred(type: string, payload: Record<string, unknown>, statusEl: HTMLElement) {
+    statusEl.textContent = 'Menunggu bot…';
+    const o = await kirimPerintah(type, payload, {
+      timeoutMs: 6 * 60_000,
+      onUpdate: (row) => {
+        statusEl.textContent = row.progress?.phase === 'restarting'
+          ? 'Bot sedang restart — hasil akhir ditulis bot setelah online lagi…'
+          : row.status === 'processing' ? 'Bot sedang memproses…' : 'Menunggu bot…';
+      },
+    });
+    if (o.ok) {
+      statusEl.innerHTML = notice('ok', o.result?.message ?? 'Selesai.');
+    } else {
+      const rec = (o.progress as any)?.recovery;
+      statusEl.innerHTML = notice(o.timedOut ? 'warn' : 'error', o.error ?? 'Gagal.')
+        + (rec ? notice('info', `Pemulihan darurat di VPS: ${rec}`) : '');
+    }
+  }
+
+  async function update(ev: Event) {
+    const b = ev.currentTarget as HTMLButtonElement;
+    if (window.prompt('Bot akan di-update lalu restart. Ketik UPDATE untuk melanjutkan:') !== 'UPDATE') return;
+    b.disabled = true;
+    await tungguDeferred('sys.bot.update', { expectSha: b.dataset.sha }, document.getElementById('ks-update-status')!);
+  }
+
+  async function restart(ev: Event) {
+    const b = ev.currentTarget as HTMLButtonElement;
+    if (window.prompt('Bot akan offline beberapa detik (kode tidak berubah). Ketik RESTART untuk melanjutkan:') !== 'RESTART') return;
+    b.disabled = true;
+    out().innerHTML = '<p id="ks-restart-status" class="text-xs"></p>';
+    await tungguDeferred('sys.bot.restart', {}, document.getElementById('ks-restart-status')!);
+    b.disabled = false;
+  }
+
+  async function backup(ev: Event) {
+    const b = ev.currentTarget as HTMLButtonElement;
+    const st = document.getElementById('ks-backup-status')!;
+    if (!window.confirm('Buat backup database sekarang? Berkas berisi data pemain.')) return;
+    b.disabled = true;
+    st.textContent = 'Bot sedang membuat & mengunggah backup…';
+    st.className = `text-xs ${KELAS.muted}`;
+    const o = await kirimPerintah('sys.db.backup', {}, { timeoutMs: 5 * 60_000 });
+    b.disabled = false;
+    if (!o.ok) { st.textContent = o.error ?? 'Backup gagal.'; st.className = 'text-xs text-red-600 dark:text-red-400'; return; }
+    st.textContent = `Backup siap: ${o.result.path} (${fmtBytes(o.result.gzipBytes)} terkompresi dari ${fmtBytes(o.result.sizeBytes)}) · SHA-256 ${String(o.result.sha256).slice(0, 16)}…`;
+    st.className = 'text-xs text-teal-700 dark:text-teal-300';
+    await daftarBackup();
+  }
+
+  async function daftarBackup() {
+    const el = document.getElementById('ks-backup-list')!;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { data, error } = await supabase.storage.from(BUCKET).list('', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
+    if (error) { el.innerHTML = notice('error', 'Gagal membaca daftar backup (bucket belum dibuat? jalankan supabase/developer-panel-schema.sql).'); return; }
+    const rows = (data ?? []).filter((f) => f.name && !f.name.startsWith('.')).map((f) => [
+      `<code class="text-xs">${esc(f.name)}</code>`,
+      esc(fmtBytes((f.metadata as any)?.size ?? null)),
+      esc(f.created_at ? new Date(f.created_at).toLocaleString('id-ID') : '—'),
+      `<button type="button" data-dl="${esc(f.name)}" class="${KELAS.tombolNetral}">Unduh</button>
+       <button type="button" data-del="${esc(f.name)}" class="${KELAS.tombolNetral}">Hapus</button>`,
+    ]);
+    el.innerHTML = table(['Berkas', 'Ukuran', 'Dibuat', ''], rows, 'Belum ada backup.');
+    el.querySelectorAll<HTMLButtonElement>('[data-dl]').forEach((btn) => btn.addEventListener('click', async () => {
+      const { data: signed, error: err } = await supabase.storage.from(BUCKET).createSignedUrl(btn.dataset.dl!, 600, { download: true });
+      if (err || !signed) { alert('Gagal membuat tautan unduh.'); return; }
+      window.location.href = signed.signedUrl;
+    }));
+    el.querySelectorAll<HTMLButtonElement>('[data-del]').forEach((btn) => btn.addEventListener('click', async () => {
+      if (!window.confirm(`Hapus ${btn.dataset.del}?`)) return;
+      const { error: err } = await supabase.storage.from(BUCKET).remove([btn.dataset.del!]);
+      if (err) { alert('Gagal menghapus.'); return; }
+      void daftarBackup();
+    }));
+  }
+</script>

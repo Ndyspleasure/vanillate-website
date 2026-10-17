@@ -1,0 +1,96 @@
+---
+// Panel Developer — Tutorial Pemain Baru (pengganti /developer › 🎓 Tutorial).
+// Statistik & sesi dari snapshot `tutorial`. Gerbang tutorial diatur di
+// /admin/kontrol (setting tutorial_enabled & tutorial_gate_new). Reset massal
+// bertipe sys.* (khusus owner) dengan konfirmasi ketik "RESET SEMUA".
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Tutorial" active="dev-tutorial">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="Tutorial Pemain Baru"
+    description="Status tutorial seluruh pemain, sesi yang sedang berjalan, dan alat bantu per pemain."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-10">
+    <p id="tut-fresh"></p>
+    <div id="tut-body" class="space-y-10"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { url } from '@/utils/url';
+  import { bacaSnapshot } from '@/lib/dev-panel/client';
+  import { GRUP } from '@/lib/dev-panel/actions';
+  import { fmtJam, formCard, freshness, pasangAksi, pill, section, stat, table } from '@/lib/dev-panel/ui';
+
+  let role = 'viewer';
+
+  document.addEventListener('admin:ready', (e) => {
+    role = (e as CustomEvent).detail?.role ?? 'viewer';
+    void muat();
+  });
+
+  async function muat() {
+    const s = await bacaSnapshot('tutorial');
+    document.getElementById('tut-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('tut-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
+    const t = s.data;
+    const editor = role === 'owner' || role === 'admin';
+    const aksiTutorial = GRUP.find((g) => g.key === 'tutorial')!.aksi;
+
+    body.innerHTML = [
+      section('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Belum mulai', fmtAngka(t.counts?.NOT_STARTED))}
+        ${stat('Sedang berjalan', fmtAngka(t.counts?.IN_PROGRESS))}
+        ${stat('Sudah selesai', fmtAngka(t.counts?.COMPLETED))}
+        ${stat('Tertinggal versi', fmtAngka(t.outdated), 'akan diminta mengerjakan materi baru')}
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        Konten v${esc(t.version)} · ${esc(t.questCount)} quest ·
+        Gerbang wajib ${t.gates?.tutorial ? pill('aktif', 'ok') : pill('nonaktif', 'muted')}
+        Gerbang materi baru ${t.gates?.newContent ? pill('aktif', 'ok') : pill('nonaktif', 'muted')}
+        <a href="${url('/admin/kontrol')}" class="text-xs text-amber-700 dark:text-amber-400 underline">Atur gerbang di Kontrol Bot →</a>
+      </div>`),
+      section('Sesi berjalan', table(['Pemain (Discord ID)', 'Quest', 'Aktivitas terakhir'], (t.sessions ?? []).map((x: any) => [
+        `<code class="text-xs">${esc(x.userId)}</code>`,
+        esc(x.questNumber ? `${x.questNumber}/${t.questCount} ${x.questTitle ?? ''}` : '—'),
+        `<span class="text-xs">${esc(fmtJam(x.lastActivityAt))}</span>`,
+      ]), 'Tidak ada sesi yang sedang berjalan.')),
+      editor ? section('Alat bantu per pemain', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${aksiTutorial.map((a) => formCard({ id: `tut-${a.type.replace(/\./g, '-')}`, title: a.label, fields: a.fields, danger: a.danger, desc: a.help })).join('')}
+      </div>`) : '',
+      role === 'owner' ? section('Reset seluruh pemain', formCard({
+        id: 'tut-reset-all', title: 'Reset tutorial SELURUH pemain', danger: true, ownerOnly: true, submit: 'Reset semua',
+        desc: 'Semua pemain wajib mengerjakan tutorial lagi dari quest pertama. Tidak bisa dibatalkan.',
+        fields: [{ name: 'confirm', label: 'Ketik RESET SEMUA', required: true, placeholder: 'RESET SEMUA' }],
+      })) : '',
+    ].join('');
+
+    for (const a of editor ? aksiTutorial : []) {
+      pasangAksi(document.getElementById(`tut-${a.type.replace(/\./g, '-')}`) as HTMLFormElement, {
+        type: a.type,
+        confirm: a.danger ? (p) => `${a.label} untuk "${p.player}"?` : undefined,
+        success: (o) => (a.type === 'tutorial.cleanOne'
+          ? (o.result?.cleaned ? 'Pinjaman tutorial ditarik kembali.' : 'Tidak ada pinjaman tutorial yang tersisa.')
+          : 'Selesai.'),
+        resetOnSuccess: true,
+        onDone: (o) => { if (o.ok) setTimeout(() => void muat(), 1500); },
+      });
+    }
+    const resetAll = document.getElementById('tut-reset-all') as HTMLFormElement | null;
+    if (resetAll) {
+      pasangAksi(resetAll, {
+        type: 'sys.tutorial.resetAll',
+        confirm: (p) => (String(p.confirm).toUpperCase() === 'RESET SEMUA' ? 'Yakin mereset tutorial SELURUH pemain?' : null),
+        send: { timeoutMs: 10 * 60_000 },
+        success: (o) => `${o.result?.rows ?? 0} baris status dikosongkan, ${o.result?.sessionsCleaned ?? 0} sesi dibereskan.`,
+        onDone: (o) => { if (o.ok) setTimeout(() => void muat(), 1500); },
+      });
+    }
+  }
+</script>

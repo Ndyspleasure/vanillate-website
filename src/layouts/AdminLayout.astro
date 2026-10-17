@@ -59,11 +59,30 @@ const menu = [
     icon: '<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
     items: [
       { key: 'kontrol', label: 'Kontrol Bot',   href: '/admin/kontrol' },
-      { key: 'operasi', label: 'Operasi Bot',   href: '/admin/operasi' },
-      { key: 'games',   label: 'Monitor Game',  href: '/admin/games' },
       { key: 'promo',   label: 'Promo',         href: '/admin/promo' },
-      { key: 'kata',    label: 'Moderasi Kata', href: '/admin/kata' },
       { key: 'lagu',    label: 'Tebak Lagu',    href: '/admin/lagu' },
+    ],
+  },
+  {
+    // Pengganti slash command /developer (V3). Semua aksi dikirim lewat
+    // bot_commands; keadaan bot dibaca dari bot_panel_snapshots.
+    key: 'grup-developer', label: 'Panel Developer',
+    icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+    items: [
+      { key: 'dev-home',      label: 'Ringkasan & Sistem', href: '/admin/developer' },
+      { key: 'dev-server',    label: 'Kontrol Server',     href: '/admin/developer/kontrol-server' },
+      { key: 'games',         label: 'Monitor Game',       href: '/admin/games' },
+      { key: 'pemain',        label: 'Pemain',             href: '/admin/pemain' },
+      { key: 'kata',          label: 'Word Collection',    href: '/admin/kata' },
+      { key: 'dev-broadcast', label: 'Broadcast DM',       href: '/admin/developer/broadcast' },
+      { key: 'dev-polling',   label: 'Polling',            href: '/admin/developer/polling' },
+      { key: 'dev-event',     label: 'Event System',       href: '/admin/developer/event' },
+      { key: 'dev-error',     label: 'Error KB',           href: '/admin/developer/error' },
+      { key: 'dev-tutorial',  label: 'Tutorial',           href: '/admin/developer/tutorial' },
+      { key: 'dev-campaign',  label: 'DM Campaign',        href: '/admin/developer/campaign' },
+      { key: 'dev-sosial',    label: 'Social Monitor',     href: '/admin/developer/sosial' },
+      { key: 'dev-autoheal',  label: 'Auto-Heal',          href: '/admin/developer/autoheal' },
+      { key: 'operasi',       label: 'Operasi & Riwayat',  href: '/admin/operasi' },
     ],
   },
   {
@@ -105,7 +124,6 @@ const menu = [
       { key: 'statistik', label: 'Statistik',     href: '/admin/statistik' },
       { key: 'logs',      label: 'Log Aktivitas', href: '/admin/logs' },
       { key: 'server',    label: 'Server',        href: '/admin/server' },
-      { key: 'pemain',    label: 'Pemain',        href: '/admin/pemain' },
     ],
   },
 ];

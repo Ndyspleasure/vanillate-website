@@ -1,0 +1,169 @@
+---
+// Panel Developer — Error Knowledge Base (pengganti /developer › 🐛 Error KB).
+//
+// Ringkasan, error terbaru, fingerprint teratas, dan statistik auto-recovery
+// dari snapshot `errors`. Detail satu error (katalog + AI Analysis heuristik
+// lokal + dampak + insiden serupa) diminta lewat perintah error.detail; ubah
+// status lewat error.setStatus / error.fingerprintFixed.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Error KB" active="dev-error">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="Error Knowledge Base"
+    description="Error bot yang tercatat dengan Error ID, fingerprint, analisis penyebab, dan status penanganan."
+  />
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <p id="ekb-fresh"></p>
+      <form id="ekb-find" class="flex items-end gap-2">
+        <label class="text-xs">Cari Error ID<input name="errorId" required placeholder="ERR-XXXXXX" class="mt-1 block rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-transparent px-3 py-1.5 text-sm" /></label>
+        <button type="submit" class="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-ink-950 hover:bg-amber-400">Buka</button>
+      </form>
+    </div>
+    <div id="ekb-detail"></div>
+    <div id="ekb-body" class="space-y-10"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
+  import { toEpoch } from '@/lib/dev-panel/model';
+  import { fmtJam, freshness, notice, pill, section, stat, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
+
+  let bolehEdit = false;
+  const SEV: Record<string, Tone> = { CRITICAL: 'bad', HIGH: 'bad', MEDIUM: 'warn', LOW: 'muted' };
+  const STATUS: Record<string, Tone> = { open: 'warn', investigating: 'info', fixed: 'ok' };
+
+  document.addEventListener('admin:ready', (e) => {
+    const role = (e as CustomEvent).detail?.role;
+    bolehEdit = role === 'owner' || role === 'admin';
+    void muat();
+    setInterval(() => void muat(), 60_000);
+    document.getElementById('ekb-body')!.addEventListener('click', (ev) => {
+      const id = (ev.target as HTMLElement).closest<HTMLElement>('[data-err]')?.dataset.err;
+      if (id) void buka(id);
+    });
+    document.getElementById('ekb-find')!.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const v = String(new FormData(ev.currentTarget as HTMLFormElement).get('errorId') ?? '').trim();
+      if (v) void buka(v);
+    });
+  });
+
+  async function muat() {
+    const s = await bacaSnapshot('errors');
+    document.getElementById('ekb-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('ekb-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
+    const { stats, fingerprintSummary: fp, recovery: rc, recent, fingerprints } = s.data;
+    const tombolErr = (id: string) => `<button type="button" data-err="${esc(id)}" class="font-mono text-xs underline decoration-dotted hover:text-amber-600">${esc(id)}</button>`;
+
+    body.innerHTML = [
+      section('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Total error', fmtAngka(stats.total), `${fmtAngka(stats.last24h)} dalam 24 jam`)}
+        ${stat('Masih open', fmtAngka(stats.open))}
+        ${stat('Fingerprint', fmtAngka(fp.total), `${fmtAngka(fp.open)} open · ${fmtAngka(fp.fixed)} fixed`)}
+        ${stat('Auto-recovery', `${rc.successRate ?? 0}%`, `${fmtAngka(rc.success)} berhasil dari ${fmtAngka(rc.total)} · rata-rata ${rc.avgDurationMs ?? 0} ms`)}
+      </div>
+      <div class="grid gap-4 lg:grid-cols-3">
+        ${table(['Kategori', 'Jumlah'], (stats.byCategory ?? []).map((r: any) => [esc(r.category), esc(fmtAngka(r.count))]), '—')}
+        ${table(['Severity', 'Jumlah'], (stats.bySeverity ?? []).map((r: any) => [pill(r.severity, SEV[r.severity] ?? 'muted'), esc(fmtAngka(r.count))]), '—')}
+        ${table(['Kode teratas', 'Jumlah'], (stats.topCodes ?? []).map((r: any) => [`<span class="text-xs">${esc(r.code)} — ${esc(r.name)}</span>`, esc(fmtAngka(r.count))]), '—')}
+      </div>`),
+      section('Error terbaru', table(['Error ID', 'Kode', 'Pesan', 'Konteks', 'Status', 'Waktu'], (recent ?? []).map((r: any) => [
+        tombolErr(r.error_id),
+        `<span class="text-xs">${esc(r.catalog_code ?? '—')}</span>${r.severity ? `<br>${pill(r.severity, SEV[r.severity] ?? 'muted')}` : ''}`,
+        `<span class="text-xs break-words">${esc(String(r.message ?? '').slice(0, 140))}</span>`,
+        `<span class="text-xs">${esc([r.guild_name, r.username, r.game_id].filter(Boolean).join(' · ') || '—')}</span>`,
+        pill(r.status ?? '—', STATUS[r.status] ?? 'muted'),
+        `<span class="text-xs whitespace-nowrap">${esc(fmtJam(toEpoch(r.created_at)))}</span>`,
+      ]), 'Belum ada error tercatat.')),
+      section('Fingerprint teratas', table(['Fingerprint', 'Kode', 'Kemunculan', 'Dampak', 'Recovery', 'Status'], (fingerprints ?? []).map((f: any) => [
+        `<code class="text-xs break-all">${esc(String(f.fingerprint).slice(0, 80))}</code>`,
+        `<span class="text-xs">${esc(f.catalog_code ?? '—')} ${esc(f.name ?? '')}</span>`,
+        esc(fmtAngka(f.occurrences)),
+        `<span class="text-xs">${esc(`${f.affected?.servers ?? 0} server · ${f.affected?.players ?? 0} pemain · ${f.affected?.games ?? 0} game`)}</span>`,
+        `<span class="text-xs">${esc(`${f.recovered_count ?? 0}/${f.recovery_attempts ?? 0}`)}</span>`,
+        pill(f.status ?? '—', STATUS[f.status] ?? 'muted'),
+      ]), 'Belum ada fingerprint.')),
+      section('Auto-recovery per metode', table(['Metode', 'Berhasil / total'], (rc.byMethod ?? []).map((m: any) => [esc(m.method), esc(`${m.ok ?? 0}/${m.total}`)]), 'Belum ada percobaan recovery.')),
+    ].join('');
+  }
+
+  async function buka(errorId: string, pesan = '') {
+    const el = document.getElementById('ekb-detail')!;
+    el.innerHTML = notice('info', `Memuat ${errorId}…`);
+    el.scrollIntoView({ behavior: 'smooth' });
+    const o = await kirimPerintah('error.detail', { errorId });
+    if (!o.ok) { el.innerHTML = notice('error', o.error ?? 'Gagal.'); return; }
+    renderDetail(o.result, pesan);
+  }
+
+  function renderDetail(d: any, pesan: string) {
+    const el = document.getElementById('ekb-detail')!;
+    const r = d.row ?? {};
+    const en = d.entry ?? {};
+    const a = d.analysis ?? {};
+    const konteks = [
+      r.guild_name ? `Server ${r.guild_name}` : '', r.channel_id ? `channel ${r.channel_id}` : '',
+      r.username ? `${r.username} (${r.user_id ?? '—'})` : '', r.command ? `perintah ${r.command}` : '', r.game_id ? `game ${r.game_id}` : '',
+    ].filter(Boolean).join(' · ');
+    const tombol = (status: string, label: string) => `<button type="button" data-status-set="${status}" class="${KELAS.tombolNetral}" ${r.status === status ? 'disabled' : ''}>${esc(label)}</button>`;
+    el.innerHTML = `<div class="${KELAS.kartu} space-y-4">
+      ${pesan ? notice('ok', pesan) : ''}
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p class="font-mono text-xs ${KELAS.muted}">${esc(r.error_id)} · ${esc(r.catalog_code ?? '—')} · ${esc(fmtJam(toEpoch(r.created_at)))}</p>
+          <h2 class="font-display text-xl font-semibold tracking-tightest">${esc(en.name ?? r.catalog_code ?? 'Unknown')}</h2>
+        </div>
+        <div class="flex gap-2">${pill(r.status ?? '—', STATUS[r.status] ?? 'muted')}${pill(r.severity ?? en.severity ?? 'MEDIUM', SEV[r.severity ?? en.severity] ?? 'muted')}</div>
+      </div>
+      <p class="text-sm">${esc(en.explanation_id ?? r.message ?? '—')}</p>
+      ${konteks ? `<p class="text-xs ${KELAS.muted}">${esc(konteks)}</p>` : ''}
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="space-y-1 text-sm">
+          <p class="font-semibold">Analisis</p>
+          <p>Akar masalah: ${esc(a.rootCause ?? en.root_cause ?? '—')} (${esc(a.confidence ?? r.confidence ?? 0)}%)</p>
+          <p>Modul: ${esc(a.affectedModule ?? '—')}${a.affectedFunction && a.affectedFunction !== '—' ? ` › ${esc(a.affectedFunction)}()` : ''}</p>
+          <p>Saran: ${esc(a.suggestedFix ?? en.solution ?? '—')}</p>
+          <p>Workaround: ${esc(a.workaround ?? en.workaround ?? '—')}</p>
+          <p>Risiko ${esc(a.estimatedRisk ?? '—')} · kompleksitas ${esc(a.complexity ?? '—')} · estimasi ${esc(a.estimatedFixTime ?? '—')} · prioritas ${esc(a.priority ?? '—')}</p>
+          ${a.recoveryRate != null ? `<p>Auto-recovery ${esc(a.recoveryRate)}% berhasil</p>` : ''}
+        </div>
+        <div class="space-y-1 text-sm">
+          <p class="font-semibold">Fingerprint & dampak</p>
+          <p class="font-mono text-xs break-all">${esc(r.fingerprint ?? '—')}</p>
+          ${d.affected ? `<p>${esc(`${d.affected.servers} server · ${d.affected.channels} channel · ${d.affected.players} pemain · ${d.affected.games} game`)}</p>` : ''}
+          ${a.similarIncidents ? `<p>${esc(a.similarIncidents.occurrences)}× sejak ${esc(a.similarIncidents.firstVersion ?? '—')}</p>` : ''}
+        </div>
+      </div>
+      ${(d.similar ?? []).length ? table(['Insiden serupa', 'Pesan', 'Waktu'], d.similar.map((x: any) => [`<code class="text-xs">${esc(x.error_id)}</code>`, `<span class="text-xs">${esc(String(x.message ?? '').slice(0, 100))}</span>`, `<span class="text-xs">${esc(fmtJam(toEpoch(x.created_at)))}</span>`])) : ''}
+      <details><summary class="cursor-pointer text-sm font-semibold">Stack trace</summary><pre class="mt-2 max-h-80 overflow-auto rounded-xl bg-ink-900/5 dark:bg-cream-100/5 p-4 text-xs whitespace-pre-wrap">${esc(r.stack ?? 'N/A')}</pre></details>
+      ${bolehEdit ? `<div class="flex flex-wrap items-center gap-2">
+        ${tombol('investigating', 'Tandai investigating')}${tombol('fixed', 'Tandai fixed')}${tombol('open', 'Buka lagi (open)')}
+        ${r.fingerprint ? `<button type="button" data-fp-fixed class="${KELAS.tombolNetral}">Tandai fingerprint fixed</button>` : ''}
+        <span id="ekb-act" class="text-xs"></span>
+      </div>` : ''}
+    </div>`;
+
+    el.querySelectorAll<HTMLButtonElement>('[data-status-set]').forEach((b) => b.addEventListener('click', async () => {
+      document.getElementById('ekb-act')!.textContent = 'Menunggu bot…';
+      const o = await kirimPerintah('error.setStatus', { errorId: r.error_id, status: b.dataset.statusSet });
+      if (!o.ok) { document.getElementById('ekb-act')!.textContent = o.error ?? 'Gagal.'; return; }
+      renderDetail(o.result, `Status ${r.error_id} diubah menjadi ${b.dataset.statusSet}.`);
+      void muat();
+    }));
+    el.querySelector<HTMLButtonElement>('[data-fp-fixed]')?.addEventListener('click', async () => {
+      document.getElementById('ekb-act')!.textContent = 'Menunggu bot…';
+      const o = await kirimPerintah('error.fingerprintFixed', { errorId: r.error_id });
+      if (!o.ok) { document.getElementById('ekb-act')!.textContent = o.error ?? 'Gagal.'; return; }
+      renderDetail(o.result, 'Fingerprint ditandai fixed.');
+      void muat();
+    });
+  }
+</script>

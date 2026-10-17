@@ -1,0 +1,169 @@
+---
+// Panel Developer — Auto-Healing Agent (pengganti /developer › 🩺 Auto-Heal
+// DAN tombol ah_* di channel kontrol Discord — sejak V3 approval & kontrol ada
+// di sini). Status dari snapshot `autoheal`. Semua aksi bertipe
+// `sys.autoheal.*` = KHUSUS OWNER (trigger DB + bot). Keputusan approval tetap
+// melalui approval.decide() di bot: CAS status, nonce, kedaluwarsa, ikatan
+// incident. Channel kontrol Discord tetap menerima notifikasi (tanpa tombol).
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Auto-Heal" active="dev-autoheal">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="Auto-Healing Agent"
+    description="Incident, permintaan izin, circuit breaker, dan auto-deploy. Approval izin & semua kontrol khusus owner."
+  />
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p id="ah-fresh"></p>
+      <button type="button" id="ah-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang dari bot</button>
+    </div>
+    <div id="ah-body" class="space-y-10"></div>
+    <div id="ah-detail"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { bacaSnapshot, kirimPerintah, muatUlangDariBot } from '@/lib/dev-panel/client';
+  import { fmtJam, freshness, notice, pill, section, stat, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
+
+  const RISK: Record<string, Tone> = { SAFE: 'ok', MODERATE: 'warn', CRITICAL: 'bad', LOW: 'ok', MEDIUM: 'warn', HIGH: 'bad' };
+  const CB: Record<string, Tone> = { CLOSED: 'ok', HALF_OPEN: 'warn', OPEN: 'bad' };
+  const KEPUTUSAN: Record<string, string> = {
+    once: 'Setujui sekali', temp: 'Setujui sementara', deny: 'Tolak', stop: 'Hentikan incident',
+  };
+
+  let role = 'viewer';
+
+  document.addEventListener('admin:ready', (e) => {
+    role = (e as CustomEvent).detail?.role ?? 'viewer';
+    void muat();
+    setInterval(() => void muat(), 20_000);
+    document.getElementById('ah-refresh')?.addEventListener('click', async (ev) => {
+      const b = ev.currentTarget as HTMLButtonElement;
+      b.disabled = true;
+      const { snapshots } = await muatUlangDariBot(['autoheal']);
+      b.disabled = false;
+      render(snapshots.autoheal);
+    });
+    document.getElementById('ah-body')!.addEventListener('click', onKlik);
+  });
+
+  async function muat() {
+    render(await bacaSnapshot('autoheal'));
+  }
+
+  function render(s: { data: any; updatedAt: string | null; error: string | null }) {
+    document.getElementById('ah-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('ah-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
+    const a = s.data;
+    if (!a.enabled) {
+      body.innerHTML = notice('info', 'Auto-Healing sedang MATI. Setel AUTOHEAL_ENABLED=1 di .env server bot lalu restart untuk mengaktifkannya. Tabel autoheal_* sudah dibuat, jadi tidak perlu migrasi manual.');
+      return;
+    }
+    const owner = role === 'owner';
+    const cb = a.breaker ?? {};
+    const d = a.deploy ?? {};
+
+    const approvals = (a.approvals ?? []).map((x: any) => `<div class="${KELAS.kartu} space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h3 class="font-semibold">${esc(x.approval_no)} · ${esc(x.permission)}</h3>
+        <div class="flex gap-2">${pill(x.risk ?? '—', RISK[x.risk] ?? 'muted')}${x.riskClass ? pill(x.riskClass, RISK[x.riskClass] ?? 'muted') : ''}</div>
+      </div>
+      <p class="text-sm">Incident <code class="text-xs">${esc(x.incidentNo ?? '—')}</code> · ${esc(x.errorName ?? '—')}${x.file ? ` · ${esc(x.file)}${x.line ? `:${esc(x.line)}` : ''}` : ''}</p>
+      <p class="text-sm ${KELAS.muted}">${esc(x.reason ?? '')}</p>
+      <p class="text-xs ${KELAS.muted}">Cakupan ${esc(x.scope ?? '—')} · durasi izin ${esc(Math.round((x.duration_ms ?? 0) / 60000))} menit · kedaluwarsa ${esc(fmtJam(x.expires_ms))}</p>
+      ${owner ? `<div class="flex flex-wrap gap-2">${Object.entries(KEPUTUSAN).map(([k, l]) => `<button type="button" data-decide="${esc(k)}" data-apv="${esc(x.approval_no)}" data-nonce="${esc(x.nonce)}" class="${k === 'once' || k === 'temp' ? KELAS.tombol : KELAS.tombolNetral}">${esc(l)}</button>`).join('')}</div>` : `<p class="text-xs ${KELAS.muted}">Hanya owner yang bisa memutuskan.</p>`}
+    </div>`).join('');
+
+    body.innerHTML = [
+      section('Status', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Circuit breaker', cb.state ?? '—', `skor ${cb.score ?? 0}${cb.cooldown_until ? ` · cooldown sampai ${fmtJam(cb.cooldown_until)}` : ''}`)}
+        ${stat('Incident terbuka', a.openIncidents ?? 0)}
+        ${stat('Approval menunggu', (a.approvals ?? []).length)}
+        ${stat('Izin aktif', (a.grants ?? []).length, `${a.worktrees ?? 0} worktree aktif`)}
+        ${stat('Auto-deploy', !d.enabled ? 'mati' : d.locked ? 'terkunci' : 'aktif', d.enabled ? `kuota hari ini ${d.today}/${d.maxPerDay}` : 'AUTOHEAL_DEPLOY_ENABLED')}
+        ${stat('origin', a.originOutOfSync ? 'BELUM SINKRON' : 'sinkron', a.originOutOfSync ? 'produksi punya commit yang belum di GitHub' : '')}
+      </div>
+      <div class="flex flex-wrap gap-2">${pill(`breaker ${cb.state ?? '—'}`, CB[cb.state] ?? 'muted')}${d.locked ? pill(`terkunci: ${d.lockReason ?? ''}`, 'bad') : ''}</div>
+      ${cb.reason ? `<pre class="rounded-xl bg-ink-900/5 dark:bg-cream-100/5 p-3 text-xs whitespace-pre-wrap">${esc(cb.reason)}</pre>` : ''}
+      ${a.originOutOfSync ? notice('warn', 'Produksi punya commit (mis. rilis Auto-Heal) yang belum ada di GitHub. Sinkronkan dulu sebelum rilis manual apa pun.') : ''}`),
+      section('Permintaan izin', approvals || `<p class="text-sm ${KELAS.muted}">Tidak ada permintaan yang menunggu.</p>`,
+        'Izin hanya untuk incident terkait, punya batas waktu, dan dicabut otomatis setelah selesai.'),
+      owner ? section('Kontrol', `<div class="flex flex-wrap gap-3">
+        <button type="button" data-ctl="sys.autoheal.closeBreaker" data-confirm="Tutup paksa circuit breaker?" class="${KELAS.tombolNetral}">Tutup breaker</button>
+        <button type="button" data-ctl="sys.autoheal.unlock" data-confirm="Buka kembali auto-deploy?" class="${KELAS.tombolNetral}" ${d.locked ? '' : 'disabled'}>Buka kunci auto-deploy</button>
+        <button type="button" data-ctl="sys.autoheal.selftest" class="${KELAS.tombolNetral}">Uji sandbox</button>
+        <button type="button" data-ctl="sys.autoheal.simheal" class="${KELAS.tombolNetral}">Simulasi heal</button>
+      </div><div id="ah-ctl-out"></div>`, 'Uji sandbox membuktikan isolasi worktree di server produksi; simulasi heal menjalankan klasifikasi → aturan → validasi tanpa menyentuh produksi.') : '',
+      section('Incident terbaru', table(['Incident', 'State', 'Risiko', 'Kejadian', 'Error', ''], (a.recent ?? []).map((i: any) => [
+        `<code class="text-xs">${esc(i.incident_no)}</code>`, `<code class="text-xs">${esc(i.state)}</code>`, pill(i.risk_class ?? '—', RISK[i.risk_class] ?? 'muted'),
+        esc(`×${i.occurrence_count ?? 1}`), `<span class="text-xs">${esc(i.error_name ?? '—')}</span>`,
+        `<button type="button" data-inc="${esc(i.incident_no)}" class="${KELAS.tombolNetral}">Detail</button>`,
+      ]), 'Belum ada incident.')),
+      section('Izin aktif', table(['Grant', 'Izin', 'Mode', 'Incident', 'Habis'], (a.grants ?? []).map((g: any) => [
+        `<code class="text-xs">${esc(g.grant_no)}</code>`, `<code class="text-xs">${esc(g.permission)}</code>`, esc(g.mode), esc(`#${g.incident_id}`), `<span class="text-xs">${esc(fmtJam(g.expires_ms))}</span>`,
+      ]), 'Tidak ada izin elevated yang aktif.')),
+    ].join('');
+  }
+
+  async function onKlik(e: Event) {
+    const t = e.target as HTMLElement;
+    const decide = t.closest<HTMLButtonElement>('[data-decide]');
+    if (decide) {
+      const aksi = decide.dataset.decide!;
+      if (!window.confirm(`${KEPUTUSAN[aksi]} untuk ${decide.dataset.apv}?`)) return;
+      decide.disabled = true;
+      const o = await kirimPerintah('sys.autoheal.decide', { approvalNo: decide.dataset.apv, nonce: decide.dataset.nonce, action: aksi });
+      decide.disabled = false;
+      alert(o.ok ? `${KEPUTUSAN[aksi]}: ${o.result?.permission ?? ''} (${o.result?.incidentNo ?? ''})${o.result?.grantExpiresMs ? ` — berlaku sampai ${fmtJam(o.result.grantExpiresMs)}` : ''}` : (o.error ?? 'Gagal.'));
+      void muat();
+      return;
+    }
+    const ctl = t.closest<HTMLButtonElement>('[data-ctl]');
+    if (ctl) {
+      if (ctl.dataset.confirm && !window.confirm(ctl.dataset.confirm)) return;
+      const out = document.getElementById('ah-ctl-out')!;
+      ctl.disabled = true;
+      out.innerHTML = notice('info', 'Menunggu bot… (uji sandbox / simulasi bisa memakan beberapa menit)');
+      const o = await kirimPerintah(ctl.dataset.ctl!, {}, { timeoutMs: 10 * 60_000 });
+      ctl.disabled = false;
+      if (!o.ok) { out.innerHTML = notice('error', o.error ?? 'Gagal.'); return; }
+      const r = o.result ?? {};
+      out.innerHTML = r.steps
+        ? `${notice(r.ok ? 'ok' : 'error', r.ok ? 'LULUS' : `${r.failed} langkah GAGAL`)}<ul class="mt-2 text-sm space-y-1">${r.steps.map((s: any) => `<li>${s.ok ? '✅' : '❌'} ${esc(s.text)}</li>`).join('')}</ul>${r.rootCause ? `<p class="mt-2 text-xs ${KELAS.muted}">Akar masalah (sintetis): ${esc(r.rootCause)}</p>` : ''}`
+        : notice('ok', r.after ? `Breaker ditutup (sebelumnya ${r.before}).` : r.unlocked ? `Auto-deploy dibuka kembali. Sebelumnya terkunci: ${r.previousReason ?? ''}` : 'Selesai.');
+      void muat();
+      return;
+    }
+    const inc = t.closest<HTMLElement>('[data-inc]')?.dataset.inc;
+    if (inc) void bukaIncident(inc);
+  }
+
+  async function bukaIncident(no: string) {
+    const el = document.getElementById('ah-detail')!;
+    el.innerHTML = notice('info', `Memuat ${no}…`);
+    el.scrollIntoView({ behavior: 'smooth' });
+    const o = await kirimPerintah('autoheal.incident', { incidentNo: no });
+    if (!o.ok) { el.innerHTML = notice('error', o.error ?? 'Gagal.'); return; }
+    const { incident: i, audit } = o.result;
+    el.innerHTML = section(`Incident ${i.incident_no}`, `<div class="${KELAS.kartu} space-y-3">
+      <div class="flex flex-wrap gap-2">${pill(i.state, 'info')}${pill(i.risk_class ?? '—', RISK[i.risk_class] ?? 'muted')}${pill(`severity ${i.severity ?? '—'}`, 'muted')}</div>
+      <p class="text-sm">${esc(i.error_name ?? '—')}: ${esc(i.message ?? '')}</p>
+      <p class="text-xs ${KELAS.muted}">${esc(i.file ?? '—')}${i.line ? `:${esc(i.line)}` : ''} · fingerprint <code>${esc(String(i.fingerprint ?? '').slice(0, 80))}</code> · ×${esc(i.occurrence_count ?? 1)}</p>
+      ${i.diagnosis ? `<p class="text-sm">Diagnosis: ${esc(i.diagnosis)}</p>` : ''}
+      ${table(['Waktu', 'Aksi', 'Detail'], (audit ?? []).map((x: any) => [`<span class="text-xs whitespace-nowrap">${esc(x.created_at)}</span>`, `<code class="text-xs">${esc(x.action)}</code>`, `<span class="text-xs">${esc(x.detail ?? '')}</span>`]), 'Belum ada audit.')}
+      ${role === 'owner' ? `<div class="flex items-center gap-2"><button type="button" id="ah-stop" class="${KELAS.tombolBahaya}">Hentikan incident</button><span id="ah-stop-st" class="text-xs"></span></div>` : ''}
+    </div>`);
+    document.getElementById('ah-stop')?.addEventListener('click', async () => {
+      if (!window.confirm(`Hentikan ${i.incident_no}? Tidak ada tindakan otomatis lebih lanjut untuknya.`)) return;
+      const r = await kirimPerintah('sys.autoheal.stop', { incidentNo: i.incident_no });
+      document.getElementById('ah-stop-st')!.textContent = r.ok ? 'Incident dihentikan.' : (r.error ?? 'Gagal.');
+      void muat();
+    });
+  }
+</script>

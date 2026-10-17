@@ -1,0 +1,159 @@
+---
+// Panel Developer — Ringkasan & Sistem (pengganti layar utama /developer,
+// ⚙️ System Health, 📊 Database Tools, 📋 Versi & Changelog, 📜 Live Log).
+//
+// Data dari snapshot `system` (bot_panel_snapshots). Versi & changelog
+// read-only (SSoT version.json + CHANGELOG.json di repo bot); tampil/sembunyi
+// changelog di lobby, maintenance, dan pengumuman diatur di /admin/kontrol.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Panel Developer" active="dev-home">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="Ringkasan & Sistem"
+    description="Keadaan bot Sambung Kata saat ini: server, game, kesehatan proses, versi, dan database. Pengganti layar utama /developer di Discord."
+  />
+
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p id="sys-fresh"></p>
+      <button type="button" id="sys-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang dari bot</button>
+    </div>
+    <div id="sys-body" class="space-y-10"></div>
+    <div id="sys-log"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { url } from '@/utils/url';
+  import { bacaSnapshot, muatUlangDariBot, kirimPerintah } from '@/lib/dev-panel/client';
+  import { fmtBytes, fmtDuration } from '@/lib/dev-panel/model';
+  import { freshness, pill, section, stat, table, KELAS } from '@/lib/dev-panel/ui';
+
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    void muat();
+    setInterval(() => void muat(), 30_000);
+    document.getElementById('sys-refresh')?.addEventListener('click', async (ev) => {
+      const b = ev.currentTarget as HTMLButtonElement;
+      b.disabled = true; b.textContent = 'Meminta bot…';
+      const { snapshots } = await muatUlangDariBot(['system']);
+      b.disabled = false; b.textContent = 'Muat ulang dari bot';
+      render(snapshots.system);
+    });
+    renderLog();
+  });
+
+  async function muat() {
+    render(await bacaSnapshot('system'));
+  }
+
+  const link = (href: string, teks: string) => `<a href="${url(href)}" class="text-amber-700 dark:text-amber-400 underline">${esc(teks)}</a>`;
+
+  function render(s: { data: any; updatedAt: string | null; error: string | null }) {
+    document.getElementById('sys-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('sys-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
+    const d = s.data;
+    const h = d.health ?? {};
+    const v = d.version ?? {};
+    const m = d.maintenance ?? {};
+    const a = d.announcement ?? {};
+    const db = d.db ?? {};
+
+    const ringkasan = `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      ${stat('Server', fmtAngka(d.overview?.servers))}
+      ${stat('Game aktif', fmtAngka(d.overview?.activeGames), `${fmtAngka(d.overview?.onlinePlayers)} pemain in-game`)}
+      ${stat('Kata di kamus', fmtAngka(d.overview?.totalWords))}
+      ${stat('Versi bot', `v${v.version ?? '?'}`, v.updatedAt ? `rilis ${v.updatedAt}` : '')}
+    </div>`;
+
+    const kesehatan = `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      ${stat('Uptime', fmtDuration(h.uptimeSec))}
+      ${stat('Ping Discord', h.pingMs !== null && h.pingMs !== undefined ? `${h.pingMs} ms` : '—')}
+      ${stat('Heap', `${h.heapUsedMb ?? '?'} / ${h.heapTotalMb ?? '?'} MB`, `RSS ${h.rssMb ?? '?'} MB`)}
+      ${stat('RAM server', `${h.ramUsedMb ?? '?'} / ${h.ramTotalMb ?? '?'} MB`, `CPU load ${h.cpuPercent ?? '?'}%`)}
+      ${stat('Node.js', h.nodeVersion ?? '—', h.platform ?? '')}
+      ${stat('PM2', d.control?.pm2 ? 'terdeteksi' : 'tidak terdeteksi', d.control?.pm2App ?? '')}
+    </div>`;
+
+    const status = `<div class="grid gap-4 md:grid-cols-2">
+      <div class="${KELAS.kartu} space-y-2">
+        <div class="flex items-center justify-between"><h3 class="text-sm font-semibold">Maintenance</h3>${m.active ? pill('AKTIF', 'bad') : pill('nonaktif', 'ok')}</div>
+        ${m.active ? `<p class="text-sm">${esc(m.message ?? '')}</p><p class="text-xs ${KELAS.muted}">${esc(m.durationMin ?? 0)} menit</p>` : ''}
+        <p class="text-xs ${KELAS.muted}">Diatur di ${link('/admin/kontrol', 'Kontrol Bot')} (termasuk jadwal).</p>
+      </div>
+      <div class="${KELAS.kartu} space-y-2">
+        <div class="flex items-center justify-between"><h3 class="text-sm font-semibold">Pengumuman lobby</h3>${a.active && a.message ? pill('tampil', 'ok') : pill('nonaktif', 'muted')}</div>
+        ${a.message ? `<p class="text-sm font-medium">${esc(a.title ?? '')}</p><p class="text-sm whitespace-pre-line">${esc(a.message)}</p>` : `<p class="text-sm ${KELAS.muted}">Belum diatur.</p>`}
+        <p class="text-xs ${KELAS.muted}">Diatur di ${link('/admin/kontrol', 'Kontrol Bot')} › Pengumuman Discord.</p>
+      </div>
+    </div>`;
+
+    const versi = `<div class="${KELAS.kartu} space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h3 class="text-sm font-semibold">v${esc(v.version ?? '?')} — ${esc(v.title ?? '')}</h3>
+        ${v.changelogActive ? pill('changelog tampil di lobby', 'ok') : pill('changelog disembunyikan dari lobby', 'muted')}
+      </div>
+      <ul class="list-disc pl-5 text-sm space-y-1">${(v.changelogItems ?? []).slice(0, v.changelogMaxItems ?? 5).map((x: string) => `<li>${esc(x)}</li>`).join('') || `<li class="${KELAS.muted}">Belum ada changelog.</li>`}</ul>
+      <p class="text-xs ${KELAS.muted}">Isi read-only, otomatis dari version.json & CHANGELOG.json bot saat rilis. Tampil/sembunyi di lobby: ${link('/admin/kontrol', 'Kontrol Bot')} › Pengumuman Discord.</p>
+    </div>`;
+
+    const database = `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      ${stat('Pemain terdaftar', fmtAngka(db.players), `${fmtAngka(db.banned)} banned`)}
+      ${stat('Total coin beredar', fmtAngka(db.coins))}
+      ${stat('Boost di inventory', fmtAngka(db.inventoryTotal))}
+      ${stat('Ukuran database', fmtBytes(db.sizeBytes))}
+      ${stat('Class aktif', fmtAngka(db.activeClasses), `${fmtAngka(db.classes)} terdaftar · ${fmtAngka(db.talents)} talent`)}
+      ${stat('Quest selesai hari ini', fmtAngka(db.questsToday), `${fmtAngka(db.questPlayersToday)} pemain mengerjakan`)}
+      ${stat('Quest mingguan selesai', fmtAngka(db.questsWeek))}
+    </div>
+    <div class="grid gap-4 md:grid-cols-3">
+      <div>${table(['Boost', 'Total'], (db.inventory ?? []).map((r: any) => [esc(r.boost_type), esc(fmtAngka(r.total))]), 'Inventory kosong.')}</div>
+      <div>${table(['Class aktif', 'Pemain'], (db.classDist ?? []).map((r: any) => [esc(r.class_id), esc(fmtAngka(r.c))]), 'Belum ada class aktif.')}</div>
+      <div>${table(['Katalog boost', 'ID'], (d.catalog?.boosts ?? []).map((b: any) => [esc(b.name), `<code class="text-xs">${esc(b.id)}</code>`]), '—')}</div>
+    </div>`;
+
+    body.innerHTML = [
+      section('Ringkasan', ringkasan),
+      section('Kesehatan proses', kesehatan),
+      section('Status', status),
+      section('Versi & changelog', versi),
+      section('Database & ekonomi', database, 'Reset cooldown claim ada di Operasi; backup & bersihkan log ada di Kontrol Server (owner).'),
+    ].join('');
+  }
+
+  function renderLog() {
+    const el = document.getElementById('sys-log')!;
+    if (!bolehEdit) return;
+    el.innerHTML = section('Live Log', `<div class="${KELAS.kartu} space-y-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="text-xs">Baris terakhir
+          <select id="log-lines" class="${KELAS.input} mt-1 w-28"><option>50</option><option selected>100</option><option>200</option><option>500</option></select>
+        </label>
+        <button type="button" id="log-load" class="${KELAS.tombol}">Muat log</button>
+        <p id="log-status" class="text-xs" role="status" aria-live="polite"></p>
+      </div>
+      <pre id="log-out" class="max-h-[32rem] overflow-auto rounded-xl bg-ink-900/5 dark:bg-cream-100/5 p-4 text-xs font-mono whitespace-pre-wrap"></pre>
+    </div>`, 'Log harian bot (logs/YYYY-MM-DD.log di server). Riwayat lebih panjang ada di Data & Laporan › Log Aktivitas.');
+
+    document.getElementById('log-load')!.addEventListener('click', async (ev) => {
+      const b = ev.currentTarget as HTMLButtonElement;
+      const st = document.getElementById('log-status')!;
+      b.disabled = true; st.textContent = 'Menunggu bot…'; st.className = `text-xs ${KELAS.muted}`;
+      const lines = Number((document.getElementById('log-lines') as HTMLSelectElement).value);
+      const o = await kirimPerintah('log.tail', { lines });
+      b.disabled = false;
+      if (!o.ok) { st.textContent = o.error ?? 'Gagal.'; st.className = 'text-xs text-red-600 dark:text-red-400'; return; }
+      st.textContent = `${o.result?.file ?? ''} · ${o.result?.lines?.length ?? 0} baris`;
+      document.getElementById('log-out')!.textContent = (o.result?.lines ?? []).join('\n') || 'Log hari ini kosong.';
+    });
+  }
+</script>

@@ -1,5 +1,12 @@
 ---
-// Daftar pemain.
+// Pemain — cermin data pemain + kelola pemain langsung dari bot.
+//
+// Tab "Cermin website" membaca tabel `bot_players` (dikirim websiteSync).
+// Tab "Kelola pemain" (pengganti /developer › 👤 Player, ⭐ Progression,
+// 🎁 Boost, 📋 List Pemain) mengirim perintah ke bot lewat `bot_commands`:
+// player.view (profil lengkap), player.list (ranking live), player.banned,
+// dan semua aksi grup PLAYER_GROUP_KEYS dengan Player terisi otomatis.
+// Bot memvalidasi ulang setiap payload (src/cms/handlers/player.js).
 //
 // PRIVASI: halaman ini menampilkan data orang lain. Yang disimpan sengaja
 // dibatasi pada Discord ID, nama tampilan, dan progres permainan — cukup untuk
@@ -13,6 +20,8 @@ const urutan = [
   { value: 'wins',         label: 'Paling banyak menang' },
   { value: 'level',        label: 'Level tertinggi' },
 ];
+
+const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors aria-selected:bg-amber-500 aria-selected:text-ink-950 text-ink-600 dark:text-cream-200/70 hover:bg-ink-900/5 dark:hover:bg-cream-100/5';
 ---
 
 <AdminLayout title="Pemain" active="pemain">
@@ -30,48 +39,103 @@ const urutan = [
       </p>
     </div>
 
-    <div class="flex flex-wrap items-end gap-3 mb-6">
-      <div class="flex-1 min-w-[200px]">
-        <label for="cari-pemain" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Cari pemain</label>
-        <input
-          id="cari-pemain"
-          type="search"
-          placeholder="Nama tampilan atau Discord ID…"
-          class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500"
-        />
+    <div class="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="Tampilan pemain">
+      <button type="button" role="tab" class={tab} data-tab="cermin" aria-selected="true">Cermin website</button>
+      <button type="button" role="tab" class={tab} data-tab="kelola" aria-selected="false">Kelola pemain</button>
+      <button type="button" role="tab" class={tab} data-tab="ranking" aria-selected="false">Ranking live</button>
+      <button type="button" role="tab" class={tab} data-tab="banned" aria-selected="false">Banned</button>
+    </div>
+
+    <!-- TAB: CERMIN WEBSITE (bot_players) -->
+    <div data-panel="cermin">
+      <div class="flex flex-wrap items-end gap-3 mb-6">
+        <div class="flex-1 min-w-[200px]">
+          <label for="cari-pemain" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Cari pemain</label>
+          <input
+            id="cari-pemain"
+            type="search"
+            placeholder="Nama tampilan atau Discord ID…"
+            class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500"
+          />
+        </div>
+        <div>
+          <label for="urut-pemain" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Urutkan</label>
+          <select id="urut-pemain" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
+            {urutan.map((u) => <option value={u.value}>{u.label}</option>)}
+          </select>
+        </div>
       </div>
-      <div>
-        <label for="urut-pemain" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Urutkan</label>
-        <select id="urut-pemain" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
-          {urutan.map((u) => <option value={u.value}>{u.label}</option>)}
-        </select>
+
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-ink-900/5 dark:bg-cream-100/5">
+              <tr class="text-left">
+                <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Pemain</th>
+                <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Level</th>
+                <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Coin</th>
+                <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Main</th>
+                <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Menang</th>
+                <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Terakhir main</th>
+              </tr>
+            </thead>
+            <tbody id="pemain-body"></tbody>
+          </table>
+        </div>
+        <div id="pemain-state"></div>
+      </div>
+
+      <div class="mt-5 flex items-center justify-between">
+        <p id="pemain-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
+        <button type="button" id="pemain-lagi" class="hidden rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+          Muat lebih banyak
+        </button>
       </div>
     </div>
 
-    <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
-            <tr class="text-left">
-              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Pemain</th>
-              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Level</th>
-              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Coin</th>
-              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Main</th>
-              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Menang</th>
-              <th class="px-5 py-3 font-medium text-xs uppercase tracking-[0.1em] text-ink-500 dark:text-cream-300/60">Terakhir main</th>
-            </tr>
-          </thead>
-          <tbody id="pemain-body"></tbody>
-        </table>
-      </div>
-      <div id="pemain-state"></div>
+    <!-- TAB: KELOLA PEMAIN (player.view + aksi) -->
+    <div data-panel="kelola" class="hidden space-y-8">
+      <form id="kelola-form" class="flex flex-wrap items-end gap-3">
+        <div class="flex-1 min-w-[220px]">
+          <label for="kelola-player" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Player ID / Discord ID / mention</label>
+          <input id="kelola-player" name="player" required placeholder="mis. #A3K9 atau 123456789012345678"
+            class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+        </div>
+        <button type="submit" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors disabled:opacity-60">Buka profil</button>
+        <p id="kelola-status" class="w-full text-xs text-ink-500 dark:text-cream-300/60" role="status" aria-live="polite"></p>
+      </form>
+      <div id="profil" class="space-y-8"></div>
     </div>
 
-    <div class="mt-5 flex items-center justify-between">
-      <p id="pemain-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
-      <button type="button" id="pemain-lagi" class="hidden rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
-        Muat lebih banyak
-      </button>
+    <!-- TAB: RANKING LIVE (player.list) -->
+    <div data-panel="ranking" class="hidden space-y-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <div>
+          <label for="rank-filter" class="block text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60 mb-1.5">Urutkan</label>
+          <select id="rank-filter" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500">
+            <option value="all">Terbaru diperbarui</option>
+            <option value="level">Level tertinggi</option>
+            <option value="coin">Coin terbanyak</option>
+            <option value="wins">Menang terbanyak</option>
+          </select>
+        </div>
+        <p id="rank-status" class="text-xs text-ink-500 dark:text-cream-300/60" role="status" aria-live="polite"></p>
+      </div>
+      <div id="rank-body"></div>
+      <div class="flex items-center justify-between">
+        <button type="button" id="rank-prev" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium disabled:opacity-40">← Sebelumnya</button>
+        <p id="rank-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
+        <button type="button" id="rank-next" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium disabled:opacity-40">Berikutnya →</button>
+      </div>
+    </div>
+
+    <!-- TAB: BANNED (player.banned) -->
+    <div data-panel="banned" class="hidden space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <p id="banned-status" class="text-xs text-ink-500 dark:text-cream-300/60" role="status" aria-live="polite"></p>
+        <button type="button" id="banned-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
+      </div>
+      <div id="banned-body"></div>
     </div>
   </div>
 </AdminLayout>
@@ -80,18 +144,25 @@ const urutan = [
   import { getSupabase } from '@/lib/supabase';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { GRUP, PLAYER_GROUP_KEYS, type Aksi } from '@/lib/dev-panel/actions';
+  import { kirimPerintah } from '@/lib/dev-panel/client';
+  import { toEpoch } from '@/lib/dev-panel/model';
+  import { KELAS, fmtJam, formCard, formPayload, notice, pasangAksi, pill, section, stat, table } from '@/lib/dev-panel/ui';
 
   const PER_HALAMAN = 50;
   let offset = 0;
   let total = 0;
   let generasi = 0;
+  let bolehEdit = false;
 
   const tbody = document.getElementById('pemain-body') as HTMLElement;
   const stateEl = document.getElementById('pemain-state') as HTMLElement;
   const infoEl = document.getElementById('pemain-info') as HTMLElement;
   const btnLagi = document.getElementById('pemain-lagi') as HTMLButtonElement;
 
-  document.addEventListener('admin:ready', () => {
+  document.addEventListener('admin:ready', (e) => {
+    const role = (e as CustomEvent).detail?.role;
+    bolehEdit = role === 'owner' || role === 'admin';
     void muat(true);
 
     document.getElementById('urut-pemain')?.addEventListener('change', () => void muat(true));
@@ -102,8 +173,44 @@ const urutan = [
       clearTimeout(timer);
       timer = setTimeout(() => void muat(true), 350);
     });
+
+    pasangTab();
+    pasangKelola();
+    pasangRanking();
+    pasangBanned();
   });
 
+  // ─── Tab ──────────────────────────────────────────────────────────────────
+  const dimuat = new Set<string>();
+
+  function pilihTab(nama: string) {
+    document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === nama)));
+    document.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== nama));
+    if (!bolehEdit || dimuat.has(nama)) return;
+    dimuat.add(nama);
+    if (nama === 'ranking') void muatRanking();
+    if (nama === 'banned') void muatBanned();
+  }
+
+  function pasangTab() {
+    document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => {
+      b.addEventListener('click', () => pilihTab(b.dataset.tab!));
+    });
+    if (!bolehEdit) {
+      const pesan = notice('info', 'Peran kamu hanya bisa melihat cermin data pemain. Kelola pemain butuh peran admin atau owner.');
+      for (const id of ['profil', 'rank-body', 'banned-body']) document.getElementById(id)!.innerHTML = pesan;
+      document.getElementById('kelola-form')?.classList.add('hidden');
+    }
+  }
+
+  /** Buka profil satu pemain dari tab lain. */
+  function bukaProfil(player: string) {
+    pilihTab('kelola');
+    (document.getElementById('kelola-player') as HTMLInputElement).value = player;
+    void muatProfil(player);
+  }
+
+  // ─── Cermin website (bot_players) ─────────────────────────────────────────
   async function muat(reset: boolean) {
     const supabase = getSupabase();
     if (!supabase) return;
@@ -192,15 +299,213 @@ const urutan = [
       <tr class="hidden border-t border-ink-900/5 dark:border-cream-100/5 bg-ink-900/[0.02] dark:bg-cream-100/[0.02]" data-detail>
         <td colspan="6" class="px-5 py-4">
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">${detail}</div>
+          ${bolehEdit ? `<button type="button" data-kelola="${esc(row.player_id)}" class="mt-4 ${KELAS.tombolNetral}">Kelola pemain ini →</button>` : ''}
         </td>
       </tr>`;
   }
 
   // Klik baris → buka/tutup panel detail pemain (event delegation).
   document.getElementById('pemain-body')?.addEventListener('click', (e) => {
+    const kelola = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-kelola]');
+    if (kelola) { bukaProfil(kelola.dataset.kelola!); return; }
     const tr = (e.target as HTMLElement).closest('tr[data-toggle]');
     if (!tr) return;
     const detail = tr.nextElementSibling;
     if (detail && detail.hasAttribute('data-detail')) detail.classList.toggle('hidden');
+  });
+
+  // ─── Kelola pemain (player.view + aksi) ───────────────────────────────────
+  function pasangKelola() {
+    document.getElementById('kelola-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const player = (document.getElementById('kelola-player') as HTMLInputElement).value.trim();
+      if (player) void muatProfil(player);
+    });
+  }
+
+  let profilGen = 0;
+
+  async function muatProfil(player: string) {
+    const statusEl = document.getElementById('kelola-status')!;
+    const profilEl = document.getElementById('profil')!;
+    const tombol = document.querySelector<HTMLButtonElement>('#kelola-form button[type=submit]')!;
+    const gen = ++profilGen;
+    tombol.disabled = true;
+    statusEl.textContent = 'Meminta profil dari bot…';
+    const o = await kirimPerintah('player.view', { player });
+    tombol.disabled = false;
+    if (gen !== profilGen) return;
+    if (!o.ok) {
+      statusEl.textContent = '';
+      profilEl.innerHTML = notice(o.timedOut ? 'warn' : 'error', o.error ?? 'Gagal memuat profil.');
+      return;
+    }
+    statusEl.textContent = `Profil dimuat ${new Date().toLocaleTimeString('id-ID')}.`;
+    renderProfil(o.result);
+  }
+
+  const idForm = (a: Aksi) => `pf-${a.type.replace(/\./g, '-')}`;
+
+  function renderProfil(p: any) {
+    const profilEl = document.getElementById('profil')!;
+    const nama = p.username || 'Tanpa nama';
+    const status = [
+      p.banned ? pill('Banned', 'bad') : pill('Aktif', 'ok'),
+      p.inGame ? pill(`Sedang main: ${p.inGame.mode ?? 'game'}`, 'info') : '',
+      p.dmOptIn ? pill('DM campaign: ikut', 'muted') : pill('DM campaign: opt-out', 'warn'),
+    ].join(' ');
+
+    const inv = (p.inventory ?? []).map((b: any) => [
+      `${esc(b.emoji ?? '')} ${esc(b.name ?? b.id)}`,
+      `<code class="text-xs">${esc(b.id)}</code>`,
+      `<span class="tabular-nums">${esc(fmtAngka(b.amount))}</span>`,
+    ]);
+    const kelas = (p.classes ?? []).map((c: any) => [
+      `<code class="text-xs">${esc(c.classId)}</code> ${c.active ? pill('aktif', 'ok') : ''}`,
+      esc(c.level),
+      esc(fmtAngka(c.exp)),
+      esc((c.talents ?? []).join(', ') || '—'),
+    ]);
+    const quest = (list: any[]) => (list ?? []).map((q: any) => [
+      `<code class="text-xs">${esc(q.quest_id)}</code>`,
+      esc(fmtAngka(q.progress)),
+      q.claimed ? pill('diklaim', 'ok') : q.completed ? pill('selesai', 'info') : pill('berjalan', 'muted'),
+    ]);
+
+    const grup = GRUP.filter((g) => PLAYER_GROUP_KEYS.includes(g.key));
+    const aksiHtml = grup.map((g) => `
+      <div class="space-y-3">
+        <h3 class="text-sm font-semibold">${esc(g.label)} <span class="font-normal ${KELAS.muted}">— ${esc(g.desc)}</span></h3>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          ${g.aksi.map((a) => formCard({
+            id: idForm(a), title: a.label, danger: a.danger, desc: a.help,
+            fields: a.fields.filter((f) => f.name !== 'player'),
+          })).join('')}
+        </div>
+      </div>`).join('');
+
+    profilEl.innerHTML = [
+      `<div class="${KELAS.kartu} space-y-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <h2 class="font-display text-xl font-semibold tracking-tightest">${esc(nama)}</h2>
+          ${status}
+        </div>
+        <p class="text-xs ${KELAS.muted}">Player ID <code>${esc(p.playerId ?? '—')}</code> · Discord ID <code>${esc(p.userId)}</code> · diperbarui ${esc(fmtJam(toEpoch(p.updatedAt)))}</p>
+        ${p.banned ? `<p class="text-sm text-red-600 dark:text-red-400">Alasan ban: ${esc(p.banned.reason ?? '—')} (${esc(fmtJam(p.banned.bannedAt))})</p>` : ''}
+      </div>`,
+      `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Level akun', p.accountLevel, `${fmtAngka(p.accountExp)} EXP`)}
+        ${stat('Coin', fmtAngka(p.coins))}
+        ${stat('Menang', fmtAngka(p.wins), `${fmtAngka(p.totalGames)} game`)}
+        ${stat('Total kata', fmtAngka(p.totalWords), p.longestWord ? `terpanjang: ${p.longestWord}` : '')}
+        ${stat('Dungeon', fmtAngka(p.dungeonGames), `${fmtAngka(p.dungeonClears)} clear`)}
+      </div>`,
+      section('Inventory boost', table(['Boost', 'ID', 'Jumlah'], inv, 'Belum ada boost.')),
+      section('Class & talent', table(['Class', 'Level', 'EXP', 'Talent'], kelas, 'Belum memiliki class.')),
+      `<div class="grid gap-6 lg:grid-cols-2">
+        ${section(`Quest harian (${p.quests?.date ?? '—'})`, table(['Quest', 'Progres', 'Status'], quest(p.quests?.daily), 'Belum ada quest harian.'))}
+        ${section(`Quest mingguan (${p.quests?.weekKey ?? '—'})`, table(['Quest', 'Progres', 'Status'], quest(p.quests?.weekly), 'Belum ada quest mingguan.'))}
+      </div>`,
+      section('Aksi untuk pemain ini', `<div class="space-y-6">${aksiHtml}</div>`, 'Setiap aksi langsung diterapkan ke pemain di atas. Profil dimuat ulang otomatis setelah aksi berhasil.'),
+    ].join('');
+
+    for (const g of grup) {
+      for (const a of g.aksi) {
+        pasangAksi(document.getElementById(idForm(a)) as HTMLFormElement, {
+          type: a.type,
+          payload: (form) => ({ ...formPayload(form), player: p.userId }),
+          confirm: a.danger ? `${a.label} untuk ${nama}? Aksi ini tidak bisa dibatalkan.` : undefined,
+          success: () => 'Selesai.',
+          resetOnSuccess: true,
+          onDone: (o) => {
+            if (!o.ok) return;
+            setTimeout(() => void muatProfil(p.userId), 1200);
+            dimuat.delete('ranking');
+            dimuat.delete('banned');
+          },
+        });
+      }
+    }
+  }
+
+  // ─── Ranking live (player.list) ───────────────────────────────────────────
+  let halaman = 1;
+  let jumlahHalaman = 1;
+
+  function pasangRanking() {
+    document.getElementById('rank-filter')?.addEventListener('change', () => { halaman = 1; void muatRanking(); });
+    document.getElementById('rank-prev')?.addEventListener('click', () => { if (halaman > 1) { halaman--; void muatRanking(); } });
+    document.getElementById('rank-next')?.addEventListener('click', () => { if (halaman < jumlahHalaman) { halaman++; void muatRanking(); } });
+  }
+
+  async function muatRanking() {
+    const body = document.getElementById('rank-body')!;
+    const statusEl = document.getElementById('rank-status')!;
+    const filter = (document.getElementById('rank-filter') as HTMLSelectElement).value;
+    statusEl.textContent = 'Meminta data dari bot…';
+    const o = await kirimPerintah('player.list', { filter, page: halaman });
+    if (!o.ok) { statusEl.textContent = ''; body.innerHTML = notice(o.timedOut ? 'warn' : 'error', o.error ?? 'Gagal memuat ranking.'); return; }
+    const r = o.result;
+    statusEl.textContent = '';
+    jumlahHalaman = r.pages ?? 1;
+    halaman = r.page ?? halaman;
+    const mulai = (halaman - 1) * (r.perPage ?? 20);
+    body.innerHTML = table(['#', 'Pemain', 'Level', 'Menang', 'Coin', 'Diperbarui', ''], (r.rows ?? []).map((x: any, i: number) => [
+      `<span class="tabular-nums ${KELAS.muted}">${mulai + i + 1}</span>`,
+      `<span class="font-medium">${esc(x.username ?? 'Tanpa nama')}</span><span class="block font-mono text-[0.7rem] ${KELAS.muted}">${esc(x.player_id ?? '—')} · ${esc(x.user_id)}</span>`,
+      esc(x.account_level ?? 1),
+      esc(fmtAngka(x.wins)),
+      esc(fmtAngka(x.coins)),
+      `<span class="text-xs">${esc(fmtJam(toEpoch(x.updated_at)))}</span>`,
+      `<button type="button" data-kelola="${esc(x.user_id)}" class="${KELAS.tombolNetral}">Kelola</button>`,
+    ]), 'Belum ada pemain.');
+    document.getElementById('rank-info')!.textContent = `Halaman ${halaman} dari ${jumlahHalaman} · ${fmtAngka(r.total)} pemain`;
+    (document.getElementById('rank-prev') as HTMLButtonElement).disabled = halaman <= 1;
+    (document.getElementById('rank-next') as HTMLButtonElement).disabled = halaman >= jumlahHalaman;
+  }
+
+  document.getElementById('rank-body')?.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-kelola]');
+    if (b) bukaProfil(b.dataset.kelola!);
+  });
+
+  // ─── Banned (player.banned + unban) ───────────────────────────────────────
+  function pasangBanned() {
+    document.getElementById('banned-refresh')?.addEventListener('click', () => { if (bolehEdit) void muatBanned(); });
+    document.getElementById('banned-body')?.addEventListener('click', async (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-unban]');
+      if (!b) return;
+      const uid = b.dataset.unban!;
+      if (!window.confirm(`Cabut ban untuk ${b.dataset.nama || uid}?`)) return;
+      b.disabled = true;
+      b.textContent = 'Memproses…';
+      const o = await kirimPerintah('player.unban', { player: uid });
+      if (!o.ok) { b.disabled = false; b.textContent = 'Unban'; alert(o.error ?? 'Gagal.'); return; }
+      void muatBanned();
+    });
+  }
+
+  async function muatBanned() {
+    const body = document.getElementById('banned-body')!;
+    const statusEl = document.getElementById('banned-status')!;
+    statusEl.textContent = 'Meminta data dari bot…';
+    const o = await kirimPerintah('player.banned');
+    if (!o.ok) { statusEl.textContent = ''; body.innerHTML = notice(o.timedOut ? 'warn' : 'error', o.error ?? 'Gagal memuat daftar banned.'); return; }
+    const rows = o.result?.rows ?? [];
+    statusEl.textContent = `${fmtAngka(rows.length)} pemain di-ban.`;
+    body.innerHTML = table(['Pemain', 'Alasan', 'Sejak', ''], rows.map((x: any) => [
+      `<span class="font-medium">${esc(x.username ?? 'Unknown')}</span><span class="block font-mono text-[0.7rem] ${KELAS.muted}">${esc(x.user_id)}</span>`,
+      `<span class="text-sm">${esc(x.reason ?? '—')}</span>`,
+      `<span class="text-xs">${esc(fmtJam(x.banned_at))}</span>`,
+      `<div class="flex gap-2 justify-end">
+        <button type="button" data-kelola="${esc(x.user_id)}" class="${KELAS.tombolNetral}">Kelola</button>
+        <button type="button" data-unban="${esc(x.user_id)}" data-nama="${esc(x.username ?? '')}" class="${KELAS.tombolNetral}">Unban</button>
+      </div>`,
+    ]), 'Tidak ada pemain yang di-ban.');
+  }
+
+  document.getElementById('banned-body')?.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-kelola]');
+    if (b) bukaProfil(b.dataset.kelola!);
   });
 </script>

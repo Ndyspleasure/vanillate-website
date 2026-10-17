@@ -8,7 +8,9 @@
 #  ubuntu-latest GitHub Actions. Cluster dibuat di direktori sementara, dengan
 #  socket Unix (tanpa port TCP), lalu dihapus setelah selesai.
 #  Urutan: supabase-stub.sql → guild-dashboard-schema.sql (dua kali, untuk
-#  membuktikan idempoten) → guild-dashboard.test.sql.
+#  membuktikan idempoten) → guild-dashboard.test.sql, lalu suite Panel
+#  Developer: developer-panel-prereq.sql → developer-panel-schema.sql →
+#  developer-panel-settings.sql → developer-panel.test.sql.
 # ════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -56,3 +58,11 @@ done
 
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/guild-dashboard.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL guild dashboard lulus."
+
+# Suite kedua: Panel Developer (V3). Skema dijalankan sekali di sini; tesnya
+# menjalankannya ulang untuk membuktikan idempoten & seed tidak menimpa nilai.
+for f in supabase/tests/developer-panel-prereq.sql supabase/developer-panel-schema.sql supabase/developer-panel-settings.sql; do
+  PGOPTIONS="-c client_min_messages=warning" run "${PSQL[@]}" -f "$ROOT/$f" >/dev/null
+done
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/developer-panel.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL Panel Developer lulus."
