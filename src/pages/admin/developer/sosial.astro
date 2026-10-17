@@ -1,0 +1,289 @@
+---
+// Panel Developer — Social Monitor (pengganti /developer › 🤝 Social Monitor
+// & ✍️ Pemantau Kata-Kata). Daftar server SocialHub & database kata-kata dari
+// snapshot `social`; detail server (social.detail), pasang/matikan channel
+// (social.setChannel / social.disable — aturan sama dengan /pengaturan:
+// channel teks, satu channel satu fitur), cari server (social.search), dan
+// tulisan per server (social.kata, hanya baca).
+//
+// Isi tulisan kata-kata berasal dari member server — tampilkan hanya untuk
+// pemantauan dan jangan disalin keluar panel.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Social Monitor" active="dev-sosial">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="Social Monitor"
+    description="SocialHub (/sosial — Counting & Streak Harian) di setiap server: status, channel, aktivitas, dan database Kata-Kata Hari Ini."
+  />
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <p id="soc-fresh"></p>
+    <div id="soc-summary"></div>
+    <div id="soc-detail"></div>
+    <div id="soc-list"></div>
+    <div id="soc-kata"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
+  import { fmtJam, freshness, notice, pill, section, stat, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
+
+  const PAGE = 10;
+  const FTONE: Record<string, Tone> = { configured: 'ok', missing_channel: 'warn', disabled: 'bad', not_configured: 'muted' };
+  const GTONE: Record<string, Tone> = { active: 'ok', warning: 'warn', inactive: 'bad', left: 'muted' };
+  const ALASAN: Record<string, string> = {
+    admin: 'Dimatikan admin server', developer: 'Dimatikan developer', channel_deleted: 'Mati karena channel-nya dihapus', dashboard: 'Dimatikan lewat Vanillate Dashboard',
+  };
+  const FILTER = [
+    { value: 'semua', label: 'Semua tulisan' }, { value: 'antre', label: 'Menunggu dikirim' }, { value: 'diklaim', label: 'Sedang dikirim' },
+    { value: 'terkirim', label: 'Terkirim (teks dihapus)' }, { value: 'dihapus', label: 'Teks dihapus sebelum terkirim' },
+  ];
+
+  let bolehEdit = false;
+  let snap: any = null;
+  let halaman = 1;
+  let cari = '';
+
+  document.addEventListener('admin:ready', (e) => {
+    const role = (e as CustomEvent).detail?.role;
+    bolehEdit = role === 'owner' || role === 'admin';
+    void muat();
+    setInterval(() => void muat(), 60_000);
+  });
+
+  async function muat() {
+    const s = await bacaSnapshot('social');
+    document.getElementById('soc-fresh')!.innerHTML = freshness(s.updatedAt);
+    if (!s.data) { document.getElementById('soc-summary')!.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
+    snap = s.data;
+    renderRingkasan();
+    renderDaftar();
+    renderKataOverview();
+  }
+
+  function renderRingkasan() {
+    const sm = snap.summary ?? { byStatus: {}, perFeature: {} };
+    const sw = snap.switches ?? {};
+    const saklar = (on: boolean, teks: string) => pill(`${teks}: ${on ? 'aktif' : 'nonaktif (saklar global)'}`, on ? 'ok' : 'muted');
+    document.getElementById('soc-summary')!.innerHTML = section('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      ${stat('Server SocialHub', fmtAngka(sm.total), 'memakai / pernah memakai')}
+      ${stat('Aktif', fmtAngka(sm.byStatus?.active))}
+      ${stat('Perlu dicek', fmtAngka(sm.byStatus?.warning), 'channel hilang / izin kurang')}
+      ${stat('Nonaktif', fmtAngka(sm.byStatus?.inactive))}
+      ${stat('Bot keluar', fmtAngka(sm.byStatus?.left))}
+    </div>
+    <div class="flex flex-wrap gap-2">
+      ${(snap.features ?? []).map((f: any) => pill(`${f.emoji} ${f.name} aktif di ${fmtAngka(sm.perFeature?.[f.key] ?? 0)} server`, 'info')).join('')}
+      ${saklar(sw.reminder, '🔔 Pengingat Streak')}${saklar(sw.ajakan, `🌅 Ajakan Harian${sw.ajakanLabel ? ` (${sw.ajakanLabel})` : ''}`)}${saklar(sw.tukarKata, '💌 Tukar Kata-Kata')}
+    </div>`);
+  }
+
+  const namaServer = (g: any) => g.name || `Server ${g.guildId}`;
+  const namaCh = (id: string | null, nama: string | null) => (id ? `#${esc(nama ?? id)} <span class="text-xs ${KELAS.muted}">${esc(id)}</span>` : '—');
+
+  function renderDaftar() {
+    const semua: any[] = snap.guilds ?? [];
+    const q = cari.toLowerCase();
+    const list = q ? semua.filter((g) => g.guildId.includes(q) || namaServer(g).toLowerCase().includes(q)) : semua;
+    const pages = Math.max(1, Math.ceil(list.length / PAGE));
+    halaman = Math.min(Math.max(1, halaman), pages);
+    const isi = list.slice((halaman - 1) * PAGE, halaman * PAGE);
+
+    const rows = isi.map((g) => [
+      `<button type="button" data-guild="${esc(g.guildId)}" class="text-left underline decoration-dotted hover:text-amber-600">${esc(namaServer(g))}</button><br><code class="text-xs ${KELAS.muted}">${esc(g.guildId)}</code>`,
+      pill(`${g.status?.emoji ?? ''} ${g.status?.label ?? '—'}`, GTONE[g.status?.key] ?? 'muted'),
+      esc(`${g.activeCount}/${g.total}`),
+      (g.features ?? []).map((f: any) => `<span class="text-xs">${esc(f.emoji)} ${f.channelId ? namaCh(f.channelId, f.channelName) : esc(f.status?.label ?? '—')}</span>`).join('<br>'),
+      esc(g.memberCount ?? '—'),
+    ]);
+    document.getElementById('soc-list')!.innerHTML = section('Server', `
+      <div class="flex flex-wrap items-end gap-3">
+        <label class="text-xs">Saring daftar (nama / Guild ID)<input id="soc-filter" value="${esc(cari)}" class="${KELAS.input} mt-1 w-64" /></label>
+        <form id="soc-search" class="flex items-end gap-2">
+          <label class="text-xs">Buka server lain (ID / nama)<input name="query" required class="${KELAS.input} mt-1 w-64" placeholder="server yang belum memakai SocialHub" /></label>
+          <button type="submit" class="${KELAS.tombolNetral}">Cari</button>
+        </form>
+      </div>
+      <div id="soc-search-out"></div>
+      ${table(['Server', 'Status', 'Fitur aktif', 'Channel', 'Member'], rows, q ? 'Tidak ada server yang cocok.' : 'Belum ada server yang memakai SocialHub.')}
+      <div class="flex items-center gap-2 text-xs">
+        <button type="button" id="soc-prev" class="${KELAS.tombolNetral}" ${halaman <= 1 ? 'disabled' : ''}>◀</button>
+        <span>Halaman ${halaman}/${pages} · ${fmtAngka(list.length)} server</span>
+        <button type="button" id="soc-next" class="${KELAS.tombolNetral}" ${halaman >= pages ? 'disabled' : ''}>▶</button>
+      </div>`);
+
+    const filter = document.getElementById('soc-filter') as HTMLInputElement;
+    filter.addEventListener('change', () => { cari = filter.value.trim(); halaman = 1; renderDaftar(); });
+    document.getElementById('soc-prev')!.addEventListener('click', () => { halaman -= 1; renderDaftar(); });
+    document.getElementById('soc-next')!.addEventListener('click', () => { halaman += 1; renderDaftar(); });
+    document.getElementById('soc-list')!.querySelectorAll<HTMLElement>('[data-guild]').forEach((b) => b.addEventListener('click', () => void bukaDetail(b.dataset.guild!)));
+    document.getElementById('soc-search')!.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const out = document.getElementById('soc-search-out')!;
+      const query = String(new FormData(ev.currentTarget as HTMLFormElement).get('query') ?? '').trim();
+      if (/^\d{5,25}$/.test(query)) { void bukaDetail(query); return; }
+      out.innerHTML = notice('info', 'Mencari…');
+      const o = await kirimPerintah('social.search', { query });
+      if (!o.ok) { out.innerHTML = notice('error', o.error ?? 'Gagal.'); return; }
+      const hasil = o.result?.results ?? [];
+      out.innerHTML = hasil.length
+        ? `<div class="flex flex-wrap gap-2">${hasil.map((g: any) => `<button type="button" data-guild="${esc(g.guildId)}" class="${KELAS.tombolNetral}">${esc(g.name ?? '(tanpa nama)')} · ${esc(g.guildId)}</button>`).join('')}</div>`
+        : notice('info', 'Tidak ada server yang cocok.');
+      out.querySelectorAll<HTMLElement>('[data-guild]').forEach((b) => b.addEventListener('click', () => void bukaDetail(b.dataset.guild!)));
+    });
+  }
+
+  /** Kunci tahap pengingat → "20.00 WIB" (dari saklar di snapshot). */
+  function jamTahap(stage: string): string {
+    const t = (snap?.switches?.reminderStages ?? []).find((x: any) => x.key === stage);
+    return t ? `${String(t.hour).padStart(2, '0')}.00 WIB` : stage;
+  }
+
+  function aktivitas(key: string, o: any): string {
+    if (!o?.hasData) return `<p class="text-xs ${KELAS.muted}">Belum ada aktivitas.</p>`;
+    if (key === 'counting') {
+      return `<p class="text-sm">Sekarang <strong>${esc(fmtAngka(o.current))}</strong> → berikutnya ${esc(fmtAngka((o.current ?? 0) + 1))} · rekor ${esc(fmtAngka(o.record))}</p>
+        <p class="text-xs ${KELAS.muted}">${esc(fmtAngka(o.players))} penghitung · ${esc(fmtAngka(o.correct))} benar · ${esc(fmtAngka(o.wrong))} salah · ${esc(fmtAngka(o.resets))} reset${o.updatedAt ? ` · terakhir ${esc(fmtJam(o.updatedAt))}` : ''}</p>`;
+    }
+    if (key === 'streak_harian') {
+      const r = o.lastReminder;
+      return `<p class="text-sm">${esc(fmtAngka(o.alive))} streak hidup dari ${esc(fmtAngka(o.members))} member · terpanjang ${esc(fmtAngka(o.longest))} hari · rekor ${esc(fmtAngka(o.best))} hari</p>
+        <p class="text-xs ${KELAS.muted}">${esc(fmtAngka(o.writtenToday))} menulis hari ini · ${esc(fmtAngka(o.entries))} tulisan tercatat${o.lastEntryAt ? ` · terakhir ${esc(fmtJam(o.lastEntryAt))}` : ''}${r ? ` · pengingat terakhir ${esc(fmtJam(r.sentAt))} (${esc(jamTahap(r.stage))}, ${esc(r.targets)} member)` : ''}${o.lastAjakan ? ` · ajakan terakhir ${esc(fmtJam(o.lastAjakan.sentAt))}` : ''}</p>`;
+    }
+    return `<pre class="text-xs">${esc(JSON.stringify(o, null, 2))}</pre>`;
+  }
+
+  async function bukaDetail(guildId: string, pesan = '') {
+    const el = document.getElementById('soc-detail')!;
+    el.innerHTML = notice('info', `Memuat server ${guildId}…`);
+    el.scrollIntoView({ behavior: 'smooth' });
+    const o = await kirimPerintah('social.detail', { guildId });
+    if (!o.ok) { el.innerHTML = notice('error', o.error ?? 'Gagal.'); return; }
+    renderDetail(o.result, pesan);
+  }
+
+  function renderDetail(g: any, pesan: string) {
+    const el = document.getElementById('soc-detail')!;
+    const kartu = (f: any) => {
+      const h = f.history ?? {};
+      const riwayat: string[] = [];
+      if (f.status?.key === 'configured' && h.lastSetAt) riwayat.push(`Diatur ${fmtJam(h.lastSetAt)}${h.lastSetBy ? ` oleh ${h.lastSetBy}` : ''}`);
+      if (f.status?.key === 'disabled' && h.disabledAt) riwayat.push(`${ALASAN[h.disabledReason] ?? 'Dimatikan'}${h.disabledBy ? ` (${h.disabledBy})` : ''} ${fmtJam(h.disabledAt)}`);
+      if (f.status?.key === 'disabled' && h.lastChannelId) riwayat.push(`Channel terakhir #${h.lastChannelName ?? h.lastChannelId}`);
+      const bisaMati = bolehEdit && (f.status?.key === 'configured' || f.status?.key === 'missing_channel');
+      return `<div class="${KELAS.kartu} space-y-3">
+        <div class="flex items-center justify-between gap-2"><h3 class="font-semibold">${esc(f.emoji)} ${esc(f.name)}</h3>${pill(`${f.status?.emoji ?? ''} ${f.status?.label ?? '—'}`, FTONE[f.status?.key] ?? 'muted')}</div>
+        <p class="text-sm">Channel: ${namaCh(f.channelId, f.channelName)}${f.status?.key === 'missing_channel' ? ' — <strong>tidak ditemukan di server</strong>' : ''}</p>
+        ${riwayat.length ? `<p class="text-xs ${KELAS.muted}">${esc(riwayat.join(' · '))}</p>` : ''}
+        ${f.missingPerms?.length ? notice('warn', `Izin bot kurang: ${f.missingPerms.join(', ')}`) : ''}
+        ${aktivitas(f.key, g.overviews?.[f.key])}
+        ${bolehEdit && g.inGuild ? `<form data-set="${esc(f.key)}" class="flex flex-wrap items-end gap-2">
+          <label class="text-xs">Pasang di channel (ID / #nama)<input name="channel" required class="${KELAS.input} mt-1 w-56" /></label>
+          <button type="submit" class="${KELAS.tombolNetral}">Pasang</button>
+          ${bisaMati ? `<button type="button" data-off="${esc(f.key)}" class="${KELAS.tombolNetral}">Matikan</button>` : ''}
+          <span data-st class="text-xs"></span>
+        </form>` : ''}
+      </div>`;
+    };
+    el.innerHTML = section(`Detail — ${namaServer(g)}`, `
+      ${pesan ? notice('ok', pesan) : ''}
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <code class="text-xs">${esc(g.guildId)}</code> ${pill(`${g.status?.emoji ?? ''} ${g.status?.label ?? '—'}`, GTONE[g.status?.key] ?? 'muted')}
+        <span class="${KELAS.muted}">${esc(g.activeCount)}/${esc(g.total)} fitur aktif · ${esc(g.memberCount ?? '—')} member</span>
+        ${g.inGuild ? '' : pill('Bot tidak lagi berada di server ini — channel tidak bisa diatur', 'warn')}
+        <button type="button" id="soc-kata-open" class="${KELAS.tombolNetral}">Lihat kata-kata server ini</button>
+        <button type="button" id="soc-close" class="${KELAS.tombolNetral}">Tutup</button>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-2">${(g.features ?? []).map(kartu).join('')}</div>`);
+
+    document.getElementById('soc-close')!.addEventListener('click', () => { el.innerHTML = ''; });
+    document.getElementById('soc-kata-open')!.addEventListener('click', () => void bukaKata(g.guildId, 1, 'semua'));
+    el.querySelectorAll<HTMLFormElement>('form[data-set]').forEach((f) => f.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const st = f.querySelector<HTMLElement>('[data-st]')!;
+      st.textContent = 'Menunggu bot…';
+      const o = await kirimPerintah('social.setChannel', { guildId: g.guildId, feature: f.dataset.set, channel: String(new FormData(f).get('channel') ?? '').trim() });
+      if (!o.ok) { st.textContent = o.error ?? 'Gagal.'; st.className = 'text-xs text-red-600 dark:text-red-400'; return; }
+      const perm = o.result.missingPerms?.length ? ` Izin bot belum lengkap: ${o.result.missingPerms.join(', ')}.` : '';
+      renderDetail(o.result.detail, `Fitur aktif di #${o.result.channelName ?? o.result.channelId}.${perm}`);
+      void muat();
+    }));
+    el.querySelectorAll<HTMLButtonElement>('[data-off]').forEach((b) => b.addEventListener('click', async () => {
+      if (!window.confirm('Matikan fitur ini di server tersebut? Data & rekornya tetap tersimpan.')) return;
+      const o = await kirimPerintah('social.disable', { guildId: g.guildId, feature: b.dataset.off });
+      if (!o.ok) { alert(o.error ?? 'Gagal.'); return; }
+      renderDetail(o.result.detail, 'Fitur dimatikan. Data & rekornya tetap tersimpan.');
+      void muat();
+    }));
+  }
+
+  function ringkasKata(st: any, global = false): string {
+    const b = st?.byStatus ?? {};
+    const c = st?.checks ?? {};
+    const cek = (ok: boolean, baik: string, buruk: string) => `<li>${ok ? '✅' : '⚠️'} ${esc(ok ? baik : buruk)}</li>`;
+    return `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      ${stat('Tulisan', fmtAngka(st?.total), `${fmtAngka(st?.writers)} penulis${global ? ` · ${fmtAngka(st?.guilds)} server` : ''} · ${fmtAngka(st?.today)} hari ini`)}
+      ${stat('Menunggu dikirim', fmtAngka(b.antre), st?.bannedQueued ? `${fmtAngka(st.bannedQueued)} dari penulis banned (tidak dikirim)` : '')}
+      ${stat('Terkirim', fmtAngka(b.terkirim), `${fmtAngka(b.diklaim)} sedang dikirim`)}
+      ${stat('Teks dihapus', fmtAngka(b.dihapus), st?.lastAt ? `tulisan terakhir ${fmtJam(st.lastAt)}` : '')}
+    </div>
+    <ul class="text-sm space-y-1">
+      ${cek(!c.selfDelivered, 'Tidak ada kiriman ke penulisnya sendiri', `${c.selfDelivered} kiriman sampai ke penulisnya sendiri — periksa antrean 💌`)}
+      ${cek(!c.deliveredWithText, 'Semua tulisan yang terkirim sudah dihapus teksnya', `${c.deliveredWithText} tulisan terkirim masih menyimpan teks`)}
+      <li>${c.staleClaims ? `ℹ️ ${esc(c.staleClaims)} klaim basi (bot berhenti saat mengirim) — otomatis bebas lagi di antrean` : '✅ Tidak ada klaim kiriman yang macet'}</li>
+    </ul>`;
+  }
+
+  function renderKataOverview() {
+    const k = snap.kata ?? {};
+    const el = document.getElementById('soc-kata')!;
+    if (el.dataset.guild) return; // sedang membuka tulisan satu server
+    el.innerHTML = section('✍️ Pemantau Kata-Kata', `
+      <p class="text-sm ${KELAS.muted}">Database "kata-kata hari ini" Streak Harian — juga antrean 💌 Tukar Kata-Kata (${snap.switches?.tukarKata ? 'aktif: tulisan ⏳ dikirim ke member lain lalu dihapus' : 'nonaktif: tulisan ⏳ menunggu sampai fitur diaktifkan'}). Hanya baca.</p>
+      ${ringkasKata(k.stats, true)}
+      ${table(['Server', 'Tulisan', 'Menunggu', 'Terkirim', 'Terakhir'], (k.guilds ?? []).map((g: any) => [
+        `<button type="button" data-kata="${esc(g.guildId)}" class="text-left underline decoration-dotted hover:text-amber-600">${esc(g.name ?? `Server ${g.guildId}`)}</button>`,
+        esc(fmtAngka(g.total)), esc(fmtAngka(g.queued)), esc(fmtAngka(g.delivered)), `<span class="text-xs">${esc(fmtJam(g.lastAt))}</span>`,
+      ]), 'Belum ada tulisan.')}`);
+    el.querySelectorAll<HTMLElement>('[data-kata]').forEach((b) => b.addEventListener('click', () => void bukaKata(b.dataset.kata!, 1, 'semua')));
+  }
+
+  const LABEL_STATUS: Record<string, string> = { antre: '⏳ Menunggu dikirim', diklaim: '🔒 Sedang dikirim', terkirim: '💌 Terkirim', dihapus: '🗑️ Teks dihapus' };
+
+  async function bukaKata(guildId: string, page: number, filter: string) {
+    const el = document.getElementById('soc-kata')!;
+    el.dataset.guild = guildId;
+    el.innerHTML = notice('info', 'Memuat tulisan…');
+    el.scrollIntoView({ behavior: 'smooth' });
+    const o = await kirimPerintah('social.kata', { guildId, page, filter });
+    if (!o.ok) { el.innerHTML = notice('error', o.error ?? 'Gagal.'); return; }
+    const k = o.result;
+    const entri = (e: any) => [
+      `<span class="text-xs">${esc(e.day)}</span>`,
+      `${esc(e.username ?? '—')}<br><code class="text-xs ${KELAS.muted}">${esc(e.userId)}</code>`,
+      `<span class="text-xs">${esc(LABEL_STATUS[e.status] ?? e.status)}${e.status === 'terkirim' ? ` ke ${esc(e.deliveredTo)} ${esc(fmtJam(e.deliveredAt))}` : ''}${e.banned && e.status === 'antre' ? ' · ⛔ penulis di-banned (tidak dikirim)' : ''}</span>`,
+      e.content ? `<span class="text-sm whitespace-pre-line">${esc(String(e.content).slice(0, 600))}</span>` : `<span class="text-xs ${KELAS.muted}">(teks tidak disimpan lagi)</span>`,
+    ];
+    el.innerHTML = section(`✍️ Kata-kata — ${k.name ?? `Server ${k.guildId}`}`, `
+      <div class="flex flex-wrap items-end gap-3">
+        <label class="text-xs">Filter<select id="kata-filter" class="${KELAS.input} mt-1">${FILTER.map((f) => `<option value="${f.value}" ${f.value === k.filter ? 'selected' : ''}>${esc(f.label)}</option>`).join('')}</select></label>
+        <button type="button" id="kata-back" class="${KELAS.tombolNetral}">← Semua server</button>
+      </div>
+      ${ringkasKata(k.stats)}
+      ${table(['Hari', 'Penulis', 'Status', 'Isi'], (k.entries ?? []).map(entri), 'Tidak ada tulisan untuk filter ini.')}
+      <div class="flex items-center gap-2 text-xs">
+        <button type="button" id="kata-prev" class="${KELAS.tombolNetral}" ${k.page <= 1 ? 'disabled' : ''}>◀</button>
+        <span>Halaman ${esc(k.page)}/${esc(k.pages)} · ${esc(fmtAngka(k.count))} tulisan</span>
+        <button type="button" id="kata-next" class="${KELAS.tombolNetral}" ${k.page >= k.pages ? 'disabled' : ''}>▶</button>
+      </div>`);
+    (document.getElementById('kata-filter') as HTMLSelectElement).addEventListener('change', (ev) => void bukaKata(guildId, 1, (ev.target as HTMLSelectElement).value));
+    document.getElementById('kata-prev')!.addEventListener('click', () => void bukaKata(guildId, k.page - 1, k.filter));
+    document.getElementById('kata-next')!.addEventListener('click', () => void bukaKata(guildId, k.page + 1, k.filter));
+    document.getElementById('kata-back')!.addEventListener('click', () => { delete el.dataset.guild; renderKataOverview(); });
+  }
+</script>

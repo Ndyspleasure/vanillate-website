@@ -1,0 +1,116 @@
+---
+// Panel Developer — Event System (pengganti /developer › 🎲 Events &
+// 🎖️ Setelan Penjajah). Satu tabel peluang terpadu untuk 4 event (undian
+// tunggal per match; 0 = nonaktif; jumlah ≤ 1) + parameter perilaku Penjajah.
+// Nilai tersimpan permanen di bot (tahan restart) dan berlaku langsung.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Event System" active="dev-event">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="Event System"
+    description="Peluang event acak di match PvP dan perilaku event musiman Penjajah. Untuk memunculkan event di match tertentu, buka Monitor Game."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-10">
+    <p id="ev-fresh"></p>
+    <div id="ev-body" class="space-y-10"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { bacaSnapshot } from '@/lib/dev-panel/client';
+  import { EVENT_KEYS, chanceTotal, validateChances } from '@/lib/dev-panel/model';
+  import { formCard, freshness, pasangAksi, section, stat, KELAS } from '@/lib/dev-panel/ui';
+
+  const NAMA: Record<string, string> = {
+    ai_challenger: 'AI Challenger', lost_signal: 'Lost Signal', traveling_merchant: 'Traveling Merchant', invader: 'Penjajah (musiman)',
+  };
+  const PELUANG_PENJAJAH: [string, string][] = [
+    ['steal_chance', 'Peluang rebut kata'], ['block_chance', 'Peluang tahan pemain'],
+    ['challenge_spawn_chance', 'Peluang muncul soal'], ['dialog_chance', 'Peluang dialog'],
+  ];
+  const ANGKA_PENJAJAH: [string, string][] = [
+    ['block_duration', 'Durasi tahan (detik)'], ['challenge_duration', 'Durasi jawab soal (detik)'],
+    ['fact_pause', 'Jeda tampil fakta (detik)'], ['reward_coin_multiplier', 'Pengali coin bila menang'],
+    ['reward_exp_multiplier', 'Pengali EXP bila menang'],
+  ];
+
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const role = (e as CustomEvent).detail?.role;
+    bolehEdit = role === 'owner' || role === 'admin';
+    void muat();
+  });
+
+  async function muat() {
+    const s = await bacaSnapshot('events');
+    document.getElementById('ev-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('ev-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
+    const { chances, triggers, noEvent, invader } = s.data;
+    const pct = (v: number) => `${(Number(v) * 100).toFixed(1)}%`;
+
+    const ringkas = `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      ${EVENT_KEYS.map((k) => stat(NAMA[k], pct(chances[k]), `${triggers[k] ?? 0}× terpicu${Number(chances[k]) <= 0 ? ' · nonaktif' : ''}`)).join('')}
+      ${stat('Tanpa event', pct(noEvent))}
+    </div>`;
+
+    const forms = bolehEdit ? `<div class="grid gap-4 lg:grid-cols-2">
+      ${formCard({
+        id: 'ev-chances', title: 'Ubah peluang event', submit: 'Simpan peluang',
+        desc: 'Angka 0–1 (0 = nonaktif). Jumlah keempatnya maksimal 1; sisanya = tanpa event.',
+        fields: EVENT_KEYS.map((k) => ({ name: k, label: NAMA[k], type: 'number' as const, step: '0.01', value: String(chances[k]), required: true })),
+      })}
+      ${formCard({
+        id: 'ev-invader', title: 'Perilaku Penjajah saat berjalan', submit: 'Simpan perilaku',
+        desc: 'Peluang spawn Penjajah diatur di tabel peluang. Di sini hanya perilaku saat event berlangsung.',
+        fields: [
+          ...PELUANG_PENJAJAH.map(([k, l]) => ({ name: k, label: `${l} (0–1)`, type: 'number' as const, step: '0.01', value: String(invader[k]), required: true })),
+          ...ANGKA_PENJAJAH.map(([k, l]) => ({ name: k, label: l, type: 'number' as const, step: '1', value: String(invader[k]), required: true })),
+        ],
+      })}
+      ${formCard({ id: 'ev-reset', title: 'Reset statistik pemicu', danger: true, submit: 'Reset statistik', fields: [], desc: 'Mengosongkan hitungan berapa kali tiap event terpicu.' })}
+    </div>` : `<p class="text-sm ${KELAS.muted}">Peran kamu hanya bisa melihat.</p>`;
+
+    body.innerHTML = section('Peluang & pemicu', ringkas)
+      + section('Penjajah — target', `<p class="text-sm">Benar <strong>${esc(invader.win_correct)}</strong> = Penjajah terusir · Salah <strong>${esc(invader.lose_wrong)}</strong> = Penjajah menang · bonus ${esc(invader.reward_coin_multiplier)}× coin / ${esc(invader.reward_exp_multiplier)}× EXP</p>`)
+      + section('Pengaturan', forms);
+    if (!bolehEdit) return;
+
+    const fChances = document.getElementById('ev-chances') as HTMLFormElement;
+    const info = document.createElement('p');
+    info.className = `text-xs ${KELAS.muted}`;
+    fChances.querySelector('[data-status]')!.before(info);
+    const hitung = () => {
+      const v = Object.fromEntries(new FormData(fChances).entries()) as Record<string, string>;
+      const err = validateChances(v);
+      info.textContent = err ?? `Total ${(chanceTotal(v) * 100).toFixed(1)}% · tanpa event ${((1 - chanceTotal(v)) * 100).toFixed(1)}%`;
+      info.className = `text-xs ${err ? 'text-red-600 dark:text-red-400' : KELAS.muted}`;
+    };
+    fChances.addEventListener('input', hitung);
+    hitung();
+    pasangAksi(fChances, {
+      type: 'event.setChances',
+      payload: (f) => {
+        const v = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
+        return validateChances(v) ? null : v;
+      },
+      success: () => 'Peluang disimpan & berlaku langsung.',
+      onDone: (o) => { if (o.ok) setTimeout(() => void muat(), 1500); },
+    });
+    pasangAksi(document.getElementById('ev-invader') as HTMLFormElement, {
+      type: 'event.setInvader',
+      success: () => 'Perilaku Penjajah disimpan & berlaku langsung.',
+    });
+    pasangAksi(document.getElementById('ev-reset') as HTMLFormElement, {
+      type: 'event.resetStats',
+      confirm: 'Reset statistik pemicu semua event?',
+      success: (o) => `${o.result?.deleted ?? 0} catatan dihapus.`,
+      onDone: (o) => { if (o.ok) setTimeout(() => void muat(), 1500); },
+    });
+  }
+</script>

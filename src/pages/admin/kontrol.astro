@@ -11,6 +11,11 @@
 //
 // Sumber kebenaran versi/changelog tetap version.json di repo bot — halaman ini
 // sengaja TIDAK menyediakan editor versi/changelog.
+//
+// Setting bernilai NULL belum pernah disinkronkan: bot mengisinya dengan nilai
+// lokalnya saat start (remoteConfig LOCAL_BINDINGS), setelah itu panel ini yang
+// berwenang. Karena itu Simpan hanya menulis field yang BENAR-BENAR diubah —
+// setting yang masih menunggu sinkron tidak ikut tertimpa nilai kosong.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
@@ -84,6 +89,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     gamepad:  '<line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="2"/>',
     sliders:  '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/>',
     toggle:   '<rect width="20" height="12" x="2" y="6" rx="6"/><circle cx="16" cy="12" r="2"/>',
+    book:     '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+    mail:     '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   };
   const ikonSvg = (nama: string | null | undefined) => IC[nama ?? ''] ?? IC.settings;
@@ -249,6 +256,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       .map((c) => sectionKategori(c, perKategori.get(c.key) ?? []))
       .join('');
     document.getElementById('kontrol-aksi')!.classList.remove('hidden');
+    const tandai = (e: Event) => { (e.target as HTMLElement).closest<HTMLElement>('[data-key]')?.setAttribute('data-dirty', '1'); };
+    wadah.oninput = tandai;
+    wadah.onchange = tandai;
 
     if (!bolehEdit) {
       wadah.querySelectorAll('input, textarea').forEach((el) => {
@@ -287,9 +297,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   function field(row: any): string {
     const id = `f-${row.key}`;
-    const help = row.help
-      ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(row.help)}</p>`
+    const menunggu = row.value === null || row.value === undefined
+      ? `<p class="mt-1 text-xs text-amber-700 dark:text-amber-400">Menunggu sinkron dari bot — nilai aktif saat ini dipakai sampai bot mengirimnya. Ubah hanya bila ingin menimpanya.</p>`
       : '';
+    const help = (row.help
+      ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(row.help)}</p>`
+      : '') + menunggu;
 
     if (row.kind === 'boolean') {
       const aktif = row.value === 'true';
@@ -362,6 +375,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const fields = Array.from(
       document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-key]'),
     );
+    const berubah = fields.filter((el) => el.dataset.dirty === '1');
+    if (berubah.length === 0) {
+      pesan.textContent = 'Tidak ada perubahan untuk disimpan.';
+      btn.disabled = false;
+      btn.textContent = 'Simpan perubahan';
+      return;
+    }
 
     // Validasi silang: min pemain tidak boleh melebihi max pemain.
     const nilaiOf = (key: string) => {
@@ -379,7 +399,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     }
 
     const hasil = await Promise.all(
-      fields.map((el) => {
+      berubah.map((el) => {
         let nilai: string;
         if (el.dataset.kind === 'boolean') nilai = String((el as HTMLInputElement).checked);
         else nilai = el.value;
@@ -397,6 +417,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     } else {
       pesan.textContent = 'Tersimpan. Bot akan menerapkannya dalam ± 1 menit.';
       pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+      berubah.forEach((el) => el.removeAttribute('data-dirty'));
+      void muat();
+      void muatAudit();
     }
 
     btn.disabled = false;

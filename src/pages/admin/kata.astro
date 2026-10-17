@@ -1,9 +1,13 @@
 ---
-// Moderasi Word Collection.
+// Moderasi Word Collection (pengganti /developer › 📚 Word Collection).
 //
-// Bot mengirim antrean kata tak dikenal ke tabel `bot_word_queue` (via
-// websiteSync). Terima/Tolak mengantre perintah `word.accept` / `word.reject`
-// ke `bot_commands`; bot memindahkan kata ke kamus atau daftar tolak.
+// - Statistik dari snapshot `words` (bot_panel_snapshots).
+// - Antrean pending dari cermin `bot_word_queue` (websiteSync) → word.accept /
+//   word.reject.
+// - Cari kata (word.search), antrean cepat review ulang (word.rereview).
+// - Review massal: word.export membuat SESI + berkas TXT/CSV milik admin ini →
+//   admin meninjau berkas → word.bulk hanya memproses kata dari sesi export
+//   terbaru miliknya (validasi dua tahap di bot, wordReview.processBulk).
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
@@ -12,15 +16,30 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   <AdminPageHeader
     eyebrow="Konten"
     title="Moderasi Kata"
-    description="Kata yang diajukan pemain dan menunggu ditinjau. Terima untuk masuk kamus, atau tolak."
+    description="Kata yang diajukan pemain dan menunggu ditinjau. Terima untuk masuk kamus, atau tolak — satu per satu atau massal."
   />
 
-  <div class="px-6 lg:px-10 py-8 space-y-5">
-    <div class="flex items-center justify-between gap-3">
-      <p id="kata-info" class="text-sm text-ink-500 dark:text-cream-300/60"></p>
-      <button type="button" id="kata-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
-    </div>
-    <div id="kata-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <section class="space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="font-display text-lg font-semibold tracking-tightest">Statistik</h2>
+        <p id="stat-fresh"></p>
+      </div>
+      <div id="stat-body"></div>
+    </section>
+
+    <section class="space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h2 class="font-display text-lg font-semibold tracking-tightest">Antrean pending</h2>
+          <p id="kata-info" class="mt-0.5 text-sm text-ink-500 dark:text-cream-300/60"></p>
+        </div>
+        <button type="button" id="kata-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
+      </div>
+      <div id="kata-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    </section>
+
+    <div id="kata-alat" class="space-y-10"></div>
   </div>
 </AdminLayout>
 
@@ -28,18 +47,52 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
+  import { BULK_ACTIONS, countBulkWords, toEpoch } from '@/lib/dev-panel/model';
+  import { KELAS, fmtJam, formCard, freshness, notice, pasangAksi, pill, section, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
 
   let bolehEdit = false;
+
+  const LABEL_STATUS: Record<string, [string, 'ok' | 'bad' | 'muted' | 'warn']> = {
+    approved: ['diterima', 'ok'],
+    rejected: ['ditolak', 'bad'],
+    pending: ['pending', 'warn'],
+  };
+  const LABEL_EXPORT: Record<string, string> = { pending: 'Pending', accepted: 'Diterima', rejected: 'Ditolak' };
+
+  /** Teks laporan bot memakai markdown Discord — tampilkan polos. */
+  const polos = (s: string) => String(s ?? '').replace(/\*\*/g, '').replace(/`/g, '').replace(/_\((.*?)\)_/g, '($1)');
 
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
     void muat();
-    setInterval(() => void muat(), 30_000);
-    document.getElementById('kata-refresh')?.addEventListener('click', () => void muat());
+    void muatStatistik();
+    setInterval(() => { void muat(); void muatStatistik(); }, 30_000);
+    document.getElementById('kata-refresh')?.addEventListener('click', () => { void muat(); void muatStatistik(); });
     document.getElementById('kata-body')?.addEventListener('click', onAksi);
+    renderAlat();
   });
 
+  // ─── Statistik (snapshot `words`) ─────────────────────────────────────────
+  async function muatStatistik() {
+    const s = await bacaSnapshot('words');
+    document.getElementById('stat-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('stat-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
+    const w = s.data;
+    body.innerHTML = `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Kata di kamus', fmtAngka(w.totalWords))}
+        ${stat('Pending', fmtAngka(w.totalPending))}
+        ${stat('Diterima (Word Collection)', fmtAngka(w.totalApproved))}
+        ${stat('Ditolak', fmtAngka(w.totalRejected), `${fmtAngka(w.totalReReview)} masuk antrean review ulang`)}
+        ${stat('Sudah direview ulang', fmtAngka(w.totalReReviewed))}
+        ${stat('Perubahan 24 jam', fmtAngka(w.changes24h), w.lastUpdated ? `terakhir ${fmtJam(toEpoch(w.lastUpdated))}` : '')}
+      </div>
+      ${(w.topWords ?? []).length ? `<p class="mt-3 text-xs ${KELAS.muted}">Pending terpopuler: ${(w.topWords as any[]).map((t) => `${esc(t.word)} (${esc(fmtAngka(t.attempts))}×, ${esc(fmtAngka(t.guild_count))} server)`).join(' · ')}</p>` : ''}`;
+  }
+
+  // ─── Antrean pending (cermin bot_word_queue) ──────────────────────────────
   async function muat() {
     const body = document.getElementById('kata-body')!;
     const supabase = getSupabase();
@@ -58,16 +111,16 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       return;
     }
 
-    document.getElementById('kata-info')!.textContent = `${fmtAngka(data.length)} kata menunggu`;
+    document.getElementById('kata-info')!.textContent = `${fmtAngka(data.length)} kata menunggu (maks. 200 teratas)`;
     const rows = data.map((w: any) => `
       <tr class="border-t border-ink-900/5 dark:border-cream-100/5" data-word="${esc(w.word)}">
         <td class="px-5 py-3 font-medium">${esc(w.word)}</td>
         <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(w.hits))}</td>
         <td class="px-5 py-3 text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(w.first_seen ? fmtWaktu(w.first_seen) : '—')}</td>
-        <td class="px-5 py-3 text-right space-x-2">
+        <td class="px-5 py-3 text-right space-x-2 whitespace-nowrap">
           ${bolehEdit ? `
-            <button type="button" data-accept="${esc(w.word)}" class="rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-teal-400 transition-colors">Terima</button>
-            <button type="button" data-reject="${esc(w.word)}" class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-400 transition-colors">Tolak</button>
+            <button type="button" data-accept="${esc(w.word)}" class="rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-teal-400 transition-colors disabled:opacity-60">Terima</button>
+            <button type="button" data-reject="${esc(w.word)}" class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-400 transition-colors disabled:opacity-60">Tolak</button>
           ` : '<span class="text-xs text-ink-400 dark:text-cream-300/40">—</span>'}
         </td>
       </tr>`).join('');
@@ -88,32 +141,191 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       </div>`;
   }
 
+  /** Terima/Tolak satu kata dan tunggu jawaban bot (sukses atau alasan gagal). */
+  async function putuskan(word: string, accept: boolean, tombol: HTMLButtonElement[], baris: HTMLElement | null) {
+    let reason: string | undefined;
+    if (!accept) {
+      const r = window.prompt(`Tolak kata "${word}"? Alasan (opsional):`, '');
+      if (r === null) return false; // batal
+      reason = r.trim() || undefined;
+    }
+    tombol.forEach((b) => { b.disabled = true; });
+    const o = await kirimPerintah(accept ? 'word.accept' : 'word.reject', reason ? { word, reason } : { word });
+    if (!o.ok && !o.timedOut) {
+      tombol.forEach((b) => { b.disabled = false; });
+      alert(o.error ?? 'Gagal.');
+      return false;
+    }
+    if (baris) {
+      baris.style.opacity = '0.5';
+      const sel = baris.querySelector('td:last-child');
+      if (sel) sel.innerHTML = o.timedOut ? pill('antre', 'muted') : pill(accept ? 'diterima' : 'ditolak', accept ? 'ok' : 'bad');
+    }
+    return true;
+  }
+
   async function onAksi(e: Event) {
     const el = (e.target as HTMLElement).closest('button[data-accept], button[data-reject]') as HTMLButtonElement | null;
     if (!el) return;
     const accept = el.hasAttribute('data-accept');
     const word = (accept ? el.dataset.accept : el.dataset.reject)!;
+    const tr = el.closest('tr') as HTMLElement | null;
+    const ok = await putuskan(word, accept, Array.from(tr?.querySelectorAll('button') ?? []), tr);
+    if (ok) setTimeout(() => void muatStatistik(), 1500);
+  }
 
-    let reason: string | undefined;
-    if (!accept) {
-      const r = window.prompt(`Tolak kata "${word}"? Alasan (opsional):`, '');
-      if (r === null) return; // batal
-      reason = r.trim() || undefined;
+  // ─── Alat: cari, review ulang, export & review massal ─────────────────────
+  function renderAlat() {
+    const el = document.getElementById('kata-alat')!;
+    if (!bolehEdit) {
+      el.innerHTML = notice('info', 'Peran kamu hanya bisa melihat. Cari kata, review ulang, dan review massal butuh peran admin atau owner.');
+      return;
     }
+    const opsiBulk = Object.entries(BULK_ACTIONS).map(([value, a]) => ({ value, label: a.label }));
+    el.innerHTML = [
+      section('Cari kata', `${formCard({
+        id: 'cari-kata', title: 'Cari di pending, diterima, dan ditolak', submit: 'Cari',
+        fields: [{ name: 'query', label: 'Kata / potongan kata (min. 2 huruf)', required: true, placeholder: 'mis. ngab' }],
+      })}<div id="cari-hasil"></div>`),
+      section('Review ulang (antrean cepat)', `<div class="flex items-center gap-3">
+          <button type="button" id="rr-muat" class="${KELAS.tombolNetral}">Muat antrean</button>
+          <p id="rr-status" class="text-xs ${KELAS.muted}" role="status" aria-live="polite"></p>
+        </div>
+        <div id="rr-body"></div>`, 'Kata yang pernah ditolak tetapi terus dipakai pemain. Terima untuk memasukkannya ke kamus.'),
+      section('Export daftar kata', `<div class="${KELAS.kartu} space-y-3">
+          <p class="text-xs ${KELAS.muted}">Export membuat <strong>sesi review</strong> atas namamu (berlaku 24 jam) beserta berkas TXT & CSV. Review massal hanya memproses kata dari sesi export terbaru milikmu.</p>
+          <div class="flex flex-wrap gap-2">
+            ${Object.entries(LABEL_EXPORT).map(([k, l]) => `<button type="button" data-export="${k}" class="${KELAS.tombolNetral}">Export ${esc(l)}</button>`).join('')}
+          </div>
+          <p id="export-status" class="text-xs" role="status" aria-live="polite"></p>
+        </div>`),
+      section('Review massal', `${formCard({
+        id: 'bulk', title: 'Proses hasil review', submit: 'Proses',
+        desc: 'Tempel kata hasil review (satu per baris atau pisahkan koma), atau ketik SEMUA untuk seluruh isi sesi.',
+        fields: [
+          { name: 'action', label: 'Aksi', type: 'select', required: true, options: opsiBulk, value: 'accept' },
+          { name: 'words', label: 'Daftar kata', type: 'textarea', rows: 8, required: true, placeholder: 'kata1\nkata2\n… atau SEMUA' },
+          { name: 'reason', label: 'Alasan tolak (opsional)', placeholder: 'hanya untuk aksi Tolak' },
+        ],
+      })}<p id="bulk-hint" class="text-xs ${KELAS.muted}"></p><div id="bulk-hasil"></div>`),
+    ].join('');
 
-    const supabase = getSupabase();
-    if (!supabase) return;
-    const tr = el.closest('tr');
-    tr?.querySelectorAll('button').forEach((b) => ((b as HTMLButtonElement).disabled = true));
+    pasangCari();
+    pasangReReview();
+    pasangExport();
+    pasangBulk();
+  }
 
-    const { data: sesi } = await supabase.auth.getSession();
-    const payload: Record<string, string> = { word };
-    if (reason) payload.reason = reason;
-    const { error } = await supabase.from('bot_commands').insert({
-      type: accept ? 'word.accept' : 'word.reject', payload, status: 'pending', created_by: sesi.session?.user.id ?? null,
+  function pasangCari() {
+    pasangAksi(document.getElementById('cari-kata') as HTMLFormElement, {
+      type: 'word.search',
+      success: (o) => {
+        const rows = o.result?.rows ?? [];
+        document.getElementById('cari-hasil')!.innerHTML = table(['Kata', 'Status', 'Percobaan', 'Di kamus', 'Keterangan'], rows.map((r: any) => {
+          const [label, tone] = LABEL_STATUS[r.status] ?? [r.status, 'muted'];
+          return [
+            `<span class="font-medium">${esc(r.word)}</span>`,
+            pill(label, tone),
+            esc(fmtAngka(r.attempts)),
+            r.inDictionary ? pill('ya', 'ok') : pill('tidak', 'muted'),
+            `<span class="text-xs">${esc([r.reason, r.re_review ? 'antre review ulang' : '', r.guild_count ? `${r.guild_count} server` : ''].filter(Boolean).join(' · ') || '—')}</span>`,
+          ];
+        }), 'Tidak ada kata yang cocok.');
+        return `${rows.length} hasil.`;
+      },
     });
-    if (error) { alert(pesanError(error)); tr?.querySelectorAll('button').forEach((b) => ((b as HTMLButtonElement).disabled = false)); return; }
-    // Tandai baris sudah diproses (akan hilang saat refresh berikutnya).
-    if (tr) { (tr as HTMLElement).style.opacity = '0.5'; el.textContent = 'Antre…'; }
+  }
+
+  function pasangReReview() {
+    const muatRR = async () => {
+      const st = document.getElementById('rr-status')!;
+      st.textContent = 'Meminta data dari bot…';
+      const o = await kirimPerintah('word.rereview');
+      const body = document.getElementById('rr-body')!;
+      if (!o.ok) { st.textContent = ''; body.innerHTML = notice(o.timedOut ? 'warn' : 'error', o.error ?? 'Gagal.'); return; }
+      const rows = o.result?.rows ?? [];
+      st.textContent = `${rows.length} kata di antrean review ulang.`;
+      body.innerHTML = table(['Kata', 'Percobaan', 'Alasan ditolak', ''], rows.map((r: any) => [
+        `<span class="font-medium">${esc(r.word)}</span>`,
+        esc(fmtAngka(r.attempts)),
+        `<span class="text-xs">${esc(r.reason ?? '—')}</span>`,
+        `<button type="button" data-rr="${esc(r.word)}" class="rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-teal-400 transition-colors disabled:opacity-60">Terima</button>`,
+      ]), 'Antrean review ulang kosong.');
+    };
+    document.getElementById('rr-muat')?.addEventListener('click', () => void muatRR());
+    document.getElementById('rr-body')?.addEventListener('click', async (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-rr]');
+      if (!b) return;
+      if (!window.confirm(`Terima "${b.dataset.rr}" ke kamus?`)) return;
+      const ok = await putuskan(b.dataset.rr!, true, [b], b.closest('tr'));
+      if (ok) setTimeout(() => void muatStatistik(), 1500);
+    });
+  }
+
+  function pasangExport() {
+    document.querySelectorAll<HTMLButtonElement>('button[data-export]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        const kind = b.dataset.export!;
+        const st = document.getElementById('export-status')!;
+        const semua = document.querySelectorAll<HTMLButtonElement>('button[data-export]');
+        semua.forEach((x) => { x.disabled = true; });
+        st.className = `text-xs ${KELAS.muted}`;
+        st.textContent = `Menyiapkan export ${LABEL_EXPORT[kind]}…`;
+        const o = await kirimPerintah('word.export', { kind }, { timeoutMs: 90_000 });
+        semua.forEach((x) => { x.disabled = false; });
+        if (!o.ok) { st.className = 'text-xs text-red-600 dark:text-red-400'; st.textContent = o.error ?? 'Gagal.'; return; }
+        const r = o.result;
+        if (!r.count) { st.textContent = `Tidak ada kata berstatus ${LABEL_EXPORT[kind]} untuk diexport saat ini.`; return; }
+        const tgl = new Date().toISOString().slice(0, 10);
+        unduhTeks(`wc_${kind}_${r.sessionId}_${tgl}.txt`, r.txt);
+        unduhTeks(`wc_${kind}_${r.sessionId}_${tgl}.csv`, r.csv, 'text/csv;charset=utf-8');
+        st.className = 'text-xs text-teal-700 dark:text-teal-300';
+        st.textContent = `${fmtAngka(r.count)} kata diexport · sesi ${r.sessionId} (berlaku ${r.validHours} jam). Berkas TXT & CSV terunduh.`;
+      });
+    });
+  }
+
+  function pasangBulk() {
+    const form = document.getElementById('bulk') as HTMLFormElement;
+    const hint = document.getElementById('bulk-hint')!;
+    const perbarui = () => {
+      const action = (form.elements.namedItem('action') as HTMLSelectElement).value;
+      const a = BULK_ACTIONS[action];
+      const n = countBulkWords((form.elements.namedItem('words') as HTMLTextAreaElement).value);
+      (form.elements.namedItem('reason') as HTMLInputElement).closest('div')!.classList.toggle('hidden', !a?.reason);
+      hint.textContent = `Butuh sesi export ${LABEL_EXPORT[a?.from ?? 'pending']} terbaru milikmu. `
+        + (n === 'SEMUA' ? 'Akan memproses SELURUH isi sesi.' : `${n} kata unik terdeteksi.`);
+    };
+    form.addEventListener('input', perbarui);
+    perbarui();
+
+    pasangAksi(form, {
+      type: 'word.bulk',
+      payload: (f) => {
+        const action = (f.elements.namedItem('action') as HTMLSelectElement).value;
+        const words = (f.elements.namedItem('words') as HTMLTextAreaElement).value.trim();
+        const reason = (f.elements.namedItem('reason') as HTMLInputElement).value.trim();
+        const p: Record<string, unknown> = { action, words };
+        if (BULK_ACTIONS[action]?.reason && reason) p.reason = reason;
+        return p;
+      },
+      confirm: (p) => {
+        const n = countBulkWords(String(p.words));
+        return `${BULK_ACTIONS[String(p.action)]?.label}: ${n === 'SEMUA' ? 'SELURUH isi sesi' : `${n} kata`}. Lanjutkan?`;
+      },
+      send: { timeoutMs: 5 * 60_000 },
+      success: (o) => {
+        const r = o.result;
+        const hasil = document.getElementById('bulk-hasil')!;
+        hasil.innerHTML = `<div class="${KELAS.kartu} space-y-3">
+          <pre class="whitespace-pre-wrap text-xs leading-relaxed">${esc(polos(r.reportText))}</pre>
+          ${r.skippedFile ? `<button type="button" id="bulk-skip" class="${KELAS.tombolNetral}">Unduh detail kata yang dilewati</button>` : ''}
+        </div>`;
+        document.getElementById('bulk-skip')?.addEventListener('click', () => unduhTeks(`wc_skipped_${r.sessionId}.txt`, r.skippedFile));
+        void muat();
+        setTimeout(() => void muatStatistik(), 1500);
+        return `${fmtAngka(r.processed)} diproses, ${fmtAngka(r.skipped)} dilewati.`;
+      },
+    });
   }
 </script>
