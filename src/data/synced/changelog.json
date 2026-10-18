@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.0.0",
+    "date": "2026-10-18",
+    "title": "Pengelolaan bot pindah ke website — lebih cepat & lebih aman",
+    "highlights": [
+      "🛠️ Panel pengelola bot kini di website, jadi perbaikan, event, dan pengumuman bisa diterapkan lebih cepat",
+      "📢 Pengumuman & broadcast resmi dikirim dengan pratinjau dan pemantauan langsung",
+      "🛡️ Keamanan pengelolaan bot ditingkatkan: aksi penting hanya bisa dilakukan pemilik",
+      "⚡ Bot tetap berjalan normal — tidak ada perubahan cara bermain"
+    ]
+  },
+  {
     "version": "2.74.0",
     "date": "2026-10-17",
     "title": "Tukar Kata-Kata: terima kata-kata hari ini dari teman",
