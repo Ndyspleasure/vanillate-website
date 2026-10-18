@@ -51,6 +51,7 @@ export function mountServersPage(cfg: PageConfig): void {
     <a href="${esc(cfg.productUrl)}" class="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900 dark:text-cream-300 dark:hover:text-cream-50">
       ${icon('arrow-left')} ${esc(cfg.productName)}
     </a>`;
+  const supportLink = `<a href="/support#hubungi-support" class="font-medium text-amber-700 underline dark:text-amber-300">hubungi support kami</a>`;
   const serverUrl = (id: string) => `/dashboard/server/?id=${encodeURIComponent(id)}`;
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -173,6 +174,10 @@ export function mountServersPage(cfg: PageConfig): void {
         Pilih server yang ingin kamu atur. Hanya server tempat kamu pemilik, Administrator, atau punya izin
         <strong>Manage Server</strong> yang tampil di sini.
       </p>
+      <p class="mt-2 text-sm text-ink-600 dark:text-cream-300">
+        Server-mu tidak muncul? Berarti kamu bukan pemilik atau Admin di server tersebut. Jika ada kendala, silakan
+        ${supportLink}.
+      </p>
       ${
         data.servers.length > 6
           ? `<label class="mt-5 flex max-w-sm items-center gap-2 rounded-full border border-ink-900/10 bg-white/60 px-4 py-2 dark:border-cream-100/10 dark:bg-ink-900/40">
@@ -186,7 +191,7 @@ export function mountServersPage(cfg: PageConfig): void {
         data.servers.length === 0
           ? `<div class="${CARD} mt-8 p-8 text-center text-sm text-ink-600 dark:text-cream-300">
                Belum ada server yang bisa kamu kelola. Kamu perlu menjadi pemilik server atau punya izin <strong>Manage Server</strong>.
-               Sudah punya? Tekan <strong>Segarkan</strong>.
+               Sudah punya? Tekan <strong>Segarkan</strong>. Jika ada kendala, silakan ${supportLink}.
              </div>`
           : list.length === 0
             ? `<p class="mt-8 text-sm text-ink-500">Tidak ada server yang cocok dengan “${esc(query)}”.</p>`
