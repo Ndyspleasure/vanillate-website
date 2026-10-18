@@ -1,0 +1,71 @@
+---
+// Panel Developer — DM Campaign (pengganti /developer › 📬 Campaign).
+// Statistik dari snapshot `campaign`. Jumlah DM per hari diatur di
+// /admin/kontrol (setting dm_campaign_per_day); kirim paksa ke satu pemain
+// lewat perintah campaign.forceSend.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="DM Campaign" active="dev-campaign">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="DM Campaign"
+    description="Pengingat DM otomatis untuk pemain yang lama tidak bermain (menghormati opt-out), beserta dampaknya."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-10">
+    <p id="cmp-fresh"></p>
+    <div id="cmp-body" class="space-y-10"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { url } from '@/utils/url';
+  import { bacaSnapshot } from '@/lib/dev-panel/client';
+  import { GRUP } from '@/lib/dev-panel/actions';
+  import { formCard, freshness, pasangAksi, section, stat } from '@/lib/dev-panel/ui';
+
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const role = (e as CustomEvent).detail?.role;
+    bolehEdit = role === 'owner' || role === 'admin';
+    void muat();
+  });
+
+  async function muat() {
+    const s = await bacaSnapshot('campaign');
+    document.getElementById('cmp-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('cmp-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
+    const c = s.data;
+    const optOut = c.totalUsers ? ((c.optedOut / c.totalUsers) * 100).toFixed(1) : '0.0';
+    const retensi = c.sentTotal ? `${Math.round((c.returnedAfterDm / c.sentTotal) * 100)}%` : '—';
+    const kirim = GRUP.find((g) => g.key === 'campaign')!.aksi[0];
+
+    body.innerHTML = [
+      section('Statistik', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Total pengguna', fmtAngka(c.totalUsers))}
+        ${stat('Opt-in DM', fmtAngka(c.optedIn), `${fmtAngka(c.optedOut)} opt-out (${optOut}%)`)}
+        ${stat('Eligible hari ini', fmtAngka(c.eligibleToday), `${fmtAngka(c.inactive7d)} tidak aktif > 7 hari`)}
+        ${stat('Terkirim hari ini', fmtAngka(c.sentToday), `batas ${fmtAngka(c.perDay)} DM/hari`)}
+        ${stat('Total terkirim', fmtAngka(c.sentTotal), `${fmtAngka(c.failedTotal)} gagal`)}
+        ${stat('Kembali main setelah DM', fmtAngka(c.returnedAfterDm), `efek retensi ${retensi}`)}
+      </div>
+      <p class="text-xs text-ink-500 dark:text-cream-300/60">Jumlah DM per hari diatur di <a href="${url('/admin/kontrol')}" class="underline text-amber-700 dark:text-amber-400">Kontrol Bot › DM Campaign</a>.</p>`),
+      bolehEdit ? section('Kirim paksa', formCard({ id: 'cmp-force', title: kirim.label, fields: kirim.fields, desc: 'Kirim pengingat sekarang ke satu pemain (DM pemain harus terbuka).' })) : '',
+    ].join('');
+    const f = document.getElementById('cmp-force') as HTMLFormElement | null;
+    if (f) {
+      pasangAksi(f, {
+        type: kirim.type,
+        confirm: (p) => `Kirim DM campaign ke "${p.player}" sekarang?`,
+        success: () => 'DM terkirim.',
+        resetOnSuccess: true,
+        onDone: (o) => { if (o.ok) setTimeout(() => void muat(), 1500); },
+      });
+    }
+  }
+</script>

@@ -62,7 +62,8 @@ vanillate-website/
 │   │   │   ├── logs.astro          /admin/logs (log aktivitas bot)
 │   │   │   ├── statistik.astro     /admin/statistik (angka & tren)
 │   │   │   ├── server.astro        /admin/server (daftar server Discord)
-│   │   │   ├── pemain.astro        /admin/pemain (daftar pemain)
+│   │   │   ├── pemain.astro        /admin/pemain (daftar & kelola pemain)
+│   │   │   ├── developer/          /admin/developer/* — Panel Developer (pengganti /developer) — lihat docs/DEVELOPER-PANEL.md
 │   │   │   ├── faq/                /admin/faq (pertanyaan) & /admin/faq/categories
 │   │   │   ├── after-dark.astro    /admin/after-dark (tantangan game 18+ After Dark)
 │   │   │   └── konten.astro        /admin/konten (editor konten)
@@ -71,7 +72,8 @@ vanillate-website/
 │   │   ├── supabase.ts             Inisialisasi klien Supabase (anon key)
 │   │   ├── admin-auth.ts           Login, guard sesi, profil admin
 │   │   ├── admin-ui.ts             Escaping & blok status tampilan
-│   │   └── admin-chart.ts          Grafik tren halaman statistik
+│   │   ├── admin-chart.ts          Grafik tren halaman statistik
+│   │   └── dev-panel/              Panel Developer: antrean perintah bot, snapshot, model (teruji), UI
 │   ├── utils/
 │   │   └── url.ts                  url() helper untuk internal links (base path aware)
 │   └── styles/global.css           Tailwind + global styles

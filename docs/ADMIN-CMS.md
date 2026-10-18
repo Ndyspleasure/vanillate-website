@@ -398,10 +398,14 @@ pemeriksaan jalan ada di tab Actions.
 | `src/layouts/AdminLayout.astro` | Kerangka panel + penjaga sesi |
 | `src/pages/admin/*.astro` | Halaman login dan dashboard |
 | `src/pages/admin/kontrol.astro` | **Control panel** — atur setting bot + jadwal + kartu pemantauan + riwayat perubahan |
-| `src/pages/admin/operasi.astro` | **Console aksi** — antrean perintah bot (dengan konfirmasi aksi berbahaya & test-send) |
-| `src/pages/admin/games.astro` | **Monitor game** live (akhiri game mode klasik) |
-| `src/pages/admin/promo.astro` | **Manajemen promo** (daftar + analitik + nyalakan/matikan) |
-| `src/pages/admin/kata.astro` | **Moderasi kata** (terima/tolak usulan Word Collection) |
+| `src/pages/admin/operasi.astro` | **Console aksi** — semua aksi sederhana + riwayat perintah bot |
+| `src/pages/admin/games.astro` | **Monitor game** live semua mode + aksi developer (End, Force Turn, Set Word, Eliminate, Revive, Spawn Event, broadcast) |
+| `src/pages/admin/pemain.astro` | **Pemain** — cermin `bot_players` + kelola pemain live, ranking, banned |
+| `src/pages/admin/promo.astro` | **Manajemen promo** (daftar + analitik + nyalakan/matikan + buat/ubah) |
+| `src/pages/admin/kata.astro` | **Word Collection** (statistik, terima/tolak, cari, review ulang, export, review massal) |
+| `src/pages/admin/developer/*.astro` | **Panel Developer** (pengganti `/developer`): ringkasan & log, kontrol server (owner), broadcast, polling, event, error, tutorial, campaign, sosial, Auto-Heal — lihat `docs/DEVELOPER-PANEL.md` |
+| `src/lib/dev-panel/*.ts` | Klien antrean perintah & snapshot, model murni (teruji), komponen tampilan, registry aksi |
+| `supabase/developer-panel-*.sql` | Skema Panel Developer (aditif) + setting baru + rollback |
 | `src/pages/admin/lagu.astro` | **Tebak Lagu** — kelola katalog lagu (upload audio + kunci jawaban) |
 | `src/pages/admin/faq/index.astro` | **FAQ** — tulis & kelola seluruh panduan |
 | `src/pages/admin/faq/categories.astro` | **Kategori FAQ** — struktur panduan |
@@ -416,15 +420,21 @@ pemeriksaan jalan ada di tab Actions.
 Bagian 1–10 memakai arah data **bot → website** (bot menulis, panel membaca).
 Panel `/admin/kontrol` dan `/admin/operasi` menambahkan **arah balik website → bot**,
 mengubah panel menjadi control panel: developer mengatur bot dari website tanpa
-menyentuh source code atau me-restart bot. Setara Developer Dashboard di dalam
-Discord.
+menyentuh source code atau me-restart bot.
+
+> **V3 (bot v3.0.0):** slash command `/developer` di Discord dihapus — seluruh
+> Developer Dashboard kini **Panel Developer** di CMS ini (`/admin/developer/*`,
+> `/admin/games`, `/admin/pemain`, `/admin/kata`, `/admin/promo`). Tambahan
+> skema: `bot_panel_snapshots`, progress/heartbeat di `bot_commands`, penjaga owner
+> `sys.*`, bucket `bot-backups`. Acuan lengkap: **`docs/DEVELOPER-PANEL.md`**.
 
 Dua tabel Supabase (dibuat oleh `supabase/schema.sql` bagian 7):
 
 | Tabel | Peran | Ditulis oleh | Dibaca oleh |
 |---|---|---|---|
 | `bot_settings` | State deklaratif (maintenance, pengumuman, toggle mode, tunable, feature flag) | editor via panel `/admin/kontrol` | bot (service_role, live polling) |
-| `bot_commands` | Antrean aksi sekali-jalan (kelola pemain/boost/promo/quest/broadcast) | editor via panel `/admin/operasi` | bot (service_role, dieksekusi lalu status ditulis balik) |
+| `bot_commands` | Antrean aksi sekali-jalan (seluruh aksi Panel Developer; `sys.*` khusus owner) | editor via `/admin/operasi` & halaman Panel Developer | bot (service_role, dieksekusi lalu status/hasil/progress ditulis balik) |
+| `bot_panel_snapshots` | Keadaan bot terkini per panel (11 key) | bot (service_role) | admin login |
 
 ### Cara kerja
 
@@ -434,12 +444,12 @@ Dua tabel Supabase (dibuat oleh `supabase/schema.sql` bagian 7):
               ▼                                             ▼
    Supabase: bot_settings                        Supabase: bot_commands (pending)
               │                                             │
-              │  bot menarik tiap ± 1 menit                 │ bot menarik tiap ± 45 dtk
+              │  bot menarik tiap ± 1 menit                 │ bot menarik tiap 2,5–6 dtk
               ▼                                             ▼
-   remoteConfig menerapkan LIVE:                 remoteCommands eksekusi lewat
-   maintenance, pengumuman, toggle mode,         manager bot (playerStats, boost,
-   tunable (di-clamp), feature flag              promo, broadcast) → tulis balik
-                                                 status done/error + hasil
+   remoteConfig menerapkan LIVE:                 remoteCommands: cek peran pembuat,
+   maintenance, pengumuman, toggle mode,         eksekusi handler src/cms/handlers/*
+   tunable (di-clamp), feature flag              → tulis balik status done/error +
+                                                 hasil (+ progress tugas panjang)
 ```
 
 Berbeda dari halaman **Konten** (yang me-rebuild situs statis), halaman kontrol
@@ -451,7 +461,9 @@ menyetir bot, **bukan** situs publik — jadi tidak ada build/deploy yang terpic
   (best-effort, saat kontrol yang sama diubah dari Discord) via service_role.
 - `bot_commands`: admin boleh baca riwayat; `owner`/`admin` boleh **INSERT** perintah,
   dipaksa `status = 'pending'` + `created_by = auth.uid()`. **Tidak ada** UPDATE/DELETE
-  untuk `authenticated` — status hanya ditulis bot (service_role).
+  untuk `authenticated` — status hanya ditulis bot (service_role). Tipe `sys.*` hanya
+  boleh dari **owner** (trigger `bot_commands_owner_guard`), dan bot memeriksa ulang
+  peran pembuat dari `admin_users` sebelum mengeksekusi.
 - Nilai numerik & payload perintah **selalu divalidasi ulang & di-clamp di sisi bot**;
   input panel tidak pernah dipercaya mentah.
 - **Versi & changelog tidak dikontrol dari sini** — SSoT-nya tetap `version.json` +
@@ -465,7 +477,9 @@ sama dengan Website Sync — tanpa secret baru). Bila kosong, seluruh fitur diam
 | File | Peran |
 |---|---|
 | `src/services/remoteConfig.js` | Tarik `bot_settings`, terapkan live (`isModeEnabled`/`tunable`/`getFlag`) |
-| `src/services/remoteCommands.js` | Proses antrean `bot_commands` (registry `HANDLERS`) |
+| `src/services/remoteCommands.js` | Proses antrean `bot_commands` (klaim atomik, verifikasi peran, heartbeat) |
+| `src/cms/registry.js` + `src/cms/handlers/*` | Registry & handler seluruh perintah Panel Developer |
+| `src/cms/snapshots.js` | Penerbit `bot_panel_snapshots` |
 | `src/services/websiteSync.js` | (sudah ada) kirim log/statistik + metrik pemantauan ke `bot_stats.meta` |
 
 ### Menambah aksi/setting baru
@@ -477,8 +491,9 @@ sama dengan Website Sync — tanpa secret baru). Bila kosong, seluruh fitur diam
 - **Kategori**: tambah baris di `bot_setting_categories` (`key`, `label`, `description`,
   `icon`, `sort`). Section baru langsung terbentuk — tampilannya **data-driven**, tak perlu
   ubah frontend. `icon` = nama Lucide (mis. `wrench`); nama tak dikenal memakai ikon default.
-- **Aksi**: tambah entri form di `GRUP` (`src/pages/admin/operasi.astro`) + handler dengan
-  `type` yang sama di `HANDLERS` (`src/services/remoteCommands.js`). Tidak perlu tabel baru.
+- **Aksi**: tambah entri form di `GRUP` (`src/lib/dev-panel/actions.ts`) atau halaman di
+  `src/pages/admin/developer/` + handler dengan `type` yang sama di `src/cms/handlers/*`
+  (repo bot). Tidak perlu tabel baru. Lihat `docs/DEVELOPER-PANEL.md` §6.
 
 ### Peningkatan (bagian 8 schema)
 
@@ -488,7 +503,7 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 |---|---|
 | `bot_setting_categories` | Metadata kategori (label/deskripsi/ikon/urutan) — hierarki **Kategori → Item** yang data-driven di `/admin/kontrol` (bagian 9). |
 | `bot_settings_audit` | Riwayat perubahan setting (trigger otomatis: key, old→new, kapan). Tampil di `/admin/kontrol`. |
-| `bot_games` | Snapshot game aktif (di-upsert bot ~30 dtk, auto-bersih saat selesai) → `/admin/games`. |
+| `bot_games` | ~~Snapshot game aktif~~ — **tidak dipakai lagi sejak V3** (Game Monitor membaca snapshot `games` di `bot_panel_snapshots`). Tabel dibiarkan (migrasi V3 aditif). |
 | `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
 | `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
 | `partnership_slots` | Partner yang tampil di **Dashboard Partnership** pada lobby bot → `/admin/partnership/lobby` (bagian 11). |
@@ -498,15 +513,16 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 Tambahan lain:
 - **Penjadwalan**: setting `maintenance_start_at`/`maintenance_end_at` (maintenance efektif =
   manual OR jendela terjadwal) dan `discord_announcement_expires_at` (pengumuman auto-mati).
-- **Keselamatan aksi**: `/admin/operasi` meminta konfirmasi untuk aksi berbahaya; broadcast massal
-  wajib ketik `BROADCAST` dan punya **test-send** (`broadcast.test`) ke satu ID lebih dulu.
-- **Robustness bot**: perintah yang nyangkut di `processing` > 10 menit ditandai error
+- **Keselamatan aksi**: aksi berbahaya meminta konfirmasi; broadcast massal wajib ketik
+  `BROADCAST` (Darurat: `DARURAT`, owner) dan punya mode **🧪 Test** ke satu ID lebih dulu
+  (`/admin/developer/broadcast`, perintah `broadcast.send`).
+- **Robustness bot**: perintah `processing` tanpa heartbeat > 10 menit ditandai error
   (bukan diulang); tunable pemain dijaga `min ≤ max`; lonjakan error memicu alert ke channel
   developer.
 - **Pemantauan**: `bot_stats.meta` kini memuat memori, game aktif, total pemain/coin, banned —
   ditampilkan sebagai kartu di `/admin/kontrol` dan grafik di `/admin/statistik`.
 
-> **Realtime:** kontrol memakai polling (setting ~60 dtk, perintah ~20 dtk). WebSocket realtime
+> **Realtime:** kontrol memakai polling (setting ~60 dtk, perintah 2,5–6 dtk, snapshot 10–30 dtk). WebSocket realtime
 > sengaja tidak dipakai agar bot tetap pada jalur REST minimal & fail-safe tanpa dependency baru.
 
 ---

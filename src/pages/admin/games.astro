@@ -1,112 +1,252 @@
 ---
-// Monitor game live.
+// Panel Developer — Game Monitor (pengganti /developer › 🎮 Game Monitor).
 //
-// Bot mengirim snapshot game aktif ke tabel `bot_games` (via websiteSync) tiap
-// ~30 dtk. Halaman ini menampilkannya dan — untuk mode klasik/PvP — menyediakan
-// tombol akhiri yang mengantre perintah `game.end` ke `bot_commands`.
+// Daftar & detail SEMUA game aktif (Sambung Kata PvP/PvB/Global/Dungeon dan
+// game sampingan Werewolf/Pengacara/UNO/Tebak Lagu) + antrean Global dibaca
+// dari snapshot `games` (bot_panel_snapshots, diterbitkan bot ±10–30 dtk).
+// Aksi dikirim sebagai perintah game.* — bot memvalidasi ulang terhadap
+// keadaan room SAAT ITU dan mengumumkan setiap aksi di channel game.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
 
 <AdminLayout title="Monitor Game" active="games">
   <AdminPageHeader
-    eyebrow="Pemantauan"
+    eyebrow="Panel Developer"
     title="Monitor Game"
-    description="Game yang sedang berjalan. Data disegarkan otomatis dari bot setiap beberapa detik."
+    description="Semua game yang sedang berjalan, lengkap dengan Game ID, server, pemain, dan aksi developer. Setiap aksi diumumkan ke pemain di channel game."
   />
 
-  <div class="px-6 lg:px-10 py-8 space-y-5">
-    <div class="flex items-center justify-between gap-3">
-      <p id="games-info" class="text-sm text-ink-500 dark:text-cream-300/60"></p>
-      <button type="button" id="games-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
+  <div class="px-6 lg:px-10 py-8 space-y-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p id="games-fresh"></p>
+      <button type="button" id="games-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang dari bot</button>
     </div>
-    <div id="games-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    <div id="games-summary" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+    <div id="games-detail" class="hidden"></div>
+    <div id="games-body" class="space-y-8"></div>
+    <div id="games-broadcast"></div>
   </div>
 </AdminLayout>
 
 <script>
-  import { getSupabase } from '@/lib/supabase';
-  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
-  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { bacaSnapshot, muatUlangDariBot } from '@/lib/dev-panel/client';
+  import { GAME_ACTIONS, SPAWN_EVENTS, fmtDuration, modeGroup, modeLabel, toEpoch } from '@/lib/dev-panel/model';
+  import { formCard, freshness, notice, pasangAksi, pill, section, stat, table, KELAS } from '@/lib/dev-panel/ui';
 
   let bolehEdit = false;
+  let snap: any = null;
+  let terpilih: string | null = null;
+  // Game yang form aksinya sedang terpasang — refresh berkala hanya memperbarui
+  // info & daftar pemain supaya isian form yang sedang diketik tidak hilang.
+  let formUntuk: string | null = null;
 
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
     void muat();
-    setInterval(() => void muat(), 15_000);
-    document.getElementById('games-refresh')?.addEventListener('click', () => void muat());
-    document.getElementById('games-body')?.addEventListener('click', onAksi);
+    setInterval(() => void muat(), 10_000);
+    document.getElementById('games-refresh')?.addEventListener('click', async (ev) => {
+      const b = ev.currentTarget as HTMLButtonElement;
+      b.disabled = true; b.textContent = 'Meminta bot…';
+      const { snapshots } = await muatUlangDariBot(['games']);
+      b.disabled = false; b.textContent = 'Muat ulang dari bot';
+      terapkan(snapshots.games);
+    });
+    document.getElementById('games-body')?.addEventListener('click', (ev) => {
+      const id = (ev.target as HTMLElement).closest<HTMLElement>('[data-game]')?.dataset.game;
+      if (id) { terpilih = id; formUntuk = null; renderDetail(); document.getElementById('games-detail')?.scrollIntoView({ behavior: 'smooth' }); }
+    });
+    renderBroadcast();
   });
 
   async function muat() {
-    const body = document.getElementById('games-body')!;
-    const supabase = getSupabase();
-    if (!supabase) return;
-
-    const { data, error } = await supabase
-      .from('bot_games')
-      .select('game_id, mode, guild_name, channel_id, player_count, status, started_at, updated_at')
-      .order('updated_at', { ascending: false })
-      .limit(100);
-
-    if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
-    if (!data || data.length === 0) {
-      body.innerHTML = stateBlock('empty', 'Tidak ada game aktif saat ini.');
-      document.getElementById('games-info')!.textContent = '';
-      return;
-    }
-
-    document.getElementById('games-info')!.textContent = `${fmtAngka(data.length)} game aktif`;
-    const rows = data.map((g: any) => `
-      <tr class="border-t border-ink-900/5 dark:border-cream-100/5">
-        <td class="px-5 py-3"><code class="text-xs font-mono">${esc(g.game_id)}</code></td>
-        <td class="px-5 py-3"><span class="inline-block rounded-full bg-teal-500/15 px-2.5 py-0.5 text-[0.7rem] text-teal-700 dark:text-teal-300">${esc(g.mode ?? '—')}</span></td>
-        <td class="px-5 py-3 text-sm">${esc(g.guild_name ?? '—')}</td>
-        <td class="px-5 py-3 whitespace-nowrap">${esc(fmtAngka(g.player_count))}</td>
-        <td class="px-5 py-3 text-xs text-ink-500 dark:text-cream-300/60 whitespace-nowrap">${esc(g.started_at ? fmtWaktu(g.started_at) : '—')}</td>
-        <td class="px-5 py-3 text-right">
-          ${bolehEdit && (g.mode === 'classic' || g.mode === 'pvp')
-            ? `<button type="button" data-end="${esc(g.game_id)}" class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-400 transition-colors">Akhiri</button>`
-            : '<span class="text-xs text-ink-400 dark:text-cream-300/40">—</span>'}
-        </td>
-      </tr>`).join('');
-
-    body.innerHTML = `
-      <div class="overflow-x-auto">
-        <table class="w-full text-left">
-          <thead class="bg-ink-900/5 dark:bg-cream-100/5">
-            <tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
-              <th class="px-5 py-3 font-medium">Game ID</th>
-              <th class="px-5 py-3 font-medium">Mode</th>
-              <th class="px-5 py-3 font-medium">Server</th>
-              <th class="px-5 py-3 font-medium">Pemain</th>
-              <th class="px-5 py-3 font-medium">Mulai</th>
-              <th class="px-5 py-3 font-medium text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
+    terapkan(await bacaSnapshot('games'));
   }
 
-  async function onAksi(e: Event) {
-    const btn = (e.target as HTMLElement).closest('button[data-end]') as HTMLButtonElement | null;
-    if (!btn) return;
-    const gameId = btn.dataset.end!;
-    if (!window.confirm(`Akhiri game "${gameId}"? Pemain akan diberi tahu.`)) return;
+  function terapkan(s: { data: any; updatedAt: string | null; error: string | null }) {
+    document.getElementById('games-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('games-body')!;
+    if (s.error && !s.data) { body.innerHTML = stateBlock('error', s.error); return; }
+    snap = s.data;
+    renderRingkasan();
+    renderDaftar();
+    renderDetail();
+  }
 
-    const supabase = getSupabase();
-    if (!supabase) return;
-    btn.disabled = true;
-    btn.textContent = 'Mengirim…';
+  const durasi = (r: any) => {
+    const t = toEpoch(r.startedAt ?? r.createdAt);
+    return t ? fmtDuration((Date.now() - t) / 1000) : '—';
+  };
+  const jumlahPemain = (r: any) => (Array.isArray(r.players) ? r.players.length : 0);
 
-    const { data: sesi } = await supabase.auth.getSession();
-    const { error } = await supabase.from('bot_commands').insert({
-      type: 'game.end', payload: { gameId }, status: 'pending', created_by: sesi.session?.user.id ?? null,
+  function renderRingkasan() {
+    const rooms: any[] = snap?.rooms ?? [];
+    const inti = rooms.filter((r) => modeGroup(r.mode) === 'sambung');
+    const sampingan = rooms.filter((r) => modeGroup(r.mode) === 'sampingan');
+    const pemain = rooms.reduce((n, r) => n + jumlahPemain(r), 0);
+    const tertua = rooms.filter((r) => r.startedAt).sort((a, b) => a.startedAt - b.startedAt)[0];
+    document.getElementById('games-summary')!.innerHTML = [
+      stat('Game aktif', rooms.length, `Sambung Kata ${inti.length} · sampingan ${sampingan.length}`),
+      stat('Pemain in-game', pemain),
+      stat('Mengantre Global', snap?.waitingPlayers ?? 0, snap?.queue?.label ?? ''),
+      stat('Terlama berjalan', tertua ? durasi(tertua) : '—', tertua ? tertua.gameId : 'tidak ada game berjalan'),
+    ].join('');
+  }
+
+  function renderDaftar() {
+    const rooms: any[] = snap?.rooms ?? [];
+    const baris = (r: any) => [
+      `<button type="button" data-game="${esc(r.gameId)}" class="font-mono text-xs underline decoration-dotted hover:text-amber-600">${esc(r.gameId)}</button>`,
+      pill(modeLabel(r.mode), modeGroup(r.mode) === 'sambung' ? 'info' : 'muted'),
+      `<span class="text-sm">${esc(r.guildName ?? '—')}</span><br><span class="text-xs ${KELAS.muted}">#${esc(r.channelName ?? r.channelId ?? '—')}</span>`,
+      esc(jumlahPemain(r)),
+      esc(r.status ?? '—'),
+      `<span class="text-xs">${esc(durasi(r))}</span>`,
+      `<span class="text-xs">${esc(r.hostName ?? '—')}</span>`,
+    ];
+    const kelompok = (judul: string, list: any[]) => section(`${judul} (${list.length})`,
+      table(['Game ID', 'Mode', 'Server / Channel', 'Pemain', 'Status', 'Durasi', 'Host'], list.map(baris), 'Tidak ada game aktif.'));
+
+    const lobi = (snap?.lobbies ?? []).map((l: any) => [
+      `<code class="text-xs">${esc(l.lobbyId)}</code>`,
+      esc(l.guildName ?? '—'),
+      esc(`${l.players?.length ?? 0}/${l.maxPlayers ?? '?'}`),
+      esc(`~${l.avgRating ?? '?'} pts`),
+      esc((l.players ?? []).map((p: any) => p.name ?? '?').join(', ') || '—'),
+    ]);
+
+    document.getElementById('games-body')!.innerHTML = [
+      kelompok('Sambung Kata', rooms.filter((r) => modeGroup(r.mode) === 'sambung')),
+      section(`Antrean Global — mencari lawan (${lobi.length} lobby)`, table(['Lobby', 'Server', 'Pemain', 'Rating', 'Nama'], lobi, 'Tidak ada pemain yang mengantre.')),
+      kelompok('Game sampingan', rooms.filter((r) => modeGroup(r.mode) === 'sampingan')),
+    ].join('');
+  }
+
+  function infoMode(r: any): string {
+    const baris: string[] = [];
+    if (r.currentWord !== undefined) baris.push(`Kata saat ini: <strong>${esc(String(r.currentWord ?? '—').toUpperCase())}</strong> · sambung: <strong>${esc(String(r.targetLetter ?? '—').toUpperCase())}</strong>`);
+    if (r.event) baris.push(`Status event: ${esc(r.event.label)}`);
+    if (r.mode === 'dungeon') baris.push(`Wave ${esc(r.wave ?? '?')}/5`);
+    if (r.bot) baris.push(`Bot: ❤️ ${esc(r.bot.hp)}/${esc(r.bot.maxHp)} · 🔷 ${esc(r.bot.mana)}`);
+    if (r.servers) baris.push(`Server peserta: ${esc(r.servers.filter(Boolean).join(', ') || '—')}`);
+    if (r.day !== undefined) baris.push(`Hari ke-${esc(r.day)}`);
+    if (r.caseInfo) baris.push(`Kasus ${esc(r.caseInfo.caseId ?? '?')} — ${esc(r.caseInfo.victim ?? '?')} @ ${esc(r.caseInfo.location ?? '?')} · bukti ${esc(r.evidence)} · keberatan ${esc(r.objections)} · pernyataan ${esc(r.statements)} (⚑ ${esc(r.contradictions)})`);
+    if (r.missingSeats?.length) baris.push(`⚠ Kursi wajib kosong: ${esc(r.missingSeats.join(', '))}`);
+    if (r.topCard !== undefined) baris.push(`Kartu teratas ${esc(r.topCard ?? '—')} · warna ${esc(r.activeColor ?? '—')} · arah ${esc(r.direction)}${r.voting !== null ? ` · voting ${esc(r.voting)} suara` : ''}`);
+    if (r.totalRounds !== undefined) baris.push(`Ronde ${esc(r.round)}/${esc(r.totalRounds ?? '?')} · fase ${esc(r.phase ?? '—')} · voice ${esc(r.voiceChannelName ?? '—')}`);
+    return baris.map((b) => `<p class="text-sm">${b}</p>`).join('');
+  }
+
+  function daftarPemain(r: any): string {
+    const rows = (r.players ?? []).map((p: any) => {
+      const tanda = p.host ? '👑' : p.eliminated || p.alive === false ? '💀' : p.current ? '▶️' : '•';
+      const rinci = [
+        p.seat ? `kursi ${p.seat}` : '',
+        p.role ? `peran ${p.role}` : '',
+        p.lives !== undefined && p.lives !== null ? `❤️ ${p.lives}${p.maxLives ? `/${p.maxLives}` : ''}` : '',
+        p.hp !== undefined && p.hp !== null ? `❤️ ${p.hp}/${p.maxHp}` : '',
+        p.score !== undefined && p.score !== null ? `🏆 ${p.score}` : '',
+        p.cards !== undefined ? `🃏 ${p.cards}` : '',
+        p.server ? `🏠 ${p.server}` : '',
+        p.alive === false ? 'gugur' : '',
+      ].filter(Boolean).join(' · ');
+      return [esc(tanda), esc(p.name ?? '—'), `<code class="text-xs">${esc(p.id ?? '—')}</code>`, `<span class="text-xs">${esc(rinci)}</span>`];
     });
-    if (error) { btn.disabled = false; btn.textContent = 'Akhiri'; alert(pesanError(error)); return; }
-    btn.textContent = 'Antre…';
+    return table(['', 'Pemain', 'ID', 'Rincian'], rows, 'Belum ada pemain.');
+  }
+
+  function renderDetail() {
+    const el = document.getElementById('games-detail')!;
+    const r = (snap?.rooms ?? []).find((x: any) => x.gameId === terpilih);
+    if (!terpilih) { el.classList.add('hidden'); formUntuk = null; return; }
+    el.classList.remove('hidden');
+    if (!r) {
+      el.innerHTML = notice('warn', `Game ${terpilih} sudah berakhir.`);
+      formUntuk = null;
+      return;
+    }
+    if (formUntuk === r.gameId) {
+      // Refresh berkala: cukup perbarui info, form dibiarkan.
+      const info = document.getElementById('gd-info');
+      if (info) info.innerHTML = kepala(r) + infoMode(r) + daftarPemain(r);
+      return;
+    }
+    formUntuk = r.gameId;
+
+    const aksi: string[] = r.actions ?? [];
+    const forms: string[] = [];
+    if (bolehEdit) {
+      if (aksi.includes('setword')) forms.push(formCard({ id: 'gd-setword', title: GAME_ACTIONS.setword.label, fields: [{ name: 'word', label: 'Kata baru', required: true }] }));
+      if (aksi.includes('forceturn')) forms.push(formCard({ id: 'gd-forceturn', title: GAME_ACTIONS.forceturn.label, fields: [], desc: 'Giliran pindah ke pemain berikutnya; timer di-reset.' }));
+      if (aksi.includes('eliminate')) forms.push(formCard({ id: 'gd-eliminate', title: GAME_ACTIONS.eliminate.label, danger: true, fields: [{ name: 'player', label: 'User ID pemain', required: true }] }));
+      if (aksi.includes('revive')) forms.push(formCard({ id: 'gd-revive', title: GAME_ACTIONS.revive.label, fields: [{ name: 'player', label: 'User ID pemain', required: true }], desc: 'Pemain hidup lagi dengan 3 nyawa.' }));
+      if (aksi.includes('spawnevent')) forms.push(formCard({ id: 'gd-spawnevent', title: GAME_ACTIONS.spawnevent.label, desc: 'Melewati peluang & ronde otomatis. Satu event per match.', fields: [{ name: 'event', label: 'Event', type: 'select', options: SPAWN_EVENTS.map((e) => ({ value: e.code, label: e.label })) }] }));
+      forms.push(formCard({ id: 'gd-end', title: GAME_ACTIONS.end.label, danger: true, fields: [], desc: 'Game dihentikan, transkrip disimpan, pemain diberi tahu.' }));
+    }
+
+    el.innerHTML = `<div class="${KELAS.kartu} space-y-5">
+      <div class="flex justify-end"><button type="button" id="gd-close" class="${KELAS.tombolNetral}">Tutup</button></div>
+      <div id="gd-info" class="space-y-4">${kepala(r)}${infoMode(r)}${daftarPemain(r)}</div>
+      ${forms.length ? `<div class="grid gap-4 sm:grid-cols-2">${forms.join('')}</div>` : `<p class="text-sm ${KELAS.muted}">Peran kamu hanya bisa melihat.</p>`}
+    </div>`;
+
+    document.getElementById('gd-close')?.addEventListener('click', () => { terpilih = null; renderDetail(); });
+    const gameId = r.gameId;
+    const ikat = (id: string, type: string, konfirmasi?: string) => {
+      const f = document.getElementById(id) as HTMLFormElement | null;
+      if (!f) return;
+      pasangAksi(f, {
+        type,
+        payload: (form) => {
+          const data: Record<string, unknown> = {};
+          new FormData(form).forEach((v, k) => { if (String(v).trim()) data[k] = String(v).trim(); });
+          return { ...data, gameId };
+        },
+        confirm: konfirmasi,
+        success: (o) => ringkasHasil(type, o.result),
+        onDone: (o) => { if (o.ok) void muat(); },
+      });
+    };
+    ikat('gd-setword', 'game.setWord');
+    ikat('gd-forceturn', 'game.forceTurn');
+    ikat('gd-eliminate', 'game.eliminate', 'Eliminasi pemain ini dari game?');
+    ikat('gd-revive', 'game.revive');
+    ikat('gd-spawnevent', 'game.spawnEvent');
+    ikat('gd-end', 'game.end', `Akhiri game ${gameId}? Pemain akan diberi tahu.`);
+  }
+
+  function kepala(r: any): string {
+    return `<div>
+      <p class="font-mono text-xs ${KELAS.muted}">${esc(r.gameId)}</p>
+      <h2 class="font-display text-xl font-semibold tracking-tightest">${esc(modeLabel(r.mode))} — ${esc(r.status ?? '—')}</h2>
+      <p class="text-sm ${KELAS.muted}">${esc(r.guildName ?? '—')} · #${esc(r.channelName ?? r.channelId ?? '—')} · host ${esc(r.hostName ?? '—')} · ${esc(durasi(r))}</p>
+      <p class="text-xs ${KELAS.muted}">Channel ${esc(r.channelId ?? '—')}${r.threadId ? ` · thread ${esc(r.threadId)}` : ''} · Guild ${esc(r.guildId ?? '—')}</p>
+    </div>`;
+  }
+
+  function ringkasHasil(type: string, res: any): string {
+    if (!res) return 'Selesai.';
+    if (type === 'game.setWord') return `Kata: ${String(res.word).toUpperCase()} · berikutnya ${String(res.target).toUpperCase()} (diumumkan di channel).`;
+    if (type === 'game.forceTurn') return `Giliran pindah${res.before ? `: ${res.before} → ${res.after}` : ''}.`;
+    if (type === 'game.spawnEvent') return `${res.label} dimunculkan — lihat channel game.`;
+    if (type === 'game.end') return `Game ${res.gameId} diakhiri.`;
+    return `Selesai: ${res.name ?? ''}`;
+  }
+
+  function renderBroadcast() {
+    const el = document.getElementById('games-broadcast')!;
+    if (!bolehEdit) return;
+    el.innerHTML = section('Broadcast ke channel game', formCard({
+      id: 'game-bc', title: 'Kirim pesan ke semua channel game klasik yang aktif', submit: 'Kirim',
+      fields: [{ name: 'message', label: 'Pesan', type: 'textarea', required: true }],
+    }), 'Pesan tampil sebagai "[Developer Broadcast]" di setiap channel game PvP/PvB yang sedang berjalan.');
+    pasangAksi(document.getElementById('game-bc') as HTMLFormElement, {
+      type: 'game.broadcast',
+      confirm: 'Kirim pesan ini ke semua channel game aktif?',
+      success: (o) => `Terkirim ke ${o.result?.sent ?? 0} dari ${o.result?.total ?? 0} channel.`,
+      resetOnSuccess: true,
+    });
   }
 </script>
