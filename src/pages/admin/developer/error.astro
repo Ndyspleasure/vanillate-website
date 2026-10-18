@@ -4,7 +4,8 @@
 // Ringkasan, error terbaru, fingerprint teratas, dan statistik auto-recovery
 // dari snapshot `errors`. Detail satu error (katalog + AI Analysis heuristik
 // lokal + dampak + insiden serupa) diminta lewat perintah error.detail; ubah
-// status lewat error.setStatus / error.fingerprintFixed.
+// status lewat error.setStatus / error.fingerprintFixed, atau massal per kode
+// katalog lewat error.setStatusByCode (tombol di tabel Kode teratas).
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
@@ -45,7 +46,10 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     void muat();
     setInterval(() => void muat(), 60_000);
     document.getElementById('ekb-body')!.addEventListener('click', (ev) => {
-      const id = (ev.target as HTMLElement).closest<HTMLElement>('[data-err]')?.dataset.err;
+      const t = ev.target as HTMLElement;
+      const kode = t.closest<HTMLElement>('[data-code-fixed]')?.dataset.codeFixed;
+      if (kode) { void tutupKode(kode); return; }
+      const id = t.closest<HTMLElement>('[data-err]')?.dataset.err;
       if (id) void buka(id);
     });
     document.getElementById('ekb-find')!.addEventListener('submit', (ev) => {
@@ -73,8 +77,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <div class="grid gap-4 lg:grid-cols-3">
         ${table(['Kategori', 'Jumlah'], (stats.byCategory ?? []).map((r: any) => [esc(r.category), esc(fmtAngka(r.count))]), '—')}
         ${table(['Severity', 'Jumlah'], (stats.bySeverity ?? []).map((r: any) => [pill(r.severity, SEV[r.severity] ?? 'muted'), esc(fmtAngka(r.count))]), '—')}
-        ${table(['Kode teratas', 'Jumlah'], (stats.topCodes ?? []).map((r: any) => [`<span class="text-xs">${esc(r.code)} — ${esc(r.name)}</span>`, esc(fmtAngka(r.count))]), '—')}
-      </div>`),
+        ${table(['Kode teratas', 'Jumlah', ...(bolehEdit ? [''] : [])], (stats.topCodes ?? []).map((r: any) => [
+          `<span class="text-xs">${esc(r.code)} — ${esc(r.name)}</span>`, esc(fmtAngka(r.count)),
+          ...(bolehEdit ? [`<button type="button" data-code-fixed="${esc(r.code)}" class="text-xs underline decoration-dotted hover:text-amber-600 whitespace-nowrap">Tandai semua fixed</button>`] : []),
+        ]), '—')}
+      </div>
+      <p id="ekb-kode" class="text-xs"></p>`),
       section('Error terbaru', table(['Error ID', 'Kode', 'Pesan', 'Konteks', 'Status', 'Waktu'], (recent ?? []).map((r: any) => [
         tombolErr(r.error_id),
         `<span class="text-xs">${esc(r.catalog_code ?? '—')}</span>${r.severity ? `<br>${pill(r.severity, SEV[r.severity] ?? 'muted')}` : ''}`,
@@ -93,6 +101,18 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       ]), 'Belum ada fingerprint.')),
       section('Auto-recovery per metode', table(['Metode', 'Berhasil / total'], (rc.byMethod ?? []).map((m: any) => [esc(m.method), esc(`${m.ok ?? 0}/${m.total}`)]), 'Belum ada percobaan recovery.')),
     ].join('');
+  }
+
+  /** Aksi massal: semua kejadian & fingerprint satu kode katalog → fixed. */
+  async function tutupKode(code: string) {
+    if (!confirm(`Tandai SEMUA error berkode ${code} sebagai fixed?`)) return;
+    const el = document.getElementById('ekb-kode');
+    if (el) el.textContent = `Menunggu bot… (${code})`;
+    const o = await kirimPerintah('error.setStatusByCode', { code, status: 'fixed' });
+    if (!o.ok) { if (el) el.textContent = o.error ?? 'Gagal.'; return; }
+    await muat();
+    const el2 = document.getElementById('ekb-kode');
+    if (el2) el2.textContent = `${code}: ${fmtAngka(o.result?.errors ?? 0)} error & ${fmtAngka(o.result?.fingerprints ?? 0)} fingerprint ditandai fixed.`;
   }
 
   async function buka(errorId: string, pesan = '') {
