@@ -28,7 +28,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { esc } from '@/lib/admin-ui';
   import { fmtWaktu, fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot, bacaPerintah, kirimPerintah, riwayatPerintah } from '@/lib/dev-panel/client';
-  import { estimateMinutes, isFinal, mediaKind, parsePollOptions, previewHeader, validateBroadcast, type BroadcastDraft } from '@/lib/dev-panel/model';
+  import { describeMedia, estimateMinutes, isFinal, mediaHint, mediaKind, parsePollOptions, previewHeader, validateBroadcast, type BroadcastDraft } from '@/lib/dev-panel/model';
   import { fieldHtml, notice, pill, progressBar, section, statusTone, table, KELAS } from '@/lib/dev-panel/ui';
 
   let role = 'viewer';
@@ -71,10 +71,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${fieldHtml({ name: 'message', label: 'Isi pesan', type: 'textarea', rows: 6, required: true, help: 'Maks. 4000 karakter. Markdown Discord didukung.' }, 'bc-')}
         <div class="grid gap-4 sm:grid-cols-2">
           ${fieldHtml({ name: 'color', label: 'Warna hex (opsional)', placeholder: '57F287' }, 'bc-')}
-          ${fieldHtml({ name: 'mediaUrl', label: 'URL media (opsional)', placeholder: 'https://… gambar / video / tautan' }, 'bc-')}
+          ${fieldHtml({ name: 'mediaUrl', label: 'URL media (opsional)', placeholder: 'https://… gambar / video / tautan', help: 'Gambar: pakai link gambar langsung (klik kanan → Copy image address).' }, 'bc-')}
           ${fieldHtml({ name: 'customLabel', label: 'Teks tombol custom (opsional)', placeholder: 'mis. Lihat Promo' }, 'bc-')}
           ${fieldHtml({ name: 'customUrl', label: 'URL tombol custom', placeholder: 'https://…' }, 'bc-')}
         </div>
+        <div id="bc-media-hint"></div>
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="bc-poll-on" class="h-4 w-4 accent-amber-500" /> Sertakan polling</label>
         <div id="bc-poll" class="hidden space-y-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-4">
           ${fieldHtml({ name: 'pollQuestion', label: 'Pertanyaan polling' }, 'bc-')}
@@ -142,6 +143,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const errs = validateBroadcast(d, { test: Boolean(a?.test) });
     if (a?.emergency && role !== 'owner') errs.push('Audiens info darurat khusus owner.');
     document.getElementById('bc-errors')!.innerHTML = errs.length && d.message ? notice('warn', errs.join(' ')) : '';
+    const hint = mediaHint(d.mediaUrl);
+    document.getElementById('bc-media-hint')!.innerHTML = hint.length ? notice('warn', hint.join(' ')) : '';
     renderPreview(d, Boolean(a?.emergency), Boolean(a?.server));
   }
 
@@ -164,12 +167,17 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           ${h.title ? `<p class="font-semibold">${esc(h.title)}</p>` : ''}
           <p class="mt-1 whitespace-pre-line">${esc(d.message || 'Isi pesan…')}</p>
           ${server ? `<p class="mt-2 text-xs font-semibold">📌 Kenapa saya menerima pesan ini?</p><p class="text-xs text-cream-300/70">Kamu owner/admin di <em>(nama server tiap penerima)</em>.</p>` : ''}
-          ${media === 'image' ? `<img src="${esc(d.mediaUrl)}" alt="" class="mt-2 max-h-48 rounded" onerror="this.remove()" />` : ''}
+          ${media === 'image' ? `<img src="${esc(d.mediaUrl)}" alt="" class="mt-2 max-h-48 rounded" data-bc-img />` : ''}
           <p class="mt-2 text-[0.7rem] text-cream-300/60">${esc(h.footer)}</p>
         </div>
         ${poll}
         <div class="mt-3 flex flex-wrap gap-2">${tombol.map((t) => `<span class="rounded bg-[#4e5058] px-3 py-1 text-xs">${esc(t)}</span>`).join('')}</div>
       </div>`;
+    // Gambar rusak tidak boleh hilang diam-diam: beri tahu admin sebelum kirim.
+    const img = document.querySelector<HTMLImageElement>('#bc-preview [data-bc-img]');
+    img?.addEventListener('error', () => {
+      img.outerHTML = `<p class="mt-2 rounded bg-red-500/15 px-2 py-1 text-xs text-red-300">⚠️ Gambar tidak bisa dimuat dari URL ini — kemungkinan juga tidak tampil di Discord.</p>`;
+    }, { once: true });
   }
 
   async function kirim(e: Event) {
@@ -210,6 +218,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         <div class="flex items-center gap-2">${pill(row.status, statusTone(row.status))}<span class="text-xs ${KELAS.muted}">${esc(row.payload?.audience ?? '')}</span></div>
         ${progressBar(row.progress)}
         ${row.status === 'done' ? notice('ok', `Selesai: ${r.sent} terkirim, ${r.failed} gagal${r.skipped ? `, ${r.skipped} dilewati` : ''} dari ${r.total} target unik${r.dupRemoved ? ` (dedup −${r.dupRemoved})` : ''} · ${r.durationS} dtk${r.pollId ? ` · polling #${r.pollId} aktif` : ''}.`) : ''}
+        ${describeMedia(r.media) ? `<p class="text-xs ${KELAS.muted}">${esc(describeMedia(r.media))}</p>` : ''}
         ${row.status === 'done' && r.errors ? `<pre class="text-xs whitespace-pre-wrap">${esc(r.errors)}</pre>` : ''}
         ${row.status === 'done' && r.skips ? `<pre class="text-xs whitespace-pre-wrap">${esc(r.skips)}</pre>` : ''}
         ${row.status === 'error' ? notice('error', row.error ?? 'Gagal.') : ''}
