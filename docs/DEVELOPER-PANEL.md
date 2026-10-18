@@ -45,7 +45,7 @@ pembuat dari `admin_users` → validasi payload per handler. Konfirmasi ketik di
 | `/admin/developer/broadcast` | Composer DM (Semua / 👑 Owner server / 🛡️ Owner + Admin / 🚨 Darurat (owner) / 🧪 Test), pratinjau, polling opsional, progres live, riwayat |
 | `/admin/developer/polling` | Polling aktif & riwayat, pemilih per opsi, batalkan polling |
 | `/admin/developer/event` | Peluang event (jumlah ≤ 1), statistik & reset, perilaku Penjajah |
-| `/admin/developer/error` | Error terbaru, detail Error ID, ubah status, fingerprint, recovery |
+| `/admin/developer/error` | Error terbaru, detail Error ID, ubah status, fingerprint, recovery, tandai semua kejadian satu kode fixed (`error.setStatusByCode`) |
 | `/admin/developer/tutorial` | Status tutorial seluruh pemain, sesi berjalan, aksi per pemain, reset massal (owner) |
 | `/admin/developer/campaign` | Statistik DM campaign + kirim paksa ke satu pemain |
 | `/admin/developer/sosial` | Social Monitor: server pemakai SocialHub, detail, atur/matikan channel fitur, ✍️ Pemantau Kata-Kata |
