@@ -4,6 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  describeMedia,
   ageSeconds,
   BULK_ACTIONS,
   canSend,
@@ -15,6 +16,7 @@ import {
   isFinal,
   isOwnerOnly,
   isStale,
+  mediaHint,
   mediaKind,
   modeGroup,
   modeLabel,
@@ -141,6 +143,17 @@ test('jenis media & pratinjau header', () => {
   assert.equal(mediaKind('https://youtu.be/abc'), 'link');
   assert.equal(mediaKind('data:image/png;base64,xx'), null);
   assert.equal(mediaKind(''), null);
+
+  // Peringatan media: link halaman & lampiran Discord yang kedaluwarsa.
+  assert.deepEqual(mediaHint('https://i.imgur.com/abc.png'), []);
+  assert.deepEqual(mediaHint('https://youtu.be/abc'), []);
+  assert.deepEqual(mediaHint(''), []);
+  assert.ok(mediaHint('https://imgur.com/abc').some((h) => /bukan link gambar langsung/.test(h)));
+  assert.ok(mediaHint('https://cdn.discordapp.com/attachments/1/2/a.png?ex=1&is=2&hm=3').some((h) => /kedaluwarsa/.test(h)));
+  assert.deepEqual(mediaHint('https://cdn.discordapp.com/attachments/1/2/a.png'), []);
+  assert.equal(describeMedia(null), null);
+  assert.match(describeMedia({ kind: 'image', url: 'https://i.imgur.com/a.jpeg', source: 'page' })!, /og:image/);
+  assert.match(describeMedia({ kind: 'link', url: 'https://x.id', source: 'page-link', warning: 'w' })!, /Tautan.*⚠️ w/);
 
   const d = { audience: 'all', message: 'x', title: '  ', color: 'zzz' };
   assert.deepEqual(previewHeader(d), { title: null, footer: 'Sambung Kata • Pesan resmi dari tim', color: '#57F287' });

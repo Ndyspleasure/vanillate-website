@@ -195,6 +195,42 @@ export function mediaKind(url: string | null | undefined): 'image' | 'link' | nu
 }
 
 /**
+ * Peringatan URL media sebelum kirim. Bot tetap memeriksa URL sungguhan
+ * (Content-Type & og:image, `src/services/broadcastMedia.js` repo bot); ini
+ * hanya umpan balik supaya admin tahu gambar mungkin tidak tampil.
+ */
+export function mediaHint(url: string | null | undefined): string[] {
+  const u = String(url ?? '').trim();
+  if (!isHttp(u)) return [];
+  const out: string[] = [];
+  let host = '';
+  let parsed: URL | null = null;
+  try { parsed = new URL(u); host = parsed.hostname.toLowerCase(); } catch { return []; }
+  const video = /(youtube\.com|youtu\.be|tiktok\.com|twitch\.tv)$/i.test(host);
+  if (!video && mediaKind(u) === 'link') {
+    out.push('Ini bukan link gambar langsung (.png/.jpg/.gif/.webp). Bot akan mencoba mengambil gambar dari halamannya; bila tidak ketemu, dikirim sebagai tautan biasa. Paling aman: klik kanan gambar → "Copy image address".');
+  }
+  if (/(^|\.)(discordapp\.(com|net)|discord\.com)$/i.test(host) && parsed!.pathname.includes('/attachments/') && parsed!.searchParams.has('ex')) {
+    out.push('Link lampiran Discord kedaluwarsa ±24 jam — gambar bisa hilang dari DM setelahnya. Pakai link gambar permanen (mis. i.imgur.com/…png).');
+  }
+  return out;
+}
+
+/** Ringkasan hasil pemeriksaan media oleh bot (`result.media` broadcast.send). */
+export function describeMedia(m: { kind?: string | null; url?: string | null; source?: string; warning?: string } | null | undefined): string | null {
+  if (!m?.url) return null;
+  const sumber: Record<string, string> = {
+    direct: 'gambar langsung',
+    page: 'gambar diambil dari halaman (og:image)',
+    video: 'tautan video',
+    'page-link': 'halaman tanpa gambar — dikirim sebagai tautan',
+    unchecked: 'tidak bisa dicek bot — ditebak dari akhiran URL',
+  };
+  const jenis = m.kind === 'image' ? '🖼️ Gambar' : '🔗 Tautan';
+  return `${jenis}: ${sumber[m.source ?? ''] ?? m.source ?? ''}${m.warning ? ` · ⚠️ ${m.warning}` : ''}`;
+}
+
+/**
  * Judul & footer embed yang akan diterima (cermin buildBroadcastPayload &
  * serverBroadcast.buildServerPayload di bot).
  */
