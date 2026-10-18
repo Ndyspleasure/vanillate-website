@@ -64,6 +64,15 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           <option value="draft">Draf</option>
         </select>
       </label>
+      <label class="text-sm">
+        <span class="block font-medium mb-1.5">Penantang</span>
+        <select id="f-penantang" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm">
+          <option value="all">Semua</option>
+          <option value="female">Cewek</option>
+          <option value="male">Cowok</option>
+          <option value="bebas">Bebas (tanpa filter)</option>
+        </select>
+      </label>
       <label class="text-sm flex-1 min-w-[12rem]">
         <span class="block font-medium mb-1.5">Cari</span>
         <input id="f-cari" type="search" placeholder="Teks atau id" class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm" />
@@ -165,7 +174,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     }
     tambah.addEventListener('click', () => bukaForm(kosong(), true));
     document.getElementById('btn-hapus-semua')!.addEventListener('click', () => void hapusSemua());
-    for (const id of ['f-level', 'f-status']) document.getElementById(id)!.addEventListener('change', tampilkan);
+    for (const id of ['f-level', 'f-status', 'f-penantang']) document.getElementById(id)!.addEventListener('change', tampilkan);
     document.getElementById('f-cari')!.addEventListener('input', tampilkan);
     document.getElementById('ad-body')!.addEventListener('click', onAksi);
     document.getElementById('ad-form')!.addEventListener('click', onAksiForm);
@@ -214,7 +223,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   function cocok(t: Tantangan): boolean {
     const level = (document.getElementById('f-level') as HTMLSelectElement).value;
     const status = (document.getElementById('f-status') as HTMLSelectElement).value;
+    const penantang = (document.getElementById('f-penantang') as HTMLSelectElement).value;
     const cari = (document.getElementById('f-cari') as HTMLInputElement).value.trim().toLowerCase();
+    const kelaminPenantang = t.active_genders ?? [];
+    if (penantang === 'bebas' && kelaminPenantang.length) return false;
+    if (penantang !== 'all' && penantang !== 'bebas' && !kelaminPenantang.includes(penantang)) return false;
     if (level === 'final' && t.pool !== 'final') return false;
     if (level === RISIKO && t.category !== RISIKO) return false;
     if (level === NAIK && t.pool !== NAIK) return false;
