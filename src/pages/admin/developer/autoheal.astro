@@ -37,6 +37,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   };
 
   let role = 'viewer';
+  // Hasil kontrol terakhir (HTML aman) — dipertahankan saat panel dirender ulang.
+  let hasilKontrol = '';
 
   document.addEventListener('admin:ready', (e) => {
     role = (e as CustomEvent).detail?.role ?? 'viewer';
@@ -99,7 +101,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         <button type="button" data-ctl="sys.autoheal.unlock" data-confirm="Buka kembali auto-deploy?" class="${KELAS.tombolNetral}" ${d.locked ? '' : 'disabled'}>Buka kunci auto-deploy</button>
         <button type="button" data-ctl="sys.autoheal.selftest" class="${KELAS.tombolNetral}">Uji sandbox</button>
         <button type="button" data-ctl="sys.autoheal.simheal" class="${KELAS.tombolNetral}">Simulasi heal</button>
-      </div><div id="ah-ctl-out"></div>`, 'Uji sandbox membuktikan isolasi worktree di server produksi; simulasi heal menjalankan klasifikasi → aturan → validasi tanpa menyentuh produksi.') : '',
+      </div><div id="ah-ctl-out">${hasilKontrol}</div>`, 'Uji sandbox membuktikan isolasi worktree di server produksi; simulasi heal menjalankan klasifikasi → aturan → validasi tanpa menyentuh produksi.') : '',
       section('Incident terbaru', table(['Incident', 'State', 'Risiko', 'Kejadian', 'Error', ''], (a.recent ?? []).map((i: any) => [
         `<code class="text-xs">${esc(i.incident_no)}</code>`, `<code class="text-xs">${esc(i.state)}</code>`, pill(i.risk_class ?? '—', RISK[i.risk_class] ?? 'muted'),
         esc(`×${i.occurrence_count ?? 1}`), `<span class="text-xs">${esc(i.error_name ?? '—')}</span>`,
@@ -134,9 +136,10 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       ctl.disabled = false;
       if (!o.ok) { out.innerHTML = notice('error', o.error ?? 'Gagal.'); return; }
       const r = o.result ?? {};
-      out.innerHTML = r.steps
+      hasilKontrol = r.steps
         ? `${notice(r.ok ? 'ok' : 'error', r.ok ? 'LULUS' : `${r.failed} langkah GAGAL`)}<ul class="mt-2 text-sm space-y-1">${r.steps.map((s: any) => `<li>${s.ok ? '✅' : '❌'} ${esc(s.text)}</li>`).join('')}</ul>${r.rootCause ? `<p class="mt-2 text-xs ${KELAS.muted}">Akar masalah (sintetis): ${esc(r.rootCause)}</p>` : ''}`
         : notice('ok', r.after ? `Breaker ditutup (sebelumnya ${r.before}).` : r.unlocked ? `Auto-deploy dibuka kembali. Sebelumnya terkunci: ${r.previousReason ?? ''}` : 'Selesai.');
+      out.innerHTML = hasilKontrol;
       void muat();
       return;
     }
@@ -153,7 +156,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const { incident: i, audit } = o.result;
     el.innerHTML = section(`Incident ${i.incident_no}`, `<div class="${KELAS.kartu} space-y-3">
       <div class="flex flex-wrap gap-2">${pill(i.state, 'info')}${pill(i.risk_class ?? '—', RISK[i.risk_class] ?? 'muted')}${pill(`severity ${i.severity ?? '—'}`, 'muted')}</div>
-      <p class="text-sm">${esc(i.error_name ?? '—')}: ${esc(i.message ?? '')}</p>
+      <p class="text-sm">${esc(i.error_name ?? '—')}: ${esc(i.message_redacted ?? i.message ?? '')}</p>
       <p class="text-xs ${KELAS.muted}">${esc(i.file ?? '—')}${i.line ? `:${esc(i.line)}` : ''} · fingerprint <code>${esc(String(i.fingerprint ?? '').slice(0, 80))}</code> · ×${esc(i.occurrence_count ?? 1)}</p>
       ${i.diagnosis ? `<p class="text-sm">Diagnosis: ${esc(i.diagnosis)}</p>` : ''}
       ${table(['Waktu', 'Aksi', 'Detail'], (audit ?? []).map((x: any) => [`<span class="text-xs whitespace-nowrap">${esc(x.created_at)}</span>`, `<code class="text-xs">${esc(x.action)}</code>`, `<span class="text-xs">${esc(x.detail ?? '')}</span>`]), 'Belum ada audit.')}

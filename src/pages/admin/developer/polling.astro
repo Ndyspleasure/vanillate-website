@@ -32,6 +32,8 @@ import { url } from '@utils/url';
   import { fmtJam, freshness, notice, pill, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
 
   let bolehEdit = false;
+  // Hasil audit/aksi per polling (HTML aman) — dipertahankan saat auto-refresh.
+  const hasil = new Map<string, string>();
 
   document.addEventListener('admin:ready', (e) => {
     const role = (e as CustomEvent).detail?.role;
@@ -70,7 +72,7 @@ import { url } from '@utils/url';
           <button type="button" data-voters="${esc(p.poll_id)}" class="${KELAS.tombolNetral}">Audit pemilih</button>
           ${bolehEdit && p.status === 'ACTIVE' ? `<button type="button" data-cancel="${esc(p.poll_id)}" class="${KELAS.tombolNetral}">Batalkan polling</button>` : ''}
         </div>
-        <div data-out="${esc(p.poll_id)}"></div>
+        <div data-out="${esc(p.poll_id)}">${hasil.get(String(p.poll_id)) ?? ''}</div>
       </div>`;
     }).join('');
   }
@@ -90,12 +92,14 @@ import { url } from '@utils/url';
       out.innerHTML = table(['Discord ID', 'Pilihan', 'Waktu'], (o.result?.voters ?? []).map((v: any) => [
         `<code class="text-xs">${esc(v.user_id)}</code>`, esc(v.label), `<span class="text-xs">${esc(fmtJam(toEpoch(v.voted_at)))}</span>`,
       ]), 'Belum ada suara masuk.');
+      hasil.set(id, out.innerHTML);
       return;
     }
     if (!window.confirm(`Batalkan polling #${id}? Hasil tidak akan diumumkan.`)) return;
     out.innerHTML = notice('info', 'Menunggu bot…');
     const o = await kirimPerintah('poll.cancel', { pollId: Number(id) });
     out.innerHTML = o.ok ? notice('ok', `Polling #${id} dibatalkan.`) : notice('error', o.error ?? 'Gagal.');
+    hasil.set(id, out.innerHTML);
     if (o.ok) setTimeout(() => void muat(), 1500);
   }
 </script>

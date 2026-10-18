@@ -68,7 +68,7 @@ export const GRUP: Grup[] = [
   {
     key: 'boost', label: 'Boost', icon: IC.zap, desc: 'Beri atau atur boost pemain.',
     aksi: [
-      { type: 'boost.give', label: 'Beri Boost', fields: [FPLAYER, { name: 'boostId', label: 'Boost ID', required: true, placeholder: 'hint · reroll · shield · extra_life · extra_time · golden_key', help: 'ID sesuai katalog boost bot (lihat Ringkasan Developer).' }, { name: 'amount', label: 'Jumlah', type: 'number', placeholder: 'default 1' }] },
+      { type: 'boost.give', label: 'Beri Boost', fields: [FPLAYER, { name: 'boostId', label: 'Boost ID', required: true, placeholder: 'hint · reroll · shield · extra_life · extra_time', help: 'ID sesuai katalog boost bot (lihat Ringkasan Developer).' }, { name: 'amount', label: 'Jumlah', type: 'number', placeholder: 'default 1' }] },
       { type: 'boost.set', label: 'Set Jumlah Boost', fields: [FPLAYER, { name: 'boostId', label: 'Boost ID', required: true }, { name: 'amount', label: 'Jumlah', type: 'number', required: true }] },
       { type: 'boost.reset', label: 'Reset Semua Boost', danger: true, fields: [FPLAYER] },
     ],

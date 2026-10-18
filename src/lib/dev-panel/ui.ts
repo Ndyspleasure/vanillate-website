@@ -145,7 +145,15 @@ export function formPayload(form: HTMLFormElement): Record<string, unknown> {
   form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input[name], textarea[name], select[name]').forEach((el) => {
     if (el instanceof HTMLInputElement && el.type === 'checkbox') { out[el.name] = el.checked; return; }
     const v = String(el.value ?? '').trim();
-    if (v !== '') out[el.name] = v;
+    if (v === '') return;
+    // datetime-local tidak membawa zona waktu; kirim ISO UTC dari zona waktu
+    // admin supaya bot tidak membacanya memakai zona waktu VPS.
+    if (el instanceof HTMLInputElement && el.type === 'datetime-local') {
+      const t = new Date(v);
+      out[el.name] = Number.isNaN(t.getTime()) ? v : t.toISOString();
+      return;
+    }
+    out[el.name] = v;
   });
   return out;
 }

@@ -71,6 +71,7 @@ export async function kirimPerintah<T = any>(
   const batas = Date.now() + timeoutMs;
   let jeda = 1000;
   let terakhir = '';
+  let progresTerakhir: Progress | null = null;
   while (Date.now() < batas) {
     await sleep(jeda);
     jeda = Math.min(3000, jeda + 250);
@@ -80,6 +81,7 @@ export async function kirimPerintah<T = any>(
       .eq('id', id)
       .maybeSingle();
     if (!row) continue;
+    progresTerakhir = row.progress ?? progresTerakhir;
     const sidik = `${row.status}|${JSON.stringify(row.progress ?? null)}`;
     if (sidik !== terakhir) {
       terakhir = sidik;
@@ -96,7 +98,9 @@ export async function kirimPerintah<T = any>(
   return {
     id, ok: false, status: 'pending', result: null,
     error: 'Bot belum menjawab. Perintah tetap di antrean — cek riwayat sebentar lagi (bot mungkin offline).',
-    progress: null, timedOut: true,
+    // Progres terakhir tetap dikembalikan: restart/update menaruh perintah
+    // pemulihan darurat di sini sebelum bot mati.
+    progress: progresTerakhir, timedOut: true,
   };
 }
 
@@ -154,7 +158,12 @@ export async function bacaSnapshots<T = any>(keys: string[]): Promise<Record<str
     return out;
   }
   for (const row of data ?? []) {
-    out[row.key] = { key: row.key, data: row.data as T, updatedAt: row.updated_at, error: null };
+    // Bot menulis { error } bila pembangun snapshot itu gagal (src/cms/snapshots.js).
+    const d = row.data as any;
+    const gagal = d && typeof d === 'object' && Object.keys(d).length === 1 && typeof d.error === 'string';
+    out[row.key] = gagal
+      ? { key: row.key, data: null, updatedAt: row.updated_at, error: `Bot gagal menyiapkan data ini: ${d.error}` }
+      : { key: row.key, data: row.data as T, updatedAt: row.updated_at, error: null };
   }
   for (const k of keys) {
     if (!out[k].data && !out[k].error) out[k].error = 'Bot belum pernah mengirim data ini. Pastikan bot v3 sudah berjalan.';
