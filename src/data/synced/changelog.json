@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.0.1",
+    "date": "2026-10-18",
+    "title": "Perbaikan stabilitas: voting, Global Match, dan transkrip permainan",
+    "highlights": [
+      "🛠️ Voting \"hentikan permainan\" di Sambung Kata tidak lagi membuat game error bila semua pemain memilih bersamaan",
+      "🌐 Player vs Server: bila match gagal dimulai, pemain kini langsung diberi tahu (tidak menunggu tanpa kabar)",
+      "📝 Transkrip permainan tetap tersimpan walau thread game sudah dihapus",
+      "🖼️ Gambar dari link di pengumuman kini tampil langsung di pesan",
+      "⚡ Tombol di thread yang sudah diarsip merespons lebih cepat"
+    ]
+  },
+  {
     "version": "3.0.0",
     "date": "2026-10-18",
     "title": "Pengelolaan bot pindah ke website — lebih cepat & lebih aman",
