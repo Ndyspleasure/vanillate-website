@@ -114,6 +114,23 @@ select set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-0000000
 select tests_dev.ok((select count(*) from storage.objects where bucket_id = 'bot-backups') = 1,
   'owner bisa melihat berkas backup (untuk signed URL)');
 
+-- ─── Konsol Dev: baris sys.* hanya terbaca owner ────────────────────────────
+-- Diterapkan DI SINI (sesudah skema dijalankan ulang di atas) supaya policy
+-- yang dipersempit tidak tertimpa oleh "admin baca bot_commands" versi lama.
+reset role;
+\ir ../developer-terminal.sql
+set role authenticated;
+
+select set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-000000000002","role":"authenticated"}', false);
+select tests_dev.ok((select count(*) from public.bot_commands where type like 'sys.%') = 0,
+  'admin TIDAK melihat baris perintah sys.* (keluaran konsol bisa memuat info host)');
+select tests_dev.ok((select count(*) from public.bot_commands where type not like 'sys.%') >= 2,
+  'admin tetap melihat perintah non-sys (riwayat biasa)');
+
+select set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-000000000001","role":"authenticated"}', false);
+select tests_dev.ok((select count(*) from public.bot_commands where type like 'sys.%') >= 1,
+  'owner tetap melihat baris perintah sys.*');
+
 reset role;
 
 -- ─── Bot (service_role) ─────────────────────────────────────────────────────

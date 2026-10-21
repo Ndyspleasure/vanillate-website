@@ -37,7 +37,7 @@ pembuat dari `admin_users` → validasi payload per handler. Konfirmasi ketik di
 | Halaman | Isi |
 |---|---|
 | `/admin/developer` | Ringkasan & sistem (server, game aktif, kesehatan, versi & changelog read-only, maintenance/pengumuman, statistik DB & ekonomi), **Live Log** (`log.tail`: ≤ 500 baris terakhir dari memori bot sejak menyala — bot tidak menulis file log; riwayat 30 hari di `/admin/logs`) |
-| `/admin/developer/kontrol-server` | **Owner**: cek update → Update & Restart (ketik `UPDATE`), Restart (ketik `RESTART`), backup DB + unduh (signed URL) + hapus, bersihkan log |
+| `/admin/developer/kontrol-server` | **Owner**: cek update → Update & Restart (ketik `UPDATE`), Restart (ketik `RESTART`), backup DB + unduh (signed URL) + hapus, bersihkan log, **Konsol** allowlist baca-saja (`sys.console.catalog`/`sys.console.run`: git · npm · pm2 · node, tanpa shell; aktif bila `DEV_CONSOLE_ENABLED=1` di host bot) |
 | `/admin/games` | Monitor game semua mode + aksi per room (End, Force Turn, Set Word, Eliminate, Revive, Spawn Event) + broadcast ke semua game aktif |
 | `/admin/pemain` | Cermin `bot_players` + **Kelola pemain** (profil live `player.view` + semua aksi per pemain), **Ranking live** (`player.list`), **Banned** (`player.banned`, unban) |
 | `/admin/kata` | Statistik (snapshot `words`), antrean pending (terima/tolak), cari kata, review ulang cepat, export TXT/CSV (membuat sesi), review massal (`word.bulk`) |
@@ -75,7 +75,8 @@ Semua teks dari bot/Discord masuk `innerHTML` lewat `esc()`.
 | `supabase/developer-panel-schema.sql` | `bot_panel_snapshots` + RLS baca admin, kolom `bot_commands.progress`/`heartbeat_at`, trigger `bot_commands_owner_guard`, bucket privat `bot-backups` (50 MB, `application/gzip`) + policy baca/hapus owner. Aditif, idempoten, **tanpa DROP**. |
 | `supabase/developer-panel-settings.sql` | 2 kategori (`tutorial`, `campaign`) + 5 setting baru bernilai NULL (bot mengisinya dari nilai lokal) |
 | `supabase/developer-panel-rollback.sql` | Pemulihan (kebalikan dua berkas di atas) |
-| `supabase/tests/developer-panel*.sql` | Tes SQL (peran, trigger owner, RLS snapshot & bucket, idempoten) — `npm run test:sql` |
+| `supabase/developer-terminal.sql` | Mempersempit policy SELECT `bot_commands`: baris `sys.*` (termasuk keluaran Konsol) **hanya owner**; admin lain tetap membaca perintah non-`sys`. Rollback: `supabase/developer-terminal-rollback.sql` |
+| `supabase/tests/developer-panel*.sql` | Tes SQL (peran, trigger owner, RLS snapshot & bucket, baris `sys.*` hanya owner, idempoten) — `npm run test:sql` |
 
 Status produksi: `developer-panel-schema.sql` **sudah diterapkan** (2026-10-17,
 migrasi `developer_panel_v3_*`). `developer-panel-settings.sql` diterapkan
