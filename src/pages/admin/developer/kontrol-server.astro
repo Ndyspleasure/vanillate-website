@@ -65,7 +65,20 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         id: 'ks-cleanup', title: 'Hapus file log lama di server', danger: true, submit: 'Bersihkan', ownerOnly: true,
         fields: [{ name: 'days', label: 'Hapus yang lebih tua dari (hari)', type: 'number', value: '7', required: true }],
       })),
+      section('Konsol', `<div class="${KELAS.kartu} space-y-3">
+        <div id="ks-con-head" class="text-xs ${KELAS.muted}">Memeriksa konsol…</div>
+        <div id="ks-con-chips" class="flex flex-wrap gap-2"></div>
+        <div class="flex items-stretch gap-2 font-mono text-sm">
+          <span id="ks-con-cwd" class="shrink-0 self-center ${KELAS.muted}">repo</span>
+          <span class="self-center ${KELAS.muted}">$</span>
+          <input id="ks-con-input" type="text" autocomplete="off" spellcheck="false" disabled
+            class="${KELAS.input} font-mono" placeholder="mis. git log --oneline -20" />
+          <button type="button" id="ks-con-run" class="${KELAS.tombol}" disabled>Jalankan</button>
+        </div>
+        <pre id="ks-con-out" class="hidden max-h-[28rem] overflow-auto rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-ink-950/90 dark:bg-black/60 p-4 text-xs leading-relaxed text-cream-100 whitespace-pre-wrap break-words"></pre>
+      </div>`, 'Allowlist baca-saja (git · npm · pm2 · node) — tanpa shell. Mati default; nyalakan DEV_CONSOLE_ENABLED=1 di host. Aksi yang mengubah tetap lewat tombol di atas.'),
     ].join('');
+    void initKonsol();
 
     pasangAksi(document.getElementById('ks-cleanup') as HTMLFormElement, {
       type: 'sys.logs.cleanup',
@@ -184,5 +197,52 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       if (err) { alert('Gagal menghapus.'); return; }
       void daftarBackup();
     }));
+  }
+
+  // ─── Konsol allowlist ───────────────────────────────────────────────────
+  const CHIPS = ['git status', 'git log --oneline -20', 'pm2 status', 'pm2 logs --lines 100', 'npm outdated', 'node --version'];
+  let konCwd = '';
+
+  async function initKonsol() {
+    const head = document.getElementById('ks-con-head')!;
+    const input = document.getElementById('ks-con-input') as HTMLInputElement;
+    const run = document.getElementById('ks-con-run') as HTMLButtonElement;
+    const o = await kirimPerintah('sys.console.catalog', {}, { timeoutMs: 30_000 });
+    if (!o.ok) { head.innerHTML = notice('warn', o.error ?? 'Tidak bisa memeriksa konsol (bot offline?).'); return; }
+    if (!o.result?.enabled) {
+      head.innerHTML = notice('info', 'Konsol mati. Set DEV_CONSOLE_ENABLED=1 di .env host lalu restart bot untuk mengaktifkan.');
+      return;
+    }
+    const progs = (o.result.programs ?? []).map((p: any) => `<code>${esc(p.bin)}</code> <span class="${KELAS.muted}">${esc(p.note)}</span>`).join(' · ');
+    head.innerHTML = `<span class="text-teal-700 dark:text-teal-300">● aktif</span> — ${progs}`;
+    document.getElementById('ks-con-chips')!.innerHTML = CHIPS
+      .map((c) => `<button type="button" data-cmd="${esc(c)}" class="${KELAS.tombolNetral} font-mono">${esc(c)}</button>`).join('');
+    document.querySelectorAll<HTMLButtonElement>('#ks-con-chips [data-cmd]').forEach((b) =>
+      b.addEventListener('click', () => { input.value = b.dataset.cmd!; input.focus(); }));
+    input.disabled = false; run.disabled = false;
+    run.addEventListener('click', jalankanKonsol);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') jalankanKonsol(); });
+  }
+
+  async function jalankanKonsol() {
+    const input = document.getElementById('ks-con-input') as HTMLInputElement;
+    const run = document.getElementById('ks-con-run') as HTMLButtonElement;
+    const out = document.getElementById('ks-con-out') as HTMLPreElement;
+    const cmd = input.value.trim();
+    if (!cmd) return;
+    run.disabled = true; input.disabled = true;
+    out.classList.remove('hidden');
+    out.textContent = `${konCwd || 'repo'} $ ${cmd}\n… menjalankan`;
+    const o = await kirimPerintah('sys.console.run', { command: cmd, cwd: konCwd }, { timeoutMs: 11 * 60_000 });
+    run.disabled = false; input.disabled = false; input.focus();
+    if (!o.ok) { out.textContent = `${konCwd || 'repo'} $ ${cmd}\n\n✗ ${o.error ?? 'Gagal.'}`; return; }
+    const r = o.result;
+    konCwd = r.cwd === '.' ? '' : r.cwd;
+    document.getElementById('ks-con-cwd')!.textContent = konCwd || 'repo';
+    input.value = '';
+    if (r.cd) { out.textContent = `$ ${cmd}\n→ direktori: ${r.cwd}`; return; }
+    const body = [r.stdout, r.stderr].filter(Boolean).join('\n');
+    const status = r.error ? `✗ ${r.error}` : `selesai (exit ${r.exitCode}, ${r.durationMs} ms)`;
+    out.textContent = `${konCwd || 'repo'} $ ${cmd}\n\n${body || '(tanpa keluaran)'}\n\n— ${status}`;
   }
 </script>

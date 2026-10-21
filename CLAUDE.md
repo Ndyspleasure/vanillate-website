@@ -42,6 +42,7 @@ Bot produksi menulis log & keadaannya ke Supabase project
 | `bot_logs` | Log bot (`level`, `event`, `message`, `meta.stack`) — kelompokkan error/warn 7 hari terakhir. Hanya 30 hari terakhir (`supabase/bot-logs-retention.sql`, pg_cron harian) |
 | `bot_panel_snapshots` | Keadaan bot per key: `errors` (Error KB), `autoheal` (incident), `system` (versi & kesehatan), `games`, dll. `updated_at` > 2 menit = bot offline |
 | `bot_commands` | Perintah CMS beserta `status`/`error` dari bot |
+| `bot_commands` tipe `sys.console.run` | Hasil **Konsol Dev** (git/pm2/npm/node baca-saja di host bot): `result.stdout/stderr/exitCode/cwd`. Status komputer host (RAM, CPU, disk `health.disk`, PM2) ada di snapshot `system`. Claude **tidak** mengirim perintah konsol sendiri — minta owner menjalankannya di Kontrol Server › Konsol, lalu baca hasilnya (SELECT). Acuan repo bot: `CLAUDE.md` › "Mengecek status komputer host" & `docs/panel-developer-cms.md` §8a |
 
 Temuan bug **dicatat di `claudereport.md` repo bot** (papan bug bersama),
 lalu diperbaiki lewat PR di repo yang tepat. Data pemain (nama, Discord ID,
