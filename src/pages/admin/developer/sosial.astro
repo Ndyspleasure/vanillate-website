@@ -40,8 +40,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     admin: 'Dimatikan admin server', developer: 'Dimatikan developer', channel_deleted: 'Mati karena channel-nya dihapus', dashboard: 'Dimatikan lewat Vanillate Dashboard',
   };
   const FILTER = [
-    { value: 'semua', label: 'Semua tulisan' }, { value: 'antre', label: 'Menunggu dikirim' }, { value: 'diklaim', label: 'Sedang dikirim' },
-    { value: 'terkirim', label: 'Terkirim (teks dihapus)' }, { value: 'dihapus', label: 'Teks dihapus sebelum terkirim' },
+    { value: 'semua', label: 'Semua yang belum selesai' }, { value: 'antre', label: 'Menunggu dikirim' }, { value: 'diklaim', label: 'Sedang dikirim' },
+    { value: 'arsip', label: 'Terkirim, menunggu diarsipkan' },
   ];
 
   let bolehEdit = false;
@@ -222,19 +222,29 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     }));
   }
 
+  // Bot ≥ arsip Discord: hanya kata-kata aktif (antre/diklaim/arsip) + `archive`.
+  // Bot lama (terkirim/dihapus/deliveredWithText) tetap terbaca.
   function ringkasKata(st: any, global = false): string {
     const b = st?.byStatus ?? {};
     const c = st?.checks ?? {};
+    const a = st?.archive;
     const cek = (ok: boolean, baik: string, buruk: string) => `<li>${ok ? '✅' : '⚠️'} ${esc(ok ? baik : buruk)}</li>`;
+    const arsip = a
+      ? `<li>${a.failing
+        ? `⚠️ ${esc(a.failing)} log gagal dikirim ke channel arsip Discord — data disimpan & dicoba lagi tiap menit (cek izin bot di channel arsip)`
+        : (a.newPending || a.sentPending)
+          ? `⏳ Menunggu diarsipkan ke Discord: ${esc(fmtAngka(a.newPending))} log dicatat · ${esc(fmtAngka(a.sentPending))} log terkirim`
+          : '✅ Semua kata-kata sudah tercatat di channel arsip Discord'}</li>`
+      : cek(!c.deliveredWithText, 'Semua tulisan yang terkirim sudah dihapus teksnya', `${c.deliveredWithText} tulisan terkirim masih menyimpan teks`);
     return `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      ${stat('Tulisan', fmtAngka(st?.total), `${fmtAngka(st?.writers)} penulis${global ? ` · ${fmtAngka(st?.guilds)} server` : ''} · ${fmtAngka(st?.today)} hari ini`)}
+      ${stat('Belum selesai', fmtAngka(st?.total), `${fmtAngka(st?.writers)} penulis${global ? ` · ${fmtAngka(st?.guilds)} server` : ''} · ${fmtAngka(st?.today)} hari ini`)}
       ${stat('Menunggu dikirim', fmtAngka(b.antre), st?.bannedQueued ? `${fmtAngka(st.bannedQueued)} dari penulis banned (tidak dikirim)` : '')}
-      ${stat('Terkirim', fmtAngka(b.terkirim), `${fmtAngka(b.diklaim)} sedang dikirim`)}
-      ${stat('Teks dihapus', fmtAngka(b.dihapus), st?.lastAt ? `tulisan terakhir ${fmtJam(st.lastAt)}` : '')}
+      ${stat('Sedang dikirim', fmtAngka(b.diklaim), `${fmtAngka(b.arsip ?? b.terkirim)} terkirim, menunggu diarsipkan`)}
+      ${stat('Sudah diarsipkan', st?.archivedTotal == null ? '—' : fmtAngka(st.archivedTotal), st?.lastAt ? `tulisan terakhir ${fmtJam(st.lastAt)}` : 'riwayat lengkap di channel arsip Discord')}
     </div>
     <ul class="text-sm space-y-1">
       ${cek(!c.selfDelivered, 'Tidak ada kiriman ke penulisnya sendiri', `${c.selfDelivered} kiriman sampai ke penulisnya sendiri — periksa antrean 💌`)}
-      ${cek(!c.deliveredWithText, 'Semua tulisan yang terkirim sudah dihapus teksnya', `${c.deliveredWithText} tulisan terkirim masih menyimpan teks`)}
+      ${arsip}
       <li>${c.staleClaims ? `ℹ️ ${esc(c.staleClaims)} klaim basi (bot berhenti saat mengirim) — otomatis bebas lagi di antrean` : '✅ Tidak ada klaim kiriman yang macet'}</li>
     </ul>`;
   }
@@ -244,16 +254,19 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const el = document.getElementById('soc-kata')!;
     if (el.dataset.guild) return; // sedang membuka tulisan satu server
     el.innerHTML = section('✍️ Pemantau Kata-Kata', `
-      <p class="text-sm ${KELAS.muted}">Database "kata-kata hari ini" Streak Harian — juga antrean 💌 Tukar Kata-Kata (${snap.switches?.tukarKata ? 'aktif: tulisan ⏳ dikirim ke member lain lalu dihapus' : 'nonaktif: tulisan ⏳ menunggu sampai fitur diaktifkan'}). Hanya baca.</p>
+      <p class="text-sm ${KELAS.muted}">Database "kata-kata hari ini" Streak Harian — juga antrean 💌 Tukar Kata-Kata (${snap.switches?.tukarKata ? 'aktif: tulisan dikirim ke member lain, diarsipkan ke channel Discord, lalu dihapus dari database' : 'nonaktif: tulisan ⏳ menunggu sampai fitur diaktifkan'}). Hanya baca.</p>
       ${ringkasKata(k.stats, true)}
-      ${table(['Server', 'Tulisan', 'Menunggu', 'Terkirim', 'Terakhir'], (k.guilds ?? []).map((g: any) => [
+      ${table(['Server', 'Belum selesai', 'Menunggu', 'Menunggu arsip', 'Terakhir'], (k.guilds ?? []).map((g: any) => [
         `<button type="button" data-kata="${esc(g.guildId)}" class="text-left underline decoration-dotted hover:text-amber-600">${esc(g.name ?? `Server ${g.guildId}`)}</button>`,
         esc(fmtAngka(g.total)), esc(fmtAngka(g.queued)), esc(fmtAngka(g.delivered)), `<span class="text-xs">${esc(fmtJam(g.lastAt))}</span>`,
       ]), 'Belum ada tulisan.')}`);
     el.querySelectorAll<HTMLElement>('[data-kata]').forEach((b) => b.addEventListener('click', () => void bukaKata(b.dataset.kata!, 1, 'semua')));
   }
 
-  const LABEL_STATUS: Record<string, string> = { antre: '⏳ Menunggu dikirim', diklaim: '🔒 Sedang dikirim', terkirim: '💌 Terkirim', dihapus: '🗑️ Teks dihapus' };
+  const LABEL_STATUS: Record<string, string> = {
+    antre: '⏳ Menunggu dikirim', diklaim: '🔒 Sedang dikirim', arsip: '🗄️ Terkirim, menunggu diarsipkan',
+    terkirim: '💌 Terkirim', dihapus: '🗑️ Teks dihapus',
+  };
 
   async function bukaKata(guildId: string, page: number, filter: string) {
     const el = document.getElementById('soc-kata')!;
@@ -266,7 +279,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const entri = (e: any) => [
       `<span class="text-xs">${esc(e.day)}</span>`,
       `${esc(e.username ?? '—')}<br><code class="text-xs ${KELAS.muted}">${esc(e.userId)}</code>`,
-      `<span class="text-xs">${esc(LABEL_STATUS[e.status] ?? e.status)}${e.status === 'terkirim' ? ` ke ${esc(e.deliveredTo)} ${esc(fmtJam(e.deliveredAt))}` : ''}${e.banned && e.status === 'antre' ? ' · ⛔ penulis di-banned (tidak dikirim)' : ''}</span>`,
+      `<span class="text-xs">${esc(LABEL_STATUS[e.status] ?? e.status)}${(e.status === 'terkirim' || e.status === 'arsip') && e.deliveredTo ? ` ke ${esc(e.deliveredTo)} ${esc(fmtJam(e.deliveredAt))}` : ''}${e.archiveTries ? ` · ⚠️ arsip gagal ${esc(e.archiveTries)}×, dicoba lagi` : ''}${e.banned && e.status === 'antre' ? ' · ⛔ penulis di-banned (tidak dikirim)' : ''}</span>`,
       e.content ? `<span class="text-sm whitespace-pre-line">${esc(String(e.content).slice(0, 600))}</span>` : `<span class="text-xs ${KELAS.muted}">(teks tidak disimpan lagi)</span>`,
     ];
     el.innerHTML = section(`✍️ Kata-kata — ${k.name ?? `Server ${k.guildId}`}`, `
