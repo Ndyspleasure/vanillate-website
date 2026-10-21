@@ -247,15 +247,23 @@ export async function segarkanDaftarServer(client) {
 | `bot_guilds` | `guild_id`, `name`, `member_count`, `is_active` | Saat start + guild masuk/keluar |
 | `bot_players` | `player_id`, `display_name`, `level`, `games_played`, `wins`, `last_seen_at` | Saat progres pemain berubah |
 
-### Rawat volume log
+### Rawat volume log (otomatis, 30 hari)
 
-`bot_logs` tumbuh cepat. Pasang pembersih otomatis di SQL Editor supaya paket
-gratis tidak cepat penuh:
+Bot tidak lagi menulis file log di mesinnya — semua log hanya ada di
+`bot_logs`. Migrasi `supabase/bot-logs-retention.sql` memasang
+`public.prune_bot_logs(p_days)` dan job pg_cron `prune-bot-logs-30d`
+(tiap hari 19.17 UTC / 02.17 WIB) yang **menghapus permanen** baris lebih tua
+dari 30 hari. Tidak perlu langkah manual. Cek jadwalnya:
 
 ```sql
-delete from public.bot_logs
-where created_at < now() - interval '30 days';
+select jobname, schedule, active from cron.job where jobname = 'prune-bot-logs-30d';
+select status, return_message, start_time from cron.job_run_details
+ where jobid = (select jobid from cron.job where jobname = 'prune-bot-logs-30d')
+ order by start_time desc limit 5;
 ```
+
+Rollback: `supabase/bot-logs-retention-rollback.sql` (log yang sudah terhapus
+tidak bisa dikembalikan).
 
 ---
 

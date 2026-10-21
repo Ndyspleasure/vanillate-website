@@ -36,7 +36,7 @@ pembuat dari `admin_users` → validasi payload per handler. Konfirmasi ketik di
 
 | Halaman | Isi |
 |---|---|
-| `/admin/developer` | Ringkasan & sistem (server, game aktif, kesehatan, versi & changelog read-only, maintenance/pengumuman, statistik DB & ekonomi), **Live Log** (`log.tail`) |
+| `/admin/developer` | Ringkasan & sistem (server, game aktif, kesehatan, versi & changelog read-only, maintenance/pengumuman, statistik DB & ekonomi), **Live Log** (`log.tail`: ≤ 500 baris terakhir dari memori bot sejak menyala — bot tidak menulis file log; riwayat 30 hari di `/admin/logs`) |
 | `/admin/developer/kontrol-server` | **Owner**: cek update → Update & Restart (ketik `UPDATE`), Restart (ketik `RESTART`), backup DB + unduh (signed URL) + hapus, bersihkan log |
 | `/admin/games` | Monitor game semua mode + aksi per room (End, Force Turn, Set Word, Eliminate, Revive, Spawn Event) + broadcast ke semua game aktif |
 | `/admin/pemain` | Cermin `bot_players` + **Kelola pemain** (profil live `player.view` + semua aksi per pemain), **Ranking live** (`player.list`), **Banned** (`player.banned`, unban) |
