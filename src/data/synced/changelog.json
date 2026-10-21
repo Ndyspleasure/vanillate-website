@@ -1,5 +1,43 @@
 [
   {
+    "version": "3.2.1",
+    "date": "2026-10-21",
+    "title": "Pemantauan server lebih baik untuk tim developer",
+    "highlights": [
+      "🛠️ Tim developer kini bisa memeriksa kondisi server bot lebih cepat, sehingga gangguan bisa diperbaiki lebih sigap"
+    ]
+  },
+  {
+    "version": "3.2.0",
+    "date": "2026-10-21",
+    "title": "Transkrip UNO per ronde & log bot lebih rapi",
+    "highlights": [
+      "🛠️ Transkrip UNO setelah \"Main Lagi\" kini terpisah per ronde, dengan Game ID baru",
+      "🧹 Catatan log & error bot kini disimpan 30 hari lalu dihapus otomatis",
+      "⚡ Bot tidak lagi menulis file log di server — lebih ringan & stabil"
+    ]
+  },
+  {
+    "version": "3.1.0",
+    "date": "2026-10-21",
+    "title": "💌 Tukar Kata-Kata kini lintas server",
+    "highlights": [
+      "🌏 Tukar Kata-Kata kini lintas server: kamu bisa menerima kata-kata dari teman di server lain, tetap anonim",
+      "🛠️ Perbaikan pesan \"Belum ada kata-kata dari teman\" yang muncul padahal masih ada kata-kata yang bisa dikirim",
+      "🗄️ Riwayat kata-kata kini diarsipkan dengan aman, jadi tidak ada kata-kata yang hilang saat terjadi gangguan"
+    ]
+  },
+  {
+    "version": "3.0.2",
+    "date": "2026-10-21",
+    "title": "UNO: giliran bot kini tampil seperti pemain lain",
+    "highlights": [
+      "🤖 Giliran bot di UNO kini muncul di papan — terlihat \"Bot sedang memilih kartu…\" sebelum bot bermain",
+      "🎴 Saat bot mengambil kartu lalu langsung memainkannya, kedua aksinya kini ditampilkan",
+      "🛠️ Pesan giliran UNO tidak lagi gagal terkirim saat giliran jatuh ke bot"
+    ]
+  },
+  {
     "version": "3.0.1",
     "date": "2026-10-18",
     "title": "Perbaikan stabilitas: voting, Global Match, dan transkrip permainan",
