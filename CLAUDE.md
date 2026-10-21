@@ -39,7 +39,7 @@ Bot produksi menulis log & keadaannya ke Supabase project
 
 | Tabel | Isi |
 |---|---|
-| `bot_logs` | Log bot (`level`, `event`, `message`, `meta.stack`) — kelompokkan error/warn 7 hari terakhir |
+| `bot_logs` | Log bot (`level`, `event`, `message`, `meta.stack`) — kelompokkan error/warn 7 hari terakhir. Hanya 30 hari terakhir (`supabase/bot-logs-retention.sql`, pg_cron harian) |
 | `bot_panel_snapshots` | Keadaan bot per key: `errors` (Error KB), `autoheal` (incident), `system` (versi & kesehatan), `games`, dll. `updated_at` > 2 menit = bot offline |
 | `bot_commands` | Perintah CMS beserta `status`/`error` dari bot |
 

@@ -10,7 +10,9 @@
 #  Urutan: supabase-stub.sql → guild-dashboard-schema.sql (dua kali, untuk
 #  membuktikan idempoten) → guild-dashboard.test.sql, lalu suite Panel
 #  Developer: developer-panel-prereq.sql → developer-panel-schema.sql →
-#  developer-panel-settings.sql → developer-panel.test.sql.
+#  developer-panel-settings.sql → developer-panel.test.sql, lalu retensi log:
+#  bot-logs-retention-prereq.sql → bot-logs-retention.sql (dua kali) →
+#  bot-logs-retention.test.sql.
 # ════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -66,3 +68,11 @@ for f in supabase/tests/developer-panel-prereq.sql supabase/developer-panel-sche
 done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/developer-panel.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL Panel Developer lulus."
+
+# Suite ketiga: retensi log bot (bot_logs > 30 hari dihapus). Migrasi dijalankan
+# dua kali untuk membuktikan idempoten (tanpa pg_cron → jadwal dilewati).
+for f in supabase/tests/bot-logs-retention-prereq.sql supabase/bot-logs-retention.sql supabase/bot-logs-retention.sql; do
+  PGOPTIONS="-c client_min_messages=warning" run "${PSQL[@]}" -f "$ROOT/$f" >/dev/null
+done
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-logs-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL retensi log bot lulus."
