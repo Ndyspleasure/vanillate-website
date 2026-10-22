@@ -36,3 +36,19 @@ insert into public.bot_settings (key, label, value, kind, category, help, min_va
   ('dm_campaign_per_day', 'Jumlah DM per hari', null, 'number', 'campaign',
    'Berapa pemain tidak aktif yang diingatkan lewat DM setiap hari.', 1, 50, 10)
 on conflict (key) do nothing;
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 🧭 Onboarding konfigurasi sosial (bot: src/social/onboarding, sejak v3.5)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Bawaan bot MATI; baris NULL diisi bot dengan nilai lokalnya (false), jadi
+-- memasang bagian ini tidak menyalakan apa pun. Owner menyalakannya di sini.
+insert into public.bot_setting_categories (key, label, description, icon, sort) values
+  ('onboarding', 'Onboarding Server', 'Pengingat owner & admin server untuk mengatur fitur sosial (Counting & Streak Harian).', 'toggle', 80)
+on conflict (key) do nothing;
+
+insert into public.bot_settings (key, label, value, kind, category, help, min_value, max_value, sort) values
+  ('onboarding_channel_enabled', 'Channel #konfigurasi-vanillate', null, 'boolean', 'onboarding',
+   'Server yang baru mengundang bot (sejak setting ini pertama dinyalakan) dibuatkan channel panduan berisi status setup & mention owner/admin. Dipulihkan maks. 2× bila dihapus sebelum setup selesai.', null, null, 10),
+  ('onboarding_nudge_enabled', 'Sapaan owner & admin', null, 'boolean', 'onboarding',
+   'Pesan "Hei, ada waktu?" (hanya terlihat oleh owner/admin) setelah mereka memakai command, selama fitur sosial servernya belum diputuskan. Maks. sekali per 24 jam, berhenti setelah 3×.', null, null, 20)
+on conflict (key) do nothing;
