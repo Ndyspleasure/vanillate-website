@@ -1,5 +1,48 @@
 [
   {
+    "version": "3.4.0",
+    "date": "2026-10-22",
+    "title": "Share Server — promosikan servermu ke server lain lewat vote",
+    "highlights": [
+      "📣 Fitur sosial baru Share Server: server peserta saling mempromosikan komunitasnya (atur di /pengaturan → 🤝 Sosial → 📣 Share Server atau vanillate.id/dashboard)",
+      "🗳️ Dukung servermu: tekan Vote untuk Server Ini di panel vote, lalu vote Sambung Kata di Top.gg. Vote terbanyak tayang lebih dulu",
+      "⏩ Setiap 5 vote memotong masa tunggu tayang 30 menit (maks. 12 jam)",
+      "🔗 Link undangan diverifikasi otomatis & dicek tiap hari; admin diberi tahu bila link bermasalah",
+      "🛡️ Iklan wajib bertahan 24 jam; ada Pesan Uji & tombol 🚩 Laporkan agar jaringan tetap adil dan aman"
+    ]
+  },
+  {
+    "version": "3.3.1",
+    "date": "2026-10-22",
+    "title": "FAQ Pusat Bantuan kini selalu terbaru",
+    "highlights": [
+      "📚 Jawaban di FAQ Pusat Bantuan (/help › Pusat Bantuan) kini diperbarui tim langsung, tanpa menunggu update bot",
+      "🛟 Jawaban seputar izin bot, hadiah, dan cara bermain tetap tersedia walau koneksi ke server sedang terganggu"
+    ]
+  },
+  {
+    "version": "3.3.0",
+    "date": "2026-10-22",
+    "title": "Bantuan lebih ringkas: semuanya kini lewat /help",
+    "highlights": [
+      "🛟 Pusat Bantuan (FAQ, Tanya Asisten, Hubungi Tim Support) kini dibuka dari tombol di bawah /help — /support tidak dipakai lagi",
+      "📬 Kirim saran & laporan bug lewat tombol Kirim Masukan di /help — menggantikan /masukan",
+      "🎓 Pemain baru yang belum menyelesaikan tutorial kini tetap bisa membuka /help untuk membaca panduan & meminta bantuan",
+      "📚 Isi FAQ Pusat Bantuan diperbarui mengikuti cara baru ini"
+    ]
+  },
+  {
+    "version": "3.2.2",
+    "date": "2026-10-22",
+    "title": "Tampilan pesan bot lebih bersih & mudah dibaca",
+    "highlights": [
+      "🧹 Pesan permainan kini lebih ringkas — emoji berlebih dihapus dari status giliran, papan skor, dan hasil pertandingan",
+      "🔢 Nyawa, HP, dan Mana ditampilkan sebagai angka yang jelas (mis. Nyawa 4/5)",
+      "🪙 Mata uang kini ditulis \"Coin\" di semua pesan reward, toko, dan quest",
+      "🎮 Berlaku untuk Sambung Kata, UNO, Werewolf, Tebak Lagu, Pengacara, serta /help, /stats, /quest, /shop, dan tutorial"
+    ]
+  },
+  {
     "version": "3.2.1",
     "date": "2026-10-21",
     "title": "Pemantauan server lebih baik untuk tim developer",
