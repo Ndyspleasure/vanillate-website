@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.5.0",
+    "date": "2026-10-22",
+    "title": "Panduan setup server untuk owner & admin",
+    "highlights": [
+      "🧭 Owner & admin kini diingatkan untuk mengatur fitur sosial (Counting & Streak Harian) servernya, cukup lewat /pengaturan atau dashboard",
+      "🚫 Pilihan baru \"Tidak Dipakai\" di /pengaturan → 🤝 Sosial untuk fitur yang tidak diperlukan server",
+      "📌 Server baru mendapat channel #konfigurasi-vanillate berisi panduan & status setup yang diperbarui otomatis"
+    ]
+  },
+  {
     "version": "3.4.2",
     "date": "2026-10-22",
     "title": "Share Server: promosi juga tampil di server sendiri",
