@@ -12,7 +12,8 @@
 #  Developer: developer-panel-prereq.sql → developer-panel-schema.sql →
 #  developer-panel-settings.sql → developer-panel.test.sql, lalu retensi log:
 #  bot-logs-retention-prereq.sql → bot-logs-retention.sql (dua kali) →
-#  bot-logs-retention.test.sql.
+#  bot-logs-retention.test.sql, lalu Share Server: share-server.test.sql
+#  (menjalankan supabase/share-server.sql dua kali).
 # ════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -76,3 +77,8 @@ for f in supabase/tests/bot-logs-retention-prereq.sql supabase/bot-logs-retentio
 done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-logs-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL retensi log bot lulus."
+
+# Suite keempat: 📣 Share Server (memakai skema & fixture guild dashboard di
+# atas; tesnya menjalankan supabase/share-server.sql dua kali → idempoten).
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/share-server.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL Share Server lulus."

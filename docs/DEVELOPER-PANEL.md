@@ -49,6 +49,7 @@ pembuat dari `admin_users` → validasi payload per handler. Konfirmasi ketik di
 | `/admin/developer/tutorial` | Status tutorial seluruh pemain, sesi berjalan, aksi per pemain, reset massal (owner) |
 | `/admin/developer/campaign` | Statistik DM campaign + kirim paksa ke satu pemain |
 | `/admin/developer/sosial` | Social Monitor: server pemakai SocialHub, detail, atur/matikan channel fitur, ✍️ Pemantau Kata-Kata |
+| `/admin/developer/share-server` | 📣 Share Server: statistik jaringan & vote, antrean, broadcast, laporan iklan 🚩 (abaikan / tahan server), detail server, 🔓 Cabut Terhambat, aturan (`sys.share.rules`, owner). Snapshot `share`; perintah `share.*` |
 | `/admin/developer/autoheal` | Status & breaker, approval tertunda (keputusan owner), buka kunci deploy, uji sandbox, simulasi heal, incident, izin aktif |
 | `/admin/operasi` | Konsol semua aksi sederhana + **riwayat perintah** |
 | `/admin/kontrol` | Setting (state): maintenance, pengumuman (+ judul), changelog di lobby, gerbang tutorial, DM campaign/hari, mode, tunable, fitur |

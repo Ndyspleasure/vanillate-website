@@ -159,6 +159,34 @@ disiapkan" (dicek otomatis lewat `/auth/v1/settings`), bukan error.
 5. Cabut izin *Send Messages* bot di channel itu → pilih ulang channel yang sama
    di channel lain lalu simpan → `Perlu perhatian` dengan pesan izin yang hilang.
 
+## 5a. 📣 Share Server (tab `#share-server`)
+
+Broadcast promosi antar server (Sosial Hub Sambung Kata). Aturan lengkap ada di
+repo bot: `docs/share-server.md`. Berbeda dengan fitur lain, Share Server
+**tidak** memakai revisi `guild_config`, karena isinya bukan sekadar
+nyala/mati + channel (ada profil, undangan, antrean, sanksi). Website tetap
+**tidak** menyimpan konfigurasi sendiri:
+
+| Komponen | Peran |
+|---|---|
+| `share_guild_state` | Status + riwayat per server, **diterbitkan bot**. Dibaca lewat RPC `share_dashboard_get` (cek `guild_dashboard_assert_access`) |
+| `share_requests` | Aksi admin (`save`, `activate`, `deactivate`, `test`, `recheck_invite`, `ack`) lewat RPC `share_request_submit`. Identitas Discord diambil dari `auth.identities`; satu permintaan aktif per server; maks. 30/jam per user. **Bot memverifikasi ulang** izin Manage Server user di Discord, lalu menjalankan aksi dengan aturan yang sama dengan `/pengaturan` |
+| `share_topgg_votes` | Kotak masuk webhook Top.gg, ditulis Edge Function `topgg-webhook` (service_role), dibaca bot |
+| UI | `src/lib/dashboard/share-server.ts` (tab), `share-model.ts` (model murni, `tests/share-model.test.ts`) |
+
+Migrasi: `supabase/share-server.sql` (aditif & idempoten; rollback
+`share-server-rollback.sql`; tes `supabase/tests/share-server.test.sql`).
+
+**Edge Function `topgg-webhook`** (`supabase/functions/topgg-webhook/`): deploy
+dengan **`verify_jwt = false`** (Top.gg tidak mengirim JWT). Autentikasinya tanda
+tangan HMAC-SHA256 `x-topgg-signature: t=…,v1=…` (jendela 5 menit), atau header
+`Authorization` = secret untuk webhook lama. Secret wajib di
+`TOPGG_WEBHOOK_SECRET`. Tanpa secret, semua permintaan ditolak (503). Fungsi
+hanya menyimpan vote (`event_key` unik). Penghitungan, server tujuan, dan
+penyaring akun dilakukan bot. Tes: `tests/topgg-webhook.test.ts`.
+
+URL untuk dashboard Top.gg: `https://<project>.supabase.co/functions/v1/topgg-webhook`.
+
 ## 6. Pengembangan & tes
 
 ```bash
