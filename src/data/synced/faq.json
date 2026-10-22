@@ -68,6 +68,51 @@
       "aliases": []
     },
     {
+      "category": "bantuan",
+      "slug": "produk-tidak-merespons",
+      "question": "Produknya tidak merespons, apa yang harus dilakukan?",
+      "answer": "Coba beberapa hal ini dulu:\n\n1. Pastikan produk punya izin yang diperlukan di tempat kamu memakainya.\n2. Ulangi aksinya dari awal.\n3. Tunggu beberapa detik bila platformnya sedang lambat.\n\nKalau masih bermasalah, laporkan lewat [Support Center](/support) kami, dan orang yang menulis kodenya akan langsung membantu.",
+      "sortOrder": 10,
+      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
+      "aliases": []
+    },
+    {
+      "category": "convert",
+      "slug": "apa-itu-convert",
+      "question": "Apa itu Vanillate Convert?",
+      "answer": "Vanillate Convert adalah konverter dan alat file gratis untuk mengubah gambar, data, subtitle, dan arsip ke format lain langsung di peramban. Ada **205 konversi** dan **16 alat** yang bisa dipakai saat ini, dari JPG ke PNG, CSV ke XLSX, SRT ke VTT, sampai membuat ZIP.\n\nTanpa akun, tanpa iklan, dan file tidak diunggah ke server. Buka di [convert.vanillate.id](https://convert.vanillate.id/).",
+      "sortOrder": 10,
+      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "aliases": []
+    },
+    {
+      "category": "umum",
+      "slug": "menghidupkan-komunitas",
+      "question": "Apakah produk Vanillate bisa membantu menghidupkan komunitas yang sepi?",
+      "answer": "Bisa, dan itu memang salah satu kekuatannya. Produk kami dirancang mengajak banyak anggota ikut berinteraksi sekaligus, sehingga obrolan yang tadinya sepi cepat kembali ramai.\n\nContohnya, satu sesi Vanillate Sambung Kata di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.",
+      "sortOrder": 10,
+      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
+      "aliases": []
+    },
+    {
+      "category": "hand-sign-camera",
+      "slug": "apa-itu-hand-sign-camera",
+      "question": "Apa itu Vanillate Hand Sign Camera?",
+      "answer": "Vanillate Hand Sign Camera adalah aplikasi kamera web gratis yang mengenali **16 gestur tangan** secara real-time, lalu menampilkan efek visual yang berbeda untuk setiap gestur. Tinju memancarkan gelombang kejut, peace sign melukis jejak pelangi, dan dua tangan membentuk hati raksasa.\n\nAplikasi berjalan langsung di peramban komputer maupun ponsel. Tidak perlu instal, tidak perlu akun, dan video kamera tidak pernah dikirim ke server.\n\nBuka aplikasinya di [handsign.vanillate.id](https://handsign.vanillate.id/).",
+      "sortOrder": 10,
+      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
+      "aliases": []
+    },
+    {
+      "category": "science",
+      "slug": "apa-itu-science",
+      "question": "Apa itu Vanillate Science?",
+      "answer": "Vanillate Science adalah kalkulator matematika dan sains berbahasa Indonesia yang tidak hanya memberi jawaban. Untuk setiap soal, kamu mendapat langkah penyelesaian yang benar-benar dihitung, penjelasan alasannya, dan verifikasi independen atas hasilnya.\n\nGratis, tanpa akun, dan berjalan langsung di peramban komputer maupun ponsel. Buka di [science.vanillate.id](https://science.vanillate.id/).",
+      "sortOrder": 10,
+      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
+      "aliases": []
+    },
+    {
       "category": "sambung-kata",
       "slug": "cara-mulai-bermain",
       "question": "Bagaimana cara mulai bermain Sambung Kata?",
@@ -83,51 +128,6 @@
       "answer": "Vanillate Play adalah platform game gerak gratis di peramban. Kamera laptop, tablet, atau ponsel membaca gerakan seluruh tubuhmu dan menjadikannya controller: lompat, jongkok, condong, pukul, tendang, atau berpose.\n\nAda **36 game** dengan mode duo, couple, solo, dan party. Sebagian besar dirancang untuk dimainkan berdua di depan satu kamera. Tanpa instal, tanpa akun, dan video kamera tidak pernah dikirim ke server.",
       "sortOrder": 10,
       "updatedAt": "2026-10-11T10:55:45.482321+00:00",
-      "aliases": []
-    },
-    {
-      "category": "convert",
-      "slug": "apa-itu-convert",
-      "question": "Apa itu Vanillate Convert?",
-      "answer": "Vanillate Convert adalah konverter dan alat file gratis untuk mengubah gambar, data, subtitle, dan arsip ke format lain langsung di peramban. Ada **205 konversi** dan **16 alat** yang bisa dipakai saat ini, dari JPG ke PNG, CSV ke XLSX, SRT ke VTT, sampai membuat ZIP.\n\nTanpa akun, tanpa iklan, dan file tidak diunggah ke server. Buka di [convert.vanillate.id](https://convert.vanillate.id/).",
-      "sortOrder": 10,
-      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
-      "aliases": []
-    },
-    {
-      "category": "science",
-      "slug": "apa-itu-science",
-      "question": "Apa itu Vanillate Science?",
-      "answer": "Vanillate Science adalah kalkulator matematika dan sains berbahasa Indonesia yang tidak hanya memberi jawaban. Untuk setiap soal, kamu mendapat langkah penyelesaian yang benar-benar dihitung, penjelasan alasannya, dan verifikasi independen atas hasilnya.\n\nGratis, tanpa akun, dan berjalan langsung di peramban komputer maupun ponsel. Buka di [science.vanillate.id](https://science.vanillate.id/).",
-      "sortOrder": 10,
-      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
-      "aliases": []
-    },
-    {
-      "category": "hand-sign-camera",
-      "slug": "apa-itu-hand-sign-camera",
-      "question": "Apa itu Vanillate Hand Sign Camera?",
-      "answer": "Vanillate Hand Sign Camera adalah aplikasi kamera web gratis yang mengenali **16 gestur tangan** secara real-time, lalu menampilkan efek visual yang berbeda untuk setiap gestur. Tinju memancarkan gelombang kejut, peace sign melukis jejak pelangi, dan dua tangan membentuk hati raksasa.\n\nAplikasi berjalan langsung di peramban komputer maupun ponsel. Tidak perlu instal, tidak perlu akun, dan video kamera tidak pernah dikirim ke server.\n\nBuka aplikasinya di [handsign.vanillate.id](https://handsign.vanillate.id/).",
-      "sortOrder": 10,
-      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
-      "aliases": []
-    },
-    {
-      "category": "umum",
-      "slug": "menghidupkan-komunitas",
-      "question": "Apakah produk Vanillate bisa membantu menghidupkan komunitas yang sepi?",
-      "answer": "Bisa, dan itu memang salah satu kekuatannya. Produk kami dirancang mengajak banyak anggota ikut berinteraksi sekaligus, sehingga obrolan yang tadinya sepi cepat kembali ramai.\n\nContohnya, satu sesi Vanillate Sambung Kata di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.",
-      "sortOrder": 10,
-      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
-      "aliases": []
-    },
-    {
-      "category": "bantuan",
-      "slug": "produk-tidak-merespons",
-      "question": "Produknya tidak merespons, apa yang harus dilakukan?",
-      "answer": "Coba beberapa hal ini dulu:\n\n1. Pastikan produk punya izin yang diperlukan di tempat kamu memakainya.\n2. Ulangi aksinya dari awal.\n3. Tunggu beberapa detik bila platformnya sedang lambat.\n\nKalau masih bermasalah, laporkan lewat [Support Center](/support) kami, dan orang yang menulis kodenya akan langsung membantu.",
-      "sortOrder": 10,
-      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
       "aliases": []
     },
     {
@@ -149,6 +149,51 @@
       "aliases": []
     },
     {
+      "category": "hand-sign-camera",
+      "slug": "cara-mulai",
+      "question": "Bagaimana cara mulai memakainya?",
+      "answer": "1. Buka [handsign.vanillate.id](https://handsign.vanillate.id/) di peramban modern, lalu masuk ke halaman kamera.\n2. Izinkan akses kamera saat peramban meminta.\n3. Tunggu model pelacakan tangan selesai dimuat. Kunjungan pertama mengunduh sekitar 20 MB, kunjungan berikutnya langsung siap.\n4. Tunjukkan tangan ke kamera dan coba gesturnya.\n\nBaru pertama kali? Ikuti **tutorial interaktif**. Tutorial lanjut otomatis begitu gestur yang diminta terdeteksi kamera. Kamu juga bisa membuka **Panduan Gestur** untuk melihat contoh setiap gestur dalam animasi tangan.",
+      "sortOrder": 20,
+      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
+      "aliases": []
+    },
+    {
+      "category": "bantuan",
+      "slug": "lapor-bug-dan-masukan",
+      "question": "Bagaimana cara memberi masukan atau melaporkan bug?",
+      "answer": "Kirim lewat [Support Center](/support) di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai.\n\nKhusus Sambung Kata, ketik `/help` di Discord lalu tekan tombol **📬 Kirim Masukan**, kemudian pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.\n\nKami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.",
+      "sortOrder": 20,
+      "updatedAt": "2026-10-22T03:02:32.725748+00:00",
+      "aliases": []
+    },
+    {
+      "category": "sambung-kata",
+      "slug": "cara-bermain",
+      "question": "Apa aturan dasar permainan Sambung Kata?",
+      "answer": "Sambung Kata adalah permainan kata berantai. Setiap pemain menyebut kata yang diawali huruf terakhir dari kata sebelumnya. Contoh: dari kata `MAKAN` huruf berikutnya adalah `N`, jadi jawaban yang valid antara lain `NASI`, `NAMA`, atau `NILAI`.\n\n### Aturan dasar\n\n- Kata harus diawali dari huruf yang ditentukan.\n- Kata harus ada di kamus Bahasa Indonesia (25.000+ kata).\n- Kata yang sudah pernah dipakai tidak boleh diulang.\n- Hanya 1 kata per giliran (tanpa spasi).\n- Kata minimum 2 huruf.\n\n### Waktu per giliran\n\n- Setiap pemain punya waktu terbatas untuk menjawab.\n- Waktu habis berarti kehilangan 1 nyawa dan giliran pindah.\n- Jawab dalam ≤5 detik untuk dihitung ke quest **Kilat Kata**.\n- Gunakan boost **Extra Time** untuk menambah waktu giliran.\n\n### Sistem nyawa\n\n- Setiap pemain mulai dengan 5 nyawa.\n- Jawaban salah atau waktu habis mengurangi 1 kesempatan.\n- Setelah 5 kesempatan gagal, kamu kehilangan 1 nyawa dan giliran pindah.\n- Nyawa habis berarti eliminasi dari permainan.\n\n### Cara menang\n\n- **PvP/PvB:** jadilah pemain terakhir yang bertahan.\n- **Dungeon:** tumbangkan Guardian sampai wave 5.\n- Jika skor seri saat voting stop, Balapan Ayam menentukan pemenang.\n\n### Voting perhentian\n\nPemain bisa mengajukan voting untuk menghentikan game. Semua pemain aktif punya 30 detik untuk vote. Mayoritas memilih Hentikan berarti game berakhir lebih awal; mayoritas Lanjutkan atau seri berarti game diteruskan.\n\n### Kata istimewa\n\n- Kata ≥8 huruf memberi bonus EXP dan damage besar di Dungeon.\n- Kata berakhiran huruf langka (X, Q, Z, V) memberi bonus Coin dan damage tertinggi.",
+      "sortOrder": 20,
+      "updatedAt": "2026-08-29T21:44:54.664579+00:00",
+      "aliases": []
+    },
+    {
+      "category": "play",
+      "slug": "cara-mulai",
+      "question": "Bagaimana cara mulai bermain?",
+      "answer": "1. Buka Vanillate Play dari halaman produk, lalu pilih game.\n2. Izinkan akses kamera, dan tunggu kamera serta pelacakan tubuh siap.\n3. Berdiri di depan kamera. Pemain dikenali dan dikalibrasi otomatis.\n4. Ikuti latihan singkat **cara bermain** yang mengecek setiap gerakan.\n5. **Angkat tangan** untuk mulai. Setelah selesai, angkat tangan lagi untuk main ulang tanpa menyentuh layar.\n\nKamera tetap menyala saat berpindah game, jadi tidak perlu memuat ulang halaman.",
+      "sortOrder": 20,
+      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "aliases": []
+    },
+    {
+      "category": "convert",
+      "slug": "kenapa-beta",
+      "question": "Kenapa statusnya Beta?",
+      "answer": "Saat ini yang aktif adalah **konversi yang berjalan di peramban**, dan semuanya sudah bisa dipakai.\n\nKonversi yang membutuhkan server sedang disiapkan dan belum dibuka, misalnya:\n\n- dokumen Office,\n- PDF ke gambar,\n- audio dan video,\n- sebagian format arsip dan format khusus.\n\nKonversi tersebut akan muncul di situs setelah aktif, dan status Beta dilepas setelah pemrosesan server berjalan.",
+      "sortOrder": 20,
+      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "aliases": []
+    },
+    {
       "category": "science",
       "slug": "apakah-pakai-ai",
       "question": "Apakah hasilnya dibuat oleh AI?",
@@ -167,33 +212,6 @@
       "aliases": []
     },
     {
-      "category": "convert",
-      "slug": "kenapa-beta",
-      "question": "Kenapa statusnya Beta?",
-      "answer": "Saat ini yang aktif adalah **konversi yang berjalan di peramban**, dan semuanya sudah bisa dipakai.\n\nKonversi yang membutuhkan server sedang disiapkan dan belum dibuka, misalnya:\n\n- dokumen Office,\n- PDF ke gambar,\n- audio dan video,\n- sebagian format arsip dan format khusus.\n\nKonversi tersebut akan muncul di situs setelah aktif, dan status Beta dilepas setelah pemrosesan server berjalan.",
-      "sortOrder": 20,
-      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
-      "aliases": []
-    },
-    {
-      "category": "bantuan",
-      "slug": "lapor-bug-dan-masukan",
-      "question": "Bagaimana cara memberi masukan atau melaporkan bug?",
-      "answer": "Kirim lewat [Support Center](/support) di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai.\n\nKhusus Sambung Kata, kamu juga bisa memakai command `/masukan` langsung di dalam produknya, lalu pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.\n\nKami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.",
-      "sortOrder": 20,
-      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
-      "aliases": []
-    },
-    {
-      "category": "hand-sign-camera",
-      "slug": "cara-mulai",
-      "question": "Bagaimana cara mulai memakainya?",
-      "answer": "1. Buka [handsign.vanillate.id](https://handsign.vanillate.id/) di peramban modern, lalu masuk ke halaman kamera.\n2. Izinkan akses kamera saat peramban meminta.\n3. Tunggu model pelacakan tangan selesai dimuat. Kunjungan pertama mengunduh sekitar 20 MB, kunjungan berikutnya langsung siap.\n4. Tunjukkan tangan ke kamera dan coba gesturnya.\n\nBaru pertama kali? Ikuti **tutorial interaktif**. Tutorial lanjut otomatis begitu gestur yang diminta terdeteksi kamera. Kamu juga bisa membuka **Panduan Gestur** untuk melihat contoh setiap gestur dalam animasi tangan.",
-      "sortOrder": 20,
-      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
-      "aliases": []
-    },
-    {
       "category": "umum",
       "slug": "apakah-gratis",
       "question": "Apakah produk Vanillate gratis?",
@@ -203,21 +221,48 @@
       "aliases": []
     },
     {
-      "category": "play",
-      "slug": "cara-mulai",
-      "question": "Bagaimana cara mulai bermain?",
-      "answer": "1. Buka Vanillate Play dari halaman produk, lalu pilih game.\n2. Izinkan akses kamera, dan tunggu kamera serta pelacakan tubuh siap.\n3. Berdiri di depan kamera. Pemain dikenali dan dikalibrasi otomatis.\n4. Ikuti latihan singkat **cara bermain** yang mengecek setiap gerakan.\n5. **Angkat tangan** untuk mulai. Setelah selesai, angkat tangan lagi untuk main ulang tanpa menyentuh layar.\n\nKamera tetap menyala saat berpindah game, jadi tidak perlu memuat ulang halaman.",
-      "sortOrder": 20,
-      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "category": "umum",
+      "slug": "cara-mulai-memakai",
+      "question": "Bagaimana cara mulai memakai produknya?",
+      "answer": "Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk:\n\n- **Sambung Kata** diundang ke server Discord lewat tombol **Undang ke Server**.\n- **Hand Sign Camera, Science, Convert, dan Play** adalah aplikasi web. Cukup tekan **Buka Aplikasi**. Sebagian bisa dipasang ke layar utama ponsel atau komputer seperti aplikasi biasa.\n\nSetiap halaman produk menjelaskan langkahnya.",
+      "sortOrder": 30,
+      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
       "aliases": []
     },
     {
-      "category": "sambung-kata",
-      "slug": "cara-bermain",
-      "question": "Apa aturan dasar permainan Sambung Kata?",
-      "answer": "Sambung Kata adalah permainan kata berantai. Setiap pemain menyebut kata yang diawali huruf terakhir dari kata sebelumnya. Contoh: dari kata `MAKAN` huruf berikutnya adalah `N`, jadi jawaban yang valid antara lain `NASI`, `NAMA`, atau `NILAI`.\n\n### Aturan dasar\n\n- Kata harus diawali dari huruf yang ditentukan.\n- Kata harus ada di kamus Bahasa Indonesia (25.000+ kata).\n- Kata yang sudah pernah dipakai tidak boleh diulang.\n- Hanya 1 kata per giliran (tanpa spasi).\n- Kata minimum 2 huruf.\n\n### Waktu per giliran\n\n- Setiap pemain punya waktu terbatas untuk menjawab.\n- Waktu habis berarti kehilangan 1 nyawa dan giliran pindah.\n- Jawab dalam ≤5 detik untuk dihitung ke quest **Kilat Kata**.\n- Gunakan boost **Extra Time** untuk menambah waktu giliran.\n\n### Sistem nyawa\n\n- Setiap pemain mulai dengan 5 nyawa.\n- Jawaban salah atau waktu habis mengurangi 1 kesempatan.\n- Setelah 5 kesempatan gagal, kamu kehilangan 1 nyawa dan giliran pindah.\n- Nyawa habis berarti eliminasi dari permainan.\n\n### Cara menang\n\n- **PvP/PvB:** jadilah pemain terakhir yang bertahan.\n- **Dungeon:** tumbangkan Guardian sampai wave 5.\n- Jika skor seri saat voting stop, Balapan Ayam menentukan pemenang.\n\n### Voting perhentian\n\nPemain bisa mengajukan voting untuk menghentikan game. Semua pemain aktif punya 30 detik untuk vote. Mayoritas memilih Hentikan berarti game berakhir lebih awal; mayoritas Lanjutkan atau seri berarti game diteruskan.\n\n### Kata istimewa\n\n- Kata ≥8 huruf memberi bonus EXP dan damage besar di Dungeon.\n- Kata berakhiran huruf langka (X, Q, Z, V) memberi bonus Coin dan damage tertinggi.",
-      "sortOrder": 20,
-      "updatedAt": "2026-08-29T21:44:54.664579+00:00",
+      "category": "convert",
+      "slug": "cara-konversi",
+      "question": "Bagaimana cara mengonversi file?",
+      "answer": "1. Buka [convert.vanillate.id](https://convert.vanillate.id/) lalu pilih file, atau langsung buka halaman konversi yang kamu butuhkan, misalnya JPG ke PNG.\n2. Sistem mengenali format filemu dan hanya menawarkan konversi yang benar-benar bisa dilakukan.\n3. Pilih format tujuan dan atur opsinya bila perlu, misalnya kualitas gambar.\n4. Unduh hasilnya.\n\nSetiap konversi punya halaman sendiri yang menjelaskan kualitas hasil, batasan, dan statusnya, jadi kamu tahu apa yang akan terjadi sebelum mengonversi.",
+      "sortOrder": 30,
+      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "aliases": []
+    },
+    {
+      "category": "hand-sign-camera",
+      "slug": "daftar-gestur-dan-efek",
+      "question": "Gestur apa saja yang dikenali, dan apa efeknya?",
+      "answer": "| Gestur | Cara membuat | Efek |\n| --- | --- | --- |\n| Open Palm | lima jari terbuka | Neon Skeleton |\n| Fist | semua jari menggenggam | Shockwave |\n| Peace | telunjuk + jari tengah tegak | Rainbow Trail |\n| Pointing | telunjuk tegak | Laser |\n| Thumbs Up | jempol ke atas, jari lain menggenggam | Star Burst |\n| Thumbs Down | jempol ke bawah, jari lain menggenggam | Rain Cloud |\n| OK | jempol dan telunjuk membentuk lingkaran, jari lain tegak | Halo |\n| Rock | telunjuk + kelingking tegak, jempol dilipat | Lightning |\n| Pinch | ujung jempol dan telunjuk bersentuhan | Particle Spark |\n| Call Me | jempol + kelingking terbuka | Sound Waves |\n| Three | telunjuk, jari tengah, jari manis tegak | Tri-Beam |\n| Four | empat jari tegak, jempol dilipat | Code Rain |\n| I Love You | jempol + telunjuk + kelingking terbuka | Floating Hearts |\n| Wave | telapak terbuka digerakkan ke kiri-kanan | Ripple |\n| Heart Hands (2 tangan) | ujung telunjuk bertemu di atas, jempol di bawah | Big Heart |\n| Double Palm (2 tangan) | kedua telapak terbuka | Energy Beam |\n\nPanduan Gestur di dalam aplikasi juga mengajarkan hitungan jari 1 sampai 10 dengan dua tangan.",
+      "sortOrder": 30,
+      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
+      "aliases": []
+    },
+    {
+      "category": "akun-data",
+      "slug": "progres-antar-komunitas",
+      "question": "Apakah progres saya terbawa antar komunitas atau perangkat?",
+      "answer": "Untuk **Sambung Kata**, ya. Progres, statistik, dan peringkat bersifat global per akun Discord, jadi capaianmu terbawa ke server mana pun kamu bermain, tanpa biaya tambahan.\n\nAplikasi web (**Science** dan **Play**) menyimpan riwayat, favorit, pengaturan, dan rekor di peramban perangkat yang kamu pakai. Karena tidak memakai akun, data itu tidak berpindah ke perangkat atau peramban lain.",
+      "sortOrder": 30,
+      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
+      "aliases": []
+    },
+    {
+      "category": "science",
+      "slug": "cakupan-soal",
+      "question": "Soal apa saja yang bisa dikerjakan?",
+      "answer": "- **Aljabar:** pecahan, bentuk akar, penyederhanaan dan faktorisasi, persamaan (linear, kuadrat, polinom, eksponen, logaritma, trigonometri, rasional, akar, nilai mutlak), pertidaksamaan, sistem persamaan, bilangan kompleks, matriks dan vektor, teori bilangan, notasi sigma.\n- **Kalkulus:** turunan (termasuk parsial dan implisit), integral tentu dan tak tentu, limit, deret Taylor, titik ekstrem.\n- **Sains:** 113 rumus fisika, kimia, astronomi, teknik, dan geometri.\n- **Kimia:** massa molar, penyetaraan reaksi, rumus empiris, stoikiometri dan pereaksi pembatas, pH, tabel periodik.\n- **Statistika:** statistik deskriptif, regresi, distribusi binomial, Poisson, dan normal, uji t, interval kepercayaan, chi-kuadrat, ANOVA.\n- **Keuangan:** bunga sederhana dan majemuk, cicilan (anuitas, efektif, flat) lengkap dengan tabel angsuran, NPV, IRR, ROI, BEP, depresiasi.\n- **Ilmu komputer:** konversi basis bilangan, komplemen dua, operasi bitwise, subnet IPv4, Base64, aljabar Boolean.\n- **Satuan:** konversi ratusan satuan, termasuk satuan gabungan dan suhu.",
+      "sortOrder": 30,
+      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
       "aliases": []
     },
     {
@@ -239,47 +284,11 @@
       "aliases": []
     },
     {
-      "category": "hand-sign-camera",
-      "slug": "daftar-gestur-dan-efek",
-      "question": "Gestur apa saja yang dikenali, dan apa efeknya?",
-      "answer": "| Gestur | Cara membuat | Efek |\n| --- | --- | --- |\n| Open Palm | lima jari terbuka | Neon Skeleton |\n| Fist | semua jari menggenggam | Shockwave |\n| Peace | telunjuk + jari tengah tegak | Rainbow Trail |\n| Pointing | telunjuk tegak | Laser |\n| Thumbs Up | jempol ke atas, jari lain menggenggam | Star Burst |\n| Thumbs Down | jempol ke bawah, jari lain menggenggam | Rain Cloud |\n| OK | jempol dan telunjuk membentuk lingkaran, jari lain tegak | Halo |\n| Rock | telunjuk + kelingking tegak, jempol dilipat | Lightning |\n| Pinch | ujung jempol dan telunjuk bersentuhan | Particle Spark |\n| Call Me | jempol + kelingking terbuka | Sound Waves |\n| Three | telunjuk, jari tengah, jari manis tegak | Tri-Beam |\n| Four | empat jari tegak, jempol dilipat | Code Rain |\n| I Love You | jempol + telunjuk + kelingking terbuka | Floating Hearts |\n| Wave | telapak terbuka digerakkan ke kiri-kanan | Ripple |\n| Heart Hands (2 tangan) | ujung telunjuk bertemu di atas, jempol di bawah | Big Heart |\n| Double Palm (2 tangan) | kedua telapak terbuka | Energy Beam |\n\nPanduan Gestur di dalam aplikasi juga mengajarkan hitungan jari 1 sampai 10 dengan dua tangan.",
-      "sortOrder": 30,
-      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
-      "aliases": []
-    },
-    {
-      "category": "convert",
-      "slug": "cara-konversi",
-      "question": "Bagaimana cara mengonversi file?",
-      "answer": "1. Buka [convert.vanillate.id](https://convert.vanillate.id/) lalu pilih file, atau langsung buka halaman konversi yang kamu butuhkan, misalnya JPG ke PNG.\n2. Sistem mengenali format filemu dan hanya menawarkan konversi yang benar-benar bisa dilakukan.\n3. Pilih format tujuan dan atur opsinya bila perlu, misalnya kualitas gambar.\n4. Unduh hasilnya.\n\nSetiap konversi punya halaman sendiri yang menjelaskan kualitas hasil, batasan, dan statusnya, jadi kamu tahu apa yang akan terjadi sebelum mengonversi.",
-      "sortOrder": 30,
-      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
-      "aliases": []
-    },
-    {
-      "category": "akun-data",
-      "slug": "progres-antar-komunitas",
-      "question": "Apakah progres saya terbawa antar komunitas atau perangkat?",
-      "answer": "Untuk **Sambung Kata**, ya. Progres, statistik, dan peringkat bersifat global per akun Discord, jadi capaianmu terbawa ke server mana pun kamu bermain, tanpa biaya tambahan.\n\nAplikasi web (**Science** dan **Play**) menyimpan riwayat, favorit, pengaturan, dan rekor di peramban perangkat yang kamu pakai. Karena tidak memakai akun, data itu tidak berpindah ke perangkat atau peramban lain.",
-      "sortOrder": 30,
-      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
-      "aliases": []
-    },
-    {
-      "category": "umum",
-      "slug": "cara-mulai-memakai",
-      "question": "Bagaimana cara mulai memakai produknya?",
-      "answer": "Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk:\n\n- **Sambung Kata** diundang ke server Discord lewat tombol **Undang ke Server**.\n- **Hand Sign Camera, Science, Convert, dan Play** adalah aplikasi web. Cukup tekan **Buka Aplikasi**. Sebagian bisa dipasang ke layar utama ponsel atau komputer seperti aplikasi biasa.\n\nSetiap halaman produk menjelaskan langkahnya.",
-      "sortOrder": 30,
-      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
-      "aliases": []
-    },
-    {
       "category": "science",
-      "slug": "cakupan-soal",
-      "question": "Soal apa saja yang bisa dikerjakan?",
-      "answer": "- **Aljabar:** pecahan, bentuk akar, penyederhanaan dan faktorisasi, persamaan (linear, kuadrat, polinom, eksponen, logaritma, trigonometri, rasional, akar, nilai mutlak), pertidaksamaan, sistem persamaan, bilangan kompleks, matriks dan vektor, teori bilangan, notasi sigma.\n- **Kalkulus:** turunan (termasuk parsial dan implisit), integral tentu dan tak tentu, limit, deret Taylor, titik ekstrem.\n- **Sains:** 113 rumus fisika, kimia, astronomi, teknik, dan geometri.\n- **Kimia:** massa molar, penyetaraan reaksi, rumus empiris, stoikiometri dan pereaksi pembatas, pH, tabel periodik.\n- **Statistika:** statistik deskriptif, regresi, distribusi binomial, Poisson, dan normal, uji t, interval kepercayaan, chi-kuadrat, ANOVA.\n- **Keuangan:** bunga sederhana dan majemuk, cicilan (anuitas, efektif, flat) lengkap dengan tabel angsuran, NPV, IRR, ROI, BEP, depresiasi.\n- **Ilmu komputer:** konversi basis bilangan, komplemen dua, operasi bitwise, subnet IPv4, Base64, aljabar Boolean.\n- **Satuan:** konversi ratusan satuan, termasuk satuan gabungan dan suhu.",
-      "sortOrder": 30,
+      "slug": "cara-menulis-soal",
+      "question": "Bagaimana cara menulis soal?",
+      "answer": "Tulis seperti di buku dengan keyboard biasa. Contoh:\n\n- `x^2 - 5x + 6 = 0`\n- `turunan x^3 sin(x)`\n- `integral x^2 dari 0 sampai 1`\n\nKolom input menampilkan **pratinjau cara soal dibaca**, jadi kamu bisa memastikan soalnya dipahami dengan benar sebelum dihitung. Di ponsel tersedia tombol simbol matematika. Panduan lengkap cara menulis soal ada di halaman **Panduan** di dalam aplikasi.\n\nUntuk topik tertentu seperti rumus fisika, cicilan, atau statistik, tersedia juga halaman kalkulator khusus dengan kolom isian yang sudah disiapkan.",
+      "sortOrder": 40,
       "updatedAt": "2026-10-11T10:54:43.291873+00:00",
       "aliases": []
     },
@@ -293,30 +302,12 @@
       "aliases": []
     },
     {
-      "category": "sambung-kata",
-      "slug": "boost",
-      "question": "Apa itu Boost dan bagaimana cara mendapatkannya?",
-      "answer": "Boost adalah item spesial yang membantu kamu dalam permainan. Ada dua jenis berdasarkan waktu pemakaiannya.\n\n### Pre-Match Boost\n\n- **Extra Life** (Legendary): tambah 1 nyawa ekstra sebelum game.\n- **Shield** (Epic): proteksi dari 1 kesalahan dalam game.\n- **Extra Time** (Common): tambah +5 detik per giliran.\n\n### In-Game Boost\n\n- **Hint** (Common): tampilkan 1 kata valid sebagai jawaban.\n- **Reroll** (Rare): ganti huruf awalan dengan huruf lain.\n\n### Rarity\n\n| Rarity | Boost | Peluang |\n| --- | --- | --- |\n| Common | Hint, Extra Time | Tertinggi |\n| Rare | Reroll | Sedang |\n| Epic | Shield | Rendah |\n| Legendary | Extra Life | Terendah |\n\n### Cara mendapatkan boost\n\n- `/claim` — boost gratis setiap 24 jam (class tertentu mendapat bonus).\n- `/claim` — reward member Server Support (reset 24 jam).\n- `/claim` — redeem Promo Code jika ada kode aktif.\n- `/shop` — beli boost dengan Coin.\n- **Mystery Box** — boost acak dari shop (500 Coin).\n- **Quest** — reward dari daily & weekly quest.\n\nLihat semua boost yang kamu miliki dengan `/inventory`. Boost otomatis muncul di tombol pre-match setelah kamu klaim atau beli.",
+      "category": "play",
+      "slug": "jumlah-pemain",
+      "question": "Berapa orang yang bisa bermain?",
+      "answer": "Satu sampai empat orang dalam satu kamera.\n\n- **Berdua** adalah pengalaman utamanya: adu tinju, adu pose, adu reaksi, atau kompak bersama di mode couple.\n- **Mode party** mendukung 3–4 pemain.\n- **Mode solo** bisa melawan target, waktu, rintangan, atau skor tertinggi.\n\nSetiap pemain dikenali sebagai Player 1 sampai Player 4 dan tetap pada posisinya selama permainan.",
       "sortOrder": 40,
-      "updatedAt": "2026-08-29T21:44:54.664579+00:00",
-      "aliases": []
-    },
-    {
-      "category": "umum",
-      "slug": "seberapa-sering-diperbarui",
-      "question": "Seberapa sering produknya diperbarui?",
-      "answer": "Rutin. Kami merilis perbaikan bug, penyempurnaan pengalaman, dan fitur baru secara berkala, sering kali setiap pekan.\n\nBagi kami rilis adalah garis start, bukan garis finis, jadi produk terus dirawat setelah diluncurkan.",
-      "sortOrder": 40,
-      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
-      "aliases": []
-    },
-    {
-      "category": "akun-data",
-      "slug": "progres-hilang",
-      "question": "Apakah progres saya bisa hilang?",
-      "answer": "Untuk **Sambung Kata**, tidak. Progres tersimpan otomatis di server dan tidak ada wipe berkala, jadi statistik, Class, dan inventory kamu tetap aman. Satu pengecualian ada di Social Hub: data Streak Harian yang sudah putus dihapus 3 hari kemudian bila tidak dilanjutkan.\n\nUntuk aplikasi web, riwayat dan rekor tersimpan di peramban. Data itu akan hilang bila kamu menghapus data situs, memakai mode penyamaran, atau mengganti perangkat.",
-      "sortOrder": 40,
-      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
+      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
       "aliases": []
     },
     {
@@ -329,21 +320,30 @@
       "aliases": []
     },
     {
-      "category": "science",
-      "slug": "cara-menulis-soal",
-      "question": "Bagaimana cara menulis soal?",
-      "answer": "Tulis seperti di buku dengan keyboard biasa. Contoh:\n\n- `x^2 - 5x + 6 = 0`\n- `turunan x^3 sin(x)`\n- `integral x^2 dari 0 sampai 1`\n\nKolom input menampilkan **pratinjau cara soal dibaca**, jadi kamu bisa memastikan soalnya dipahami dengan benar sebelum dihitung. Di ponsel tersedia tombol simbol matematika. Panduan lengkap cara menulis soal ada di halaman **Panduan** di dalam aplikasi.\n\nUntuk topik tertentu seperti rumus fisika, cicilan, atau statistik, tersedia juga halaman kalkulator khusus dengan kolom isian yang sudah disiapkan.",
+      "category": "sambung-kata",
+      "slug": "boost",
+      "question": "Apa itu Boost dan bagaimana cara mendapatkannya?",
+      "answer": "Boost adalah item spesial yang membantu kamu dalam permainan. Ada dua jenis berdasarkan waktu pemakaiannya.\n\n### Pre-Match Boost\n\n- **Extra Life** (Legendary): tambah 1 nyawa ekstra sebelum game.\n- **Shield** (Epic): proteksi dari 1 kesalahan dalam game.\n- **Extra Time** (Common): tambah +5 detik per giliran.\n\n### In-Game Boost\n\n- **Hint** (Common): tampilkan 1 kata valid sebagai jawaban.\n- **Reroll** (Rare): ganti huruf awalan dengan huruf lain.\n\n### Rarity\n\n| Rarity | Boost | Peluang |\n| --- | --- | --- |\n| Common | Hint, Extra Time | Tertinggi |\n| Rare | Reroll | Sedang |\n| Epic | Shield | Rendah |\n| Legendary | Extra Life | Terendah |\n\n### Cara mendapatkan boost\n\n- `/claim` — boost gratis setiap 24 jam (class tertentu mendapat bonus).\n- `/claim` — reward member Server Support (reset 24 jam).\n- `/claim` — redeem Promo Code jika ada kode aktif.\n- `/shop` — beli boost dengan Coin.\n- **Mystery Box** — boost acak dari shop (500 Coin).\n- **Quest** — reward dari daily & weekly quest.\n\nLihat semua boost yang kamu miliki dengan `/inventory`. Boost otomatis muncul di tombol pre-match setelah kamu klaim atau beli.",
       "sortOrder": 40,
-      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
+      "updatedAt": "2026-08-29T21:44:54.664579+00:00",
       "aliases": []
     },
     {
-      "category": "play",
-      "slug": "jumlah-pemain",
-      "question": "Berapa orang yang bisa bermain?",
-      "answer": "Satu sampai empat orang dalam satu kamera.\n\n- **Berdua** adalah pengalaman utamanya: adu tinju, adu pose, adu reaksi, atau kompak bersama di mode couple.\n- **Mode party** mendukung 3–4 pemain.\n- **Mode solo** bisa melawan target, waktu, rintangan, atau skor tertinggi.\n\nSetiap pemain dikenali sebagai Player 1 sampai Player 4 dan tetap pada posisinya selama permainan.",
+      "category": "akun-data",
+      "slug": "progres-hilang",
+      "question": "Apakah progres saya bisa hilang?",
+      "answer": "Untuk **Sambung Kata**, tidak. Progres tersimpan otomatis di server dan tidak ada wipe berkala, jadi statistik, Class, dan inventory kamu tetap aman. Satu pengecualian ada di Social Hub: data Streak Harian yang sudah putus dihapus 3 hari kemudian bila tidak dilanjutkan.\n\nUntuk aplikasi web, riwayat dan rekor tersimpan di peramban. Data itu akan hilang bila kamu menghapus data situs, memakai mode penyamaran, atau mengganti perangkat.",
       "sortOrder": 40,
-      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
+      "aliases": []
+    },
+    {
+      "category": "umum",
+      "slug": "seberapa-sering-diperbarui",
+      "question": "Seberapa sering produknya diperbarui?",
+      "answer": "Rutin. Kami merilis perbaikan bug, penyempurnaan pengalaman, dan fitur baru secara berkala, sering kali setiap pekan.\n\nBagi kami rilis adalah garis start, bukan garis finis, jadi produk terus dirawat setelah diluncurkan.",
+      "sortOrder": 40,
+      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
       "aliases": []
     },
     {
@@ -353,15 +353,6 @@
       "answer": "- Ruang kosong sekitar **2–3 meter** di depan kamera.\n- Kamera kira-kira **setinggi dada**, dengan cahaya dari depan pemain, bukan dari belakang.\n- Untuk game yang memakai kaki, seluruh tubuh perlu terlihat di kamera.\n- Kamera laptop, webcam, tablet, atau ponsel bisa dipakai. Pastikan perangkat diletakkan stabil.\n\nSaat pemeriksaan kamera, aplikasi memberi tahu bila posisi atau pencahayaan kurang pas.",
       "sortOrder": 50,
       "updatedAt": "2026-10-11T10:55:45.482321+00:00",
-      "aliases": []
-    },
-    {
-      "category": "convert",
-      "slug": "alat-file",
-      "question": "Alat apa saja yang tersedia selain konversi?",
-      "answer": "Ada 16 alat yang berjalan di peramban:\n\n- **JSON & XML:** format (merapikan) dan minify.\n- **Encoding:** Base64 encode/decode dan URL encode/decode.\n- **Gambar:** kompres, ubah ukuran, putar, dan gabungkan gambar menjadi PDF.\n- **Subtitle:** geser waktu subtitle.\n- **Arsip:** buat ZIP dan ekstrak arsip.\n- **Inspektor file:** kenali file dari isinya: format, tipe MIME, ukuran, dan checksum SHA-256.",
-      "sortOrder": 50,
-      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
       "aliases": []
     },
     {
@@ -392,12 +383,21 @@
       "aliases": []
     },
     {
-      "category": "hand-sign-camera",
-      "slug": "tanpa-kamera-mode-demo",
-      "question": "Bagaimana kalau tidak punya kamera?",
-      "answer": "Pakai **mode demo**. Tekan tombol Demo di aplikasi, dan tangan animasi akan memeragakan gestur. Gerakannya dijalankan lewat pengenal gestur dan efek yang sama dengan mode kamera, jadi kamu tetap bisa melihat semua efeknya.",
+      "category": "convert",
+      "slug": "alat-file",
+      "question": "Alat apa saja yang tersedia selain konversi?",
+      "answer": "Ada 16 alat yang berjalan di peramban:\n\n- **JSON & XML:** format (merapikan) dan minify.\n- **Encoding:** Base64 encode/decode dan URL encode/decode.\n- **Gambar:** kompres, ubah ukuran, putar, dan gabungkan gambar menjadi PDF.\n- **Subtitle:** geser waktu subtitle.\n- **Arsip:** buat ZIP dan ekstrak arsip.\n- **Inspektor file:** kenali file dari isinya: format, tipe MIME, ukuran, dan checksum SHA-256.",
+      "sortOrder": 50,
+      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "aliases": []
+    },
+    {
+      "category": "science",
+      "slug": "tab-hasil-dan-tingkat-penjelasan",
+      "question": "Apa isi tab hasil dan tingkat penjelasannya?",
+      "answer": "Hasil dibagi ke beberapa tab: **Jawaban**, **Langkah**, **Penjelasan**, **Verifikasi**, **Grafik**, dan **Metode Lain**.\n\nPenjelasan bisa diatur ke lima tingkat sesuai kebutuhanmu:\n\n| Tingkat | Cocok untuk |\n| --- | --- |\n| Dasar | Bahasa sederhana untuk pemula. |\n| Pelajar | Penjelasan konseptual dan rumus. |\n| Universitas | Notasi dan terminologi akademik. |\n| Advanced | Langkah formal beserta asumsinya. |\n| Expert | Teorema, syarat keberlakuan, domain, dan verifikasi tiap langkah. |",
       "sortOrder": 60,
-      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
+      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
       "aliases": []
     },
     {
@@ -419,21 +419,21 @@
       "aliases": []
     },
     {
-      "category": "science",
-      "slug": "tab-hasil-dan-tingkat-penjelasan",
-      "question": "Apa isi tab hasil dan tingkat penjelasannya?",
-      "answer": "Hasil dibagi ke beberapa tab: **Jawaban**, **Langkah**, **Penjelasan**, **Verifikasi**, **Grafik**, dan **Metode Lain**.\n\nPenjelasan bisa diatur ke lima tingkat sesuai kebutuhanmu:\n\n| Tingkat | Cocok untuk |\n| --- | --- |\n| Dasar | Bahasa sederhana untuk pemula. |\n| Pelajar | Penjelasan konseptual dan rumus. |\n| Universitas | Notasi dan terminologi akademik. |\n| Advanced | Langkah formal beserta asumsinya. |\n| Expert | Teorema, syarat keberlakuan, domain, dan verifikasi tiap langkah. |",
-      "sortOrder": 60,
-      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
-      "aliases": []
-    },
-    {
       "category": "play",
       "slug": "privasi-kamera",
       "question": "Apakah video kamera saya diunggah?",
       "answer": "Tidak. Pelacakan tubuh berjalan di perangkatmu, dan video kamera tidak pernah dikirim ke server.\n\n- **Klip ulangan** mati secara bawaan. Bila dinyalakan, beberapa detik terakhir pertandingan direkam di memori dengan tanda REC, dan langsung dibuang kecuali kamu sendiri mengunduh atau membagikannya.\n- **Foto di kartu hasil** bersifat opsional, dibuat di perangkat, dan hanya keluar bila kamu membagikannya.\n- **Pengaturan dan statistik** tersimpan di peramban, dan bisa direset dari Pengaturan.",
       "sortOrder": 60,
       "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "aliases": []
+    },
+    {
+      "category": "hand-sign-camera",
+      "slug": "tanpa-kamera-mode-demo",
+      "question": "Bagaimana kalau tidak punya kamera?",
+      "answer": "Pakai **mode demo**. Tekan tombol Demo di aplikasi, dan tangan animasi akan memeragakan gestur. Gerakannya dijalankan lewat pengenal gestur dan efek yang sama dengan mode kamera, jadi kamu tetap bisa melihat semua efeknya.",
+      "sortOrder": 60,
+      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
       "aliases": []
     },
     {
@@ -482,24 +482,6 @@
       "aliases": []
     },
     {
-      "category": "science",
-      "slug": "rumus-sains-dan-satuan",
-      "question": "Bagaimana rumus sains dan satuan dihitung?",
-      "answer": "Tersedia 113 rumus fisika, kimia, astronomi, teknik, dan geometri. Setiap rumus bisa diselesaikan untuk **variabel mana pun**: isi nilai yang kamu ketahui, dan sistem mencari yang belum diketahui.\n\n- Nilai boleh ditulis dengan satuan, dan sistem mengonversinya otomatis.\n- **Analisis dimensi** memastikan satuan cocok. Satuan yang tidak sepadan, misalnya menjumlahkan meter dengan detik, akan ditolak.\n- Hasil memperhatikan **angka penting**.",
-      "sortOrder": 80,
-      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
-      "aliases": []
-    },
-    {
-      "category": "play",
-      "slug": "tingkat-kesulitan",
-      "question": "Apakah ada tingkat kesulitan?",
-      "answer": "Ada. Setiap game punya tingkat **Mudah**, **Normal**, dan **Sulit**, yang mengatur kecepatan, waktu reaksi, dan kepintaran lawan komputer. Rekor pribadi disimpan terpisah untuk setiap tingkat.\n\nBesar gerakan juga bisa diatur di Pengaturan, dari gerakan ringan sampai atletis, supaya nyaman untuk anak-anak, orang tua, maupun yang ingin berkeringat.",
-      "sortOrder": 80,
-      "updatedAt": "2026-10-11T10:56:36.832881+00:00",
-      "aliases": []
-    },
-    {
       "category": "convert",
       "slug": "status-konversi",
       "question": "Apa arti label status di setiap konversi?",
@@ -518,6 +500,15 @@
       "aliases": []
     },
     {
+      "category": "play",
+      "slug": "tingkat-kesulitan",
+      "question": "Apakah ada tingkat kesulitan?",
+      "answer": "Ada. Setiap game punya tingkat **Mudah**, **Normal**, dan **Sulit**, yang mengatur kecepatan, waktu reaksi, dan kepintaran lawan komputer. Rekor pribadi disimpan terpisah untuk setiap tingkat.\n\nBesar gerakan juga bisa diatur di Pengaturan, dari gerakan ringan sampai atletis, supaya nyaman untuk anak-anak, orang tua, maupun yang ingin berkeringat.",
+      "sortOrder": 80,
+      "updatedAt": "2026-10-11T10:56:36.832881+00:00",
+      "aliases": []
+    },
+    {
       "category": "sambung-kata",
       "slug": "shop",
       "question": "Apa saja yang dijual di Shop dan berapa harganya?",
@@ -527,12 +518,12 @@
       "aliases": []
     },
     {
-      "category": "play",
-      "slug": "koleksi-pesta",
-      "question": "Apa itu koleksi pesta?",
-      "answer": "Koleksi pesta merangkai beberapa game secara berturut-turut dengan **satu papan skor**. Cocok untuk acara bersama teman atau keluarga. Pilihannya:\n\n- **Party Night**\n- **Date Night**\n- **Duo Showdown**\n- **Family Fun**\n- **Sports Day**",
-      "sortOrder": 90,
-      "updatedAt": "2026-10-11T10:56:36.832881+00:00",
+      "category": "science",
+      "slug": "rumus-sains-dan-satuan",
+      "question": "Bagaimana rumus sains dan satuan dihitung?",
+      "answer": "Tersedia 113 rumus fisika, kimia, astronomi, teknik, dan geometri. Setiap rumus bisa diselesaikan untuk **variabel mana pun**: isi nilai yang kamu ketahui, dan sistem mencari yang belum diketahui.\n\n- Nilai boleh ditulis dengan satuan, dan sistem mengonversinya otomatis.\n- **Analisis dimensi** memastikan satuan cocok. Satuan yang tidak sepadan, misalnya menjumlahkan meter dengan detik, akan ditolak.\n- Hasil memperhatikan **angka penting**.",
+      "sortOrder": 80,
+      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
       "aliases": []
     },
     {
@@ -545,21 +536,21 @@
       "aliases": []
     },
     {
-      "category": "sambung-kata",
-      "slug": "promo-code",
-      "question": "Bagaimana cara menukarkan Promo Code?",
-      "answer": "Jalankan `/claim`, lalu tekan tombol **Redeem Promo Code**.\n\n- Kode promo dibagikan lewat pengumuman resmi.\n- Setiap kode hanya bisa diklaim satu kali per pemain.\n- Reward bervariasi: Coin, EXP, atau Boost.",
-      "sortOrder": 90,
-      "updatedAt": "2026-08-29T21:45:31.931064+00:00",
-      "aliases": []
-    },
-    {
       "category": "hand-sign-camera",
       "slug": "perangkat-dan-peramban",
       "question": "Perangkat dan peramban apa yang didukung?",
       "answer": "Aplikasi berjalan di komputer maupun ponsel dengan peramban modern:\n\n- Chrome atau Edge versi 96 ke atas (direkomendasikan)\n- Firefox 120 ke atas\n- Safari 16 ke atas, termasuk iPhone dan iPad dengan iOS 16 ke atas\n- Chrome di Android 8 ke atas\n\nDi komputer dengan layar lebar dan mouse, aplikasi menampilkan **tampilan ala code editor**: kode sumber aplikasi yang bergerak, koordinat titik tangan secara live, dan log pelacakan dalam satu layar. Di ponsel, tampilannya disederhanakan agar fokus ke kamera.",
       "sortOrder": 90,
       "updatedAt": "2026-10-11T10:54:14.349164+00:00",
+      "aliases": []
+    },
+    {
+      "category": "sambung-kata",
+      "slug": "promo-code",
+      "question": "Bagaimana cara menukarkan Promo Code?",
+      "answer": "Jalankan `/claim`, lalu tekan tombol **Redeem Promo Code**.\n\n- Kode promo dibagikan lewat pengumuman resmi.\n- Setiap kode hanya bisa diklaim satu kali per pemain.\n- Reward bervariasi: Coin, EXP, atau Boost.",
+      "sortOrder": 90,
+      "updatedAt": "2026-08-29T21:45:31.931064+00:00",
       "aliases": []
     },
     {
@@ -572,12 +563,12 @@
       "aliases": []
     },
     {
-      "category": "convert",
-      "slug": "bahasa",
-      "question": "Bahasa apa saja yang tersedia?",
-      "answer": "Vanillate Convert tersedia dalam **Bahasa Indonesia** dan **Bahasa Inggris**. Setiap halaman punya versi kedua bahasa, misalnya `/id/convert/jpg-ke-png` dan `/en/convert/jpg-to-png`.",
-      "sortOrder": 100,
-      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "category": "play",
+      "slug": "koleksi-pesta",
+      "question": "Apa itu koleksi pesta?",
+      "answer": "Koleksi pesta merangkai beberapa game secara berturut-turut dengan **satu papan skor**. Cocok untuk acara bersama teman atau keluarga. Pilihannya:\n\n- **Party Night**\n- **Date Night**\n- **Duo Showdown**\n- **Family Fun**\n- **Sports Day**",
+      "sortOrder": 90,
+      "updatedAt": "2026-10-11T10:56:36.832881+00:00",
       "aliases": []
     },
     {
@@ -590,12 +581,30 @@
       "aliases": []
     },
     {
+      "category": "hand-sign-camera",
+      "slug": "gestur-tidak-terdeteksi",
+      "question": "Gestur saya tidak terdeteksi, apa yang harus dilakukan?",
+      "answer": "Coba langkah berikut:\n\n1. Pastikan **seluruh tangan** terlihat di kamera, termasuk pergelangan.\n2. Cari tempat yang cukup terang, dengan cahaya dari depan.\n3. Bandingkan bentuk tanganmu dengan **Panduan Gestur** di aplikasi.\n4. Perhatikan gestur yang mirip:\n   - **Rock** butuh jempol dilipat. Bila jempol terbuka, terbacanya **I Love You**.\n   - **Four** butuh jempol dilipat. Bila jempol terbuka, terbacanya **Open Palm**.\n5. Tahan gestur sebentar. Aplikasi menstabilkan hasil agar efek tidak berkedip, jadi gestur yang terlalu cepat bisa terlewat.",
+      "sortOrder": 100,
+      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
+      "aliases": []
+    },
+    {
       "category": "science",
       "slug": "riwayat-favorit-dan-berbagi",
       "question": "Apakah riwayat soal tersimpan, dan bisakah hasilnya dibagikan?",
       "answer": "Riwayat dan favorit tersimpan otomatis **di perangkatmu sendiri** dan tidak dikirim ke server. Karena tidak ada akun, riwayat tidak berpindah ke perangkat lain, dan akan hilang bila data situs di peramban dihapus.\n\nUntuk berbagi atau menyimpan hasil, kamu bisa:\n\n- menyalin **tautan berbagi** soal,\n- mengekspor penyelesaian ke **Markdown** atau **LaTeX**,\n- mencetak halaman hasil.",
       "sortOrder": 100,
       "updatedAt": "2026-10-11T10:54:43.291873+00:00",
+      "aliases": []
+    },
+    {
+      "category": "convert",
+      "slug": "bahasa",
+      "question": "Bahasa apa saja yang tersedia?",
+      "answer": "Vanillate Convert tersedia dalam **Bahasa Indonesia** dan **Bahasa Inggris**. Setiap halaman punya versi kedua bahasa, misalnya `/id/convert/jpg-ke-png` dan `/en/convert/jpg-to-png`.",
+      "sortOrder": 100,
+      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
       "aliases": []
     },
     {
@@ -609,11 +618,29 @@
     },
     {
       "category": "hand-sign-camera",
-      "slug": "gestur-tidak-terdeteksi",
-      "question": "Gestur saya tidak terdeteksi, apa yang harus dilakukan?",
-      "answer": "Coba langkah berikut:\n\n1. Pastikan **seluruh tangan** terlihat di kamera, termasuk pergelangan.\n2. Cari tempat yang cukup terang, dengan cahaya dari depan.\n3. Bandingkan bentuk tanganmu dengan **Panduan Gestur** di aplikasi.\n4. Perhatikan gestur yang mirip:\n   - **Rock** butuh jempol dilipat. Bila jempol terbuka, terbacanya **I Love You**.\n   - **Four** butuh jempol dilipat. Bila jempol terbuka, terbacanya **Open Palm**.\n5. Tahan gestur sebentar. Aplikasi menstabilkan hasil agar efek tidak berkedip, jadi gestur yang terlalu cepat bisa terlewat.",
-      "sortOrder": 100,
+      "slug": "kamera-tidak-muncul",
+      "question": "Kamera tidak muncul atau aksesnya ditolak, bagaimana?",
+      "answer": "1. Izinkan akses kamera untuk situs ini di pengaturan peramban, lalu muat ulang halaman.\n2. Tutup aplikasi lain yang sedang memakai kamera, seperti aplikasi rapat video.\n3. Pastikan kamu membuka alamat resmi yang diawali `https://`. Peramban tidak mengizinkan kamera di situs tanpa HTTPS.\n4. Di iPhone atau iPad, pastikan memakai iOS 16 ke atas.\n\nMasih bermasalah? Coba dulu lewat mode demo, lalu laporkan kendalanya lewat [Support Center](/support).",
+      "sortOrder": 110,
       "updatedAt": "2026-10-11T10:54:14.349164+00:00",
+      "aliases": []
+    },
+    {
+      "category": "convert",
+      "slug": "konversi-gagal",
+      "question": "Konversi gagal atau hasilnya tidak sesuai, apa yang harus dilakukan?",
+      "answer": "1. Pastikan file tidak rusak, misalnya dengan membukanya di aplikasi biasa.\n2. Periksa ukuran file terhadap batas di atas.\n3. Cek status konversinya. Konversi **Terbatas** dan **Eksperimental** memang punya batasan yang dijelaskan di halamannya.\n4. Pakai peramban modern versi terbaru, seperti Chrome, Edge, Firefox, atau Safari.\n5. Untuk file besar, tutup tab lain agar memori perangkat lebih lega.\n\nMasih gagal? Laporkan lewat [Support Center](/support) dengan menyebutkan format asal, format tujuan, dan ukuran filenya.",
+      "sortOrder": 110,
+      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "aliases": []
+    },
+    {
+      "category": "sambung-kata",
+      "slug": "golden-key",
+      "question": "Bagaimana cara mendapatkan Golden Key?",
+      "answer": "Ada tiga cara mendapatkan Golden Key:\n\n1. **Shop** — beli langsung seharga 350 Coin lewat `/shop`.\n2. **Weekly quest Kilat Kata** — 20 jawaban dalam ≤5 detik memberi kunci gratis.\n3. **Traveling Merchant** — sering menjualnya dengan harga diskon (250 Coin).\n\nKunci habis dipakai setiap kali masuk Dungeon, dan kamu maksimal memegang 1 kunci.",
+      "sortOrder": 110,
+      "updatedAt": "2026-08-29T21:45:31.931064+00:00",
       "aliases": []
     },
     {
@@ -635,29 +662,11 @@
       "aliases": []
     },
     {
-      "category": "convert",
-      "slug": "konversi-gagal",
-      "question": "Konversi gagal atau hasilnya tidak sesuai, apa yang harus dilakukan?",
-      "answer": "1. Pastikan file tidak rusak, misalnya dengan membukanya di aplikasi biasa.\n2. Periksa ukuran file terhadap batas di atas.\n3. Cek status konversinya. Konversi **Terbatas** dan **Eksperimental** memang punya batasan yang dijelaskan di halamannya.\n4. Pakai peramban modern versi terbaru, seperti Chrome, Edge, Firefox, atau Safari.\n5. Untuk file besar, tutup tab lain agar memori perangkat lebih lega.\n\nMasih gagal? Laporkan lewat [Support Center](/support) dengan menyebutkan format asal, format tujuan, dan ukuran filenya.",
-      "sortOrder": 110,
-      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
-      "aliases": []
-    },
-    {
-      "category": "hand-sign-camera",
-      "slug": "kamera-tidak-muncul",
-      "question": "Kamera tidak muncul atau aksesnya ditolak, bagaimana?",
-      "answer": "1. Izinkan akses kamera untuk situs ini di pengaturan peramban, lalu muat ulang halaman.\n2. Tutup aplikasi lain yang sedang memakai kamera, seperti aplikasi rapat video.\n3. Pastikan kamu membuka alamat resmi yang diawali `https://`. Peramban tidak mengizinkan kamera di situs tanpa HTTPS.\n4. Di iPhone atau iPad, pastikan memakai iOS 16 ke atas.\n\nMasih bermasalah? Coba dulu lewat mode demo, lalu laporkan kendalanya lewat [Support Center](/support).",
-      "sortOrder": 110,
-      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
-      "aliases": []
-    },
-    {
       "category": "sambung-kata",
-      "slug": "golden-key",
-      "question": "Bagaimana cara mendapatkan Golden Key?",
-      "answer": "Ada tiga cara mendapatkan Golden Key:\n\n1. **Shop** — beli langsung seharga 350 Coin lewat `/shop`.\n2. **Weekly quest Kilat Kata** — 20 jawaban dalam ≤5 detik memberi kunci gratis.\n3. **Traveling Merchant** — sering menjualnya dengan harga diskon (250 Coin).\n\nKunci habis dipakai setiap kali masuk Dungeon, dan kamu maksimal memegang 1 kunci.",
-      "sortOrder": 110,
+      "slug": "event-spesial",
+      "question": "Event spesial apa saja yang bisa muncul saat main PvP?",
+      "answer": "Di ronde 20–30 mode PvP, ada peluang salah satu dari **4 event spesial** muncul secara acak dan mengubah jalannya pertandingan. Saat intro event, timer dibekukan — manfaatkan untuk membaca lore dan menyusun strategi.\n\n| Event | Peluang | Kesulitan | Reward sukses | Jika gagal |\n| --- | --- | --- | --- | --- |\n| AI Challenger | Sering | Sedang | ×2 coin/exp | Tidak ada |\n| Lost Signal | Cukup | Mudah–Sedang | ×2 coin/exp | Tidak ada |\n| Traveling Merchant | Sering | Mudah | Item / multiplier | Zonk / rugi |\n| Penjajah (Invader) | Jarang–Cukup | Sulit | ×2 coin/exp | ×0 (hard-fail) |\n\nUntuk AI Challenger dan Lost Signal, kata panjang atau berakhiran langka mempercepat progres. Untuk Penjajah, tetap tenang dan fokus menjawab Challenge dengan benar.\n\nDetail tiap event ada di FAQ terpisah pada kategori ini.",
+      "sortOrder": 120,
       "updatedAt": "2026-08-29T21:45:31.931064+00:00",
       "aliases": []
     },
@@ -668,15 +677,6 @@
       "answer": "Game gerak melibatkan lompatan, pukulan, dan tendangan ke udara, jadi:\n\n- Singkirkan barang mudah pecah dan pastikan tidak ada orang atau hewan di area main.\n- Beri jarak yang cukup antar pemain saat bermain berdua.\n- Pakai alas kaki yang tidak licin, dan istirahat bila lelah.\n\nPermainan berhenti sejenak secara otomatis bila pemain keluar dari kamera. Pengaturan gerakan yang lebih ringan dan opsi kurangi animasi juga tersedia.",
       "sortOrder": 120,
       "updatedAt": "2026-10-11T10:56:36.832881+00:00",
-      "aliases": []
-    },
-    {
-      "category": "sambung-kata",
-      "slug": "event-spesial",
-      "question": "Event spesial apa saja yang bisa muncul saat main PvP?",
-      "answer": "Di ronde 20–30 mode PvP, ada peluang salah satu dari **4 event spesial** muncul secara acak dan mengubah jalannya pertandingan. Saat intro event, timer dibekukan — manfaatkan untuk membaca lore dan menyusun strategi.\n\n| Event | Peluang | Kesulitan | Reward sukses | Jika gagal |\n| --- | --- | --- | --- | --- |\n| AI Challenger | Sering | Sedang | ×2 coin/exp | Tidak ada |\n| Lost Signal | Cukup | Mudah–Sedang | ×2 coin/exp | Tidak ada |\n| Traveling Merchant | Sering | Mudah | Item / multiplier | Zonk / rugi |\n| Penjajah (Invader) | Jarang–Cukup | Sulit | ×2 coin/exp | ×0 (hard-fail) |\n\nUntuk AI Challenger dan Lost Signal, kata panjang atau berakhiran langka mempercepat progres. Untuk Penjajah, tetap tenang dan fokus menjawab Challenge dengan benar.\n\nDetail tiap event ada di FAQ terpisah pada kategori ini.",
-      "sortOrder": 120,
-      "updatedAt": "2026-08-29T21:45:31.931064+00:00",
       "aliases": []
     },
     {
@@ -755,9 +755,9 @@
       "category": "sambung-kata",
       "slug": "daftar-command",
       "question": "Apa saja command yang tersedia?",
-      "answer": "### Bermain\n\n- `/sambungkata` — buka dashboard untuk semua mode: PvP, PvB (Battle Skill/Klasik), Player vs Server, dan Dungeon.\n- `/game` — buka dashboard game sampingan: Werewolf, Pengacara, UNO, dan Tebak Lagu.\n- `/sosial` — buka Social Hub server: Counting dan Streak Harian.\n\n### Progress & info\n\n- `/stats` — statistik lengkap dan Player ID.\n- `/leaderboard` — papan peringkat 10 pemain teratas.\n- `/class` — pilih class dan beli talent.\n- `/quest` — dashboard quest harian & mingguan.\n- `/kamus [huruf]` — lihat daftar kata di kamus berdasarkan 1–3 huruf awal.\n\n### Ekonomi\n\n- `/claim` — klaim boost harian, server reward, dan promo.\n- `/shop` — beli boost dan Golden Key.\n- `/inventory` — lihat boost yang kamu miliki.\n\n### Bantuan\n\n- `/tutorial` — buka Tutorial Pemain Baru di thread pribadi.\n- `/help` — panduan lengkap di dalam Discord.\n- `/support` — buka Pusat Bantuan: FAQ, bantuan cepat, lalu hubungi tim support.\n- `/masukan` — kirim saran atau laporan bug.\n\n### Khusus admin server\n\n- `/pengaturan` — atur channel khusus tiap game dan channel fitur sosial. Butuh izin Manage Server.",
+      "answer": "### Bermain\n\n- `/sambungkata` — buka dashboard untuk semua mode: PvP, PvB (Battle Skill/Klasik), Player vs Server, dan Dungeon.\n- `/game` — buka dashboard game sampingan: Werewolf, Pengacara, UNO, dan Tebak Lagu.\n- `/sosial` — buka Social Hub server: Counting dan Streak Harian.\n\n### Progress & info\n\n- `/stats` — statistik lengkap dan Player ID.\n- `/leaderboard` — papan peringkat 10 pemain teratas.\n- `/class` — pilih class dan beli talent.\n- `/quest` — dashboard quest harian & mingguan.\n- `/kamus [huruf]` — lihat daftar kata di kamus berdasarkan 1–3 huruf awal.\n\n### Ekonomi\n\n- `/claim` — klaim boost harian, server reward, dan promo.\n- `/shop` — beli boost dan Golden Key.\n- `/inventory` — lihat boost yang kamu miliki.\n\n### Bantuan\n\n- `/tutorial` — buka Tutorial Pemain Baru di thread pribadi.\n- `/help` — panduan lengkap di dalam Discord. Di bawahnya ada tombol **🛟 Pusat Bantuan** (FAQ, Tanya Asisten, dan hubungi tim support) serta **📬 Kirim Masukan** (saran atau laporan bug).\n\n### Khusus admin server\n\n- `/pengaturan` — atur channel khusus tiap game dan channel fitur sosial. Butuh izin Manage Server.",
       "sortOrder": 180,
-      "updatedAt": "2026-10-11T10:52:35.905926+00:00",
+      "updatedAt": "2026-10-22T03:02:32.725748+00:00",
       "aliases": []
     },
     {
