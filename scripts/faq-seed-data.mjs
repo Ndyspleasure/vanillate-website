@@ -498,8 +498,7 @@ Buka dashboard game sampingan dengan \`/game\`, pilih game, lalu lobby dibuka di
 
 ### Lainnya
 
-- \`/help\` — panduan lengkap di dalam Discord.
-- \`/masukan\` — kirim saran atau laporan bug.`,
+- \`/help\` — panduan lengkap di dalam Discord. Di bawahnya ada tombol **🛟 Pusat Bantuan** (FAQ, Tanya Asisten, dan hubungi tim support) serta **📬 Kirim Masukan** (saran atau laporan bug).`,
   },
   {
     category: 'sambung-kata',
@@ -618,7 +617,7 @@ Kalau masih bermasalah, laporkan lewat [Support Center](/support) kami, dan oran
     sortOrder: 20,
     answer: `Kirim lewat [Support Center](/support) di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai.
 
-Khusus Sambung Kata, kamu juga bisa memakai command \`/masukan\` langsung di dalam produknya, lalu pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.
+Khusus Sambung Kata, ketik \`/help\` di Discord lalu tekan tombol **📬 Kirim Masukan**, kemudian pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.
 
 Kami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.`,
   },

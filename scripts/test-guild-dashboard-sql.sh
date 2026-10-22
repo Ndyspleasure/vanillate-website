@@ -12,7 +12,8 @@
 #  Developer: developer-panel-prereq.sql → developer-panel-schema.sql →
 #  developer-panel-settings.sql → developer-panel.test.sql, lalu retensi log:
 #  bot-logs-retention-prereq.sql → bot-logs-retention.sql (dua kali) →
-#  bot-logs-retention.test.sql.
+#  bot-logs-retention.test.sql, lalu FAQ Bot: bot-faqs.sql (dua kali) →
+#  bot-faqs.test.sql (memakai fixture & helper suite Panel Developer).
 # ════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -76,3 +77,10 @@ for f in supabase/tests/bot-logs-retention-prereq.sql supabase/bot-logs-retentio
 done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-logs-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL retensi log bot lulus."
+
+# Suite keempat: FAQ Bot (bot_faqs). Migrasi dua kali → isi awal tidak berlipat.
+for f in supabase/bot-faqs.sql supabase/bot-faqs.sql; do
+  PGOPTIONS="-c client_min_messages=warning" run "${PSQL[@]}" -f "$ROOT/$f" >/dev/null
+done
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-faqs.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL FAQ Bot lulus."
