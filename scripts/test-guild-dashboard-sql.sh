@@ -12,8 +12,10 @@
 #  Developer: developer-panel-prereq.sql → developer-panel-schema.sql →
 #  developer-panel-settings.sql → developer-panel.test.sql, lalu retensi log:
 #  bot-logs-retention-prereq.sql → bot-logs-retention.sql (dua kali) →
-#  bot-logs-retention.test.sql, lalu Share Server: share-server.test.sql
-#  (menjalankan supabase/share-server.sql dua kali).
+#  bot-logs-retention.test.sql, lalu FAQ Bot: bot-faqs.sql (dua kali) →
+#  bot-faqs.test.sql (memakai fixture & helper suite Panel Developer).
+#  Terakhir Share Server: share-server.test.sql (menjalankan
+#  supabase/share-server.sql dua kali).
 # ════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -78,7 +80,14 @@ done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-logs-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL retensi log bot lulus."
 
-# Suite keempat: 📣 Share Server (memakai skema & fixture guild dashboard di
+# Suite keempat: FAQ Bot (bot_faqs). Migrasi dua kali → isi awal tidak berlipat.
+for f in supabase/bot-faqs.sql supabase/bot-faqs.sql; do
+  PGOPTIONS="-c client_min_messages=warning" run "${PSQL[@]}" -f "$ROOT/$f" >/dev/null
+done
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-faqs.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL FAQ Bot lulus."
+
+# Suite kelima: 📣 Share Server (memakai skema & fixture guild dashboard di
 # atas; tesnya menjalankan supabase/share-server.sql dua kali → idempoten).
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/share-server.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL Share Server lulus."
