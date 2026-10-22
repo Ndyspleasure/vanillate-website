@@ -20,7 +20,8 @@ import { parseEvent, verifyLegacy, verifySignature } from './logic.ts';
 
 const SUPABASE_URL = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/+$/, '');
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const SECRET = Deno.env.get('TOPGG_WEBHOOK_SECRET') ?? '';
+// Spasi / baris baru / tanda kutip yang ikut tertempel saat mengisi secret dibuang.
+const SECRET = (Deno.env.get('TOPGG_WEBHOOK_SECRET') ?? '').trim().replace(/^["']+|["']+$/g, '').trim();
 const MAX_BODY = 64 * 1024;
 
 const json = (status: number, body: Record<string, unknown>) =>
