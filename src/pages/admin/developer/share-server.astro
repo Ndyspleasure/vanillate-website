@@ -1,0 +1,229 @@
+---
+// Panel Developer — 📣 Share Server (broadcast promosi antar server, Sosial
+// Hub Sambung Kata). Data dari snapshot `share` (src/social/share/monitor.js
+// di repo bot). Aksi lewat bot_commands:
+//   share.detail            detail satu server
+//   share.lift              🔓 Cabut Terhambat (setelah support menangani owner server)
+//   share.hold              tahan server (mis. dari laporan 🚩)
+//   share.report            tangani laporan iklan: abaikan / tahan server asal
+//   sys.share.rules         ubah angka aturan (khusus owner)
+// Semua laporan iklan ditangani di sini — tidak ada moderasi di Discord.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Share Server" active="dev-share">
+  <AdminPageHeader
+    eyebrow="Panel Developer"
+    title="Share Server"
+    description="Broadcast promosi antar server: statistik jaringan, antrean, laporan iklan, status terhambat, dan aturan."
+  />
+  <div class="px-6 lg:px-10 py-8 space-y-10">
+    <p id="shr-fresh"></p>
+    <div id="shr-summary"></div>
+    <div id="shr-reports"></div>
+    <div id="shr-detail"></div>
+    <div id="shr-guilds"></div>
+    <div id="shr-broadcasts"></div>
+    <div id="shr-rules"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
+  import { fmtJam, freshness, notice, pill, section, stat, table, KELAS, formCard, pasangAksi, type Tone } from '@/lib/dev-panel/ui';
+
+  const BLOCK: Record<string, string> = {
+    off: 'Nonaktif', held: 'Terhambat', bot_absent: 'Bot keluar', promo_channel: 'Channel penerima bermasalah',
+    vote_channel: 'Channel vote bermasalah', profile: 'Profil belum lengkap', invite: 'Link undangan belum valid',
+  };
+  const REASON: Record<string, string> = {
+    no_server: 'tanpa server tujuan', share_off: 'Share Server mati', bot_absent: 'bot keluar', not_member: 'bukan member',
+    account_too_new: 'akun terlalu baru', member_too_new: 'baru bergabung', lainnya: 'lainnya',
+  };
+
+  let snap: any = null;
+  let role = 'viewer';
+  const bolehEdit = () => role === 'owner' || role === 'admin';
+
+  document.addEventListener('admin:ready', (e) => {
+    role = (e as CustomEvent).detail?.role ?? 'viewer';
+    void muat();
+    setInterval(() => void muat(), 60_000);
+  });
+
+  async function muat() {
+    const s = await bacaSnapshot('share');
+    document.getElementById('shr-fresh')!.innerHTML = freshness(s.updatedAt);
+    if (!s.data) { document.getElementById('shr-summary')!.innerHTML = stateBlock('error', s.error ?? 'Belum ada data dari bot.'); return; }
+    snap = s.data;
+    renderRingkasan();
+    renderLaporan();
+    renderServer();
+    renderBroadcast();
+    renderAturan();
+  }
+
+  function renderRingkasan() {
+    const sm = snap.summary ?? {};
+    const v24 = snap.votes24h ?? {};
+    const v7 = snap.votes7d ?? {};
+    const d24 = snap.deliveries24h ?? {};
+    const wh = snap.webhook ?? {};
+    const alasan = Object.entries(v7.byReason ?? {}).map(([k, n]) => `${esc(REASON[k] ?? k)}: ${fmtAngka(n as number)}`).join(' · ') || '—';
+    document.getElementById('shr-summary')!.innerHTML = section('Ringkasan', `
+      ${snap.feature ? '' : notice('warn', 'Share Server MATI di bot (SHARE_SERVER_ENABLED bukan 1). Admin server bisa menyiapkan pengaturan, tetapi aktivasi, vote, dan broadcast tidak berjalan.')}
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        ${stat('Server terdaftar', fmtAngka(sm.configured))}
+        ${stat('Aktif', fmtAngka(sm.active), `${fmtAngka(sm.receiving)} menerima iklan`)}
+        ${stat('Terhambat', fmtAngka(sm.held))}
+        ${stat('Antrean', fmtAngka(sm.queued), 'siap tayang')}
+        ${stat('Pelanggaran 7 hari', fmtAngka(snap.violations7d), 'iklan terhapus < 24 jam')}
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Vote dihitung 24 jam', fmtAngka(v24.counted), `${fmtAngka(v24.notCounted)} tidak dihitung`)}
+        ${stat('Vote dihitung 7 hari', fmtAngka(v7.counted), alasan)}
+        ${stat('Iklan terkirim 24 jam', fmtAngka(d24.SENT ?? 0), `${fmtAngka((d24.FAILED ?? 0) + (d24.SKIPPED ?? 0) + (d24.BLOCKED ?? 0))} gagal/dilewati`)}
+        ${stat('Webhook Top.gg', v7.lastReceivedAt ? fmtJam(v7.lastReceivedAt) : 'belum ada vote', wh.apiEnabled ? `API cadangan aktif${wh.lastReconcileError ? ` — error: ${esc(wh.lastReconcileError)}` : ''}` : 'API cadangan mati (TOPGG_TOKEN kosong)')}
+      </div>
+      ${(snap.queue ?? []).length ? table(['#', 'Server', 'Vote', 'Poin', 'Perkiraan tayang'], snap.queue.map((q: any) => [
+        String(q.position), esc(namaServer(q.guildId)), fmtAngka(q.votes), fmtAngka(q.score), fmtJam(q.estimateAt),
+      ])) : notice('info', 'Antrean kosong.')}`);
+  }
+
+  function namaServer(id: string): string {
+    const g = (snap.guilds ?? []).find((x: any) => x.guildId === id);
+    return g?.name ? `${g.name} (${id})` : id;
+  }
+
+  function renderLaporan() {
+    const open = (snap.reports ?? []).filter((r: any) => r.status === 'OPEN');
+    const done = (snap.reports ?? []).filter((r: any) => r.status !== 'OPEN').slice(0, 10);
+    const el = document.getElementById('shr-reports')!;
+    el.innerHTML = section(`Laporan iklan 🚩 (${open.length} terbuka)`, `
+      ${table(['#', 'Server diiklankan', 'Pelapor', 'Alasan', 'Waktu', ''], open.map((r: any) => [
+        String(r.id), esc(namaServer(r.sourceGuildId)), `<code>${esc(r.reporterId)}</code>`, esc(r.reason ?? '—'), fmtJam(r.createdAt),
+        bolehEdit() ? `<button type="button" data-rep="${r.id}" data-act="dismiss" class="${KELAS.tombolNetral}">Abaikan</button>
+          <button type="button" data-rep="${r.id}" data-act="hold" class="${KELAS.tombolBahaya}">Tahan server</button>` : '',
+      ]), 'Tidak ada laporan terbuka.')}
+      ${done.length ? `<details class="mt-3"><summary class="cursor-pointer text-sm">Riwayat laporan</summary>${table(['#', 'Server', 'Status', 'Oleh', 'Catatan'], done.map((r: any) => [
+        String(r.id), esc(namaServer(r.sourceGuildId)), pill(r.status === 'HELD' ? 'Ditahan' : 'Diabaikan', r.status === 'HELD' ? 'bad' : 'muted'), esc(r.handledBy ?? '—'), esc(r.note ?? '—'),
+      ]))}</details>` : ''}
+      <p class="mt-2 text-xs ${KELAS.muted}">Pelapor ditampilkan sebagai Discord ID. Jangan menyalin data pemain keluar panel.</p>
+      <p class="text-xs" role="status" aria-live="polite" id="shr-rep-status"></p>`,
+      'Laporan dari tombol 🚩 di iklan. "Tahan server" = status Terhambat oleh tim (hanya bisa dicabut dari panel ini).');
+    el.querySelectorAll<HTMLButtonElement>('button[data-rep]').forEach((b) => b.addEventListener('click', async () => {
+      const act = b.dataset.act!;
+      let note = '';
+      if (act === 'hold') {
+        note = window.prompt('Alasan penahanan (tampil ke admin server di channel alert):') ?? '';
+        if (!note.trim()) return;
+      } else if (!window.confirm('Abaikan laporan ini?')) return;
+      const st = document.getElementById('shr-rep-status')!;
+      st.textContent = 'Menunggu bot…';
+      const o = await kirimPerintah('share.report', { reportId: Number(b.dataset.rep), action: act, note });
+      st.textContent = o.ok ? 'Selesai.' : (o.error ?? 'Gagal.');
+      if (o.ok) void muat();
+    }));
+  }
+
+  function statusPill(g: any): string {
+    if (g.hold) return pill(g.hold === 'cms' ? 'Ditahan tim' : 'Terhambat', 'bad');
+    if (!g.enabled) return pill(g.disabledReason === 'alert_timeout' ? 'Mati (alert 7 hari)' : 'Nonaktif', 'muted');
+    if (g.block) return pill(BLOCK[g.block] ?? g.block, 'warn');
+    return pill('Aktif', 'ok');
+  }
+
+  function renderServer() {
+    const list = [...(snap.guilds ?? [])].sort((a: any, b: any) => Number(Boolean(b.hold)) - Number(Boolean(a.hold)) || (b.votes - a.votes));
+    const el = document.getElementById('shr-guilds')!;
+    el.innerHTML = section('Server peserta', table(['Server', 'Status', 'Menerima', 'Vote', 'Antrean', 'Tayang terakhir', 'Hapus minggu ini', 'Insiden', ''], list.map((g: any) => [
+      `${esc(g.name ?? '—')}<br><code class="text-xs">${esc(g.guildId)}</code>`, statusPill(g), g.receiving ? '✅' : '—', fmtAngka(g.votes),
+      g.position ? `#${g.position}` : '—', g.lastBroadcastAt ? fmtJam(g.lastBroadcastAt) : '—', fmtAngka(g.violationsWeek), fmtAngka(g.openIncidents),
+      `<button type="button" data-detail="${esc(g.guildId)}" class="${KELAS.tombol}">Detail</button>`,
+    ]), 'Belum ada server yang mengatur Share Server.'));
+    el.querySelectorAll<HTMLButtonElement>('button[data-detail]').forEach((b) => b.addEventListener('click', () => void detail(b.dataset.detail!)));
+  }
+
+  async function detail(guildId: string) {
+    const el = document.getElementById('shr-detail')!;
+    el.innerHTML = notice('info', 'Memuat detail dari bot…');
+    const o = await kirimPerintah('share.detail', { guildId });
+    if (!o.ok) { el.innerHTML = notice('error', o.error ?? 'Gagal.'); return; }
+    const d = o.result as any;
+    const c = d.config ?? {};
+    const tone: Tone = d.status === 'ACTIVE' ? 'ok' : d.status === 'HELD' ? 'bad' : d.status === 'PROBLEM' ? 'warn' : 'muted';
+    el.innerHTML = section(`Detail — ${esc(c.guildName ?? guildId)}`, `
+      <div class="flex flex-wrap gap-2">${pill(d.statusLabel, tone)} ${d.receiving ? pill('Menerima iklan', 'ok') : ''}</div>
+      ${d.hold ? notice('warn', `Terhambat (${d.hold.reason === 'cms' ? 'oleh tim' : 'pelanggaran'}) sejak ${fmtJam(d.hold.at)}${d.hold.note ? ` — ${d.hold.note}` : ''}`) : ''}
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="${KELAS.kartu} text-sm space-y-1">
+          <p>Vote terbuka: <strong>${fmtAngka(d.votes)}</strong> · potongan ${Math.round((d.reductionMs ?? 0) / 60000)} menit</p>
+          <p>Kategori: ${esc(c.category ?? '—')}</p>
+          <p>Deskripsi: ${esc(c.description ?? '—')}</p>
+          <p>Undangan: ${esc(c.inviteUrl ?? '—')} (${esc(c.inviteStatus ?? '—')})</p>
+          <p>Hapus iklan minggu ini: ${d.violations.count}/${d.violations.quota} · Pesan Uji ${d.recover.used}/${d.recover.max}</p>
+        </div>
+        <div class="${KELAS.kartu} text-sm">
+          <p class="font-semibold">Riwayat</p>
+          <ul class="mt-1 space-y-0.5">${(d.audit ?? []).slice(0, 12).map((a: any) => `<li>${fmtJam(a.at)} — ${esc(a.action)}${a.detail ? ` (${esc(a.detail)})` : ''}</li>`).join('') || '<li>—</li>'}</ul>
+        </div>
+      </div>
+      ${bolehEdit() ? `<div class="grid gap-4 md:grid-cols-2">
+        ${d.hold ? formCard({ id: 'shr-lift', title: '🔓 Cabut Terhambat', submit: 'Cabut', desc: 'Setelah owner server menghubungi support dan masalahnya ditangani.', fields: [
+          { name: 'note', label: 'Catatan (wajib)', required: true },
+          { name: 'resetQuota', label: 'Reset jatah penghapusan minggu ini', type: 'checkbox' },
+        ] }) : formCard({ id: 'shr-hold', title: 'Tahan server', danger: true, submit: 'Tahan', desc: 'Server berhenti menerima iklan & dipromosikan. Hanya bisa dicabut dari panel ini.', fields: [
+          { name: 'note', label: 'Alasan (tampil ke admin server)', required: true },
+        ] })}
+      </div>` : ''}`);
+    const lift = el.querySelector<HTMLFormElement>('#shr-lift');
+    if (lift) pasangAksi(lift, { type: 'share.lift', payload: (f) => ({ guildId, note: (f.querySelector('[name=note]') as HTMLInputElement).value, resetQuota: (f.querySelector('[name=resetQuota]') as HTMLInputElement).checked }), onDone: (o) => { if (o.ok) void muat().then(() => detail(guildId)); } });
+    const hold = el.querySelector<HTMLFormElement>('#shr-hold');
+    if (hold) pasangAksi(hold, { type: 'share.hold', confirm: 'Tahan Share Server server ini?', payload: (f) => ({ guildId, note: (f.querySelector('[name=note]') as HTMLInputElement).value }), onDone: (o) => { if (o.ok) void muat().then(() => detail(guildId)); } });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderBroadcast() {
+    document.getElementById('shr-broadcasts')!.innerHTML = section('Broadcast terakhir', table(['#', 'Slot', 'Server', 'Vote', 'Terkirim', 'Gagal/dilewati', 'Diblokir', 'Dihapus < 24 jam', 'Antre', 'Status'],
+      (snap.broadcasts ?? []).map((b: any) => [
+        String(b.id), fmtJam(b.slotAt), esc(b.guildName ?? b.sourceGuildId), fmtAngka(b.votesUsed), fmtAngka(b.sent), fmtAngka(b.failed + b.skipped),
+        fmtAngka(b.blocked), fmtAngka(b.removed), fmtAngka(b.pending), pill(b.status === 'DONE' ? 'Selesai' : 'Mengirim', b.status === 'DONE' ? 'ok' : 'info'),
+      ]), 'Belum ada broadcast.'));
+  }
+
+  function renderAturan() {
+    const el = document.getElementById('shr-rules')!;
+    const r = snap.rules ?? {};
+    const ed = snap.editableRules ?? [];
+    el.innerHTML = section('Aturan', `
+      ${table(['Aturan', 'Nilai', 'Bawaan', 'Batas'], ed.map((x: any) => [esc(x.label), `<strong>${esc(r[x.key])}</strong>`, esc(x.def), `${x.min}–${x.max}`]))}
+      ${role === 'owner' ? `<form id="shr-rules-form" class="${KELAS.kartu} space-y-3">
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">${ed.map((x: any) => `<label class="${KELAS.label}">${esc(x.label)}
+          <input type="number" name="${esc(x.key)}" min="${x.min}" max="${x.max}" step="1" value="${esc(r[x.key])}" class="${KELAS.input}" /></label>`).join('')}</div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="submit" class="${KELAS.tombol}">Simpan aturan</button>
+          <button type="button" id="shr-rules-reset" class="${KELAS.tombolBahaya}">Kembalikan bawaan</button>
+          <p class="text-xs" role="status" aria-live="polite" data-status></p>
+        </div></form>` : notice('info', 'Mengubah aturan khusus owner.')}`);
+    const form = el.querySelector<HTMLFormElement>('#shr-rules-form');
+    if (!form) return;
+    pasangAksi(form, {
+      type: 'sys.share.rules',
+      confirm: 'Ubah aturan Share Server untuk seluruh jaringan?',
+      payload: (f) => {
+        const values: Record<string, number> = {};
+        f.querySelectorAll<HTMLInputElement>('input[type=number]').forEach((i) => { if (i.value !== '' && Number(i.value) !== Number(r[i.name])) values[i.name] = Number(i.value); });
+        return { values };
+      },
+      onDone: (o) => { if (o.ok) void muat(); },
+    });
+    el.querySelector<HTMLButtonElement>('#shr-rules-reset')?.addEventListener('click', async () => {
+      if (!window.confirm('Kembalikan semua aturan ke bawaan?')) return;
+      const o = await kirimPerintah('sys.share.rules', { reset: true });
+      if (o.ok) void muat();
+    });
+  }
+</script>

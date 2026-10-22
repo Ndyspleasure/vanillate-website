@@ -240,3 +240,17 @@ export function auditList(guildId: string, beforeId: number | null = null, limit
     p_before_id: beforeId,
   });
 }
+
+// ─── 📣 Share Server (status dari bot + antrean permintaan) ──────────────────
+
+export function getShare(guildId: string): Promise<import('./share-model').ShareDashboard> {
+  return rpc('share_dashboard_get', { p_guild_id: guildId, p_bot_slug: BOT_SLUG });
+}
+
+export function submitShareRequest(
+  guildId: string,
+  type: string,
+  payload: Record<string, unknown> = {},
+): Promise<{ ok: boolean; id: number }> {
+  return rpc('share_request_submit', { p_guild_id: guildId, p_bot_slug: BOT_SLUG, p_type: type, p_payload: payload });
+}

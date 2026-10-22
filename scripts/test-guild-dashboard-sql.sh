@@ -14,6 +14,8 @@
 #  bot-logs-retention-prereq.sql → bot-logs-retention.sql (dua kali) →
 #  bot-logs-retention.test.sql, lalu FAQ Bot: bot-faqs.sql (dua kali) →
 #  bot-faqs.test.sql (memakai fixture & helper suite Panel Developer).
+#  Terakhir Share Server: share-server.test.sql (menjalankan
+#  supabase/share-server.sql dua kali).
 # ════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -84,3 +86,8 @@ for f in supabase/bot-faqs.sql supabase/bot-faqs.sql; do
 done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-faqs.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL FAQ Bot lulus."
+
+# Suite kelima: 📣 Share Server (memakai skema & fixture guild dashboard di
+# atas; tesnya menjalankan supabase/share-server.sql dua kali → idempoten).
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/share-server.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL Share Server lulus."

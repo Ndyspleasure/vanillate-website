@@ -51,13 +51,15 @@ import {
 } from './model';
 import { rememberNextAndGoToLogin } from './servers-page';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
+import { createShareController } from './share-server';
 
-type Tab = 'overview' | 'game-hub' | 'social-hub' | 'channels' | 'audit-log';
+type Tab = 'overview' | 'game-hub' | 'social-hub' | 'share-server' | 'channels' | 'audit-log';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Ringkasan' },
   { id: 'game-hub', label: 'Game Hub' },
   { id: 'social-hub', label: 'Social Hub' },
+  { id: 'share-server', label: 'Share Server' },
   { id: 'channels', label: 'Channel' },
   { id: 'audit-log', label: 'Riwayat' },
 ];
@@ -115,6 +117,8 @@ export function mountServerPage(cfg: PageConfig): void {
   const dirty = () => changes().length > 0;
   const editable = () => Boolean(data?.bot.installed);
   const serverNow = () => Date.now() + clockSkew;
+  // 📣 Share Server punya data & antreannya sendiri (bukan revisi dashboard).
+  const share = createShareController(guildId, () => renderAll(), root);
 
   function parseTab(hash: string): Tab {
     const id = hash.replace(/^#/, '') as Tab;
@@ -287,6 +291,8 @@ export function mountServerPage(cfg: PageConfig): void {
     wireAvatars(root);
     if (focusSel) root.querySelector<HTMLElement>(focusSel)?.focus();
     if (tab === 'audit-log' && audit === null && !auditLoading && !auditError) void loadAudit();
+    if (tab === 'share-server') share.activate();
+    else share.deactivate();
   }
 
   function renderError(): void {
@@ -433,6 +439,7 @@ export function mountServerPage(cfg: PageConfig): void {
     if (tab === 'overview') return overviewHtml();
     if (tab === 'channels') return channelsHtml();
     if (tab === 'audit-log') return auditHtml();
+    if (tab === 'share-server') return share.html(data!.snapshot ?? null);
     const section = SECTION_OF_TAB[tab]!;
     const feats = registry().filter((f) => f.section === section);
     const intro =
@@ -848,6 +855,9 @@ export function mountServerPage(cfg: PageConfig): void {
       return;
     }
 
+    const shareBtn = target.closest<HTMLButtonElement>('[data-share-action]');
+    if (shareBtn && !shareBtn.disabled && share.onClick(shareBtn)) return;
+
     const btn = target.closest<HTMLButtonElement>('[data-action]');
     if (!btn) return;
     switch (btn.dataset.action) {
@@ -890,7 +900,26 @@ export function mountServerPage(cfg: PageConfig): void {
     }
   });
 
+  // Formulir 📣 Share Server (draft disimpan di controller-nya).
+  root.addEventListener('input', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-share-field]');
+    if (el) share.onInput(el);
+  });
+  root.addEventListener('submit', (e) => {
+    const form = e.target as HTMLFormElement;
+    if (form.matches?.('[data-share-form]')) {
+      e.preventDefault();
+      share.onSubmit(form);
+    }
+  });
+  root.addEventListener('focusout', () => setTimeout(() => share.flush(), 0));
+
   root.addEventListener('change', (e) => {
+    const shareField = (e.target as HTMLElement).closest<HTMLElement>('[data-share-field]');
+    if (shareField) {
+      share.onInput(shareField);
+      return;
+    }
     const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('select[data-channel]');
     if (!sel || !data) return;
     const [key, purpose] = sel.dataset.channel!.split('|');
