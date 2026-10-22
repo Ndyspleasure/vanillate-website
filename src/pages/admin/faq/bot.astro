@@ -1,0 +1,266 @@
+---
+// Admin — FAQ Bot (Pusat Bantuan bot Sambung Kata di Discord).
+//
+// Terpisah dari FAQ website: tabel `bot_faqs` (supabase/bot-faqs.sql), bukan
+// `faqs`. Tidak ada kategori atau URL — urutan di sini = urutan menu FAQ di
+// Discord (/help › 🛟 Pusat Bantuan dan DM bot). Bot menarik daftar yang AKTIF
+// secara berkala (sambung-kata-bot: src/support/faqSync.js), jadi perubahan
+// sampai ke Discord tanpa build ulang website. Pengganti /supportfaq.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import FaqTabs from '@components/FaqTabs.astro';
+---
+
+<AdminLayout title="FAQ Bot" active="faq-bot">
+  <AdminPageHeader
+    eyebrow="FAQ"
+    title="FAQ Bot Discord"
+    description="Isi menu FAQ di Pusat Bantuan bot Sambung Kata (/help › Pusat Bantuan dan DM bot). Terpisah dari FAQ website. Perubahan sampai ke Discord dalam ±2 menit."
+  />
+  <FaqTabs active="bot" />
+
+  <div id="bf-root" class="px-6 lg:px-10 py-8 max-w-4xl">
+    <div id="list-view"></div>
+    <div id="editor-view" class="hidden"></div>
+    <p id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 hidden rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg z-50" role="status" aria-live="polite"></p>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+  import { renderMarkdown } from '@utils/markdown';
+  import { BOT_FAQ_LIMIT, validateBotFaq, reorder } from '@/lib/bot-faq';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+  const BTN = 'rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
+  const BTN2 = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
+  const MUTED = 'text-ink-500 dark:text-cream-300/60';
+
+  type BotFaq = { id: string | null; question: string; answer: string; enabled: boolean; sort: number; updated_at?: string };
+
+  let bolehEdit = false;
+  let uid: string | null = null;
+  let semua: BotFaq[] = [];
+  let current: BotFaq | null = null;
+  let sibuk = false;
+
+  const $ = (id: string) => document.getElementById(id)!;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    uid = profile?.id ?? null;
+    void muatDaftar();
+    $('bf-root').addEventListener('click', onClick);
+    $('bf-root').addEventListener('input', onInput);
+  });
+
+  function toast(pesan: string, ok = true) {
+    const t = $('toast');
+    t.textContent = pesan;
+    t.className = `fixed bottom-5 left-1/2 -translate-x-1/2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg z-50 ${
+      ok ? 'bg-teal-600 text-white' : 'bg-red-600 text-white'
+    }`;
+    window.clearTimeout((toast as any)._t);
+    (toast as any)._t = window.setTimeout(() => t.classList.add('hidden'), 4000);
+  }
+
+  // ─── Daftar ────────────────────────────────────────────────────────────────
+  async function muatDaftar() {
+    current = null;
+    $('editor-view').classList.add('hidden');
+    const box = $('list-view');
+    box.classList.remove('hidden');
+    box.innerHTML = stateBlock('loading', '');
+
+    const supabase = getSupabase();
+    if (!supabase) { box.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
+    const { data, error } = await supabase
+      .from('bot_faqs')
+      .select('id, question, answer, enabled, sort, updated_at')
+      .eq('bot_slug', 'sambung-kata')
+      .order('sort', { ascending: true })
+      .order('created_at', { ascending: true });
+    if (error) {
+      box.innerHTML = stateBlock('error', error.code === '42P01'
+        ? 'Tabel bot_faqs belum ada. Terapkan migrasi supabase/bot-faqs.sql.'
+        : pesanError(error));
+      return;
+    }
+    semua = (data ?? []) as BotFaq[];
+    renderDaftar();
+  }
+
+  function renderDaftar() {
+    const aktif = semua.filter((f) => f.enabled).length;
+    const peringatan = aktif > BOT_FAQ_LIMIT
+      ? `<p class="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">Ada ${aktif} FAQ aktif, tapi menu Discord hanya memuat ${BOT_FAQ_LIMIT}. FAQ setelah urutan ke-${BOT_FAQ_LIMIT} tidak tampil.</p>`
+      : '';
+
+    const kartu = (f: BotFaq, i: number) => `
+      <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4">
+        <span class="font-mono text-xs ${MUTED} w-6 flex-none text-right">${i + 1}</span>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="font-display font-semibold tracking-tightest truncate">${esc(f.question)}</p>
+            ${f.enabled ? '' : '<span class="rounded-full bg-ink-500/15 text-ink-500 dark:text-cream-300/60 px-2 py-0.5 text-[0.65rem] font-mono uppercase tracking-wider">nonaktif</span>'}
+          </div>
+          <p class="font-mono text-xs ${MUTED} truncate">${f.answer.length} karakter · ${esc(fmtWaktu(f.updated_at))}</p>
+        </div>
+        ${bolehEdit ? `
+          <button type="button" class="${BTN2} !px-2.5" data-action="naik" data-id="${esc(f.id ?? '')}" ${i === 0 ? 'disabled' : ''} aria-label="Naikkan">↑</button>
+          <button type="button" class="${BTN2} !px-2.5" data-action="turun" data-id="${esc(f.id ?? '')}" ${i === semua.length - 1 ? 'disabled' : ''} aria-label="Turunkan">↓</button>` : ''}
+        <button type="button" class="${BTN2}" data-action="edit" data-id="${esc(f.id ?? '')}">${bolehEdit ? 'Edit' : 'Lihat'}</button>
+      </div>`;
+
+    $('list-view').innerHTML = `
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-ink-600 dark:text-cream-200/80">${aktif} aktif dari ${semua.length} FAQ · menu Discord memuat maksimal ${BOT_FAQ_LIMIT}.</p>
+        ${bolehEdit ? `<button type="button" class="${BTN}" data-action="tambah">+ Tambah FAQ Bot</button>` : `<p class="text-sm ${MUTED}">Peran kamu hanya bisa melihat.</p>`}
+      </div>
+      ${peringatan}
+      <div class="space-y-3">
+        ${semua.length ? semua.map(kartu).join('') : stateBlock('empty', 'Belum ada FAQ bot. Selama kosong, Pusat Bantuan langsung menawarkan Hubungi Tim Support.')}
+      </div>`;
+  }
+
+  async function geser(id: string, arah: -1 | 1) {
+    if (!bolehEdit || sibuk) return;
+    const ubah = reorder(semua, id, arah);
+    if (!ubah.length) return;
+    sibuk = true;
+    const supabase = getSupabase()!;
+    for (const u of ubah) {
+      const { error } = await supabase.from('bot_faqs').update({ sort: u.sort, updated_by: uid }).eq('id', u.id);
+      if (error) { sibuk = false; toast(pesanError(error), false); await muatDaftar(); return; }
+    }
+    sibuk = false;
+    await muatDaftar();
+  }
+
+  // ─── Editor ────────────────────────────────────────────────────────────────
+  function bukaEditor(id: string | null) {
+    if (id) {
+      const f = semua.find((x) => x.id === id);
+      if (!f) { toast('FAQ tidak ditemukan. Muat ulang halaman.', false); return; }
+      current = { ...f };
+    } else {
+      const terakhir = semua.reduce((m, f) => Math.max(m, f.sort ?? 0), 0);
+      current = { id: null, question: '', answer: '', enabled: true, sort: terakhir + 10 };
+    }
+    $('list-view').classList.add('hidden');
+    $('editor-view').classList.remove('hidden');
+    renderEditor();
+    window.scrollTo({ top: 0 });
+  }
+
+  function renderEditor() {
+    const f = current!;
+    const baru = !f.id;
+    $('editor-view').innerHTML = `
+      <div class="mb-6 flex items-center justify-between gap-3">
+        <button type="button" class="${BTN2}" data-action="kembali">← Daftar FAQ Bot</button>
+        ${!baru && bolehEdit ? `<button type="button" class="rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-2 text-sm font-medium hover:bg-red-500/10 transition-colors" data-action="hapus">Hapus</button>` : ''}
+      </div>
+
+      <h2 class="font-display text-2xl font-semibold tracking-tightest mb-6">${baru ? 'Tambah FAQ Bot' : esc(f.question)}</h2>
+
+      <div class="space-y-5 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
+        <div>
+          <label class="block text-sm font-medium mb-1.5" for="e-question">Pertanyaan</label>
+          <input id="e-question" value="${esc(f.question)}" maxlength="256" class="${INPUT}" />
+          <p class="mt-1 text-xs ${MUTED}">Tampil di menu pilihan Discord (dipotong di 100 karakter) dan sebagai judul jawaban. Emoji di depan membantu pemain memindai.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5" for="e-answer">Jawaban</label>
+          <textarea id="e-answer" rows="16" maxlength="4000" class="${INPUT} font-mono leading-relaxed">${esc(f.answer)}</textarea>
+          <p class="mt-1 text-xs ${MUTED}"><span id="e-count">0</span>/4000 karakter. Markdown Discord: <code class="font-mono">### Judul</code>, <code class="font-mono">**tebal**</code>, <code class="font-mono">*miring*</code>, <code class="font-mono">\`kode\`</code>, daftar dengan <code class="font-mono">•</code> atau <code class="font-mono">-</code>, dan tautan lengkap <code class="font-mono">https://…</code>. Discord <strong>tidak</strong> menampilkan tabel dan tautan relatif.</p>
+          <p id="e-warn" class="mt-1 text-xs text-amber-700 dark:text-amber-400"></p>
+        </div>
+
+        <div>
+          <p class="text-sm font-medium mb-1.5">Perkiraan tampilan</p>
+          <div id="e-preview" class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-5 max-w-2xl"></div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5" for="e-enabled">Status</label>
+          <select id="e-enabled" class="${INPUT} max-w-[12rem]">
+            <option value="1" ${f.enabled ? 'selected' : ''}>Aktif</option>
+            <option value="0" ${f.enabled ? '' : 'selected'}>Nonaktif</option>
+          </select>
+          <p class="mt-1 text-xs ${MUTED}">Nonaktif = disembunyikan dari menu Discord tanpa dihapus. Urutan diatur dengan tombol ↑ ↓ di daftar.</p>
+        </div>
+
+        ${bolehEdit
+          ? `<div class="pt-2"><button type="button" class="${BTN}" data-action="simpan">${baru ? 'Buat FAQ' : 'Simpan perubahan'}</button></div>`
+          : `<p class="text-sm ${MUTED}">Peran kamu hanya bisa melihat.</p>`}
+      </div>`;
+
+    if (!bolehEdit) $('editor-view').querySelectorAll('input,textarea,select').forEach((n) => ((n as any).disabled = true));
+    perbaruiPratinjau();
+  }
+
+  function perbaruiPratinjau() {
+    const ta = document.getElementById('e-answer') as HTMLTextAreaElement | null;
+    if (!ta) return;
+    $('e-count').textContent = String(ta.value.length);
+    $('e-warn').textContent = validateBotFaq({ question: 'x', answer: ta.value }).warnings.join(' ');
+    $('e-preview').innerHTML = ta.value.trim()
+      ? renderMarkdown(ta.value)
+      : `<p class="text-sm ${MUTED}">Jawaban masih kosong.</p>`;
+  }
+
+  async function simpan() {
+    if (!bolehEdit || !current || sibuk) return;
+    const isi = {
+      question: (document.getElementById('e-question') as HTMLInputElement).value.trim(),
+      answer: (document.getElementById('e-answer') as HTMLTextAreaElement).value.trim(),
+      enabled: (document.getElementById('e-enabled') as HTMLSelectElement).value !== '0',
+    };
+    const cek = validateBotFaq(isi);
+    if (cek.errors.length) { toast(cek.errors[0], false); return; }
+
+    sibuk = true;
+    const supabase = getSupabase()!;
+    const { error } = current.id
+      ? await supabase.from('bot_faqs').update({ ...isi, updated_by: uid }).eq('id', current.id)
+      : await supabase.from('bot_faqs').insert({ ...isi, sort: current.sort, updated_by: uid });
+    sibuk = false;
+    if (error) { toast(pesanError(error), false); return; }
+    toast(current.id ? 'Tersimpan. Bot memperbarui menu FAQ dalam ±2 menit.' : 'FAQ dibuat. Bot memperbarui menu FAQ dalam ±2 menit.');
+    await muatDaftar();
+  }
+
+  async function hapus() {
+    if (!bolehEdit || !current?.id) return;
+    if (!window.confirm(`Hapus FAQ bot "${current.question}"? Untuk menyembunyikan sementara, pakai status Nonaktif.`)) return;
+    const { error } = await getSupabase()!.from('bot_faqs').delete().eq('id', current.id);
+    if (error) { toast(pesanError(error), false); return; }
+    toast('FAQ dihapus.');
+    await muatDaftar();
+  }
+
+  // ─── Event ─────────────────────────────────────────────────────────────────
+  function onClick(e: Event) {
+    const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
+    if (!el || el.disabled) return;
+    const id = el.dataset.id ?? '';
+    switch (el.dataset.action) {
+      case 'tambah': bukaEditor(null); break;
+      case 'edit': bukaEditor(id); break;
+      case 'naik': void geser(id, -1); break;
+      case 'turun': void geser(id, 1); break;
+      case 'kembali': void muatDaftar(); break;
+      case 'simpan': void simpan(); break;
+      case 'hapus': void hapus(); break;
+    }
+  }
+
+  function onInput(e: Event) {
+    if ((e.target as HTMLElement).id === 'e-answer') perbaruiPratinjau();
+  }
+</script>

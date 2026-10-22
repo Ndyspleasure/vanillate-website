@@ -1,9 +1,9 @@
 ---
 // Sub-navigasi area FAQ di panel admin.
 //
-// Sidebar sudah menampilkan kedua halaman, tapi tab ini membuat perpindahan
-// antara daftar pertanyaan dan kategorinya terasa satu tempat — polanya sama
-// dengan PartnershipTabs.
+// Sidebar sudah menampilkan ketiga halaman, tapi tab ini membuat perpindahan
+// antara FAQ website (pertanyaan & kategori) dan FAQ Bot Discord terasa satu
+// tempat — polanya sama dengan PartnershipTabs.
 import { url } from '@utils/url';
 
 export interface Props {
@@ -15,6 +15,7 @@ const { active } = Astro.props;
 const tabs = [
   { key: 'faqs', label: 'Pertanyaan', href: '/admin/faq' },
   { key: 'categories', label: 'Kategori', href: '/admin/faq/categories' },
+  { key: 'bot', label: 'FAQ Bot Discord', href: '/admin/faq/bot' },
 ];
 ---
 

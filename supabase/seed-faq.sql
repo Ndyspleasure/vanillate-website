@@ -345,8 +345,7 @@ Buka dashboard game sampingan dengan `/game`, pilih game, lalu lobby dibuka di c
 
 ### Lainnya
 
-- `/help` — panduan lengkap di dalam Discord.
-- `/masukan` — kirim saran atau laporan bug.', true, 180),
+- `/help` — panduan lengkap di dalam Discord. Di bawahnya ada tombol **🛟 Pusat Bantuan** (FAQ, Tanya Asisten, dan hubungi tim support) serta **📬 Kirim Masukan** (saran atau laporan bug).', true, 180),
   ('sambung-kata', 'Seberapa besar kamusnya, dan bagaimana kata dinilai?', 'kamus-dan-validasi-kata', 'Kamusnya berisi 25.000+ kata Bahasa Indonesia dengan validasi otomatis. Sebuah kata dianggap valid bila:
 
 - diawali huruf yang ditentukan,
@@ -381,7 +380,7 @@ Detail lengkapnya bisa kamu baca di halaman [Kebijakan Privasi](/privacy).', tru
 Kalau masih bermasalah, laporkan lewat [Support Center](/support) kami, dan orang yang menulis kodenya akan langsung membantu.', true, 10),
   ('bantuan', 'Bagaimana cara memberi masukan atau melaporkan bug?', 'lapor-bug-dan-masukan', 'Kirim lewat [Support Center](/support) di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai.
 
-Khusus Sambung Kata, kamu juga bisa memakai command `/masukan` langsung di dalam produknya, lalu pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.
+Khusus Sambung Kata, ketik `/help` di Discord lalu tekan tombol **📬 Kirim Masukan**, kemudian pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.
 
 Kami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.', true, 20)
 ) as v(category_slug, question, slug, answer, enabled, sort)

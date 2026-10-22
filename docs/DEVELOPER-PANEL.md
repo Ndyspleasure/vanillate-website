@@ -75,6 +75,7 @@ Semua teks dari bot/Discord masuk `innerHTML` lewat `esc()`.
 | `supabase/developer-panel-schema.sql` | `bot_panel_snapshots` + RLS baca admin, kolom `bot_commands.progress`/`heartbeat_at`, trigger `bot_commands_owner_guard`, bucket privat `bot-backups` (50 MB, `application/gzip`) + policy baca/hapus owner. Aditif, idempoten, **tanpa DROP**. |
 | `supabase/developer-panel-settings.sql` | 2 kategori (`tutorial`, `campaign`) + 5 setting baru bernilai NULL (bot mengisinya dari nilai lokal) |
 | `supabase/developer-panel-rollback.sql` | Pemulihan (kebalikan dua berkas di atas) |
+| `supabase/bot-faqs.sql` | Tabel `bot_faqs` — **FAQ Bot Discord** (Pusat Bantuan `/help` › 🛟 & DM bot), terpisah dari FAQ website `faqs`. RLS sama dengan `faqs`; isi awal = FAQ bawaan bot (sekali saja). Dikelola di `/admin/faq/bot`, ditarik bot tiap 2 menit (`src/support/faqSync.js`), pengganti `/supportfaq`. Rollback: `supabase/bot-faqs-rollback.sql` |
 | `supabase/developer-terminal.sql` | Mempersempit policy SELECT `bot_commands`: baris `sys.*` (termasuk keluaran Konsol) **hanya owner**; admin lain tetap membaca perintah non-`sys`. Rollback: `supabase/developer-terminal-rollback.sql` |
 | `supabase/tests/developer-panel*.sql` | Tes SQL (peran, trigger owner, RLS snapshot & bucket, baris `sys.*` hanya owner, idempoten) — `npm run test:sql` |
 

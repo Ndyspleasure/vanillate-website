@@ -417,6 +417,7 @@ pemeriksaan jalan ada di tab Actions.
 | `src/pages/admin/lagu.astro` | **Tebak Lagu** — kelola katalog lagu (upload audio + kunci jawaban) |
 | `src/pages/admin/faq/index.astro` | **FAQ** — tulis & kelola seluruh panduan |
 | `src/pages/admin/faq/categories.astro` | **Kategori FAQ** — struktur panduan |
+| `src/pages/admin/faq/bot.astro` | **FAQ Bot Discord** — menu FAQ Pusat Bantuan bot Sambung Kata (tabel `bot_faqs`, terpisah dari FAQ website; logika `src/lib/bot-faq.ts`) |
 | `src/utils/markdown.ts` | Renderer jawaban FAQ (dipakai situs publik & pratinjau CMS) |
 | `scripts/sync-content.mjs` | Menarik konten Supabase saat build |
 | `.github/workflows/sync-content.yml` | Penjadwalan sync konten |
