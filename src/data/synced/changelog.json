@@ -1,5 +1,23 @@
 [
   {
+    "version": "3.4.2",
+    "date": "2026-10-22",
+    "title": "Share Server: promosi juga tampil di server sendiri",
+    "highlights": [
+      "📣 Saat servermu tayang, iklannya juga muncul di channel promosi servermu sendiri",
+      "🗳️ Vote tidak terbuang: server baru tayang bila ada server peserta lain yang menerima",
+      "⚡ Jumlah vote di panel vote kini diperbarui ±1 menit setelah kamu vote"
+    ]
+  },
+  {
+    "version": "3.4.1",
+    "date": "2026-10-22",
+    "title": "Perbaikan pengaturan Share Server",
+    "highlights": [
+      "🛠️ Tombol Ubah Deskripsi di pengaturan Share Server kini bisa dibuka walau deskripsi belum pernah diisi"
+    ]
+  },
+  {
     "version": "3.4.0",
     "date": "2026-10-22",
     "title": "Share Server — promosikan servermu ke server lain lewat vote",
