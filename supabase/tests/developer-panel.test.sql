@@ -68,6 +68,9 @@ select tests_dev.ok((select value is null from public.bot_settings where key = '
   'setting baru mulai NULL (diisi bot dari nilai lokal)');
 select tests_dev.ok((select count(*) from public.bot_setting_categories where key in ('tutorial', 'campaign')) = 2,
   'kategori tutorial & campaign tersedia');
+select tests_dev.ok((select count(*) from public.bot_settings
+    where key in ('onboarding_channel_enabled', 'onboarding_nudge_enabled') and value is null and category = 'onboarding') = 2,
+  'setting onboarding tersedia & mulai NULL (bot mengadopsi nilai lokal = mati)');
 select tests_dev.ok((select public = false from storage.buckets where id = 'bot-backups'),
   'bucket bot-backups privat');
 

@@ -17,8 +17,9 @@
 -- 5. Setting & kategori baru (developer-panel-settings.sql)
 delete from public.bot_settings
  where key in ('discord_announcement_title', 'changelog_lobby_enabled',
-               'tutorial_enabled', 'tutorial_gate_new', 'dm_campaign_per_day');
-delete from public.bot_setting_categories where key in ('tutorial', 'campaign');
+               'tutorial_enabled', 'tutorial_gate_new', 'dm_campaign_per_day',
+               'onboarding_channel_enabled', 'onboarding_nudge_enabled');
+delete from public.bot_setting_categories where key in ('tutorial', 'campaign', 'onboarding');
 
 -- 4. Bucket backup
 drop policy if exists owner_baca_bot_backups on storage.objects;
