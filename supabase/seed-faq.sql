@@ -12,7 +12,7 @@
 -- 1. Kategori
 insert into public.faq_categories (name, slug, description, icon, enabled, sort)
 values
-  ('Vanillate Sambung Kata', 'sambung-kata', 'Cara bermain, mode, progression, event, dan daftar command Vanillate Sambung Kata.', 'sparkles', true, 10),
+  ('Vanillate.ID', 'sambung-kata', 'Cara bermain, mode, progression, event, dan daftar command Vanillate.ID.', 'sparkles', true, 10),
   ('Umum & Produk', 'umum', 'Pertanyaan seputar produk Vanillate secara umum: cara mulai, biaya, dan pembaruan.', 'circle-help', true, 20),
   ('Akun & Data', 'akun-data', 'Izin yang diminta, keamanan data, dan bagaimana progres berpindah antar komunitas.', 'shield', true, 30),
   ('Bantuan & Troubleshooting', 'bantuan', 'Langkah pertama saat ada kendala, dan cara mengirim laporan bug atau masukan.', 'life-buoy', true, 40)
@@ -23,7 +23,7 @@ on conflict (slug) do nothing;
 insert into public.faqs (category_id, question, slug, answer, enabled, sort)
 select c.id, v.question, v.slug, v.answer, v.enabled, v.sort
 from (values
-  ('sambung-kata', 'Bagaimana cara mulai bermain Sambung Kata?', 'cara-mulai-bermain', 'Vanillate Sambung Kata adalah bot game kata berantai Bahasa Indonesia dengan progresi mendalam: Class, Quest, Boost, sampai Dungeon Mode. Lima langkah untuk mulai:
+  ('sambung-kata', 'Bagaimana cara mulai bermain Sambung Kata?', 'cara-mulai-bermain', 'Vanillate.ID adalah bot Discord berisi game kata berantai Bahasa Indonesia dengan progresi mendalam: Class, Quest, Boost, sampai Dungeon Mode. Lima langkah untuk mulai:
 
 1. Undang bot ke server Discord kamu.
 2. Ketik `/sambungkata` untuk membuka dashboard, lalu pilih mode: PvP, PvB, Player vs Server, atau Dungeon.
@@ -357,7 +357,7 @@ Kamu bisa mengecek sebuah kata kapan saja dengan `/kamus [kata]`.', true, 190),
   ('sambung-kata', 'Bisa main di berapa server?', 'main-di-banyak-server', 'Tidak terbatas. Progres, statistik, dan leaderboard bersifat global per pemain, jadi capaianmu terbawa ke server mana pun kamu bermain. Tidak ada biaya tambahan untuk memakainya di banyak server.', true, 200),
   ('umum', 'Apakah produk Vanillate bisa membantu menghidupkan komunitas yang sepi?', 'menghidupkan-komunitas', 'Bisa, dan itu memang salah satu kekuatannya. Produk kami dirancang mengajak banyak anggota ikut berinteraksi sekaligus, sehingga obrolan yang tadinya sepi cepat kembali ramai.
 
-Contohnya, satu sesi Vanillate Sambung Kata di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.', true, 10),
+Contohnya, satu sesi Vanillate.ID di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.', true, 10),
   ('umum', 'Apakah produk Vanillate gratis?', 'apakah-gratis', 'Ya. Inti setiap produk kami bisa dipakai tanpa langganan wajib. Fitur Premium opsional hanya menambah kenyamanan, bukan syarat untuk menikmati bagian utamanya.', true, 20),
   ('umum', 'Bagaimana cara mulai memakai produknya?', 'cara-mulai-memakai', 'Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk: ada yang diundang ke komunitasmu, ada yang diunduh sebagai aplikasi, ada pula yang langsung dibuka lewat web. Setiap halaman produk menjelaskan langkahnya.', true, 30),
   ('umum', 'Seberapa sering produknya diperbarui?', 'seberapa-sering-diperbarui', 'Rutin. Kami merilis perbaikan bug, penyempurnaan pengalaman, dan fitur baru secara berkala, sering kali setiap pekan.

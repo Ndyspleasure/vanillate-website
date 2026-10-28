@@ -156,12 +156,12 @@ test('jenis media & pratinjau header', () => {
   assert.match(describeMedia({ kind: 'link', url: 'https://x.id', source: 'page-link', warning: 'w' })!, /Tautan.*⚠️ w/);
 
   const d = { audience: 'all', message: 'x', title: '  ', color: 'zzz' };
-  assert.deepEqual(previewHeader(d), { title: null, footer: 'Sambung Kata • Pesan resmi dari tim', color: '#57F287' });
+  assert.deepEqual(previewHeader(d), { title: null, footer: 'Vanillate.ID • Pesan resmi dari tim', color: '#57F287' });
   const darurat = previewHeader({ ...d, color: 'ED4245' }, { emergency: true });
   assert.equal(darurat.title, '🚨 Informasi Penting');
   assert.equal(darurat.color, '#ED4245');
   assert.match(darurat.footer, /darurat/);
-  assert.equal(previewHeader({ ...d, title: 'Update' }, { server: true }).footer, 'Sambung Kata • Info khusus owner/admin server');
+  assert.equal(previewHeader({ ...d, title: 'Update' }, { server: true }).footer, 'Vanillate.ID • Info khusus owner/admin server');
 });
 
 test('estimasi durasi broadcast', () => {

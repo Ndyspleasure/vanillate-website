@@ -919,7 +919,7 @@ dari CMS**. Tidak ada lagi panduan yang ditulis di source code.
 
 ```
 FAQ
-├── Vanillate Sambung Kata      ← kategori yang dipetakan ke produk
+├── Vanillate.ID                ← kategori yang dipetakan ke produk
 │   ├── Bagaimana cara bermain?
 │   ├── Apa itu Dungeon Mode?
 │   └── …

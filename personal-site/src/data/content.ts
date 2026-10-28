@@ -296,7 +296,7 @@ export const content: Record<Locale, Copy> = {
       storyTitle: 'Berawal dari Satu Ide',
       story: [
         'Vanillate lahir pada 2026 dari satu hal yang cukup mengganggu saya. Banyak produk untuk komunitas online Indonesia yang ramai saat rilis, lalu pelan-pelan ditinggalkan. Saya ingin membuat kebalikannya, produk yang terus dirawat.',
-        'Semua dimulai dari Vanillate Sambung Kata, satu game Discord. Dari situ pelan-pelan tumbuh jadi studio kecil yang membangun berbagai produk untuk komunitas dan pengguna di Indonesia.',
+        'Semua dimulai dari Vanillate Sambung Kata (kini Vanillate.ID), satu game Discord. Dari situ pelan-pelan tumbuh jadi studio kecil yang membangun berbagai produk untuk komunitas dan pengguna di Indonesia.',
       ],
       futureTitle: 'Arah Berikutnya',
       future: ['Community Tools', 'Social Apps', 'AI Tools', 'Automation Platform', 'Web Platform', 'Mobile Applications', 'Cloud Services'],
@@ -469,7 +469,7 @@ export const content: Record<Locale, Copy> = {
       storyTitle: 'It Started With One Idea',
       story: [
         'Vanillate began in 2026 from something that kept bugging me. So many products for Indonesian online communities are loud at launch, then slowly abandoned. I wanted to make the opposite, something that keeps getting cared for.',
-        'It all started with Vanillate Sambung Kata, a single Discord game. From there it slowly grew into a small studio building products for communities and users across Indonesia.',
+        'It all started with Vanillate Sambung Kata (now Vanillate.ID), a single Discord game. From there it slowly grew into a small studio building products for communities and users across Indonesia.',
       ],
       futureTitle: "What's Next",
       future: ['Community Tools', 'Social Apps', 'AI Tools', 'Automation Platform', 'Web Platform', 'Mobile Applications', 'Cloud Services'],
