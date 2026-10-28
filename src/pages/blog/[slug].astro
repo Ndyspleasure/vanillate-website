@@ -111,7 +111,7 @@ const linkMuted = 'hover:text-amber-600 dark:hover:text-amber-400 transition-col
   >
     <script type="application/ld+json" slot="head" set:html={jsonLdString(ld)} />
     {adClient && (
-      <script is:inline async slot="head" crossorigin="anonymous" src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`}></script>
+      <script is:inline async slot="head" crossorigin="anonymous" src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`} onerror="document.documentElement.classList.add('iklan-gagal')"></script>
     )}
     {img && <link rel="preload" as="image" slot="head" imagesrcset={sanitySrcset(img.url)} imagesizes="(min-width: 1024px) 960px, 100vw" />}
 

@@ -168,3 +168,14 @@
   [data-tilt] { transform: none !important; }
   .cursor { display: none !important; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Kotak iklan blog (src/lib/blog/ads.ts). Disembunyikan bila AdSense tidak
+   mengisi unitnya (data-ad-status="unfilled") atau skripnya gagal dimuat,
+   misalnya karena ad blocker (html.iklan-gagal, dari onerror skrip AdSense),
+   supaya pembaca tidak melihat label "Iklan" dengan kotak kosong.
+   ───────────────────────────────────────────────────────────────────────── */
+.blog-iklan:has(ins[data-ad-status='unfilled']),
+html.iklan-gagal .blog-iklan {
+  display: none;
+}

@@ -39,6 +39,8 @@ test('unit iklan memuat client, slot, dan format yang sesuai', () => {
   assert.match(tengah, /data-ad-slot="1111111111"/);
   assert.match(tengah, /data-ad-layout="in-article"/);
   assert.match(adHtml('afterArticle', aktif), /data-ad-format="auto"/);
+  // Kelas pengait CSS yang menyembunyikan kotak iklan kosong / diblokir.
+  assert.match(tengah, /<aside class="blog-iklan /);
 });
 
 test('iklan tengah disisipkan tepat sebelum H2 ke-3', () => {

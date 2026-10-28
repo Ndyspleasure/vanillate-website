@@ -155,6 +155,10 @@ Cara mengaktifkan:
 3. Isi `client` (`ca-pub-…`) dan kedua slot di `ADSENSE`, lalu deploy. `/ads.txt` ikut terisi otomatis.
 4. **Matikan Auto ads** (atau batasi di AdSense) supaya penempatan tetap dari kode.
 
+Kotak iklan (kelas `blog-iklan`) disembunyikan bila AdSense tidak mengisi unitnya
+(`data-ad-status="unfilled"`) atau skripnya gagal dimuat (mis. ad blocker → `html.iklan-gagal`),
+jadi pembaca tidak melihat label "Iklan" dengan kotak kosong (`src/styles/global.css`).
+
 Kebijakan privasi (`/privacy` › Third-Party Services) sudah menyebut cookie
 iklan Google. Untuk pengunjung EEA/UK, aktifkan pesan persetujuan (CMP) di
 AdSense › Privasi & pesan.
