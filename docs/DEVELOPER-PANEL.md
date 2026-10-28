@@ -5,6 +5,13 @@ Semua fitur Developer Dashboard lama dijalankan dari CMS ini. Pasangan dokumen d
 repo bot: `sambung-kata-bot/docs/panel-developer-cms.md` (handler, peta fitur
 lama → baru, cara menambah aksi).
 
+> **Nama & menu:** bot "Vanillate Sambung Kata" kini bernama **Vanillate.ID**
+> (Sambung Kata tetap nama game/mode-nya). Di sidebar CMS, pengaturan bot
+> (Kontrol Bot, Promo, Tebak Lagu) dan Panel Developer digabung dalam satu grup
+> **Discord Bot** (`grup-bot` di `src/layouts/AdminLayout.astro`). Nama tabel
+> (`bot_*`), slug produk `sambung-kata`, dan URL `/faq/sambung-kata/…` tidak
+> berubah supaya data & tautan lama tetap utuh.
+
 ## 1. Arsitektur singkat
 
 | Arah | Tabel | Siapa menulis | Siapa membaca |

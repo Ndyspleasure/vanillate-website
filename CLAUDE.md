@@ -2,7 +2,8 @@
 
 Website resmi Vanillate Studio (Astro statis di GitHub Pages) + **CMS Admin**
 (`/admin/*`, Supabase dengan RLS). CMS ini juga **Panel Developer** bot
-Sambung Kata sejak bot v3.0.0 — slash command `/developer` di Discord sudah
+Discord **Vanillate.ID** (dulu "Vanillate Sambung Kata"; Sambung Kata kini nama
+game/mode-nya; grup sidebar **Discord Bot**) sejak bot v3.0.0 — slash command `/developer` di Discord sudah
 dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
 `CLAUDE.md` repo itu).
 

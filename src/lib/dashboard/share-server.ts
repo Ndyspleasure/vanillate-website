@@ -161,7 +161,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
         </div>
         <p class="mt-2 text-sm text-ink-700 dark:text-cream-200">${esc(s.statusLabel)}</p>
         ${s.hold ? `<p class="mt-2 text-sm text-red-700 dark:text-red-300">${s.hold.reason === 'cms'
-          ? `Ditahan Tim Sambung Kata${s.hold.note ? `: ${esc(s.hold.note)}` : ''}. Hubungi Tim Support untuk banding.`
+          ? `Ditahan Tim Vanillate${s.hold.note ? `: ${esc(s.hold.note)}` : ''}. Hubungi Tim Support untuk banding.`
           : `Terlalu banyak iklan terhapus minggu ini. Perbaiki bot anti-link / AutoMod lalu kirim Pesan Uji (${s.recover.used}/${s.recover.max} minggu ini), atau hubungi Tim Support.`}</p>` : ''}
         <div class="mt-4 grid gap-4 md:grid-cols-2">
           <div>
@@ -251,11 +251,11 @@ export function createShareController(guildId: string, rerender: () => void, roo
     if (error && !dash) return `<div class="${CARD} p-6 text-sm">${esc(error)}</div>`;
     const s = st();
     const offline = !dash?.bot_online;
-    const intro = `<p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Promosikan server ini ke server peserta lain lewat broadcast global. Member vote Sambung Kata di Top.gg lewat panel vote → server naik antrean. Wajib timbal balik: server peserta juga menerima promosi, dan iklan yang diterima wajib bertahan 24 jam.</p>`;
+    const intro = `<p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Promosikan server ini ke server peserta lain lewat broadcast global. Member vote Vanillate.ID di Top.gg lewat panel vote → server naik antrean. Wajib timbal balik: server peserta juga menerima promosi, dan iklan yang diterima wajib bertahan 24 jam.</p>`;
     const warn = [
       offline ? 'Bot sedang offline — perubahan baru diproses saat bot kembali.' : null,
       dash && isStale(dash.updated_at) && dash.state ? 'Status dari bot belum diperbarui beberapa saat.' : null,
-      s && !s.feature ? 'Share Server belum dibuka oleh Tim Sambung Kata. Pengaturan bisa disiapkan lebih dulu.' : null,
+      s && !s.feature ? 'Share Server belum dibuka oleh Tim Vanillate. Pengaturan bisa disiapkan lebih dulu.' : null,
     ].filter(Boolean).map((w) => `<p class="mt-3 rounded-xl bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-300">${esc(w!)}</p>`).join('');
     if (!s) {
       return `${intro}${warn}<div class="${CARD} mt-6 p-6 text-sm">Server ini belum pernah mengatur Share Server. ${dash?.bot_online ? 'Isi pengaturan di bawah untuk memulai.' : ''}</div>
