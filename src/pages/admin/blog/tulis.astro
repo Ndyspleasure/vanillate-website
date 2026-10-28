@@ -1,0 +1,916 @@
+---
+// Admin — Tulis / Edit Artikel Blog.
+//
+// Seluruh alur menulis ada di sini: tulis (Markdown, bisa tempel dari
+// Claude/ChatGPT), unggah gambar, atur SEO, pratinjau, simpan draft, terbitkan.
+// Data dikirim ke Edge Function `blog-admin`, yang menyimpannya di Sanity dan
+// memicu build situs. Pratinjau memakai renderer yang sama dengan halaman
+// publik (src/lib/blog/markdown.ts), jadi yang terlihat di sini = yang tayang.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import { faqList, productList } from '@/lib/blog/site';
+import { jsonLdString } from '@/lib/blog/model';
+
+// Daftar produk & FAQ situs untuk pilihan tautan internal (dibaca saat build).
+const dataSitus = jsonLdString({ products: productList, faqs: faqList });
+
+const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors disabled:opacity-60';
+const LABEL = 'block text-sm font-medium mb-1.5';
+const BANTU = 'mt-1 text-xs text-ink-500 dark:text-cream-300/60';
+const PANEL = 'rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4';
+const H = 'font-display text-base font-semibold tracking-tightest';
+const ALAT = 'rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-600 dark:text-cream-200/80 hover:bg-ink-900/5 dark:hover:bg-cream-100/10 transition-colors';
+---
+
+<AdminLayout title="Tulis Artikel" active="blog-tulis">
+  <script type="application/json" id="data-situs" set:html={dataSitus} />
+
+  <AdminPageHeader eyebrow="Blog" title="Tulis artikel">
+    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+      <span id="status-pill" class="rounded-full bg-ink-500/15 px-2.5 py-0.5 font-semibold text-ink-600 dark:text-cream-300/70">Baru</span>
+      <span id="status-teks" class="text-ink-500 dark:text-cream-300/60"></span>
+    </div>
+  </AdminPageHeader>
+
+  <!-- Bilah aksi lengket -->
+  <div class="sticky top-0 z-20 border-b border-ink-900/10 dark:border-cream-100/10 bg-cream-50/90 dark:bg-ink-950/90 backdrop-blur px-6 lg:px-10 py-3 flex flex-wrap items-center gap-2">
+    <a href="/admin/blog" class={ALAT}>← Semua artikel</a>
+    <span class="flex-1"></span>
+    <span id="simpan-info" class="text-xs text-ink-500 dark:text-cream-300/60 mr-2"></span>
+    <a id="btn-lihat" href="#" target="_blank" rel="noopener" class={`${ALAT} hidden`}>Lihat di situs ↗</a>
+    <details class="relative" id="menu-lain">
+      <summary class={`${ALAT} list-none cursor-pointer`}>Lainnya ▾</summary>
+      <div class="absolute right-0 mt-2 w-60 rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-50 dark:bg-ink-900 p-1.5 shadow-xl space-y-0.5">
+        <button type="button" id="btn-unpublish" class="block w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-ink-900/5 dark:hover:bg-cream-100/5 disabled:opacity-40">Tarik dari situs (jadi draft)</button>
+        <button type="button" id="btn-discard" class="block w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-ink-900/5 dark:hover:bg-cream-100/5 disabled:opacity-40">Buang perubahan draft</button>
+        <button type="button" id="btn-hapus" class="block w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-500/10 disabled:opacity-40">Hapus artikel</button>
+      </div>
+    </details>
+    <button type="button" id="btn-simpan" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-semibold hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors disabled:opacity-50">Simpan draft</button>
+    <button type="button" id="btn-publish" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors disabled:opacity-50">Publish</button>
+  </div>
+
+  <div class="px-6 lg:px-10 py-6 space-y-4">
+    <div id="pulihkan" class="hidden rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm flex flex-wrap items-center gap-3">
+      <span id="pulihkan-teks" class="flex-1"></span>
+      <button type="button" id="btn-pulihkan" class="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-ink-950">Pulihkan</button>
+      <button type="button" id="btn-abaikan" class="rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Abaikan</button>
+    </div>
+    <div id="pesan" class="hidden rounded-2xl border px-5 py-3 text-sm" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="editor-root" class="px-6 lg:px-10 pb-16 grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <!-- KOLOM UTAMA -->
+    <div class="min-w-0 space-y-6">
+      <div>
+        <label for="f-title" class="sr-only">Judul</label>
+        <input id="f-title" maxlength="120" placeholder="Judul artikel…" class="w-full bg-transparent font-display text-3xl md:text-4xl font-semibold tracking-tightest outline-none placeholder:text-ink-400/60 disabled:opacity-60" />
+        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <span class="font-mono text-xs text-ink-500 dark:text-cream-300/60">vanillate.id/blog/</span>
+          <input id="f-slug" maxlength="80" placeholder="slug-otomatis-dari-judul" class="min-w-0 flex-1 rounded-lg border border-transparent hover:border-ink-900/15 dark:hover:border-cream-100/15 bg-transparent px-2 py-1 font-mono text-xs outline-none focus:border-amber-500 disabled:opacity-60" />
+          <span id="slug-mode" class="text-xs text-ink-500 dark:text-cream-300/60">otomatis</span>
+        </div>
+        <p id="slug-info" class="hidden mt-1 text-xs text-amber-700 dark:text-amber-400"></p>
+      </div>
+
+      <div>
+        <label for="f-excerpt" class={LABEL}>Ringkasan <span class="font-normal text-ink-500 dark:text-cream-300/60">(tampil di bawah judul & kartu artikel)</span></label>
+        <textarea id="f-excerpt" rows="2" maxlength="300" class={INPUT} placeholder="Satu–dua kalimat yang menjelaskan isi artikel."></textarea>
+        <p class={BANTU}><span id="n-excerpt">0</span>/300 · juga dipakai sebagai meta description bila kolom SEO kosong.</p>
+      </div>
+
+      <!-- EDITOR ISI -->
+      <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden">
+        <div class="flex flex-wrap items-center gap-1 border-b border-ink-900/10 dark:border-cream-100/10 px-2 py-1.5 bg-cream-100/40 dark:bg-ink-900/40">
+          <div class="flex rounded-lg bg-ink-900/5 dark:bg-cream-100/5 p-0.5 mr-2" role="tablist">
+            <button type="button" data-tab="tulis" class="rounded-md px-3 py-1 text-xs font-semibold">Tulis</button>
+            <button type="button" data-tab="pratinjau" class="rounded-md px-3 py-1 text-xs font-semibold">Pratinjau</button>
+          </div>
+          <div id="toolbar" class="flex flex-wrap items-center gap-0.5">
+            <button type="button" data-md="h2" class={ALAT} title="Subjudul (##)">H2</button>
+            <button type="button" data-md="h3" class={ALAT} title="Sub-subjudul (###)">H3</button>
+            <button type="button" data-md="bold" class={`${ALAT} font-bold`} title="Tebal (Ctrl+B)">B</button>
+            <button type="button" data-md="italic" class={`${ALAT} italic`} title="Miring (Ctrl+I)">I</button>
+            <button type="button" data-md="link" class={ALAT} title="Tautan (Ctrl+K)">Tautan</button>
+            <button type="button" data-md="ul" class={ALAT} title="Daftar">• Daftar</button>
+            <button type="button" data-md="ol" class={ALAT} title="Daftar bernomor">1. Daftar</button>
+            <button type="button" data-md="quote" class={ALAT} title="Kutipan">❝</button>
+            <button type="button" data-md="tip" class={ALAT} title="Kotak tips">Tips</button>
+            <button type="button" data-md="table" class={ALAT} title="Tabel">Tabel</button>
+            <button type="button" data-md="image" class={ALAT} title="Sisipkan gambar">🖼 Gambar</button>
+            <select id="sisip-internal" class="rounded-lg bg-transparent px-2 py-1.5 text-xs font-medium text-ink-600 dark:text-cream-200/80 hover:bg-ink-900/5 dark:hover:bg-cream-100/10 outline-none max-w-[11rem]">
+              <option value="">＋ Tautan internal…</option>
+            </select>
+            <button type="button" id="btn-rapikan" class={`${ALAT} text-amber-700 dark:text-amber-400`} title="Rapikan Markdown hasil Claude/ChatGPT">✨ Rapikan tulisan AI</button>
+          </div>
+        </div>
+        <div data-panel="tulis">
+          <label for="f-body" class="sr-only">Isi artikel</label>
+          <textarea id="f-body" rows="24" spellcheck="true"
+            class="block w-full min-h-[480px] resize-y bg-transparent px-5 py-4 font-mono text-[0.85rem] leading-relaxed outline-none disabled:opacity-60"
+            placeholder={'Tulis atau tempel Markdown di sini — langsung dari Claude/ChatGPT juga bisa.\n\n## Subjudul\n\nParagraf biasa, **tebal**, *miring*, [tautan](/products/sambung-kata).\n\n- daftar\n- poin\n\n> [!TIP] Kotak tips.\n\n{{produk:sambung-kata}}  ← kartu produk'}></textarea>
+          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-ink-900/10 dark:border-cream-100/10 px-5 py-2 text-xs text-ink-500 dark:text-cream-300/60">
+            <span><span id="n-kata">0</span> kata · ±<span id="n-menit">1</span> menit baca</span>
+            <span>Tarik & lepas gambar ke kotak ini untuk menyisipkannya · Ctrl+S simpan draft</span>
+          </div>
+        </div>
+        <div data-panel="pratinjau" class="hidden bg-cream-50 dark:bg-ink-950 px-5 md:px-10 py-8">
+          <div class="max-w-[720px] mx-auto" id="pratinjau"></div>
+        </div>
+      </section>
+
+      <!-- POIN PENTING -->
+      <section class={PANEL}>
+        <div>
+          <h2 class={H}>Poin penting <span class="font-sans text-xs font-normal text-ink-500 dark:text-cream-300/60">(TL;DR · GEO)</span></h2>
+          <p class={BANTU}>Satu poin per baris, maks 6. Tampil di atas artikel — ringkasan seperti ini paling sering dikutip mesin AI.</p>
+        </div>
+        <textarea id="f-tldr" rows="3" class={INPUT} placeholder={'Sambung kata dari huruf terakhir lawan.\nKata harus ada di KBBI.'}></textarea>
+      </section>
+
+      <!-- FAQ ARTIKEL -->
+      <section class={PANEL}>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class={H}>FAQ artikel <span class="font-sans text-xs font-normal text-ink-500 dark:text-cream-300/60">(schema FAQPage · GEO)</span></h2>
+            <p class={BANTU}>Tanya-jawab singkat di akhir artikel. Jawaban boleh Markdown.</p>
+          </div>
+          <button type="button" id="btn-faq-tambah" class="rounded-lg bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-500/25">+ Tambah pertanyaan</button>
+        </div>
+        <div id="faq-list" class="space-y-3"></div>
+      </section>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="space-y-6">
+      <section class={PANEL}>
+        <div class="flex items-center justify-between">
+          <h2 class={H}>Checklist SEO</h2>
+          <span id="skor" class="rounded-full px-2.5 py-0.5 text-xs font-semibold">–</span>
+        </div>
+        <ul id="checklist" class="space-y-2 text-sm"></ul>
+      </section>
+
+      <section class={PANEL}>
+        <h2 class={H}>Featured image</h2>
+        <div id="img-preview" class="hidden">
+          <img id="img-el" alt="" class="w-full aspect-[16/9] rounded-xl object-cover bg-ink-900/5" />
+          <div class="mt-2 flex gap-2">
+            <button type="button" id="btn-img-ganti" class={ALAT}>Ganti</button>
+            <button type="button" id="btn-img-hapus" class={`${ALAT} text-red-600 dark:text-red-400`}>Lepas</button>
+          </div>
+        </div>
+        <button type="button" id="btn-img-pilih" class="w-full rounded-xl border-2 border-dashed border-ink-900/15 dark:border-cream-100/15 px-4 py-8 text-sm text-ink-500 dark:text-cream-300/60 hover:border-amber-500/50 transition-colors">
+          Klik atau tarik gambar ke sini<br /><span class="text-xs">Otomatis dikompres · ideal 1600×900</span>
+        </button>
+        <input type="file" id="img-file" accept="image/*" class="hidden" />
+        <div>
+          <label for="f-img-alt" class={LABEL}>Alt text <span class="text-red-600">*</span></label>
+          <input id="f-img-alt" maxlength="200" class={INPUT} placeholder="Deskripsikan isi gambar" />
+        </div>
+        <div>
+          <label for="f-img-caption" class={LABEL}>Keterangan (opsional)</label>
+          <input id="f-img-caption" maxlength="240" class={INPUT} />
+        </div>
+      </section>
+
+      <section class={PANEL}>
+        <h2 class={H}>Publikasi</h2>
+        <div>
+          <label for="f-author" class={LABEL}>Penulis</label>
+          <select id="f-author" class={INPUT}><option value="">— pilih penulis —</option></select>
+          <p class={BANTU}><a href="/admin/blog/pengaturan" class="underline">Kelola penulis</a></p>
+        </div>
+        <div>
+          <p class={LABEL}>Kategori <span class="font-normal text-ink-500 dark:text-cream-300/60">(maks 4)</span></p>
+          <div id="f-categories" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div>
+          <label for="f-tags" class={LABEL}>Tag</label>
+          <input id="f-tags" class={INPUT} placeholder="pemula, tips main, discord" />
+          <p class={BANTU}>Pisahkan dengan koma, maks 12.</p>
+        </div>
+        <div>
+          <label for="f-published" class={LABEL}>Tanggal terbit</label>
+          <input id="f-published" type="datetime-local" class={INPUT} />
+          <p id="published-info" class={BANTU}>Kosong = saat tombol Publish diklik. Tanggal di masa depan = terjadwal.</p>
+        </div>
+      </section>
+
+      <section class={PANEL}>
+        <h2 class={H}>SEO & share</h2>
+        <div>
+          <label for="f-seo-title" class={LABEL}>SEO title</label>
+          <input id="f-seo-title" maxlength="70" class={INPUT} placeholder="Kosong = judul artikel" />
+          <p class={BANTU}><span id="n-seo-title">0</span>/60 ideal</p>
+        </div>
+        <div>
+          <label for="f-seo-desc" class={LABEL}>Meta description</label>
+          <textarea id="f-seo-desc" rows="3" maxlength="170" class={INPUT} placeholder="Kosong = Ringkasan"></textarea>
+          <p class={BANTU}><span id="n-seo-desc">0</span>/160 ideal</p>
+        </div>
+        <label class="flex items-center gap-2 text-sm">
+          <input id="f-noindex" type="checkbox" class="h-4 w-4 rounded border-ink-900/20 text-amber-500 focus:ring-amber-500" />
+          Jangan tampilkan di Google (noindex)
+        </label>
+        <div>
+          <p class="text-xs font-medium text-ink-500 dark:text-cream-300/60 mb-2">Pratinjau Google</p>
+          <div class="rounded-xl bg-white dark:bg-ink-900 border border-ink-900/10 dark:border-cream-100/10 p-4">
+            <p class="text-xs text-[#4d5156] dark:text-cream-300/70 truncate" id="g-url">vanillate.id › blog</p>
+            <p class="mt-1 text-lg leading-snug text-[#1a0dab] dark:text-[#8ab4f8] line-clamp-2" id="g-title">Judul artikel</p>
+            <p class="mt-1 text-sm text-[#4d5156] dark:text-cream-300/70 line-clamp-3" id="g-desc"></p>
+          </div>
+        </div>
+        <div id="riwayat-slug" class="hidden text-xs text-ink-500 dark:text-cream-300/60"></div>
+      </section>
+
+      <section class={PANEL}>
+        <h2 class={H}>Tautan terkait</h2>
+        <p class={BANTU}>Tampil di akhir artikel; artikel juga muncul di halaman produk & FAQ yang dipilih.</p>
+        <div>
+          <p class={LABEL}>Produk Vanillate <span class="font-normal text-ink-500 dark:text-cream-300/60">(maks 4)</span></p>
+          <div id="f-products" class="space-y-1.5"></div>
+        </div>
+        <div>
+          <p class={LABEL}>FAQ / panduan <span class="font-normal text-ink-500 dark:text-cream-300/60">(maks 6)</span></p>
+          <input id="faq-cari" type="search" class={INPUT} placeholder="Cari pertanyaan FAQ…" />
+          <div id="f-faqs-dipilih" class="mt-2 flex flex-wrap gap-1.5"></div>
+          <div id="f-faqs-hasil" class="mt-2 max-h-48 overflow-y-auto space-y-1"></div>
+        </div>
+        <div>
+          <p class={LABEL}>Artikel terkait manual <span class="font-normal text-ink-500 dark:text-cream-300/60">(opsional, maks 3)</span></p>
+          <div id="f-posts" class="max-h-48 overflow-y-auto space-y-1.5"></div>
+          <p class={BANTU}>Kosong = dipilih otomatis dari kategori & tag yang sama.</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+</AdminLayout>
+
+<script>
+  import { blogCall, fmtUkuran, uploadImage } from '@/lib/blog/admin-client';
+  import { esc } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+  import { readingMinutes, renderBlogMarkdown, sanityImageUrl, slugify, wordCount } from '@/lib/blog/markdown';
+  import { productCardHtml, type ProductLite } from '@/lib/blog/product-card';
+  import { isoKeLokal, lokalKeIso, rapikanTulisanAi, seoChecklist, skorSeo } from '@/lib/blog/editor';
+
+  // ─── Data ──────────────────────────────────────────────────────────────────
+  type FaqLite = { ref: string; question: string; category: string; href: string };
+  const situs = JSON.parse(document.getElementById('data-situs')!.textContent || '{}') as { products: ProductLite[]; faqs: FaqLite[] };
+  const produkBySlug = new Map(situs.products.map((p) => [p.slug, p]));
+
+  type Post = {
+    title: string; slug: string; excerpt: string; tldr: string[]; body: string;
+    mainImage: { assetId: string; alt: string; caption: string } | null;
+    authorId: string | null; categoryIds: string[]; tags: string[]; publishedAt: string | null;
+    seo: { title: string; description: string; noindex: boolean };
+    faqs: { q: string; a: string }[];
+    relatedProducts: string[]; relatedFaqs: string[]; relatedPostIds: string[];
+  };
+  type ListItem = { id: string; title: string; slug: string; status: string; hasPublished: boolean; publishedSlug: string | null };
+
+  const st = {
+    id: null as string | null,
+    hasPublished: false,
+    hasDraft: false,
+    publishedSlug: null as string | null,
+    publishedAt: null as string | null,
+    previousSlugs: [] as string[],
+    imageUrl: null as string | null,
+    assetId: null as string | null,
+    slugManual: false,
+    dirty: false,
+    sibuk: false,
+    bolehEdit: false,
+    faqs: [] as { q: string; a: string }[],
+    relatedFaqs: [] as string[],
+    authors: [] as { id: string; name: string }[],
+    categories: [] as { id: string; title: string }[],
+    posts: [] as ListItem[],
+  };
+
+  const $ = <T extends HTMLElement = HTMLInputElement>(id: string) => document.getElementById(id) as T;
+  const body = () => $<HTMLTextAreaElement>('f-body');
+  const kunciLokal = () => `vanillate-blog-draft:${st.id ?? 'baru'}`;
+
+  // ─── Pesan ─────────────────────────────────────────────────────────────────
+  function lapor(teks: string, jenis: 'ok' | 'err' | 'info' = 'err') {
+    const p = $('pesan');
+    p.classList.remove('hidden');
+    p.className = `rounded-2xl border px-5 py-3 text-sm ${
+      jenis === 'ok' ? 'border-teal-500/40 bg-teal-500/10 text-teal-800 dark:text-teal-200'
+        : jenis === 'info' ? 'border-ink-900/15 dark:border-cream-100/15'
+          : 'border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300'}`;
+    p.textContent = teks;
+    p.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  // ─── Kumpulkan isian ───────────────────────────────────────────────────────
+  function kumpulkan(): Post {
+    const daftar = (v: string, sep: RegExp) => v.split(sep).map((s) => s.trim()).filter(Boolean);
+    return {
+      title: $('f-title').value.trim(),
+      slug: $('f-slug').value.trim() || slugify($('f-title').value),
+      excerpt: $<HTMLTextAreaElement>('f-excerpt').value.trim(),
+      tldr: daftar($<HTMLTextAreaElement>('f-tldr').value, /\n/).map((s) => s.replace(/^[-•*]\s*/, '')).slice(0, 6),
+      body: body().value,
+      mainImage: st.assetId ? { assetId: st.assetId, alt: $('f-img-alt').value.trim(), caption: $('f-img-caption').value.trim() } : null,
+      authorId: $<HTMLSelectElement>('f-author').value || null,
+      categoryIds: [...document.querySelectorAll<HTMLInputElement>('#f-categories input:checked')].map((i) => i.value),
+      tags: daftar($('f-tags').value, /,/).slice(0, 12),
+      publishedAt: lokalKeIso($('f-published').value),
+      seo: {
+        title: $('f-seo-title').value.trim(),
+        description: $<HTMLTextAreaElement>('f-seo-desc').value.trim(),
+        noindex: $('f-noindex').checked,
+      },
+      faqs: st.faqs.filter((f) => f.q.trim() && f.a.trim()),
+      relatedProducts: [...document.querySelectorAll<HTMLInputElement>('#f-products input:checked')].map((i) => i.value),
+      relatedFaqs: [...st.relatedFaqs],
+      relatedPostIds: [...document.querySelectorAll<HTMLInputElement>('#f-posts input:checked')].map((i) => i.value),
+    };
+  }
+
+  function isi(p: Post, imageUrl: string | null) {
+    $('f-title').value = p.title;
+    $('f-slug').value = p.slug;
+    st.slugManual = Boolean(p.slug) && p.slug !== slugify(p.title);
+    $<HTMLTextAreaElement>('f-excerpt').value = p.excerpt;
+    $<HTMLTextAreaElement>('f-tldr').value = p.tldr.join('\n');
+    body().value = p.body;
+    st.assetId = p.mainImage?.assetId ?? null;
+    st.imageUrl = imageUrl;
+    $('f-img-alt').value = p.mainImage?.alt ?? '';
+    $('f-img-caption').value = p.mainImage?.caption ?? '';
+    $<HTMLSelectElement>('f-author').value = p.authorId ?? '';
+    document.querySelectorAll<HTMLInputElement>('#f-categories input').forEach((i) => (i.checked = p.categoryIds.includes(i.value)));
+    $('f-tags').value = p.tags.join(', ');
+    $('f-published').value = isoKeLokal(p.publishedAt);
+    $('f-seo-title').value = p.seo.title;
+    $<HTMLTextAreaElement>('f-seo-desc').value = p.seo.description;
+    $('f-noindex').checked = p.seo.noindex;
+    st.faqs = p.faqs.map((f) => ({ ...f }));
+    st.relatedFaqs = [...p.relatedFaqs];
+    document.querySelectorAll<HTMLInputElement>('#f-products input').forEach((i) => (i.checked = p.relatedProducts.includes(i.value)));
+    document.querySelectorAll<HTMLInputElement>('#f-posts input').forEach((i) => (i.checked = p.relatedPostIds.includes(i.value)));
+    gambarFaq();
+    gambarFaqTerpilih();
+    gambarGambar();
+    segarkan();
+  }
+
+  // ─── Tampilan turunan ──────────────────────────────────────────────────────
+  function gambarGambar() {
+    const ada = Boolean(st.imageUrl);
+    $('img-preview').classList.toggle('hidden', !ada);
+    $('btn-img-pilih').classList.toggle('hidden', ada);
+    if (ada) $<HTMLImageElement>('img-el').src = sanityImageUrl(st.imageUrl!, { w: 720, h: 405, fit: 'crop' });
+  }
+
+  function segarkan() {
+    const p = kumpulkan();
+    if (!st.slugManual) $('f-slug').value = slugify(p.title);
+    $('slug-mode').textContent = st.slugManual ? 'manual' : 'otomatis';
+
+    // Peringatan ganti slug artikel yang sudah tayang.
+    const info = $('slug-info');
+    if (st.publishedSlug && p.slug && p.slug !== st.publishedSlug) {
+      info.classList.remove('hidden');
+      info.textContent = `Slug berubah dari "${st.publishedSlug}". Setelah Publish, alamat lama otomatis dialihkan ke alamat baru — tautan & peringkat Google tidak hilang.`;
+    } else info.classList.add('hidden');
+
+    $('n-excerpt').textContent = String(p.excerpt.length);
+    $('n-seo-title').textContent = String(p.seo.title.length);
+    $('n-seo-desc').textContent = String(p.seo.description.length);
+    $('n-kata').textContent = String(wordCount(p.body));
+    $('n-menit').textContent = String(readingMinutes(p.body));
+
+    $('g-url').textContent = `vanillate.id › blog › ${p.slug || '…'}`;
+    $('g-title').textContent = (p.seo.title || (p.title ? `${p.title} · Vanillate Studio` : 'Judul artikel')).slice(0, 70);
+    $('g-desc').textContent = (p.seo.description || p.excerpt || 'Isi Ringkasan atau Meta description.').slice(0, 165);
+
+    const cek = seoChecklist({ ...p, mainImage: p.mainImage ? { alt: p.mainImage.alt } : null });
+    const skor = skorSeo(cek);
+    const sk = $('skor');
+    sk.textContent = `${skor}/100`;
+    sk.className = `rounded-full px-2.5 py-0.5 text-xs font-semibold ${skor >= 80 ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300' : skor >= 50 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' : 'bg-red-500/15 text-red-700 dark:text-red-300'}`;
+    $('checklist').innerHTML = cek.map((c) => `
+      <li class="flex gap-2.5">
+        <span class="mt-0.5 flex-none ${c.status === 'ok' ? 'text-teal-600 dark:text-teal-400' : c.status === 'warn' ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}">${c.status === 'ok' ? '✓' : c.status === 'warn' ? '!' : '✕'}</span>
+        <span><span class="font-medium">${esc(c.label)}</span><span class="block text-xs text-ink-500 dark:text-cream-300/60">${esc(c.hint)}</span></span>
+      </li>`).join('');
+
+    const tgl = p.publishedAt ? new Date(p.publishedAt) : null;
+    $('published-info').textContent = tgl && tgl.getTime() > Date.now()
+      ? `Terjadwal: tayang otomatis ${fmtWaktu(p.publishedAt)} (dicek tiap jam).`
+      : 'Kosong = saat tombol Publish diklik. Tanggal di masa depan = terjadwal.';
+
+    if (document.querySelector('[data-panel="pratinjau"]:not(.hidden)')) gambarPratinjau();
+  }
+
+  function gambarPratinjau() {
+    const p = kumpulkan();
+    const opsi = { blockToken: (n: string, a: string) => (n === 'produk' ? productCardHtml(produkBySlug.get(a), `/products/${a}`) : null) };
+    const { html } = renderBlogMarkdown(p.body, opsi);
+    const gambar = st.imageUrl
+      ? `<img src="${esc(sanityImageUrl(st.imageUrl, { w: 1200 }))}" alt="${esc(p.mainImage?.alt ?? '')}" class="w-full rounded-2xl mb-8 border border-ink-900/10 dark:border-cream-100/10" />`
+      : '';
+    const tldr = p.tldr.length
+      ? `<section class="mb-10 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6"><p class="font-mono text-xs uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400 mb-3">Poin penting</p><ul class="space-y-2">${p.tldr.map((t) => `<li class="flex gap-3"><span class="text-amber-600">✓</span><span>${esc(t)}</span></li>`).join('')}</ul></section>`
+      : '';
+    const faq = p.faqs.length
+      ? `<h2 class="font-display text-2xl font-semibold tracking-tightest mt-14 mb-5">Pertanyaan yang sering diajukan</h2>${p.faqs.map((f) => `<details class="border-t border-ink-900/10 dark:border-cream-100/10 py-4" open><summary class="font-medium cursor-pointer">${esc(f.q)}</summary><div class="mt-3">${renderBlogMarkdown(f.a, opsi).html}</div></details>`).join('')}`
+      : '';
+    $('pratinjau').innerHTML = `
+      <h1 class="font-display font-semibold tracking-tightest text-4xl leading-tight">${esc(p.title || 'Judul artikel')}</h1>
+      ${p.excerpt ? `<p class="mt-4 text-lg text-ink-600 dark:text-cream-200/80">${esc(p.excerpt)}</p>` : ''}
+      <p class="mt-4 mb-8 font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(st.authors.find((a) => a.id === p.authorId)?.name ?? 'Tanpa penulis')} · ${readingMinutes(p.body)} menit baca</p>
+      ${gambar}${tldr}${html || '<p class="text-ink-500">Belum ada isi.</p>'}${faq}`;
+  }
+
+  // ─── FAQ artikel ───────────────────────────────────────────────────────────
+  function gambarFaq() {
+    const el = $('faq-list');
+    if (!st.faqs.length) { el.innerHTML = '<p class="text-xs text-ink-500 dark:text-cream-300/60">Belum ada pertanyaan.</p>'; return; }
+    const I = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
+    el.innerHTML = st.faqs.map((f, i) => `
+      <div class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-3 space-y-2">
+        <div class="flex gap-2">
+          <input data-faq="${i}" data-k="q" value="${esc(f.q)}" maxlength="200" placeholder="Pertanyaan" class="${I}" />
+          <button type="button" data-faq-hapus="${i}" class="rounded-lg px-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10" aria-label="Hapus pertanyaan">✕</button>
+        </div>
+        <textarea data-faq="${i}" data-k="a" rows="2" maxlength="2000" placeholder="Jawaban" class="${I}">${esc(f.a)}</textarea>
+      </div>`).join('');
+  }
+
+  // ─── Tautan terkait ────────────────────────────────────────────────────────
+  function gambarProduk() {
+    $('f-products').innerHTML = situs.products.map((p) => `
+      <label class="flex items-start gap-2 text-sm">
+        <input type="checkbox" value="${esc(p.slug)}" class="mt-0.5 h-4 w-4 rounded border-ink-900/20 text-amber-500 focus:ring-amber-500" />
+        <span>${esc(p.name)}</span>
+      </label>`).join('') || '<p class="text-xs text-ink-500">Belum ada produk.</p>';
+  }
+
+  function gambarFaqTerpilih() {
+    $('f-faqs-dipilih').innerHTML = st.relatedFaqs.map((r) => {
+      const f = situs.faqs.find((x) => x.ref === r);
+      return `<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs text-amber-800 dark:text-amber-300">${esc(f?.question ?? r)}<button type="button" data-faq-lepas="${esc(r)}" aria-label="Lepas" class="ml-1">✕</button></span>`;
+    }).join('');
+    gambarFaqHasil();
+  }
+
+  function gambarFaqHasil() {
+    const q = $('faq-cari').value.trim().toLowerCase();
+    const hasil = situs.faqs
+      .filter((f) => !st.relatedFaqs.includes(f.ref) && (!q || f.question.toLowerCase().includes(q) || f.category.toLowerCase().includes(q)))
+      .slice(0, q ? 30 : 8);
+    $('f-faqs-hasil').innerHTML = hasil.map((f) => `
+      <button type="button" data-faq-pilih="${esc(f.ref)}" class="block w-full text-left rounded-lg px-2.5 py-1.5 text-xs hover:bg-ink-900/5 dark:hover:bg-cream-100/5">
+        <span class="text-ink-500 dark:text-cream-300/60">${esc(f.category)} ·</span> ${esc(f.question)}
+      </button>`).join('');
+  }
+
+  function gambarPostTerkait(terpilih: string[] = []) {
+    const lain = st.posts.filter((p) => p.id !== st.id && p.hasPublished);
+    $('f-posts').innerHTML = lain.length
+      ? lain.map((p) => `
+        <label class="flex items-start gap-2 text-sm">
+          <input type="checkbox" value="${esc(p.id)}" ${terpilih.includes(p.id) ? 'checked' : ''} class="mt-0.5 h-4 w-4 rounded border-ink-900/20 text-amber-500 focus:ring-amber-500" />
+          <span>${esc(p.title)}</span>
+        </label>`).join('')
+      : '<p class="text-xs text-ink-500 dark:text-cream-300/60">Belum ada artikel terbit lainnya.</p>';
+  }
+
+  function isiPilihanInternal() {
+    const sel = $<HTMLSelectElement>('sisip-internal');
+    const grup = (label: string, opsi: string) => (opsi ? `<optgroup label="${esc(label)}">${opsi}</optgroup>` : '');
+    sel.innerHTML = '<option value="">＋ Tautan internal…</option>' +
+      grup('Kartu produk', situs.products.map((p) => `<option value="${esc(`card:${p.slug}`)}">Kartu: ${esc(p.name)}</option>`).join('')) +
+      grup('Tautan produk', situs.products.map((p) => `<option value="${esc(`link:${p.name}|/products/${p.slug}`)}">${esc(p.name)}</option>`).join('')) +
+      grup('Artikel blog', st.posts.filter((p) => p.hasPublished && p.id !== st.id).map((p) => `<option value="${esc(`link:${p.title}|/blog/${p.publishedSlug}`)}">${esc(p.title)}</option>`).join('')) +
+      grup('FAQ', situs.faqs.map((f) => `<option value="${esc(`link:${f.question}|${f.href}`)}">${esc(f.category)} · ${esc(f.question)}</option>`).join(''));
+  }
+
+  // ─── Toolbar Markdown ──────────────────────────────────────────────────────
+  function sisip(sebelum: string, sesudah = '', contoh = '') {
+    const ta = body();
+    const { selectionStart: a, selectionEnd: b, value } = ta;
+    const pilih = value.slice(a, b) || contoh;
+    ta.setRangeText(sebelum + pilih + sesudah, a, b, 'end');
+    if (!value.slice(a, b) && contoh) ta.setSelectionRange(a + sebelum.length, a + sebelum.length + contoh.length);
+    ta.focus();
+    tandaiBerubah();
+  }
+
+  function awalanBaris(awal: (i: number) => string) {
+    const ta = body();
+    const { value } = ta;
+    const a = value.lastIndexOf('\n', ta.selectionStart - 1) + 1;
+    let b = value.indexOf('\n', ta.selectionEnd);
+    if (b === -1) b = value.length;
+    const baru = value.slice(a, b).split('\n').map((l, i) => awal(i) + l.replace(/^(#{1,6}\s|[-*]\s|\d+\.\s|>\s?)/, '')).join('\n');
+    ta.setRangeText(baru, a, b, 'end');
+    ta.focus();
+    tandaiBerubah();
+  }
+
+  function blok(teks: string) {
+    const ta = body();
+    const sebelum = ta.value.slice(0, ta.selectionStart);
+    const pemisah = !sebelum || sebelum.endsWith('\n\n') ? '' : sebelum.endsWith('\n') ? '\n' : '\n\n';
+    sisip(`${pemisah}${teks}\n\n`);
+  }
+
+  function aksiMd(jenis: string) {
+    switch (jenis) {
+      case 'h2': return awalanBaris(() => '## ');
+      case 'h3': return awalanBaris(() => '### ');
+      case 'bold': return sisip('**', '**', 'teks tebal');
+      case 'italic': return sisip('*', '*', 'teks miring');
+      case 'ul': return awalanBaris(() => '- ');
+      case 'ol': return awalanBaris((i) => `${i + 1}. `);
+      case 'quote': return awalanBaris(() => '> ');
+      case 'tip': return blok('> [!TIP] Tulis tips di sini.');
+      case 'table': return blok('| Kolom 1 | Kolom 2 |\n|---|---|\n| isi | isi |');
+      case 'image': return $('img-body-file').click();
+      case 'link': {
+        const href = window.prompt('Alamat tautan (https://… atau /products/…):', 'https://');
+        if (href && href !== 'https://') sisip('[', `](${href.trim()})`, 'teks tautan');
+      }
+    }
+  }
+
+  async function sisipGambarIsi(file: File) {
+    if (!st.bolehEdit) return;
+    const alt = window.prompt('Alt text gambar (deskripsi singkat isi gambar — penting untuk SEO & aksesibilitas):', '');
+    if (alt === null) return;
+    lapor(`Mengunggah gambar (${fmtUkuran(file.size)})…`, 'info');
+    const r = await uploadImage(file);
+    if (!r.ok) { lapor(r.error.message); return; }
+    blok(`![${alt.replace(/[\[\]]/g, '').trim() || 'Gambar'}](${r.data.url})`);
+    lapor('Gambar disisipkan.', 'ok');
+  }
+
+  async function pasangFeatured(file: File) {
+    if (!st.bolehEdit) return;
+    lapor(`Mengunggah gambar (${fmtUkuran(file.size)})…`, 'info');
+    const r = await uploadImage(file);
+    if (!r.ok) { lapor(r.error.message); return; }
+    st.assetId = r.data.assetId;
+    st.imageUrl = r.data.url;
+    gambarGambar();
+    tandaiBerubah();
+    lapor('Featured image terpasang. Jangan lupa isi alt text.', 'ok');
+    $('f-img-alt').focus();
+  }
+
+  // ─── Simpan lokal (anti-hilang) ────────────────────────────────────────────
+  let timerLokal: number | undefined;
+  function tandaiBerubah() {
+    st.dirty = true;
+    $('simpan-info').textContent = 'Belum disimpan';
+    segarkan();
+    clearTimeout(timerLokal);
+    timerLokal = window.setTimeout(() => {
+      try {
+        localStorage.setItem(kunciLokal(), JSON.stringify({ at: Date.now(), post: kumpulkan(), imageUrl: st.imageUrl }));
+      } catch (_) { /* penyimpanan penuh/diblokir: abaikan */ }
+    }, 600);
+  }
+
+  function hapusLokal() {
+    try { localStorage.removeItem(kunciLokal()); localStorage.removeItem('vanillate-blog-draft:baru'); } catch (_) {}
+  }
+
+  /** Tawarkan isi simpanan lokal bila berbeda dari yang sekarang ada di form. */
+  function tawarkanPemulihan() {
+    let simpanan: { at: number; post: Post; imageUrl: string | null } | null = null;
+    try { simpanan = JSON.parse(localStorage.getItem(kunciLokal()) || 'null'); } catch (_) {}
+    if (!simpanan?.post) return;
+    if (JSON.stringify(simpanan.post) === JSON.stringify(kumpulkan())) { hapusLokal(); return; }
+    if (!simpanan.post.title && !simpanan.post.body) return;
+    $('pulihkan').classList.remove('hidden');
+    $('pulihkan-teks').textContent = `Ada tulisan yang belum tersimpan dari ${new Date(simpanan.at).toLocaleString('id-ID')}. Pulihkan?`;
+    $('btn-pulihkan').onclick = () => {
+      isi(simpanan!.post, simpanan!.imageUrl);
+      $('pulihkan').classList.add('hidden');
+      tandaiBerubah();
+    };
+    $('btn-abaikan').onclick = () => { hapusLokal(); $('pulihkan').classList.add('hidden'); };
+  }
+
+  // ─── Status ────────────────────────────────────────────────────────────────
+  function gambarStatus() {
+    const pill = $('status-pill');
+    const [label, cls] = !st.hasPublished
+      ? ['Draft', 'bg-ink-500/15 text-ink-600 dark:text-cream-300/70']
+      : st.hasDraft
+        ? ['Terbit · ada perubahan belum dipublish', 'bg-amber-500/15 text-amber-700 dark:text-amber-400']
+        : st.publishedAt && new Date(st.publishedAt).getTime() > Date.now()
+          ? ['Terjadwal', 'bg-teal-500/10 text-teal-700 dark:text-teal-300']
+          : ['Terbit', 'bg-teal-500/15 text-teal-700 dark:text-teal-300'];
+    pill.textContent = st.id ? label : 'Baru';
+    pill.className = `rounded-full px-2.5 py-0.5 font-semibold ${cls}`;
+    $('status-teks').textContent = st.publishedAt ? `Terbit ${fmtWaktu(st.publishedAt)}` : '';
+    $('btn-publish').textContent = st.hasPublished ? 'Publish perubahan' : 'Publish';
+    const lihat = $<HTMLAnchorElement>('btn-lihat');
+    lihat.classList.toggle('hidden', !st.publishedSlug);
+    if (st.publishedSlug) lihat.href = `/blog/${st.publishedSlug}`;
+    ($('btn-unpublish') as HTMLButtonElement).disabled = !st.hasPublished;
+    ($('btn-discard') as HTMLButtonElement).disabled = !(st.hasPublished && st.hasDraft);
+    ($('btn-hapus') as HTMLButtonElement).disabled = !st.id;
+    const rw = $('riwayat-slug');
+    rw.classList.toggle('hidden', st.previousSlugs.length === 0);
+    rw.textContent = st.previousSlugs.length ? `Alamat lama yang dialihkan ke artikel ini: ${st.previousSlugs.map((s) => `/blog/${s}`).join(', ')}` : '';
+    document.querySelector('h1')!.textContent = st.id ? 'Edit artikel' : 'Tulis artikel';
+  }
+
+  function setId(id: string) {
+    const lamaKunci = kunciLokal();
+    st.id = id;
+    const u = new URL(window.location.href);
+    u.searchParams.set('id', id);
+    history.replaceState(null, '', u);
+    try { localStorage.removeItem(lamaKunci); } catch (_) {}
+  }
+
+  function setSibuk(v: boolean) {
+    st.sibuk = v;
+    ['btn-simpan', 'btn-publish'].forEach((b) => (($(b) as HTMLButtonElement).disabled = v || !st.bolehEdit));
+  }
+
+  // ─── Aksi server ───────────────────────────────────────────────────────────
+  async function simpan(diam = false) {
+    if (st.sibuk || !st.bolehEdit) return;
+    setSibuk(true);
+    $('simpan-info').textContent = 'Menyimpan…';
+    const r = await blogCall<{ id: string }>('save', { id: st.id, post: kumpulkan() });
+    setSibuk(false);
+    if (!r.ok) { $('simpan-info').textContent = 'Gagal menyimpan'; lapor(r.error.message); return false; }
+    setId(r.data.id);
+    st.hasDraft = true;
+    st.dirty = false;
+    hapusLokal();
+    $('simpan-info').textContent = `Draft tersimpan ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+    gambarStatus();
+    if (!diam) lapor(st.hasPublished ? 'Draft tersimpan. Versi yang tayang belum berubah sampai kamu klik "Publish perubahan".' : 'Draft tersimpan. Belum tayang di situs.', 'ok');
+    return true;
+  }
+
+  async function publish() {
+    if (st.sibuk || !st.bolehEdit) return;
+    const p = kumpulkan();
+    const terjadwal = p.publishedAt && new Date(p.publishedAt).getTime() > Date.now();
+    const konfirmasi = st.hasPublished
+      ? `Terbitkan perubahan "${p.title}"? Versi di situs akan diganti.`
+      : terjadwal
+        ? `Jadwalkan "${p.title}" untuk tayang ${fmtWaktu(p.publishedAt)}?`
+        : `Terbitkan "${p.title}" sekarang ke vanillate.id/blog/${p.slug}?`;
+    if (!window.confirm(konfirmasi)) return;
+    setSibuk(true);
+    const r = await blogCall<{ id: string; slug: string; publishedAt: string; rebuild: string }>('publish', { id: st.id, post: p });
+    setSibuk(false);
+    if (!r.ok) { lapor(r.error.code === 'VALIDATION' ? `Belum bisa terbit: ${r.error.message}` : r.error.message); return; }
+    setId(r.data.id);
+    if (st.publishedSlug && st.publishedSlug !== r.data.slug) st.previousSlugs = [...new Set([...st.previousSlugs, st.publishedSlug])];
+    st.hasPublished = true;
+    st.hasDraft = false;
+    st.publishedSlug = r.data.slug;
+    st.publishedAt = r.data.publishedAt;
+    st.dirty = false;
+    hapusLokal();
+    $('simpan-info').textContent = 'Terbit';
+    gambarStatus();
+    const alamat = `vanillate.id/blog/${r.data.slug}`;
+    const sisa = new Date(r.data.publishedAt).getTime() > Date.now()
+      ? ` Terjadwal tayang ${fmtWaktu(r.data.publishedAt)}.`
+      : r.data.rebuild === 'sent'
+        ? ` Situs sedang dibangun ulang — tayang di ${alamat} ±2–5 menit lagi.`
+        : r.data.rebuild === 'skipped'
+          ? ` Tayang di ${alamat} pada pemeriksaan berkala berikutnya (maks ±1 jam). Aktifkan terbit instan: docs/BLOG.md.`
+          : ` Gagal memicu build otomatis; artikel tetap tayang lewat pemeriksaan berkala (±1 jam).`;
+    lapor(`Artikel terbit!${sisa}`, 'ok');
+  }
+
+  async function aksiLain(jenis: 'unpublish' | 'discard' | 'delete') {
+    if (!st.id || !st.bolehEdit) return;
+    ($('menu-lain') as HTMLDetailsElement).open = false;
+    const tanya = {
+      unpublish: 'Tarik artikel dari situs? Isinya tetap tersimpan sebagai draft dan bisa diterbitkan lagi.',
+      discard: 'Buang semua perubahan draft dan kembali ke versi yang sedang tayang?',
+      delete: st.hasPublished
+        ? 'Hapus artikel ini permanen? Alamatnya akan jadi 404. Kalau hanya ingin menyembunyikan, pakai "Tarik dari situs".'
+        : 'Hapus draft ini permanen?',
+    }[jenis];
+    if (!window.confirm(tanya)) return;
+    setSibuk(true);
+    const r = await blogCall(jenis, { id: st.id });
+    setSibuk(false);
+    if (!r.ok) { lapor(r.error.message); return; }
+    hapusLokal();
+    if (jenis === 'delete') { st.dirty = false; window.location.href = '/admin/blog'; return; }
+    await muatArtikel(st.id);
+    lapor(jenis === 'unpublish' ? 'Artikel ditarik dari situs dan kini berstatus draft.' : 'Perubahan draft dibuang.', 'ok');
+  }
+
+  async function muatArtikel(id: string) {
+    const r = await blogCall<{ post: Post & { mainImageUrl: string | null }; hasDraft: boolean; hasPublished: boolean; publishedSlug: string | null; publishedAt: string | null; previousSlugs: string[] }>('get', { id });
+    if (!r.ok) { lapor(r.error.message); return null; }
+    st.id = id;
+    st.hasDraft = r.data.hasDraft;
+    st.hasPublished = r.data.hasPublished;
+    st.publishedSlug = r.data.publishedSlug;
+    st.publishedAt = r.data.publishedAt;
+    st.previousSlugs = r.data.previousSlugs ?? [];
+    const { mainImageUrl, ...post } = r.data.post;
+    gambarPostTerkait(post.relatedPostIds);
+    isi(post, mainImageUrl);
+    st.dirty = false;
+    $('simpan-info').textContent = '';
+    gambarStatus();
+    return post;
+  }
+
+  // ─── Mulai ─────────────────────────────────────────────────────────────────
+  document.addEventListener('admin:ready', async (e) => {
+    const role = (e as CustomEvent).detail?.role;
+    st.bolehEdit = role === 'owner' || role === 'admin';
+
+    gambarProduk();
+    gambarFaq();
+    gambarFaqTerpilih();
+    pasangEvent();
+    pilihTab('tulis');
+
+    const r = await blogCall<{ posts: ListItem[]; authors: { id: string; name: string }[]; categories: { id: string; title: string }[] }>('list');
+    if (!r.ok) { lapor(r.error.message); return; }
+    st.posts = r.data.posts;
+    st.authors = r.data.authors;
+    st.categories = r.data.categories;
+    $<HTMLSelectElement>('f-author').innerHTML = '<option value="">— pilih penulis —</option>' +
+      st.authors.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
+    $('f-categories').innerHTML = st.categories.length
+      ? st.categories.map((c) => `
+        <label class="inline-flex items-center gap-1.5 rounded-full border border-ink-900/10 dark:border-cream-100/10 px-3 py-1 text-sm has-[:checked]:border-amber-500 has-[:checked]:bg-amber-500/15">
+          <input type="checkbox" value="${esc(c.id)}" class="h-3.5 w-3.5 rounded text-amber-500 focus:ring-amber-500" /> ${esc(c.title)}
+        </label>`).join('')
+      : '<p class="text-xs text-ink-500 dark:text-cream-300/60">Belum ada kategori. <a href="/admin/blog/pengaturan" class="underline">Buat kategori</a>.</p>';
+    isiPilihanInternal();
+    gambarPostTerkait();
+
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) await muatArtikel(id);
+    else {
+      if (st.authors.length === 1) $<HTMLSelectElement>('f-author').value = st.authors[0].id;
+      gambarStatus();
+      segarkan();
+    }
+    tawarkanPemulihan();
+
+    if (!st.bolehEdit) {
+      document.querySelectorAll<HTMLInputElement>('#editor-root input, #editor-root textarea, #editor-root select, #editor-root button').forEach((n) => (n.disabled = true));
+      setSibuk(false);
+      ['btn-unpublish', 'btn-discard', 'btn-hapus'].forEach((b) => (($(b) as HTMLButtonElement).disabled = true));
+      lapor('Peran kamu hanya bisa melihat artikel.', 'info');
+    }
+  });
+
+  function pilihTab(tab: string) {
+    document.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== tab));
+    document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => {
+      const aktif = b.dataset.tab === tab;
+      b.className = `rounded-md px-3 py-1 text-xs font-semibold ${aktif ? 'bg-cream-50 dark:bg-ink-800 shadow-sm' : 'text-ink-500 dark:text-cream-300/60'}`;
+    });
+    $('toolbar').classList.toggle('hidden', tab !== 'tulis');
+    if (tab === 'pratinjau') gambarPratinjau();
+  }
+
+  function pasangEvent() {
+    // Gambar sisipan isi artikel (input tersembunyi dibuat di sini).
+    const fileIsi = document.createElement('input');
+    fileIsi.type = 'file';
+    fileIsi.accept = 'image/*';
+    fileIsi.id = 'img-body-file';
+    fileIsi.className = 'hidden';
+    document.body.appendChild(fileIsi);
+    fileIsi.addEventListener('change', () => { if (fileIsi.files?.[0]) void sisipGambarIsi(fileIsi.files[0]); fileIsi.value = ''; });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => b.addEventListener('click', () => pilihTab(b.dataset.tab!)));
+    document.querySelectorAll<HTMLButtonElement>('[data-md]').forEach((b) => b.addEventListener('click', () => aksiMd(b.dataset.md!)));
+
+    $('editor-root').addEventListener('input', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.id === 'f-slug') st.slugManual = Boolean($('f-slug').value.trim());
+      if (t.id === 'faq-cari') { gambarFaqHasil(); return; }
+      if (t.dataset.faq !== undefined) {
+        const i = Number(t.dataset.faq);
+        st.faqs[i][t.dataset.k as 'q' | 'a'] = (t as HTMLInputElement).value;
+      }
+      tandaiBerubah();
+    });
+    $('editor-root').addEventListener('change', (e) => {
+      const t = e.target as HTMLInputElement;
+      if (t.closest('#f-categories') && document.querySelectorAll('#f-categories input:checked').length > 4) t.checked = false;
+      if (t.closest('#f-products') && document.querySelectorAll('#f-products input:checked').length > 4) t.checked = false;
+      if (t.closest('#f-posts') && document.querySelectorAll('#f-posts input:checked').length > 3) t.checked = false;
+      if (t.id !== 'img-file' && t.id !== 'sisip-internal') tandaiBerubah();
+    });
+    $('f-slug').addEventListener('blur', () => {
+      const v = slugify($('f-slug').value);
+      $('f-slug').value = v;
+      st.slugManual = Boolean(v) && v !== slugify($('f-title').value);
+      segarkan();
+    });
+
+    // FAQ
+    $('btn-faq-tambah').addEventListener('click', () => { st.faqs.push({ q: '', a: '' }); gambarFaq(); tandaiBerubah(); });
+    $('faq-list').addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-faq-hapus]');
+      if (!b) return;
+      st.faqs.splice(Number(b.dataset.faqHapus), 1);
+      gambarFaq();
+      tandaiBerubah();
+    });
+    $('f-faqs-hasil').addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-faq-pilih]');
+      if (!b || st.relatedFaqs.length >= 6) return;
+      st.relatedFaqs.push(b.dataset.faqPilih!);
+      gambarFaqTerpilih();
+      tandaiBerubah();
+    });
+    $('f-faqs-dipilih').addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-faq-lepas]');
+      if (!b) return;
+      st.relatedFaqs = st.relatedFaqs.filter((r) => r !== b.dataset.faqLepas);
+      gambarFaqTerpilih();
+      tandaiBerubah();
+    });
+
+    // Tautan internal
+    $<HTMLSelectElement>('sisip-internal').addEventListener('change', (e) => {
+      const sel = e.target as HTMLSelectElement;
+      const v = sel.value;
+      sel.value = '';
+      if (v.startsWith('card:')) blok(`{{produk:${v.slice(5)}}}`);
+      else if (v.startsWith('link:')) {
+        const [teks, href] = v.slice(5).split('|');
+        const ta = body();
+        const terpilih = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+        sisip('[', `](${href})`, terpilih ? '' : teks);
+      }
+    });
+
+    // Rapikan tulisan AI
+    $('btn-rapikan').addEventListener('click', () => {
+      const r = rapikanTulisanAi(body().value, $('f-title').value);
+      if (!r.changes.length) { lapor('Tulisan sudah rapi — tidak ada yang perlu diubah.', 'info'); return; }
+      if (r.title) $('f-title').value = r.title;
+      body().value = r.body;
+      tandaiBerubah();
+      lapor(`Dirapikan: ${r.changes.join(' ')}`, 'ok');
+    });
+
+    // Featured image
+    const imgFile = $('img-file');
+    $('btn-img-pilih').addEventListener('click', () => imgFile.click());
+    $('btn-img-ganti').addEventListener('click', () => imgFile.click());
+    $('btn-img-hapus').addEventListener('click', () => { st.assetId = null; st.imageUrl = null; gambarGambar(); tandaiBerubah(); });
+    imgFile.addEventListener('change', () => { if (imgFile.files?.[0]) void pasangFeatured(imgFile.files[0]); imgFile.value = ''; });
+    for (const [zona, fn] of [[$('btn-img-pilih'), pasangFeatured], [body(), sisipGambarIsi]] as const) {
+      zona.addEventListener('dragover', (e) => { e.preventDefault(); });
+      zona.addEventListener('drop', (e) => {
+        const f = (e as DragEvent).dataTransfer?.files?.[0];
+        if (f && f.type.startsWith('image/')) { e.preventDefault(); void fn(f); }
+      });
+    }
+    // Tempel gambar dari clipboard langsung ke isi artikel.
+    body().addEventListener('paste', (e) => {
+      const f = [...(e.clipboardData?.files ?? [])].find((x) => x.type.startsWith('image/'));
+      if (f) { e.preventDefault(); void sisipGambarIsi(f); }
+    });
+
+    // Tombol utama
+    $('btn-simpan').addEventListener('click', () => void simpan());
+    $('btn-publish').addEventListener('click', () => void publish());
+    $('btn-unpublish').addEventListener('click', () => void aksiLain('unpublish'));
+    $('btn-discard').addEventListener('click', () => void aksiLain('discard'));
+    $('btn-hapus').addEventListener('click', () => void aksiLain('delete'));
+
+    // Pintasan keyboard
+    document.addEventListener('keydown', (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === 's') { e.preventDefault(); void simpan(); }
+      else if (document.activeElement === body() && (k === 'b' || k === 'i' || k === 'k')) {
+        e.preventDefault();
+        aksiMd(k === 'b' ? 'bold' : k === 'i' ? 'italic' : 'link');
+      }
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      if (st.dirty) { e.preventDefault(); e.returnValue = ''; }
+    });
+  }
+</script>

@@ -4,7 +4,7 @@ name: Test
 #   • npm test      → model dashboard + logika Edge Function dashboard-discord
 #   • npm run test:sql → skema & RPC guild_* di Postgres sekali-pakai (otorisasi,
 #                        validasi simpan, revisi, audit, alur bot)
-#   • npm run build → situs tetap ter-build
+#   • npm run build → situs tetap ter-build (termasuk blog dari Sanity)
 # Tidak men-deploy apa pun (deploy tetap lewat deploy.yml saat merge ke main).
 
 on:
@@ -43,3 +43,7 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # PR tidak boleh merah hanya karena Sanity sedang tak terjangkau.
+          # Deploy sungguhan (deploy.yml) tetap ketat: gagal muat = build gagal.
+          BLOG_ALLOW_EMPTY: '1'

@@ -1,0 +1,59 @@
+name: Blog — terbit terjadwal & cadangan
+
+# Jaring pengaman blog (/blog). Tiap jam memeriksa Sanity: adakah artikel,
+# penulis, atau kategori yang berubah SETELAH deploy terakhir, atau artikel
+# terjadwal yang tanggal terbitnya sudah lewat? Kalau ada → jalankan deploy.
+#
+# Jalur utama tetap instan: Edge Function `blog-admin` memicu deploy.yml lewat
+# repository_dispatch saat artikel diterbitkan. Workflow ini menutup tiga celah:
+#   • artikel terjadwal (tanggal terbit di masa depan) — tidak ada klik Publish
+#     pada saat tanggalnya tiba;
+#   • secret GITHUB_DISPATCH_TOKEN belum diisi / dispatch gagal;
+#   • dispatch hilang.
+# Catatan: artikel yang DIHAPUS/ditarik tanpa dispatch baru hilang dari situs
+# pada deploy berikutnya (dokumennya sudah tidak ada untuk dideteksi).
+# Dataset Sanity `production` public → tidak butuh token Sanity.
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write       # gh workflow run deploy.yml
+  deployments: read    # waktu deploy GitHub Pages terakhir
+  contents: read
+
+concurrency:
+  group: blog-schedule
+  cancel-in-progress: false
+
+jobs:
+  check:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Periksa perubahan blog sejak deploy terakhir
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          LAST=$(gh api "repos/$REPO/deployments?environment=github-pages&per_page=1" --jq '.[0].created_at // empty')
+          if [ -z "$LAST" ]; then LAST=$(date -u -d '-2 hours' +%Y-%m-%dT%H:%M:%SZ); fi
+          # Mundur 10 menit: build mengambil data Sanity sebelum deploy dibuat.
+          SINCE=$(date -u -d "@$(( $(date -u -d "$LAST" +%s) - 600 ))" +%Y-%m-%dT%H:%M:%SZ)
+          echo "Deploy terakhir: $LAST → periksa perubahan sejak $SINCE"
+
+          QUERY='count(*[_type in ["blogPost","blogAuthor","blogCategory"] && !(_id in path("drafts.**")) && (_updatedAt > $since || (_type == "blogPost" && publishedAt > $since && publishedAt <= now()))])'
+          N=$(curl -fsS --retry 3 -G "https://62jp784l.api.sanity.io/v2025-02-19/data/query/production" \
+                --data-urlencode "query=$QUERY" \
+                --data-urlencode "\$since=\"$SINCE\"" \
+                --data-urlencode "perspective=published" | jq -r '.result')
+          echo "Perubahan blog: $N"
+          if [ "$N" != "0" ] && [ "$N" != "null" ]; then
+            gh workflow run deploy.yml --repo "$REPO" --ref main
+            echo "✓ deploy.yml dipicu"
+          else
+            echo "✓ Tidak ada perubahan — lewati deploy"
+          fi

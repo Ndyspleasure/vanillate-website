@@ -10,6 +10,9 @@ import FAQLink from '@components/FAQLink.astro';
 import { faqCategoryPath, faqCategoryUrl, faqCategoryFor, faqItems, faqsByCategory } from '@data/faq';
 import { site } from '@data/site';
 import { url } from '@utils/url';
+import PostCard from '@components/blog/PostCard.astro';
+import { getBlog } from '@/lib/blog/sanity';
+import { postsForProduct } from '@/lib/blog/model';
 
 export function getStaticPaths() {
   return bots.map((bot) => ({ params: { slug: bot.slug }, props: { bot } }));
@@ -30,6 +33,8 @@ const botFaqs = faqKategori
   ? faqItems(faqKategori.slug, 8)
   : bot.faq.map((f) => ({ q: f.q, a: f.a }));
 const otherBots = getOtherBots(bot.slug, 3);
+// Artikel blog yang menautkan produk ini (dipilih penulis di /admin/blog).
+const artikelProduk = postsForProduct(bot.slug, (await getBlog()).posts, 3);
 // Changelog hanya milik produk utama (datanya dari repo bot Sambung Kata).
 const hasChangelog = bot.slug === CHANGELOG_PRODUCT;
 // Vanillate Dashboard: admin server mengatur bot ini dari website.
@@ -334,6 +339,22 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
         <div class="md:col-span-2">
           <FAQAccordion items={botFaqs} />
         </div>
+      </div>
+    </section>
+  )}
+
+  <!-- DARI BLOG -->
+  {artikelProduk.length > 0 && (
+    <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
+      <div class="mb-8 flex items-end justify-between gap-6 flex-wrap">
+        <div>
+          <p class="eyebrow mb-3">Dari blog</p>
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest">Tips & panduan {bot.shortName}</h2>
+        </div>
+        <a href={url('/blog')} class="text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors">Semua artikel →</a>
+      </div>
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {artikelProduk.map((p) => <PostCard post={p} as="h3" />)}
       </div>
     </section>
   )}

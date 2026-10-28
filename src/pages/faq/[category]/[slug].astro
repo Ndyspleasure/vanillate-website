@@ -18,6 +18,8 @@ import type { FaqCategory, FaqEntry } from '@data/faq';
 import type { IconName } from '@data/icons';
 import { renderMarkdown, ringkas } from '@utils/markdown';
 import { url } from '@utils/url';
+import { getBlog } from '@/lib/blog/sanity';
+import { postPath, postsForFaq } from '@/lib/blog/model';
 
 export function getStaticPaths() {
   const halaman: any[] = [];
@@ -57,6 +59,8 @@ interface Props {
 const { faq, kategori, terkait, redirectTo } = Astro.props as Props;
 
 const isi = renderMarkdown(faq.answer);
+// Artikel blog yang membahas FAQ ini lebih dalam (dipilih di /admin/blog).
+const artikelFaq = redirectTo ? [] : postsForFaq(`${faq.category}/${faq.slug}`, (await getBlog()).posts, 3);
 const deskripsi = ringkas(faq.answer, 155);
 
 // Kategori lain, untuk pembaca yang ternyata salah kamar.
@@ -139,6 +143,21 @@ const diperbarui = faq.updatedAt
                   <li>
                     <a href={faqUrl(t.category, t.slug)} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
                       {t.question}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {artikelFaq.length > 0 && (
+            <div class="mb-8">
+              <p class="eyebrow mb-3">Dibahas di Blog</p>
+              <ul class="space-y-1">
+                {artikelFaq.map((p) => (
+                  <li>
+                    <a href={url(postPath(p.slug))} class="block py-1.5 text-sm text-ink-600 dark:text-cream-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                      {p.title}
                     </a>
                   </li>
                 ))}

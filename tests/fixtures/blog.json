@@ -1,0 +1,44 @@
+{
+  "posts": [
+    {
+      "id": "post.11111111-2222-3333-4444-555555555555",
+      "title": "Cara Main Sambung Kata untuk Pemula",
+      "slug": "cara-main-sambung-kata",
+      "excerpt": "Panduan lengkap bermain Sambung Kata di Discord: aturan dasar, strategi, dan tips menang untuk pemula.",
+      "tldr": ["Sambung kata dari huruf terakhir lawan.", "Kata harus ada di KBBI.", "Kumpulkan coin untuk item shop."],
+      "body": "## Aturan dasar\n\nSambung Kata adalah permainan kata di Discord. Setiap pemain menyambung kata dari **huruf terakhir** kata sebelumnya. Permainan ini melatih kosakata sekaligus menghidupkan obrolan server.\n\n> [!TIP] Mulai dari kata pendek supaya lawan cepat terdesak.\n\n## Strategi menang\n\n1. Hafalkan kata berakhiran huruf sulit seperti *x* dan *q*.\n2. Simak kata lawan dan siapkan cadangan.\n3. Gunakan item dari shop dengan bijak.\n\n### Contoh ronde\n\n| Pemain | Kata |\n|---|---|\n| A | makan |\n| B | nasi |\n\n{{produk:sambung-kata}}\n\n## Penutup\n\nBaca juga [FAQ cara main](/faq) atau langsung [undang botnya](/products/sambung-kata). Kata lain untuk menambah panjang artikel ini sampai cukup untuk diuji dengan baik oleh build lokal.",
+      "publishedAt": "2026-10-20T03:00:00Z",
+      "updatedAt": "2026-10-25T03:00:00Z",
+      "tags": ["Pemula", "Tips Main"],
+      "faqs": [{ "q": "Apakah Sambung Kata gratis?", "a": "Ya, **gratis** untuk semua server." }],
+      "relatedProducts": ["sambung-kata"],
+      "relatedFaqs": [],
+      "relatedPostIds": [],
+      "previousSlugs": ["cara-bermain-sambung-kata"],
+      "seo": { "title": "", "description": "Pelajari cara main Sambung Kata di Discord: aturan, strategi menang, dan tips untuk pemula.", "noindex": false },
+      "mainImage": { "alt": "Papan permainan Sambung Kata", "caption": "", "url": "https://cdn.sanity.io/images/62jp784l/production/0123456789abcdef0123456789abcdef01234567-1600x900.jpg", "width": 1600, "height": 900, "lqip": null },
+      "authorId": "author.11111111-2222-3333-4444-555555555555",
+      "categoryIds": ["category.11111111-2222-3333-4444-555555555555"]
+    },
+    {
+      "id": "post.22222222-2222-3333-4444-555555555555",
+      "title": "5 Ide Menghidupkan Server Discord yang Sepi",
+      "slug": "ide-menghidupkan-server-discord",
+      "excerpt": "",
+      "body": "## Kenapa server sepi\n\nServer yang sepi biasanya kekurangan alasan untuk kembali. Berikut ide sederhana untuk memancing anggota berinteraksi lagi setiap hari tanpa harus repot.\n\n## Adakan game rutin\n\nGame kata seperti Sambung Kata mudah dimainkan bersama.",
+      "publishedAt": "2026-10-22T03:00:00Z",
+      "tags": ["Komunitas"],
+      "relatedProducts": ["sambung-kata"],
+      "seo": {},
+      "mainImage": null,
+      "authorId": "author.11111111-2222-3333-4444-555555555555",
+      "categoryIds": ["category.11111111-2222-3333-4444-555555555555"]
+    }
+  ],
+  "authors": [
+    { "id": "author.11111111-2222-3333-4444-555555555555", "name": "Tim Vanillate", "slug": "tim-vanillate", "role": "Studio", "bio": "Tim di balik produk Vanillate Studio.", "links": [] }
+  ],
+  "categories": [
+    { "id": "category.11111111-2222-3333-4444-555555555555", "title": "Panduan", "slug": "panduan", "description": "Panduan memakai produk Vanillate.", "sort": 1 }
+  ]
+}

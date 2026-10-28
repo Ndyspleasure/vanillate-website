@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Dikirim Edge Function `blog-admin` setiap artikel blog terbit/ditarik/dihapus
+  # (butuh secret GITHUB_DISPATCH_TOKEN di Supabase). Lihat docs/BLOG.md.
+  repository_dispatch:
+    types: [blog-publish]
 
 permissions:
   contents: read

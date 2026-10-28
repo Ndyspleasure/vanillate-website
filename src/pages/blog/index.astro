@@ -1,0 +1,47 @@
+---
+// /blog — beranda blog. Artikel dikelola di /admin/blog (disimpan di Sanity)
+// dan dibangun statis saat build. Lihat docs/BLOG.md.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import BlogListing from '@components/blog/BlogListing.astro';
+import { getBlog } from '@/lib/blog/sanity';
+import { POSTS_PER_PAGE } from '@/lib/blog/config';
+import { breadcrumbJsonLd, jsonLdString, listPath, pageCount } from '@/lib/blog/model';
+import { siteInfo } from '@/lib/blog/site';
+import { url } from '@utils/url';
+
+const blog = await getBlog();
+const pages = pageCount(blog.posts.length, POSTS_PER_PAGE);
+const posts = blog.posts.slice(0, POSTS_PER_PAGE);
+const ld = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Blog',
+      '@id': `${siteInfo.url}/blog/#blog`,
+      name: `Blog ${siteInfo.name}`,
+      url: `${siteInfo.url}/blog/`,
+      inLanguage: 'id-ID',
+      publisher: { '@id': `${siteInfo.url}/#organization` },
+    },
+    breadcrumbJsonLd(siteInfo, [{ name: 'Beranda', path: '/' }, { name: 'Blog', path: '/blog' }]),
+  ],
+};
+---
+
+<BaseLayout
+  title="Blog"
+  description="Tips, panduan, dan cerita di balik produk Vanillate Studio — dari cara main Sambung Kata sampai kabar rilis terbaru."
+>
+  <script type="application/ld+json" slot="head" set:html={jsonLdString(ld)} />
+  <BlogListing
+    eyebrow="Blog Vanillate"
+    title="Tips, panduan & cerita dari studio"
+    lead="Cara memaksimalkan produk Vanillate, ide menghidupkan komunitas, dan kabar terbaru langsung dari tim yang membangunnya."
+    posts={posts}
+    categories={blog.categories}
+    featureFirst
+    page={1}
+    pages={pages}
+    pageHref={(n) => url(listPath(n))}
+  />
+</BaseLayout>

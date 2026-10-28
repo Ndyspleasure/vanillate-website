@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { site } from '@data/site';
 import SEO from '@components/SEO.astro';
+import type { Props as SEOProps } from '@components/SEO.astro';
 import Header from '@components/Header.astro';
 import AnnouncementBanner from '@components/AnnouncementBanner.astro';
 import Footer from '@components/Footer.astro';
@@ -13,10 +14,13 @@ export interface Props {
   title?: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
   noindex?: boolean;
+  article?: SEOProps['article'];
+  rawTitle?: boolean;
 }
 
-const { title, description, image, noindex } = Astro.props;
+const { title, description, image, imageAlt, noindex, article, rawTitle } = Astro.props;
 ---
 
 <!doctype html>
@@ -55,7 +59,8 @@ const { title, description, image, noindex } = Astro.props;
       rel="stylesheet"
     />
 
-    <SEO title={title} description={description} image={image} noindex={noindex} />
+    <SEO title={title} description={description} image={image} imageAlt={imageAlt} noindex={noindex} article={article} rawTitle={rawTitle} />
+    <link rel="alternate" type="application/rss+xml" href={url('/blog/rss.xml')} title={`Blog ${site.name}`} />
 
     <!--
       Titik sisip <head> per-halaman. SEO.astro sudah memasang meta & JSON-LD

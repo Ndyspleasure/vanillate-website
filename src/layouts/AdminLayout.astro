@@ -36,6 +36,16 @@ const menu = [
     ],
   },
   {
+    // Blog /blog: ditulis & diterbitkan di sini, disimpan di Sanity (docs/BLOG.md).
+    key: 'grup-blog', label: 'Blog',
+    icon: '<path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="M5 12v6"/><path d="M2 19h7"/>',
+    items: [
+      { key: 'blog',            label: 'Semua Artikel',       href: '/admin/blog' },
+      { key: 'blog-tulis',      label: 'Tulis Artikel',       href: '/admin/blog/tulis' },
+      { key: 'blog-pengaturan', label: 'Kategori & Penulis',  href: '/admin/blog/pengaturan' },
+    ],
+  },
+  {
     key: 'team', label: 'Team Management', href: '/admin/team',
     icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   },
