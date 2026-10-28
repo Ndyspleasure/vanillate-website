@@ -4,7 +4,9 @@
 // snapshot `social`; detail server (social.detail), pasang/matikan channel
 // (social.setChannel / social.disable — aturan sama dengan /pengaturan:
 // channel teks, satu channel satu fitur), cari server (social.search), dan
-// tulisan per server (social.kata, hanya baca).
+// tulisan per server (social.kata) + 🗑️ hapus satu tulisan yang belum terkirim
+// dari antrean 💌 (social.kata.remove — owner/admin; teks dikosongkan di bot,
+// hari streak penulis tetap, isi & alasan dicatat di channel arsip Discord).
 //
 // Isi tulisan kata-kata berasal dari member server — tampilkan hanya untuk
 // pemantauan dan jangan disalin keluar panel.
@@ -254,7 +256,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const el = document.getElementById('soc-kata')!;
     if (el.dataset.guild) return; // sedang membuka tulisan satu server
     el.innerHTML = section('✍️ Pemantau Kata-Kata', `
-      <p class="text-sm ${KELAS.muted}">Database "kata-kata hari ini" Streak Harian — juga antrean 💌 Tukar Kata-Kata (${snap.switches?.tukarKata ? 'aktif: tulisan dikirim ke member lain, diarsipkan ke channel Discord, lalu dihapus dari database' : 'nonaktif: tulisan ⏳ menunggu sampai fitur diaktifkan'}). Hanya baca.</p>
+      <p class="text-sm ${KELAS.muted}">Database "kata-kata hari ini" Streak Harian — juga antrean 💌 Tukar Kata-Kata (${snap.switches?.tukarKata ? 'aktif: tulisan dikirim ke member lain, diarsipkan ke channel Discord, lalu dihapus dari database' : 'nonaktif: tulisan ⏳ menunggu sampai fitur diaktifkan'}). Tulisan kasar, spam, atau berisi link ditolak otomatis oleh bot; buka satu server untuk 🗑️ menghapus tulisan yang belum terkirim.</p>
       ${ringkasKata(k.stats, true)}
       ${table(['Server', 'Belum selesai', 'Menunggu', 'Menunggu arsip', 'Terakhir'], (k.guilds ?? []).map((g: any) => [
         `<button type="button" data-kata="${esc(g.guildId)}" class="text-left underline decoration-dotted hover:text-amber-600">${esc(g.name ?? `Server ${g.guildId}`)}</button>`,
@@ -268,7 +270,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     terkirim: '💌 Terkirim', dihapus: '🗑️ Teks dihapus',
   };
 
-  async function bukaKata(guildId: string, page: number, filter: string) {
+  async function bukaKata(guildId: string, page: number, filter: string, pesan = '') {
     const el = document.getElementById('soc-kata')!;
     el.dataset.guild = guildId;
     el.innerHTML = notice('info', 'Memuat tulisan…');
@@ -281,6 +283,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       `${esc(e.username ?? '—')}<br><code class="text-xs ${KELAS.muted}">${esc(e.userId)}</code>`,
       `<span class="text-xs">${esc(LABEL_STATUS[e.status] ?? e.status)}${(e.status === 'terkirim' || e.status === 'arsip') && e.deliveredTo ? ` ke ${esc(e.deliveredTo)} ${esc(fmtJam(e.deliveredAt))}` : ''}${e.archiveTries ? ` · ⚠️ arsip gagal ${esc(e.archiveTries)}×, dicoba lagi` : ''}${e.banned && e.status === 'antre' ? ' · ⛔ penulis di-banned (tidak dikirim)' : ''}</span>`,
       e.content ? `<span class="text-sm whitespace-pre-line">${esc(String(e.content).slice(0, 600))}</span>` : `<span class="text-xs ${KELAS.muted}">(teks tidak disimpan lagi)</span>`,
+      ...(bolehEdit ? [bisaDihapus(e)
+        ? `<button type="button" data-hapus="${esc(e.id)}" class="${KELAS.tombolNetral} text-red-600 dark:text-red-400">🗑️ Hapus</button>`
+        : `<span class="text-xs ${KELAS.muted}">—</span>`] : []),
     ];
     el.innerHTML = section(`✍️ Kata-kata — ${k.name ?? `Server ${k.guildId}`}`, `
       <div class="flex flex-wrap items-end gap-3">
@@ -288,7 +293,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         <button type="button" id="kata-back" class="${KELAS.tombolNetral}">← Semua server</button>
       </div>
       ${ringkasKata(k.stats)}
-      ${table(['Hari', 'Penulis', 'Status', 'Isi'], (k.entries ?? []).map(entri), 'Tidak ada tulisan untuk filter ini.')}
+      ${pesan ? notice('ok', pesan) : ''}
+      ${table(['Hari', 'Penulis', 'Status', 'Isi', ...(bolehEdit ? ['Aksi'] : [])], (k.entries ?? []).map(entri), 'Tidak ada tulisan untuk filter ini.')}
       <div class="flex items-center gap-2 text-xs">
         <button type="button" id="kata-prev" class="${KELAS.tombolNetral}" ${k.page <= 1 ? 'disabled' : ''}>◀</button>
         <span>Halaman ${esc(k.page)}/${esc(k.pages)} · ${esc(fmtAngka(k.count))} tulisan</span>
@@ -298,5 +304,19 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     document.getElementById('kata-prev')!.addEventListener('click', () => void bukaKata(guildId, k.page - 1, k.filter));
     document.getElementById('kata-next')!.addEventListener('click', () => void bukaKata(guildId, k.page + 1, k.filter));
     document.getElementById('kata-back')!.addEventListener('click', () => { delete el.dataset.guild; renderKataOverview(); });
+    el.querySelectorAll<HTMLButtonElement>('[data-hapus]').forEach((b) => b.addEventListener('click', async () => {
+      const id = Number(b.dataset.hapus);
+      const alasan = window.prompt(`Hapus kata-kata #${id} dari antrean 💌? Tulisan tidak akan dikirim ke member lain; streak penulis tetap tercatat.\n\nAlasan (opsional, dicatat di channel arsip):`, '');
+      if (alasan === null) return;
+      b.disabled = true;
+      b.textContent = 'Menunggu bot…';
+      const o = await kirimPerintah('social.kata.remove', { guildId, id, reason: alasan.trim().slice(0, 300) });
+      if (!o.ok) { b.disabled = false; b.textContent = '🗑️ Hapus'; alert(o.error ?? 'Gagal.'); return; }
+      void bukaKata(guildId, k.page, k.filter, `Kata-kata #${id} dihapus dari antrean 💌${o.result?.archived ? ' dan dicatat di channel arsip Discord' : ' (log arsip Discord gagal — tulisan tetap dihapus)'}.`);
+      void muat();
+    }));
   }
+
+  // Hanya tulisan yang belum terkirim & teksnya masih ada (bot menolak sisanya).
+  const bisaDihapus = (e: any) => (e.status === 'antre' || e.status === 'diklaim') && Boolean(e.content) && Number.isInteger(e.id);
 </script>

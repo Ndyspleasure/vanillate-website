@@ -14,8 +14,9 @@
 #  bot-logs-retention-prereq.sql → bot-logs-retention.sql (dua kali) →
 #  bot-logs-retention.test.sql, lalu FAQ Bot: bot-faqs.sql (dua kali) →
 #  bot-faqs.test.sql (memakai fixture & helper suite Panel Developer).
-#  Terakhir Share Server: share-server.test.sql (menjalankan
-#  supabase/share-server.sql dua kali).
+#  Lalu Share Server: share-server.test.sql (menjalankan
+#  supabase/share-server.sql dua kali). Terakhir retensi salinan Pemantau
+#  Kata-Kata: social-kata-retention.sql (dua kali) → social-kata-retention.test.sql.
 # ════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -91,3 +92,11 @@ echo "✓ Tes SQL FAQ Bot lulus."
 # atas; tesnya menjalankan supabase/share-server.sql dua kali → idempoten).
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/share-server.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL Share Server lulus."
+
+# Suite keenam: retensi salinan ✍️ Pemantau Kata-Kata (bot_commands social.kata).
+# Migrasi dua kali → idempoten (tanpa pg_cron → jadwal dilewati).
+for f in supabase/social-kata-retention.sql supabase/social-kata-retention.sql; do
+  PGOPTIONS="-c client_min_messages=warning" run "${PSQL[@]}" -f "$ROOT/$f" >/dev/null
+done
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/social-kata-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL retensi Pemantau Kata-Kata lulus."
