@@ -55,7 +55,7 @@ pembuat dari `admin_users` → validasi payload per handler. Konfirmasi ketik di
 | `/admin/developer/error` | Error terbaru, detail Error ID, ubah status, fingerprint, recovery, tandai semua kejadian satu kode fixed (`error.setStatusByCode`) |
 | `/admin/developer/tutorial` | Status tutorial seluruh pemain, sesi berjalan, aksi per pemain, reset massal (owner) |
 | `/admin/developer/campaign` | Statistik DM campaign + kirim paksa ke satu pemain |
-| `/admin/developer/sosial` | Social Monitor: server pemakai SocialHub, detail, atur/matikan channel fitur, ✍️ Pemantau Kata-Kata |
+| `/admin/developer/sosial` | Social Monitor: server pemakai SocialHub, detail, atur/matikan channel fitur, ✍️ Pemantau Kata-Kata (🗑️ hapus tulisan yang belum terkirim: `social.kata.remove`; salinan daftar di `bot_commands.result` dikosongkan setelah 60 menit oleh `supabase/social-kata-retention.sql`) |
 | `/admin/developer/share-server` | 📣 Share Server: statistik jaringan & vote, antrean, broadcast, laporan iklan 🚩 (abaikan / tahan server), detail server, 🔓 Cabut Terhambat, aturan (`sys.share.rules`, owner). Snapshot `share`; perintah `share.*` |
 | `/admin/developer/autoheal` | Status & breaker, approval tertunda (keputusan owner), buka kunci deploy, uji sandbox, simulasi heal, incident, izin aktif |
 | `/admin/operasi` | Konsol semua aksi sederhana + **riwayat perintah** |
