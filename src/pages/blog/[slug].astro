@@ -29,6 +29,7 @@ import {
 } from '@/lib/blog/model';
 import { sanityImageUrl, sanitySrcset } from '@/lib/blog/markdown';
 import { faqList, productList, renderArticle, siteInfo } from '@/lib/blog/site';
+import { adHtml, adsenseClient, withInArticleAd } from '@/lib/blog/ads';
 import { url } from '@utils/url';
 
 export async function getStaticPaths() {
@@ -54,7 +55,11 @@ interface Props {
 
 const { post, related, redirectTo } = Astro.props as Props;
 
-const { html, headings } = renderArticle(post.body);
+const { html: isiHtml, headings } = renderArticle(post.body);
+// Iklan hanya di halaman artikel (bukan /blog & daftar lain). Mati bila ID kosong.
+const adClient = adsenseClient();
+const html = withInArticleAd(isiHtml);
+const adAkhir = adHtml('afterArticle');
 const toc = headings.filter((h) => h.level === 2);
 const img = post.mainImage;
 const ogImage = img ? sanityImageUrl(img.url, { w: 1200, h: 630, fit: 'crop', fm: 'jpg' }) : null;
@@ -105,6 +110,9 @@ const linkMuted = 'hover:text-amber-600 dark:hover:text-amber-400 transition-col
     }}
   >
     <script type="application/ld+json" slot="head" set:html={jsonLdString(ld)} />
+    {adClient && (
+      <script is:inline async slot="head" crossorigin="anonymous" src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`}></script>
+    )}
     {img && <link rel="preload" as="image" slot="head" imagesrcset={sanitySrcset(img.url)} imagesizes="(min-width: 1024px) 960px, 100vw" />}
 
     <article>
@@ -193,6 +201,7 @@ const linkMuted = 'hover:text-amber-600 dark:hover:text-amber-400 transition-col
           )}
 
           <div class="blog-isi" set:html={html} />
+          {adAkhir && <Fragment set:html={adAkhir} />}
 
           {faqHtml.length > 0 && (
             <section aria-labelledby="faq-artikel" class="mt-14">
@@ -318,6 +327,14 @@ const linkMuted = 'hover:text-amber-600 dark:hover:text-amber-400 transition-col
 )}
 
 <script>
+  // Isi tiap unit AdSense di halaman (antrean jalan walau skripnya belum termuat).
+  const iklan = document.querySelectorAll('ins.adsbygoogle');
+  if (iklan.length) {
+    const w = window as unknown as { adsbygoogle?: object[] };
+    w.adsbygoogle = w.adsbygoogle || [];
+    iklan.forEach(() => w.adsbygoogle!.push({}));
+  }
+
   // Sorot item daftar isi yang sedang dibaca. Tanpa JS, daftar isi tetap
   // berfungsi sebagai tautan anchor biasa.
   const links = document.querySelectorAll<HTMLAnchorElement>('[data-toc]');

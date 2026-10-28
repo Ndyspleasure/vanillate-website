@@ -137,6 +137,28 @@ tidak bisa mengirim 301. Slug lama tidak bisa dipakai artikel lain.
 
 ---
 
+## 4a. Iklan Google AdSense (hanya halaman artikel)
+
+Skrip AdSense **hanya** dimuat di `/blog/<slug>`. `/blog`, kategori, tag,
+penulis, halaman redirect, dan seluruh situs lain tidak memuatnya — jadi Auto
+ads pun tidak bisa muncul di sana. Pengaturan di `src/lib/blog/ads.ts`
+(`ADSENSE`, publisher `ca-pub-7666352445473199`); bila `client` dikosongkan iklan mati dan `/ads.txt` hanya komentar.
+
+| Posisi | Slot | Format AdSense |
+|---|---|---|
+| Tengah isi, sebelum subjudul H2 ke-3 (artikel < 3 H2 dilewati) | `slots.inArticle` | In-article |
+| Setelah isi, sebelum FAQ | `slots.afterArticle` | Display, responsif |
+
+Cara mengaktifkan:
+1. Daftarkan `vanillate.id` di AdSense dan tunggu situs disetujui.
+2. AdSense › Iklan › **Menurut unit iklan**: buat unit *In-article* dan *Display*, salin angka `data-ad-slot`-nya.
+3. Isi `client` (`ca-pub-…`) dan kedua slot di `ADSENSE`, lalu deploy. `/ads.txt` ikut terisi otomatis.
+4. **Matikan Auto ads** (atau batasi di AdSense) supaya penempatan tetap dari kode.
+
+Kebijakan privasi (`/privacy` › Third-Party Services) sudah menyebut cookie
+iklan Google. Untuk pengunjung EEA/UK, aktifkan pesan persetujuan (CMP) di
+AdSense › Privasi & pesan.
+
 ## 5. Model data di Sanity
 
 Ditulis hanya oleh Edge Function (`supabase/functions/blog-admin/logic.ts`).
@@ -170,6 +192,7 @@ di sanity.io/manage → project → **Usage**. Di paket Free kuota yang habis
 | `src/lib/blog/markdown.ts` | renderer Markdown artikel + helper gambar Sanity (murni, teruji) |
 | `src/lib/blog/model.ts` | penormalan data, artikel terkait, JSON-LD, URL (murni, teruji) |
 | `src/lib/blog/editor.ts` | checklist SEO, rapikan tulisan AI, tanggal (murni, teruji) |
+| `src/lib/blog/ads.ts`, `src/pages/ads.txt.ts` | iklan AdSense di halaman artikel + ads.txt (§4a) |
 | `src/lib/blog/sanity.ts` | ambil data saat build; `BLOG_FIXTURE`, `BLOG_ALLOW_EMPTY` |
 | `src/lib/blog/site.ts`, `product-card.ts` | penghubung ke data produk & FAQ |
 | `src/lib/blog/admin-client.ts` | klien browser Edge Function + kompres gambar |
