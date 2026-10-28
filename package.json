@@ -9,7 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "node --experimental-strip-types --test tests/dashboard-model.test.ts tests/dashboard-discord.test.ts tests/dev-panel-model.test.ts tests/bot-faq.test.ts tests/share-model.test.ts tests/topgg-webhook.test.ts tests/blog-model.test.ts tests/blog-admin.test.ts",
+    "test": "node --experimental-strip-types --test tests/dashboard-model.test.ts tests/dashboard-discord.test.ts tests/dev-panel-model.test.ts tests/bot-faq.test.ts tests/share-model.test.ts tests/topgg-webhook.test.ts tests/blog-model.test.ts tests/blog-admin.test.ts tests/blog-ads.test.ts",
     "test:sql": "bash scripts/test-guild-dashboard-sql.sh"
   },
   "dependencies": {
