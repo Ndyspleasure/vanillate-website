@@ -41,7 +41,10 @@ export const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'im
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ASSET_ID = /^image-[a-f0-9]{20,64}-\d{1,5}x\d{1,5}-(jpg|jpeg|png|webp|gif|avif|svg)$/;
-const DOC_ID = /^(post|author|category)\.[a-z0-9-]{8,64}$/;
+// Id baru memakai '-' (post-<uuid>). Sanity menyembunyikan dokumen ber-id
+// dengan titik dari pembaca tanpa token walau dataset public, jadi build situs
+// tidak bisa melihatnya. '.' tetap diterima untuk dokumen lama.
+const DOC_ID = /^(post|author|category)[.-][a-z0-9-]{8,64}$/;
 const FAQ_REF = /^[a-z0-9-]{1,80}\/[a-z0-9-]{1,120}$/;
 
 export type Role = 'owner' | 'admin' | 'viewer';
@@ -56,11 +59,11 @@ export function allowedOrigin(origin: string | null, allowed: string[]): string 
 
 export function isDocId(id: unknown, kind?: 'post' | 'author' | 'category'): id is string {
   if (typeof id !== 'string' || !DOC_ID.test(id)) return false;
-  return !kind || id.startsWith(`${kind}.`);
+  return !kind || id.startsWith(`${kind}.`) || id.startsWith(`${kind}-`);
 }
 
 export function newDocId(kind: 'post' | 'author' | 'category'): string {
-  return `${kind}.${crypto.randomUUID()}`;
+  return `${kind}-${crypto.randomUUID()}`;
 }
 
 export const draftId = (id: string) => `drafts.${id}`;
