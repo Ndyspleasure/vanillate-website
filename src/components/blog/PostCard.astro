@@ -1,0 +1,73 @@
+---
+// Kartu artikel blog. Prop "featured" = kartu lebar untuk artikel teratas di /blog.
+import type { BlogPost } from '@/lib/blog/model';
+import { categoryPath, formatTanggal, postPath } from '@/lib/blog/model';
+import { sanityImageUrl } from '@/lib/blog/markdown';
+import { url } from '@utils/url';
+
+export interface Props {
+  post: BlogPost;
+  featured?: boolean;
+  /** Heading level judul kartu — h2 di halaman daftar, h3 di bagian terkait. */
+  as?: 'h2' | 'h3';
+  eager?: boolean;
+}
+
+const { post, featured = false, as: Judul = 'h2', eager = false } = Astro.props;
+const img = post.mainImage;
+const w = featured ? 960 : 640;
+const tinggi = (lebar: number) => Math.round(lebar * 0.5625); // rasio 16:9
+const h = tinggi(w);
+const src = img ? sanityImageUrl(img.url, { w, h, fit: 'crop' }) : null;
+const srcset = img
+  ? [w * 0.5, w, w * 1.5].map((x) => `${sanityImageUrl(img.url, { w: x, h: tinggi(x), fit: 'crop' })} ${x}w`).join(', ')
+  : '';
+const kategori = post.categories[0];
+---
+
+<article
+  class:list={[
+    'group relative flex flex-col overflow-hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 transition-colors hover:border-amber-500/40',
+    featured && 'md:grid md:grid-cols-[1.25fr_1fr]',
+  ]}
+>
+  <div class="relative aspect-[16/9] overflow-hidden bg-cream-100 dark:bg-ink-900">
+    {src ? (
+      <img
+        src={src}
+        srcset={srcset}
+        sizes={featured ? '(min-width: 768px) 640px, 100vw' : '(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw'}
+        alt={img?.alt ?? ""}
+        width={w}
+        height={h}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : undefined}
+        decoding="async"
+        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        style={img?.lqip ? `background-image:url(${img.lqip});background-size:cover` : undefined}
+      />
+    ) : (
+      <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-500/20 via-cream-100 to-teal-500/15 dark:via-ink-900" aria-hidden="true">
+        <span class="font-display text-4xl font-semibold tracking-tightest text-amber-600/60 dark:text-amber-400/50">V.</span>
+      </div>
+    )}
+  </div>
+
+  <div class:list={['flex flex-1 flex-col', featured ? 'p-6 md:p-8 md:justify-center' : 'p-5 md:p-6']}>
+    {kategori && (
+      <a href={url(categoryPath(kategori.slug))} class="relative z-10 eyebrow mb-3 self-start hover:underline">{kategori.title}</a>
+    )}
+    <Judul class:list={['font-display font-semibold tracking-tightest leading-snug', featured ? 'text-2xl md:text-3xl' : 'text-lg md:text-xl']}>
+      <a href={url(postPath(post.slug))} class="after:absolute after:inset-0 hover:text-amber-700 dark:hover:text-amber-400 transition-colors">
+        {post.title}
+      </a>
+    </Judul>
+    <p class:list={['mt-3 text-ink-600 dark:text-cream-200/80 leading-relaxed', featured ? 'text-base' : 'text-sm line-clamp-3']}>
+      {post.excerpt}
+    </p>
+    <p class="mt-auto pt-5 font-mono text-xs text-ink-500 dark:text-cream-300/60">
+      <time datetime={post.publishedAt}>{formatTanggal(post.publishedAt)}</time>
+      <span aria-hidden="true"> · </span>{post.readingMinutes} menit baca
+    </p>
+  </div>
+</article>

@@ -1,0 +1,33 @@
+---
+// /blog/halaman/N — halaman lanjutan daftar artikel (halaman 1 = /blog).
+import BaseLayout from '@layouts/BaseLayout.astro';
+import BlogListing from '@components/blog/BlogListing.astro';
+import { getBlog } from '@/lib/blog/sanity';
+import { POSTS_PER_PAGE } from '@/lib/blog/config';
+import { listPath, pageCount } from '@/lib/blog/model';
+import { url } from '@utils/url';
+
+export async function getStaticPaths() {
+  const blog = await getBlog();
+  const pages = pageCount(blog.posts.length, POSTS_PER_PAGE);
+  return Array.from({ length: Math.max(0, pages - 1) }, (_, i) => ({ params: { page: String(i + 2) } }));
+}
+
+const page = Number(Astro.params.page);
+const blog = await getBlog();
+const pages = pageCount(blog.posts.length, POSTS_PER_PAGE);
+const posts = blog.posts.slice((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE);
+---
+
+<BaseLayout title={`Blog — Halaman ${page}`} description={`Arsip artikel blog Vanillate Studio, halaman ${page} dari ${pages}.`}>
+  <BlogListing
+    eyebrow={`Blog · Halaman ${page}`}
+    title="Semua artikel"
+    posts={posts}
+    categories={blog.categories}
+    page={page}
+    pages={pages}
+    pageHref={(n) => url(listPath(n))}
+    breadcrumb={[{ label: 'Blog', href: url('/blog') }]}
+  />
+</BaseLayout>

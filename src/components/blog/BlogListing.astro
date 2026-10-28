@@ -1,0 +1,110 @@
+---
+// Kerangka halaman daftar artikel: /blog, /blog/halaman/N, /blog/kategori/…,
+// /blog/tag/…, /blog/penulis/…. Satu komponen supaya semua daftar seragam.
+import PostCard from './PostCard.astro';
+import Vani from '@components/mascot/Vani.astro';
+import type { BlogCategory, BlogPost } from '@/lib/blog/model';
+import { BLOG_PATH } from '@/lib/blog/config';
+import { categoryPath } from '@/lib/blog/model';
+import { url } from '@utils/url';
+
+export interface Props {
+  eyebrow: string;
+  title: string;
+  lead?: string;
+  posts: BlogPost[];
+  categories: BlogCategory[];
+  activeCategory?: string;
+  /** Artikel pertama dibuat kartu lebar (hanya halaman 1 /blog). */
+  featureFirst?: boolean;
+  page?: number;
+  pages?: number;
+  pageHref?: (n: number) => string;
+  breadcrumb?: { label: string; href: string }[];
+}
+
+const {
+  eyebrow,
+  title,
+  lead,
+  posts,
+  categories,
+  activeCategory,
+  featureFirst = false,
+  page = 1,
+  pages = 1,
+  pageHref,
+  breadcrumb = [],
+} = Astro.props;
+
+const [pertama, ...sisa] = posts;
+const chip = (aktif: boolean) =>
+  `inline-flex items-center rounded-full border px-4 py-1.5 text-sm transition-colors whitespace-nowrap ${
+    aktif
+      ? 'border-amber-500 bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium'
+      : 'border-ink-900/10 dark:border-cream-100/10 text-ink-600 dark:text-cream-200/80 hover:border-amber-500/50'
+  }`;
+---
+
+<section class="relative overflow-hidden pt-16 pb-10 md:pt-24">
+  <div class="aurora bg-amber-500/20 h-[380px] w-[380px] top-[-140px] left-[8%]" aria-hidden="true"></div>
+  <div class="aurora bg-teal-500/15 h-[320px] w-[320px] top-[20px] right-[2%]" style="animation-delay: -7s" aria-hidden="true"></div>
+  <div class="container-page relative">
+    {breadcrumb.length > 0 && (
+      <nav aria-label="Breadcrumb" class="mb-6 flex flex-wrap items-center gap-2 text-sm text-ink-500 dark:text-cream-300/60">
+        {breadcrumb.map((b, i) => (
+          <>
+            {i > 0 && <span aria-hidden="true">/</span>}
+            <a href={b.href} class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{b.label}</a>
+          </>
+        ))}
+      </nav>
+    )}
+    <p class="eyebrow mb-5">{eyebrow}</p>
+    <h1 class="font-display font-semibold tracking-tightest text-[clamp(2rem,5vw,3.75rem)] leading-[1.05] max-w-3xl">{title}</h1>
+    {lead && <p class="mt-5 max-w-2xl text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">{lead}</p>}
+
+    {categories.length > 0 && (
+      <nav aria-label="Kategori blog" class="mt-8 -mx-6 px-6 sm:mx-0 sm:px-0 overflow-x-auto">
+        <ul class="flex gap-2 pb-1">
+          <li><a href={url(BLOG_PATH)} class={chip(!activeCategory)} aria-current={!activeCategory ? 'page' : undefined}>Semua</a></li>
+          {categories.map((c) => (
+            <li>
+              <a href={url(categoryPath(c.slug))} class={chip(activeCategory === c.slug)} aria-current={activeCategory === c.slug ? 'page' : undefined}>{c.title}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+  </div>
+</section>
+
+<section class="container-page pb-24">
+  {posts.length === 0 ? (
+    <div class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-ink-900/15 dark:border-cream-100/15 px-6 py-16 text-center">
+      <Vani expression="sleeping" size="md" animation="subtle" alt="" />
+      <p class="text-ink-500 dark:text-cream-300/60">Belum ada artikel di sini. Segera hadir!</p>
+    </div>
+  ) : (
+    <>
+      {featureFirst && pertama && (
+        <div class="mb-6">
+          <PostCard post={pertama} featured eager />
+        </div>
+      )}
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {(featureFirst ? sisa : posts).map((p, i) => <PostCard post={p} eager={!featureFirst && i < 3} />)}
+      </div>
+    </>
+  )}
+
+  {pages > 1 && pageHref && (
+    <nav aria-label="Halaman" class="mt-12 flex flex-wrap items-center justify-center gap-2">
+      {page > 1 && <a href={pageHref(page - 1)} rel="prev" class={chip(false)}>← Sebelumnya</a>}
+      {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
+        <a href={pageHref(n)} class={chip(n === page)} aria-current={n === page ? 'page' : undefined}>{n}</a>
+      ))}
+      {page < pages && <a href={pageHref(page + 1)} rel="next" class={chip(false)}>Berikutnya →</a>}
+    </nav>
+  )}
+</section>

@@ -1,0 +1,30 @@
+---
+// /blog/tag/<slug> — artikel per tag. Halaman tag sengaja noindex (follow):
+// isinya tumpang tindih dengan kategori dan sering hanya berisi 1–2 artikel,
+// jadi bukan halaman yang ingin bersaing di hasil pencarian. Tetap berguna
+// sebagai navigasi pembaca & jalur crawler menuju artikel.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import BlogListing from '@components/blog/BlogListing.astro';
+import { getBlog } from '@/lib/blog/sanity';
+import type { BlogTag } from '@/lib/blog/model';
+import { url } from '@utils/url';
+
+export async function getStaticPaths() {
+  const blog = await getBlog();
+  return blog.tags.map((t) => ({ params: { slug: t.slug }, props: { tag: t } }));
+}
+
+const { tag } = Astro.props as { tag: BlogTag };
+const blog = await getBlog();
+const posts = blog.posts.filter((p) => p.tags.some((t) => t.slug === tag.slug));
+---
+
+<BaseLayout title={`#${tag.name} — Blog`} description={`Artikel blog Vanillate Studio dengan tag ${tag.name}.`} noindex>
+  <BlogListing
+    eyebrow="Tag"
+    title={`#${tag.name}`}
+    posts={posts}
+    categories={blog.categories}
+    breadcrumb={[{ label: 'Blog', href: url('/blog') }]}
+  />
+</BaseLayout>

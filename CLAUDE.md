@@ -20,13 +20,17 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
   (+ berkas rollback + tes di `supabase/tests/`), terapkan lewat Supabase MCP
   `apply_migration`. Hindari `DROP` di migrasi (pakai `create or replace` /
   blok `DO … if not exists`) — data lama tidak boleh diubah/dihapus.
+- Blog: token Sanity/GitHub **hanya** di secret Edge Function `blog-admin`;
+  tipe dokumen Sanity sama persis antara `src/lib/blog/config.ts` dan
+  `supabase/functions/blog-admin/logic.ts` (dites). Build produksi sengaja gagal
+  bila Sanity tak terjangkau (`BLOG_ALLOW_EMPTY=1` hanya untuk dev/PR).
 - Versi & changelog bot **read-only** di sini (SSoT `version.json` /
   `CHANGELOG.json` di repo bot).
 
 ## Tes
 
 ```bash
-npm test          # node --test (model dashboard, edge function, dev-panel model)
+npm test          # node --test (model dashboard, edge function, dev-panel model, blog)
 npm run test:sql  # Postgres lokal sekali-pakai: skema guild dashboard + Panel Developer
 npm run build     # Astro build
 ```
@@ -56,3 +60,4 @@ isi tulisan) tidak dikutip ke issue/PR/commit.
 | `docs/ADMIN-CMS.md` | Model keamanan CMS, setup Supabase, kontrak data bot, Control Panel (`/admin/kontrol`) |
 | `docs/DASHBOARD-SERVER.md` | Vanillate Dashboard (`/dashboard`, admin server login Discord) · §5a 📣 Share Server (tab, `share_*`, Edge Function `topgg-webhook` — `verify_jwt = false`, secret `TOPGG_WEBHOOK_SECRET`) |
 | `docs/PIPELINE-TERBIT.md`, `docs/AUTO-SYNC-DATA.md` | Alur terbit konten & sinkron data dari repo bot |
+| `docs/BLOG.md` | Blog `/blog`: ditulis & diterbitkan di `/admin/blog`, disimpan di **Sanity** (project `62jp784l`, dataset `production` public) lewat Edge Function `blog-admin` (secret `SANITY_WRITE_TOKEN`, `GITHUB_DISPATCH_TOKEN`); halaman dibangun statis saat build |

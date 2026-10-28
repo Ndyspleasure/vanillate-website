@@ -1,0 +1,43 @@
+---
+// /blog/kategori/<slug> — artikel per kategori (dikelola di /admin/blog/pengaturan).
+import BaseLayout from '@layouts/BaseLayout.astro';
+import BlogListing from '@components/blog/BlogListing.astro';
+import { getBlog } from '@/lib/blog/sanity';
+import type { BlogCategory } from '@/lib/blog/model';
+import { breadcrumbJsonLd, categoryPath, jsonLdString } from '@/lib/blog/model';
+import { siteInfo } from '@/lib/blog/site';
+import { url } from '@utils/url';
+
+export async function getStaticPaths() {
+  const blog = await getBlog();
+  return blog.categories.map((c) => ({ params: { slug: c.slug }, props: { category: c } }));
+}
+
+const { category } = Astro.props as { category: BlogCategory };
+const blog = await getBlog();
+const posts = blog.posts.filter((p) => p.categories.some((c) => c.id === category.id));
+const ld = {
+  '@context': 'https://schema.org',
+  ...breadcrumbJsonLd(siteInfo, [
+    { name: 'Blog', path: '/blog' },
+    { name: category.title, path: categoryPath(category.slug) },
+  ]),
+};
+---
+
+<BaseLayout
+  title={`${category.title} — Blog`}
+  description={category.description || `Kumpulan artikel ${category.title} dari blog Vanillate Studio.`}
+  noindex={posts.length === 0}
+>
+  <script type="application/ld+json" slot="head" set:html={jsonLdString(ld)} />
+  <BlogListing
+    eyebrow="Kategori"
+    title={category.title}
+    lead={category.description}
+    posts={posts}
+    categories={blog.categories}
+    activeCategory={category.slug}
+    breadcrumb={[{ label: 'Blog', href: url('/blog') }]}
+  />
+</BaseLayout>

@@ -34,6 +34,7 @@ export const nav = [
   { label: 'Beranda', href: '/' },
   { label: 'Produk', href: '/products' },
   { label: 'FAQ', href: '/faq' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Tentang', href: '/about' },
   { label: 'Support', href: '/support' },
 ];

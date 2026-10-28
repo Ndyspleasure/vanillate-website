@@ -1,0 +1,52 @@
+---
+// /blog/penulis/<slug> — profil penulis + artikelnya. Sinyal E-E-A-T: siapa
+// yang menulis, perannya, dan tautan profilnya (schema.org Person/ProfilePage).
+import BaseLayout from '@layouts/BaseLayout.astro';
+import BlogListing from '@components/blog/BlogListing.astro';
+import { getBlog } from '@/lib/blog/sanity';
+import type { BlogAuthor } from '@/lib/blog/model';
+import { authorPath, canonicalUrl, jsonLdString } from '@/lib/blog/model';
+import { sanityImageUrl } from '@/lib/blog/markdown';
+import { siteInfo } from '@/lib/blog/site';
+import { url } from '@utils/url';
+
+export async function getStaticPaths() {
+  const blog = await getBlog();
+  return blog.authors.map((a) => ({ params: { slug: a.slug }, props: { author: a } }));
+}
+
+const { author } = Astro.props as { author: BlogAuthor };
+const blog = await getBlog();
+const posts = blog.posts.filter((p) => p.author?.id === author.id);
+const avatar = author.avatar ? sanityImageUrl(author.avatar.url, { w: 192, h: 192, fit: 'crop' }) : null;
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfilePage',
+  mainEntity: {
+    '@type': 'Person',
+    name: author.name,
+    url: canonicalUrl(siteInfo.url, authorPath(author.slug)),
+    ...(author.role ? { jobTitle: author.role } : {}),
+    ...(author.bio ? { description: author.bio } : {}),
+    ...(avatar ? { image: avatar } : {}),
+    ...(author.links.length ? { sameAs: author.links } : {}),
+    worksFor: { '@id': `${siteInfo.url}/#organization` },
+  },
+};
+---
+
+<BaseLayout
+  title={`${author.name} — Penulis Blog`}
+  description={author.bio ? author.bio.slice(0, 155) : `Artikel karya ${author.name} di blog Vanillate Studio.`}
+  noindex={posts.length === 0}
+>
+  <script type="application/ld+json" slot="head" set:html={jsonLdString(ld)} />
+  <BlogListing
+    eyebrow={author.role || 'Penulis'}
+    title={author.name}
+    lead={author.bio}
+    posts={posts}
+    categories={[]}
+    breadcrumb={[{ label: 'Blog', href: url('/blog') }]}
+  />
+</BaseLayout>

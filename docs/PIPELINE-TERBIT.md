@@ -44,6 +44,7 @@ build.
 | Konten & harga Partnership (`/admin/partnership/*`) | `sync-content.yml` | tiap 15 menit | ~5–45 menit |
 | FAQ & panduan (`/admin/faq`) | `sync-content.yml` | tiap 15 menit | ~5–45 menit |
 | Versi, changelog, shop, fitur/command (repo bot) | `sync-data.yml` | tiap jam | ~1–2 jam |
+| Artikel blog (`/admin/blog` → Publish) | `deploy.yml` via `repository_dispatch` (+ `blog-schedule.yml` tiap jam) | instan | ~2–5 menit (lihat `BLOG.md`) |
 | Setting bot (`/admin/kontrol`) | — | polling bot | **≤ 60 detik** |
 | Aksi bot (`/admin/operasi`) | — | polling bot | **≤ 20 detik** |
 | Angka & log di panel admin | — | tulisan bot | 30 dtk (log) – 15 mnt (pemain) |
