@@ -26,7 +26,7 @@ export const founder = {
 
   // Ringkasan profil untuk halaman Founder.
   summary:
-    'Andi Kurniawan adalah pendiri dan pemilik Vanillate Studio. Berangkat dari dunia management lalu berkembang ke data dan teknologi, ia menggabungkan sisi operasional dan teknis untuk membangun serta merawat produk digital, dimulai dari Vanillate Sambung Kata hingga arah studio yang lebih luas.',
+    'Andi Kurniawan adalah pendiri dan pemilik Vanillate Studio. Berangkat dari dunia management lalu berkembang ke data dan teknologi, ia menggabungkan sisi operasional dan teknis untuk membangun serta merawat produk digital, dimulai dari Vanillate.ID (dulu Vanillate Sambung Kata) hingga arah studio yang lebih luas.',
 
   // Peran di Vanillate — beberapa paragraf.
   roleInVanillate: [
@@ -56,7 +56,7 @@ export const founder = {
   // Kontribusi utama terhadap Vanillate.
   contributions: [
     'Mendirikan Vanillate Studio pada 2026 dan menetapkan prinsip "rilis adalah garis start, bukan garis finis".',
-    'Membangun dan merawat Vanillate Sambung Kata, produk pertama studio, dari game kata sederhana menjadi pengalaman komunitas dengan progresi yang dalam.',
+    'Membangun dan merawat Vanillate.ID (sebelumnya Vanillate Sambung Kata), produk pertama studio, dari game kata sederhana menjadi pengalaman komunitas dengan progresi yang dalam.',
     'Menyusun operasional studio: alur pengembangan, dokumentasi, dan dukungan komunitas.',
     'Mengarahkan perluasan studio ke aplikasi sosial, community tools, otomasi, dan AI.',
   ],

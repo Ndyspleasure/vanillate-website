@@ -86,8 +86,8 @@ export const supportProducts: SupportOption[] = [
   },
   {
     id: 'sambung-kata',
-    label: 'Vanillate Sambung Kata',
-    desc: 'Mode PvP, Dungeon, Class, Quest, dan statistik.',
+    label: 'Vanillate.ID (Discord Bot)',
+    desc: 'Sambung Kata (PvP, Dungeon, Class, Quest), game sampingan, dan statistik.',
     icon: 'sparkles',
   },
   {
@@ -322,7 +322,7 @@ export function buildWhatsappUrl(message: string, number: string = whatsappNumbe
  * Subjek email support. Formatnya konsisten dan sudah membawa Support ID,
  * kategori, dan produk sehingga mudah difilter di kotak masuk tim.
  *
- * Contoh: `[Support] VS-20260815-4827 — Bug / Error — Vanillate Sambung Kata`
+ * Contoh: `[Support] VS-20260815-4827 — Bug / Error — Vanillate.ID (Discord Bot)`
  */
 export function buildSupportSubject(draft: SupportDraft): string {
   return [`[Support] ${draft.supportId}`, draft.category, draft.product]

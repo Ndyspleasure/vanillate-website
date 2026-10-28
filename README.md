@@ -279,7 +279,7 @@ Domain sudah aktif dan live. Setup yang dilakukan:
 **Terms of Service** (`src/pages/terms.astro`) — **Aktif ✓**
 - Berlaku untuk **semua produk & layanan** Vanillate Studio (bukan hanya 1 bot)
 - Otomatis mencakup bot/layanan baru di masa depan (kecuali ada terms terpisah)
-- Mencakup Vanillate Sambung Kata dan produk lain di masa depan
+- Mencakup Vanillate.ID (bot Discord, dulu Vanillate Sambung Kata) dan produk lain di masa depan
 - **Section 6:** Virtual Items & In-Game Economy — item tidak punya nilai uang nyata, dapat di-rebalance
 
 **Privacy Policy** (`src/pages/privacy.astro`) — **Aktif ✓**
@@ -346,7 +346,7 @@ DETAIL SUPPORT
 ━━━━━━━━━━━━━━━━━━
 
 Support ID : VS-20260815-4827
-Produk     : Vanillate Sambung Kata
+Produk     : Vanillate.ID (Discord Bot)
 Kategori   : Bug / Error
 
 Kendala:
