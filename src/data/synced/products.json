@@ -2,8 +2,8 @@
   "products": [
     {
       "slug": "sambung-kata",
-      "name": "Vanillate Sambung Kata",
-      "shortName": "Vanillate Sambung Kata",
+      "name": "Vanillate.ID",
+      "shortName": "Vanillate.ID",
       "tagline": "Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.",
       "description": "Permainan kata klasik Indonesia yang dibangun ulang untuk Discord. Sambung kata bareng teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 25.000+ kata memastikan setiap jawaban dinilai adil. Karena semua pemain ikut mengetik jawaban, satu ronde saja sudah cukup untuk membangunkan obrolan server yang mulai sepi.",
       "platform": "discord",
@@ -37,8 +37,8 @@
       "ctaLabel": "",
       "ctaUrl": "",
       "faqCategory": "sambung-kata",
-      "seoTitle": "Vanillate Sambung Kata, Bot Game Kata Berantai untuk Discord",
-      "seoDescription": "Main Vanillate Sambung Kata di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.",
+      "seoTitle": "Vanillate.ID, Bot Discord dengan Game Sambung Kata Berantai",
+      "seoDescription": "Main Sambung Kata bersama bot Vanillate.ID di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.",
       "ogImage": "",
       "media": []
     },
