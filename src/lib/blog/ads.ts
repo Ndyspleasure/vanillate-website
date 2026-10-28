@@ -42,7 +42,11 @@ export function adsTxt(cfg = ADSENSE): string {
   return `google.com, ${client.replace(/^ca-/, '')}, DIRECT, f08c47fec0942fa0\n`;
 }
 
-/** Elemen <ins> AdSense, diberi label "Iklan" supaya jelas bukan isi artikel. */
+/**
+ * Elemen <ins> AdSense, diberi label "Iklan" supaya jelas bukan isi artikel.
+ * Kelas `blog-iklan` menyembunyikan kotaknya bila iklan tidak terisi atau
+ * skrip AdSense diblokir (src/styles/global.css).
+ */
 export function adHtml(name: AdSlotName, cfg = ADSENSE): string {
   const client = adsenseClient(cfg);
   const slot = adSlot(name, cfg);
@@ -52,7 +56,7 @@ export function adHtml(name: AdSlotName, cfg = ADSENSE): string {
       ? 'data-ad-layout="in-article" data-ad-format="fluid"'
       : 'data-ad-format="auto" data-full-width-responsive="true"';
   return (
-    `<aside class="my-10 min-h-[120px] border-y border-ink-900/10 dark:border-cream-100/10 py-4" aria-label="Iklan">` +
+    `<aside class="blog-iklan my-10 min-h-[120px] border-y border-ink-900/10 dark:border-cream-100/10 py-4" aria-label="Iklan">` +
     `<span class="mb-2 block text-center font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-500 dark:text-cream-300/60">Iklan</span>` +
     `<ins class="adsbygoogle" style="display:block;text-align:center" data-ad-client="${client}" data-ad-slot="${slot}" ${format}></ins>` +
     `</aside>`
