@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "note": "SOURCE OF TRUTH info Sambung Kata untuk website vanillate.id (auto-sync GitHub Actions). Edit di sini -> daftar fitur & command di website ikut berubah otomatis.",
   "slug": "sambung-kata",
-  "shortName": "Vanillate Sambung Kata",
+  "shortName": "Vanillate.ID",
   "tagline": "Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.",
   "features": [
     "Kamus Bahasa Indonesia 25.000+ kata dengan validasi otomatis",

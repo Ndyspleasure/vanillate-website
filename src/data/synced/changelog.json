@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.6.1",
+    "date": "2026-10-28",
+    "title": "Nama baru: Vanillate.ID",
+    "highlights": [
+      "🏷️ Bot kini tampil dengan nama Vanillate.ID di pengumuman, pesan sambutan, tutorial, dan /help",
+      "🎮 Sambung Kata tetap ada sebagai game utama, semua fitur & progres kamu tidak berubah",
+      "🛟 Pesan support, broadcast, dan info server ikut memakai nama baru"
+    ]
+  },
+  {
     "version": "3.6.0",
     "date": "2026-10-28",
     "title": "Panduan setup kini juga untuk server lama",
