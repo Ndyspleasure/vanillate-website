@@ -240,10 +240,10 @@ export function previewHeader(
 ): { title: string | null; footer: string; color: string } {
   const title = emergency ? `🚨 ${d.title?.trim() || 'Informasi Penting'}` : (d.title?.trim() || null);
   const footer = server
-    ? 'Sambung Kata • Info khusus owner/admin server'
+    ? 'Vanillate.ID • Info khusus owner/admin server'
     : emergency
-      ? 'Sambung Kata • 🚨 Info darurat — dikirim ke semua pemain, termasuk yang menonaktifkan DM'
-      : 'Sambung Kata • Pesan resmi dari tim';
+      ? 'Vanillate.ID • 🚨 Info darurat — dikirim ke semua pemain, termasuk yang menonaktifkan DM'
+      : 'Vanillate.ID • Pesan resmi dari tim';
   const hex = (d.color ?? '').trim().replace(/^#/, '');
   return { title, footer, color: /^[0-9a-f]{6}$/i.test(hex) ? `#${hex}` : '#57F287' };
 }

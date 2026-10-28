@@ -29,8 +29,8 @@
 export const categories = [
   {
     slug: 'sambung-kata',
-    name: 'Vanillate Sambung Kata',
-    description: 'Cara bermain, mode, progression, event, dan daftar command Vanillate Sambung Kata.',
+    name: 'Vanillate.ID',
+    description: 'Cara bermain, mode, progression, event, dan daftar command Vanillate.ID.',
     icon: 'sparkles',
     sortOrder: 10,
     productSlug: 'sambung-kata',
@@ -67,14 +67,14 @@ export const categories = [
  */
 export const faqs = [
   // ═══════════════════════════════════════════════════════════════════
-  // VANILLATE SAMBUNG KATA
+  // VANILLATE.ID (dulu Vanillate.ID)
   // ═══════════════════════════════════════════════════════════════════
   {
     category: 'sambung-kata',
     slug: 'cara-mulai-bermain',
     question: 'Bagaimana cara mulai bermain Sambung Kata?',
     sortOrder: 10,
-    answer: `Vanillate Sambung Kata adalah bot game kata berantai Bahasa Indonesia dengan progresi mendalam: Class, Quest, Boost, sampai Dungeon Mode. Lima langkah untuk mulai:
+    answer: `Vanillate.ID adalah bot Discord berisi game kata berantai Bahasa Indonesia dengan progresi mendalam: Class, Quest, Boost, sampai Dungeon Mode. Lima langkah untuk mulai:
 
 1. Undang bot ke server Discord kamu.
 2. Ketik \`/sambungkata\` untuk membuka dashboard, lalu pilih mode: PvP, PvB, Player vs Server, atau Dungeon.
@@ -532,7 +532,7 @@ Kamu bisa mengecek sebuah kata kapan saja dengan \`/kamus [kata]\`.`,
     sortOrder: 10,
     answer: `Bisa, dan itu memang salah satu kekuatannya. Produk kami dirancang mengajak banyak anggota ikut berinteraksi sekaligus, sehingga obrolan yang tadinya sepi cepat kembali ramai.
 
-Contohnya, satu sesi Vanillate Sambung Kata di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.`,
+Contohnya, satu sesi Vanillate.ID di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.`,
   },
   {
     category: 'umum',
