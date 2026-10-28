@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.7.0",
+    "date": "2026-10-28",
+    "title": "Kata-kata hari ini lebih bersih: tulisan kasar, link, & spam ditolak",
+    "highlights": [
+      "🚫 Kata-kata hari ini yang berisi kata kasar, link, atau hanya mengulang kata kini ditolak — bot menjelaskan alasannya, tinggal tulis ulang atau edit pesanmu",
+      "💌 Kata-kata yang kamu terima dari teman kini lebih bersih dan tanpa mention dari server lain",
+      "🔥 Streak-mu tetap aman: tulisan lama yang ditarik tidak mengurangi hari streak"
+    ]
+  },
+  {
     "version": "3.6.1",
     "date": "2026-10-28",
     "title": "Nama baru: Vanillate.ID",
