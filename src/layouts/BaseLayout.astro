@@ -9,6 +9,7 @@ import Footer from '@components/Footer.astro';
 import BackToTop from '@components/BackToTop.astro';
 import VaniContact from '@components/mascot/VaniContact.astro';
 import { url } from '@utils/url';
+import { adsenseClient } from '@/lib/blog/ads';
 
 export interface Props {
   title?: string;
@@ -29,6 +30,8 @@ const { title, description, image, imageAlt, noindex, article, rawTitle } = Astr
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google-site-verification" content={site.googleSiteVerification} />
+    <!-- Verifikasi kepemilikan situs untuk AdSense. Hanya meta: skrip iklan dimuat di halaman artikel saja. -->
+    {adsenseClient() && <meta name="google-adsense-account" content={adsenseClient()} />}
     <link rel="icon" type="image/png" sizes="32x32" href={url('/favicon-32.png')} />
     <link rel="icon" type="image/png" sizes="64x64" href={url('/favicon-64.png')} />
     <link rel="apple-touch-icon" sizes="180x180" href={url('/apple-touch-icon.png')} />
