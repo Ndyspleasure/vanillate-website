@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.6.0",
+    "date": "2026-10-28",
+    "title": "Panduan setup kini juga untuk server lama",
+    "highlights": [
+      "📌 Server yang sudah lama memakai Vanillate kini juga bisa mendapat channel #konfigurasi-vanillate berisi panduan setup fitur sosial",
+      "🧭 Channel dibuat bertahap supaya tidak mengganggu, dan berhenti otomatis begitu setup server selesai"
+    ]
+  },
+  {
     "version": "3.5.0",
     "date": "2026-10-22",
     "title": "Panduan setup server untuk owner & admin",
