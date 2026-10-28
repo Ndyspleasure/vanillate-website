@@ -148,7 +148,10 @@ Nama tipe harus sama dengan `src/lib/blog/config.ts` (`DOC_TYPES`, dites).
 | `blogAuthor` | `name`, `slug`, `role`, `bio`, `avatar`, `links[]` |
 | `blogCategory` | `title`, `slug`, `description`, `sort` |
 
-Id: `post.<uuid>`, `author.<uuid>`, `category.<uuid>`; draft = `drafts.<id>`.
+Id: `post-<uuid>`, `author-<uuid>`, `category-<uuid>`; draft = `drafts.<id>`. **Jangan** memakai
+titik di id dokumen terbit: Sanity menyembunyikan id bertitik dari pembaca tanpa token
+(walau dataset public), sehingga build situs tidak melihatnya. Id lama `post.<uuid>` masih
+diterima `isDocId`, tetapi sudah dimigrasi ke format baru.
 Penulis/kategori yang masih dipakai artikel (termasuk draft) tidak bisa dihapus.
 
 ### Kuota Sanity (paket Free)

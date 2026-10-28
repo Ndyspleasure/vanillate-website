@@ -51,6 +51,11 @@ test('isDocId & newDocId', () => {
   assert.equal(isDocId('drafts.' + id), false);
   assert.equal(isDocId('post.x'), false);
   assert.equal(isDocId('post.../../evil'), false);
+  // Id bertitik tidak terbaca build situs (Sanity anonim) → id baru tanpa titik.
+  assert.equal(id.includes('.'), false);
+  assert.equal(isDocId('post.11111111-2222-3333-4444-555555555555', 'post'), true);
+  assert.equal(isDocId('post-11111111-2222-3333-4444-555555555555', 'post'), true);
+  assert.equal(isDocId('author-11111111-2222-3333-4444-555555555555', 'post'), false);
 });
 
 test('cleanPostFields: slug dari judul, input liar dibuang', () => {
