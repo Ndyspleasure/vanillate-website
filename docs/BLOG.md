@@ -142,7 +142,7 @@ tidak bisa mengirim 301. Slug lama tidak bisa dipakai artikel lain.
 Skrip AdSense **hanya** dimuat di `/blog/<slug>`. `/blog`, kategori, tag,
 penulis, halaman redirect, dan seluruh situs lain tidak memuatnya — jadi Auto
 ads pun tidak bisa muncul di sana. Pengaturan di `src/lib/blog/ads.ts`
-(`ADSENSE`); selama `client` kosong iklan mati dan `/ads.txt` hanya komentar.
+(`ADSENSE`, publisher `ca-pub-7666352445473199`); bila `client` dikosongkan iklan mati dan `/ads.txt` hanya komentar.
 
 | Posisi | Slot | Format AdSense |
 |---|---|---|

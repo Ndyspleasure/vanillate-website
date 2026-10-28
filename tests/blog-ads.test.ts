@@ -10,11 +10,18 @@ const aktif = {
 };
 const isi = (n: number) => Array.from({ length: n }, (_, i) => `<h2 id="h${i}">H${i}</h2><p>isi</p>`).join('');
 
-test('bawaan repo: iklan mati, ads.txt hanya komentar', () => {
-  assert.equal(adsenseClient(ADSENSE), null);
-  assert.equal(adHtml('afterArticle', ADSENSE), '');
-  assert.equal(withInArticleAd(isi(5), ADSENSE), isi(5));
-  assert.match(adsTxt(ADSENSE), /^#/);
+test('ID di repo valid (iklan aktif)', () => {
+  assert.equal(adsenseClient(ADSENSE), ADSENSE.client);
+  assert.notEqual(adHtml('inArticle', ADSENSE), '');
+  assert.notEqual(adHtml('afterArticle', ADSENSE), '');
+});
+
+test('ID kosong: iklan mati, ads.txt hanya komentar', () => {
+  const kosong = { client: '', slots: { inArticle: '', afterArticle: '' }, inArticleBeforeH2: 3 };
+  assert.equal(adsenseClient(kosong), null);
+  assert.equal(adHtml('afterArticle', kosong), '');
+  assert.equal(withInArticleAd(isi(5), kosong), isi(5));
+  assert.match(adsTxt(kosong), /^#/);
 });
 
 test('ID tidak valid dianggap mati', () => {

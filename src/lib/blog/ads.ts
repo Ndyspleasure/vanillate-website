@@ -10,13 +10,13 @@
 
 export const ADSENSE = {
   /** ID publisher, bentuk `ca-pub-1234567890123456`. Kosong = iklan mati. */
-  client: '',
+  client: 'ca-pub-7666352445473199',
   /** ID unit iklan (angka) dari AdSense › Iklan › Menurut unit iklan. */
   slots: {
     /** Iklan di tengah isi artikel (format In-article). */
-    inArticle: '',
+    inArticle: '3958782997',
     /** Iklan setelah isi artikel, sebelum FAQ (format Display responsif). */
-    afterArticle: '',
+    afterArticle: '2370369154',
   },
   /** Iklan tengah disisipkan sebelum subjudul H2 ke-N (butuh minimal N subjudul). */
   inArticleBeforeH2: 3,
