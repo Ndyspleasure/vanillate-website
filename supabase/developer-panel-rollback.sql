@@ -18,7 +18,7 @@
 delete from public.bot_settings
  where key in ('discord_announcement_title', 'changelog_lobby_enabled',
                'tutorial_enabled', 'tutorial_gate_new', 'dm_campaign_per_day',
-               'onboarding_channel_enabled', 'onboarding_nudge_enabled');
+               'onboarding_channel_enabled', 'onboarding_nudge_enabled', 'onboarding_channel_existing');
 delete from public.bot_setting_categories where key in ('tutorial', 'campaign', 'onboarding');
 
 -- 4. Bucket backup

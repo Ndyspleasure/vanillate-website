@@ -50,5 +50,7 @@ insert into public.bot_settings (key, label, value, kind, category, help, min_va
   ('onboarding_channel_enabled', 'Channel #konfigurasi-vanillate', null, 'boolean', 'onboarding',
    'Server yang baru mengundang bot (sejak setting ini pertama dinyalakan) dibuatkan channel panduan berisi status setup & mention owner/admin. Dipulihkan maks. 2× bila dihapus sebelum setup selesai.', null, null, 10),
   ('onboarding_nudge_enabled', 'Sapaan owner & admin', null, 'boolean', 'onboarding',
-   'Pesan "Hei, ada waktu?" (hanya terlihat oleh owner/admin) setelah mereka memakai command, selama fitur sosial servernya belum diputuskan. Maks. sekali per 24 jam, berhenti setelah 3×.', null, null, 20)
+   'Pesan "Hei, ada waktu?" (hanya terlihat oleh owner/admin) setelah mereka memakai command, selama fitur sosial servernya belum diputuskan. Maks. sekali per 24 jam, berhenti setelah 3×.', null, null, 20),
+  ('onboarding_channel_existing', 'Channel juga untuk server lama', null, 'boolean', 'onboarding',
+   'Server lama (bergabung sebelum channel dinyalakan) yang setupnya belum selesai ikut dibuatkan channel #konfigurasi-vanillate, dicicil ±18 server per jam. Hanya berlaku bila setting channel juga menyala.', null, null, 30)
 on conflict (key) do nothing;
