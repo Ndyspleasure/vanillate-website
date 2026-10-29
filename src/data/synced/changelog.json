@@ -1,5 +1,210 @@
 [
   {
+    "version": "3.26.0",
+    "date": "2026-10-29",
+    "title": "Semua tampilan bot kini memakai kartu baru",
+    "highlights": [
+      "✨ Seluruh pesan bot kini tampil dengan kartu baru yang seragam dan rapi",
+      "🧹 Pembersihan tampilan lama agar bot lebih ringan dan konsisten"
+    ]
+  },
+  {
+    "version": "3.25.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru pengumuman, polling & partnership",
+    "highlights": [
+      "📢 Pengumuman update, broadcast, dan polling kini tampil dengan kartu baru yang lebih rapi",
+      "🤝 Dashboard Partnership dan detail partner ikut diperbarui",
+      "👋 Pesan sambutan saat bot diundang ke server tampil lebih konsisten",
+      "🔧 Info maintenance kini tampil dengan kartu baru"
+    ]
+  },
+  {
+    "version": "3.24.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru Pusat Bantuan & Tim Support",
+    "highlights": [
+      "🛟 Pusat Bantuan, FAQ, dan Asisten Support tampil dengan kartu baru yang lebih rapi",
+      "🎧 Obrolan dengan Tim Support kini memakai kartu baru — foto, video, dan berkas tetap terlihat jelas",
+      "⭐ Form rating & ucapan terima kasih setelah sesi support ikut diperbarui",
+      "📝 Pesan Masukan dan balasannya kini tampil lebih konsisten"
+    ]
+  },
+  {
+    "version": "3.23.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru /help, /quest, /shop & tutorial",
+    "highlights": [
+      "📖 /help, /quest, /leaderboard, /claim, /shop, /kamus, /stats, /inventory, dan /class kini memakai kartu baru yang lebih rapi",
+      "🎓 Tutorial pemain baru tampil dengan tampilan baru, alurnya tetap sama",
+      "🛠️ Tombol pada pesan lama tetap bisa dipakai — bot membuka tampilan baru otomatis"
+    ]
+  },
+  {
+    "version": "3.22.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru Share Server",
+    "highlights": [
+      "📣 Iklan server, panel vote, dan pemberitahuan Share Server kini memakai kartu baru yang lebih rapi",
+      "🗳️ Panel vote yang di-pin otomatis diganti ke tampilan baru tanpa perlu diatur ulang",
+      "🔗 Tombol Gabung Server & Laporkan tetap seperti biasa"
+    ]
+  },
+  {
+    "version": "3.21.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru panel /pengaturan & panduan setup server",
+    "highlights": [
+      "⚙️ Panel /pengaturan (Channel Game, Sosial, Share Server) kini memakai tampilan kartu baru",
+      "🧭 Pesan panduan setup & sapaan untuk admin server ikut tampil lebih rapi",
+      "🛠️ Panel lama yang masih terbuka tetap bisa dipakai — bot membuka panel baru otomatis"
+    ]
+  },
+  {
+    "version": "3.20.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru Social Hub: Counting & Streak Harian",
+    "highlights": [
+      "✨ Balasan Counting & Streak Harian kini memakai kartu baru yang lebih rapi",
+      "🔔 Pengingat streak tetap hanya memanggil member yang streak-nya belum tercatat",
+      "💌 Kata-kata dari teman tetap datang dalam satu balasan bersama kartu streak-mu",
+      "🤝 Dashboard /sosial tampil dengan tampilan baru"
+    ]
+  },
+  {
+    "version": "3.19.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru Dashboard /game",
+    "highlights": [
+      "🎮 Dashboard /game kini tampil dengan kartu baru yang lebih rapi, tombol game tetap sama",
+      "⏳ Pesan tunggu (cooldown) memulai game ikut memakai tampilan baru",
+      "🛡️ Pemberitahuan saat permainan dihentikan otomatis kini lebih jelas"
+    ]
+  },
+  {
+    "version": "3.18.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru untuk event dalam game",
+    "highlights": [
+      "✨ AI Challenger, Sinyal yang Tersesat, Pedagang Kelana, dan Penjajah kini tampil dengan kartu baru yang lebih rapi",
+      "⚔️ Soal Perjuangan Penjajah tetap memanggil semua pemain aktif, dan tombol jawaban terkunci rapi setelah waktu habis",
+      "🛒 Belanja di Pedagang Kelana tetap lewat tombol yang sama seperti sebelumnya"
+    ]
+  },
+  {
+    "version": "3.17.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru Sambung Kata PvP & vs Bot",
+    "highlights": [
+      "✨ Kartu giliran, voting, Balapan Ayam, dan hasil akhir Sambung Kata kini memakai tampilan baru yang lebih rapi",
+      "🔔 Ping giliran tetap hanya ke pemain yang sedang jalan — tidak ada notifikasi berlebihan",
+      "🎯 Boost Hint & Reroll di tengah permainan tetap bekerja seperti biasa dengan tampilan baru",
+      "⏳ Hitung mundur sebelum pertandingan kini seragam di semua mode"
+    ]
+  },
+  {
+    "version": "3.16.0",
+    "date": "2026-10-29",
+    "title": "Player vs Server (Global) tampil dengan gaya pesan baru",
+    "highlights": [
+      "🌐 Syarat & Ketentuan, lobby antrean lintas server, lawan ditemukan, pertandingan, voting, dan hasil Global kini memakai tampilan pesan generasi baru Discord",
+      "💬 Obrolan lintas server tampil sebagai kartu dengan nama pemain & asal servernya",
+      "✅ Antrean, rating global, dan aturan pertandingan tidak berubah — lobby yang sedang menunggu tetap aman setelah update"
+    ]
+  },
+  {
+    "version": "3.15.0",
+    "date": "2026-10-29",
+    "title": "Battle Skill tampil dengan gaya pesan baru",
+    "highlights": [
+      "⚔️ Lobby, giliran, menu Skill, serangan & Skill Bot, Overtime, voting, hasil, dan reward Battle Skill kini memakai tampilan pesan generasi baru Discord",
+      "🔷 Tombol Skill dan voting tetap di bawah kartunya dan otomatis dilepas setelah dipilih",
+      "✅ HP, Mana, Skill, Overtime, dan reward tidak berubah"
+    ]
+  },
+  {
+    "version": "3.14.0",
+    "date": "2026-10-29",
+    "title": "Dungeon tampil dengan gaya pesan baru",
+    "highlights": [
+      "🏰 Intro, giliran, serangan Guardian, wave, kemenangan/kekalahan, dan reward Dungeon kini memakai tampilan pesan generasi baru Discord",
+      "🛡️ Tombol boost tetap berada di bawah kartu giliran dan langsung diperbarui saat dipakai",
+      "✅ Golden Key, wave, damage, dan reward x2 tidak berubah"
+    ]
+  },
+  {
+    "version": "3.13.0",
+    "date": "2026-10-29",
+    "title": "UNO tampil dengan gaya pesan baru",
+    "highlights": [
+      "🃏 Lobby, papan giliran, panel kartu di tangan, pemilih warna, voting berhenti, dan layar menang UNO kini memakai tampilan pesan generasi baru Discord",
+      "🎯 Ajakan giliran tetap memanggil (ping) hanya pemain yang sedang mendapat giliran",
+      "✅ Aturan, kartu, timer giliran, dan bot pengisi tidak berubah"
+    ]
+  },
+  {
+    "version": "3.12.0",
+    "date": "2026-10-29",
+    "title": "Werewolf Lanjutan tampil dengan gaya pesan baru",
+    "highlights": [
+      "🐺 Papan lobi, malam, siang, voting, dan hasil akhir Werewolf Lanjutan (54 role) kini memakai tampilan pesan generasi baru Discord",
+      "🎭 Dashboard Aksi Malam menampilkan kartu peranmu dan pilihan kemampuan dalam satu kartu yang rapi",
+      "✅ Semua peran, kemampuan, voting, dan cara menang tidak berubah"
+    ]
+  },
+  {
+    "version": "3.11.0",
+    "date": "2026-10-29",
+    "title": "Werewolf Klasik tampil dengan gaya pesan baru",
+    "highlights": [
+      "🐺 Papan lobi, malam, siang, dan hasil akhir Werewolf Klasik kini memakai tampilan pesan generasi baru Discord",
+      "🎭 Kartu peran yang dibagikan otomatis & tombol Peranku ikut tampil dengan gaya baru",
+      "⏳ Hitung mundur persiapan pertandingan tetap terpisah dari status pemeriksaan",
+      "✅ Peran, aksi malam, voting, dan cara menang tidak berubah"
+    ]
+  },
+  {
+    "version": "3.10.0",
+    "date": "2026-10-29",
+    "title": "Pengacara tampil dengan gaya pesan baru",
+    "highlights": [
+      "⚖️ Papan sidang, Panel Hakim, Panel Vonis, dan pengajuan bukti/keberatan Pengacara kini memakai tampilan pesan generasi baru Discord",
+      "🔨 Setelah Hakim memutuskan bukti atau keberatan, kartunya terkunci dengan hasil keputusan yang jelas",
+      "✅ Kursi, peran, alur sidang, dan skor tidak berubah"
+    ]
+  },
+  {
+    "version": "3.9.0",
+    "date": "2026-10-29",
+    "title": "Tebak Lagu tampil dengan gaya pesan baru",
+    "highlights": [
+      "🎵 Lobi, ronde, hasil tiap ronde, dan papan skor Tebak Lagu kini memakai tampilan pesan generasi baru Discord",
+      "🎧 Cuplikan lagu tetap muncul langsung di kartu ronde, lengkap dengan tombol Tebak Lagu & Hentikan",
+      "✅ Cara main, skor, dan tombol tidak berubah"
+    ]
+  },
+  {
+    "version": "3.8.0",
+    "date": "2026-10-29",
+    "title": "Tampilan baru Dashboard & Lobby Sambung Kata",
+    "highlights": [
+      "🎮 Dashboard /sambungkata tampil lebih rapi: setiap mode punya penjelasan dengan tombolnya tepat di samping",
+      "🏛️ Lobby, konfirmasi tim, dan fase persiapan memakai tampilan pesan generasi baru Discord — info host, pemain, mode, dan daftar pemain lebih mudah dibaca",
+      "🧵 Pesan penunjuk ruang permainan di channel utama ikut diperbarui, tanpa mengirim notifikasi mention tambahan",
+      "✅ Semua tombol (Bergabung, Keluar, Mulai, Tutup Lobby, tim A/B) tetap sama seperti sebelumnya"
+    ]
+  },
+  {
+    "version": "3.7.1",
+    "date": "2026-10-29",
+    "title": "Persiapan tampilan pesan baru Discord (Components V2)",
+    "highlights": [
+      "🧱 Fondasi tampilan pesan generasi baru Discord sudah disiapkan — lobby, game, dan fitur lain akan pindah bertahap",
+      "🦶 Info website & waktu WIB di bagian bawah pesan tetap sama persis di tampilan baru",
+      "🎮 Belum ada perubahan yang terlihat di game kamu pada versi ini"
+    ]
+  },
+  {
     "version": "3.7.0",
     "date": "2026-10-28",
     "title": "Kata-kata hari ini lebih bersih: tulisan kasar, link, & spam ditolak",
