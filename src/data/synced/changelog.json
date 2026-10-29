@@ -1,5 +1,36 @@
 [
   {
+    "version": "3.29.0",
+    "date": "2026-10-29",
+    "title": "Data pemain kini tersimpan aman di cloud",
+    "highlights": [
+      "☁️ Semua data pemain (coin, EXP, level, class, inventori, quest, streak & counting) kini disimpan di database cloud, bukan lagi di komputer server",
+      "🛡️ Data lebih aman dari kerusakan file lokal dan bisa di-backup kapan saja",
+      "🔒 Penyimpanan data pemain dikunci khusus untuk bot — tidak bisa diakses dari luar",
+      "🛠️ Fondasi untuk game & fitur sosial baru ke depannya"
+    ]
+  },
+  {
+    "version": "3.28.0",
+    "date": "2026-10-29",
+    "title": "Pengaturan server kini lewat Vanillate Dashboard",
+    "highlights": [
+      "🌐 /pengaturan kini membuka Vanillate Dashboard — atur channel game, fitur sosial & Share Server langsung dari website",
+      "🚫 Fitur sosial yang tidak dipakai bisa ditandai \"Tidak dipakai\" di dashboard, panduan setup ikut selesai",
+      "⚙️ Tombol Mulai Setup & alert Share Server langsung menuju halaman server-mu di dashboard"
+    ]
+  },
+  {
+    "version": "3.27.0",
+    "date": "2026-10-29",
+    "title": "Tombol kini menyatu di dalam kartu",
+    "highlights": [
+      "🎛️ Semua tombol dan menu kini berada di dalam kartu pesan, tidak lagi terpisah di bawahnya",
+      "🎮 Dashboard /game kini rapi: tombol Main ada tepat di samping penjelasan tiap game",
+      "✨ Lobby dan papan permainan tampil lebih menyatu"
+    ]
+  },
+  {
     "version": "3.26.0",
     "date": "2026-10-29",
     "title": "Semua tampilan bot kini memakai kartu baru",
