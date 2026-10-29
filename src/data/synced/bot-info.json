@@ -13,7 +13,7 @@
     "Quest harian dan mingguan, promo code, serta event in-game acak",
     "Leaderboard global, win streak, dan Dungeon Trophy",
     "Hub sosial /sosial: Counting dan Streak Harian di channel pilihan server",
-    "Atur bot per server lewat /pengaturan atau Vanillate Dashboard di vanillate.id/dashboard"
+    "Atur bot per server lewat Vanillate Dashboard di vanillate.id/dashboard (/pengaturan memberi tautannya)"
   ],
   "commands": [
     {
@@ -46,7 +46,7 @@
     },
     {
       "name": "/pengaturan",
-      "description": "Admin server: atur channel game dan fitur sosial"
+      "description": "Admin server: buka Vanillate Dashboard untuk mengatur bot"
     },
     {
       "name": "/help",

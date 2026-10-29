@@ -122,8 +122,19 @@ sedang dibuka aman), dan menyimpan dengan revisi tempat draft dibuat — jadi
 perubahan dari tempat lain selama mengedit selalu ditolak `STALE_REVISION`,
 tidak pernah tertimpa diam-diam.
 
-Perubahan dari `/pengaturan` di Discord tetap berlaku dan tercatat sebagai
-revisi baru (sumber "Discord") — dashboard & bot selalu sama.
+**Dashboard adalah satu-satunya tempat admin server mengatur bot** (sejak bot
+v3.28). `/pengaturan` di Discord tidak lagi berisi panel — ia hanya membalas
+tombol tautan ke `/dashboard/server/?id=<guildId>` (tab lewat hash, mis.
+`#social-hub`); tautan itu dibawa melewati login. Perubahan dari luar
+dashboard (Social Monitor CMS, channel dihapus) tetap tercatat sebagai revisi
+baru (sumber "Discord") — dashboard & bot selalu sama.
+
+**🚫 Tidak dipakai (fitur sosial).** Bot menerbitkan setelan `not_used` di
+`settings_schema` fitur sosial. Saat fitur OFF, kartu menampilkan centang
+"🚫 Tidak dipakai di server ini" (`settings.not_used = true`); bot mencatatnya
+sebagai keputusan onboarding (`guild_social_declines`) sehingga panduan setup
+berhenti menanyakan fitur itu. `false` eksplisit membatalkan keputusan;
+mengaktifkan fitur otomatis membatalkannya.
 
 ## 5. Setup (sekali, oleh pemilik)
 
@@ -170,7 +181,7 @@ nyala/mati + channel (ada profil, undangan, antrean, sanksi). Website tetap
 | Komponen | Peran |
 |---|---|
 | `share_guild_state` | Status + riwayat per server, **diterbitkan bot**. Dibaca lewat RPC `share_dashboard_get` (cek `guild_dashboard_assert_access`) |
-| `share_requests` | Aksi admin (`save`, `activate`, `deactivate`, `test`, `recheck_invite`, `ack`) lewat RPC `share_request_submit`. Identitas Discord diambil dari `auth.identities`; satu permintaan aktif per server; maks. 30/jam per user. **Bot memverifikasi ulang** izin Manage Server user di Discord, lalu menjalankan aksi dengan aturan yang sama dengan `/pengaturan` |
+| `share_requests` | Aksi admin (`save`, `activate`, `deactivate`, `test`, `recheck_invite`, `ack`) lewat RPC `share_request_submit`. Identitas Discord diambil dari `auth.identities`; satu permintaan aktif per server; maks. 30/jam per user. **Bot memverifikasi ulang** izin Manage Server user di Discord, lalu menjalankan aksi dengan aturan yang sama dengan Social Monitor CMS (`src/social/share/service.js`) |
 | `share_topgg_votes` | Kotak masuk webhook Top.gg, ditulis Edge Function `topgg-webhook` (service_role), dibaca bot |
 | UI | `src/lib/dashboard/share-server.ts` (tab), `share-model.ts` (model murni, `tests/share-model.test.ts`) |
 
