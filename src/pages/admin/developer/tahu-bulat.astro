@@ -1,0 +1,125 @@
+---
+// Panel Developer — 🥟 Tahu Bulat (game di hub /game bot Vanillate.ID).
+// Pengganti /developer bot Tahu Bulat lama. Ringkasan dari snapshot `tahu`;
+// aksi lewat bot_commands dengan tipe yang sama persis dengan handler bot
+// (src/cms/handlers/tahu.js): tahu.detail, tahu.reset, tahu.exportIds.
+// Data pemain Tahu ada di database game (tabel tahu_*), bukan di proyek ini.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Tahu Bulat" active="dev-tahu">
+  <AdminPageHeader
+    eyebrow="Discord Bot"
+    title="Tahu Bulat"
+    description="Game idle di hub /game: ringkasan pemain, kolam donasi, peringkat, detail & reset progres per pemain."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-10">
+    <p id="tb-fresh"></p>
+    <div id="tb-body" class="space-y-10"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { bacaSnapshot } from '@/lib/dev-panel/client';
+  import { FPLAYER } from '@/lib/dev-panel/actions';
+  import { KELAS, fmtJam, formCard, freshness, pasangAksi, pill, section, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
+
+  let role = 'viewer';
+
+  document.addEventListener('admin:ready', (e) => {
+    role = (e as CustomEvent).detail?.role ?? 'viewer';
+    void muat();
+  });
+
+  const pemain = (id: string, nama?: string | null) =>
+    `${esc(nama ?? 'Pemain')}<br><code class="text-xs ${KELAS.muted}">${esc(id)}</code>`;
+
+  function detailHtml(d: any): string {
+    const baris: [string, string][] = [
+      ['Pemain', pemain(d.userId, d.username)],
+      ['Coin', fmtAngka(d.coin)],
+      ['Kendaraan', esc(d.vehicle)],
+      ['Status', d.status === 'SELLING' ? pill('jualan', 'ok') : pill('idle', 'muted')],
+      ['Rebirth', `${fmtAngka(d.rebirth)} ${d.rebirthReady ? pill('siap rebirth', 'ok') : ''}`],
+      ['Kota', `${fmtAngka(d.cities?.unlocked)}/${fmtAngka(d.cities?.total)}`],
+      ['Pendapatan / jual', `${fmtAngka(d.incomePerSale)} coin · cooldown ${esc(d.cooldownSeconds)} dtk`],
+      ['Pelanggan terbuka', fmtAngka(d.customers)],
+      ['Achievement', fmtAngka(d.achievements)],
+      ['Peringkat (total coin)', d.rank?.rank ? `#${fmtAngka(d.rank.rank)} dari ${fmtAngka(d.rank.total)}` : '—'],
+      ['Donasi siklus ini', `${fmtAngka(d.donation?.donatedThisCycle)} / ${fmtAngka(d.donation?.target)}`],
+      ['Total coin dihasilkan', fmtAngka(d.stats?.totalIncome)],
+      ['Total jualan', fmtAngka(d.stats?.totalSell)],
+      ['Total donasi', fmtAngka(d.stats?.totalDonated)],
+      ['Mulai main', esc(fmtJam(d.createdAt))],
+      ['Aktif terakhir', esc(fmtJam(d.lastActive))],
+    ];
+    return `<div class="${KELAS.kartu}"><dl class="grid gap-x-6 gap-y-2 sm:grid-cols-2 text-sm">${baris
+      .map(([k, v]) => `<div><dt class="text-xs ${KELAS.muted}">${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl></div>`;
+  }
+
+  async function muat() {
+    const s = await bacaSnapshot('tahu');
+    document.getElementById('tb-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('tb-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data. Pastikan bot sudah memakai versi dengan Tahu Bulat.'); return; }
+    const t = s.data;
+    const editor = role === 'owner' || role === 'admin';
+
+    body.innerHTML = [
+      section('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${stat('Total pemain', fmtAngka(t.summary?.total))}
+        ${stat('Aktif 30 hari', fmtAngka(t.summary?.active))}
+        ${stat('Sedang berjualan', fmtAngka(t.summary?.selling))}
+        ${stat('Pemain baru hari ini', fmtAngka(t.summary?.newToday), 'WIB')}
+        ${stat('Total coin beredar', fmtAngka(t.summary?.coinTotal), 'coin Tahu, terpisah dari Sambung Kata')}
+        ${stat('Rebirth tertinggi', fmtAngka(t.summary?.rebirthMax))}
+      </div>`),
+      section('Kolam donasi', `<div class="grid gap-4 sm:grid-cols-3">
+        ${stat('Saldo kolam', fmtAngka(t.pool?.balance))}
+        ${stat('Total disumbangkan', fmtAngka(t.pool?.totalDonated))}
+        ${stat('Total diambil', fmtAngka(t.pool?.totalClaimed))}
+      </div>`, 'Pemain kaya menyumbang; hanya pemain yang belum pernah Rebirth yang boleh mengambil.'),
+      section('10 besar — total coin dihasilkan', table(['#', 'Pemain', 'Total coin', 'Coin', 'Rebirth'], (t.top ?? []).map((r: any, i: number) => [
+        String(i + 1), pemain(r.userId, r.username), fmtAngka(r.totalIncome), fmtAngka(r.coin), fmtAngka(r.rebirth),
+      ]), 'Belum ada pemain.')),
+      section('Aktivitas terbaru', table(['Pemain', 'Coin', 'Kendaraan', 'Kota', 'Rebirth', 'Status', 'Aktif terakhir'], (t.recent ?? []).map((r: any) => [
+        pemain(r.userId, r.username), fmtAngka(r.coin), esc(r.vehicle), fmtAngka(r.cities), fmtAngka(r.rebirth),
+        r.selling ? pill('jualan', 'ok') : pill('idle', 'muted'),
+        `<span class="text-xs">${esc(fmtJam(r.lastActive))}</span>`,
+      ]), 'Belum ada pemain.')),
+      editor ? section('Alat bantu', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${formCard({ id: 'tb-detail', title: 'Lihat detail pemain', fields: [FPLAYER], submit: 'Lihat' })}
+        ${formCard({ id: 'tb-export', title: 'Export User ID pemain aktif', submit: 'Export',
+          fields: [{ name: 'days', label: 'Aktif dalam (hari)', type: 'number', value: '30', step: '1', required: true }] })}
+        ${formCard({ id: 'tb-reset', title: 'Reset progres pemain', danger: true, submit: 'Reset',
+          desc: 'Menghapus SELURUH progres Tahu Bulat pemain ini (coin, upgrade, rebirth, statistik). Tidak bisa dibatalkan. Data Sambung Kata tidak tersentuh.',
+          fields: [FPLAYER, { name: 'confirm', label: 'Ketik RESET', required: true, placeholder: 'RESET' }] })}
+      </div>
+      <div id="tb-detail-out"></div>`) : '',
+    ].join('');
+
+    if (!editor) return;
+    pasangAksi(document.getElementById('tb-detail') as HTMLFormElement, {
+      type: 'tahu.detail',
+      success: (o) => { document.getElementById('tb-detail-out')!.innerHTML = detailHtml(o.result ?? {}); return 'Detail dimuat di bawah.'; },
+    });
+    pasangAksi(document.getElementById('tb-export') as HTMLFormElement, {
+      type: 'tahu.exportIds',
+      success: (o) => {
+        const ids: string[] = o.result?.ids ?? [];
+        unduhTeks(`tahu-bulat-aktif-${o.result?.days ?? ''}hari.txt`, ids.join('\n'));
+        return `${fmtAngka(ids.length)} User ID diunduh.`;
+      },
+    });
+    pasangAksi(document.getElementById('tb-reset') as HTMLFormElement, {
+      type: 'tahu.reset',
+      confirm: (p) => (String(p.confirm).toUpperCase() === 'RESET' ? `Hapus seluruh progres Tahu Bulat "${p.player}"?` : null),
+      success: () => 'Progres pemain dihapus.',
+      resetOnSuccess: true,
+      onDone: (o) => { if (o.ok) setTimeout(() => void muat(), 1500); },
+    });
+  }
+</script>
