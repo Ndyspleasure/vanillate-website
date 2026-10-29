@@ -60,7 +60,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           <p id="ks-backup-status" class="text-xs" role="status" aria-live="polite"></p>
         </div>
         <div id="ks-backup-list"></div>
-      </div>`, 'Snapshot konsisten database Neon (NDJSON, dipulihkan dengan npm run db:restore di host bot), dikompres gzip. Berisi data pemain — unduh hanya ke perangkat yang aman. Berkas dihapus otomatis setelah 24 jam.'),
+      </div>`, 'Snapshot konsisten database game (Supabase Vanillate Game, NDJSON, dipulihkan dengan npm run db:restore di host bot), dikompres gzip. Berisi data pemain — unduh hanya ke perangkat yang aman. Berkas dihapus otomatis setelah 24 jam.'),
       section('Bersihkan log', formCard({
         id: 'ks-cleanup', title: 'Hapus file log lama di server', danger: true, submit: 'Bersihkan', ownerOnly: true,
         fields: [{ name: 'days', label: 'Hapus yang lebih tua dari (hari)', type: 'number', value: '7', required: true }],

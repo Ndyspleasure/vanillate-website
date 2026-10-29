@@ -25,9 +25,12 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
   tipe dokumen Sanity sama persis antara `src/lib/blog/config.ts` dan
   `supabase/functions/blog-admin/logic.ts` (dites). Build produksi sengaja gagal
   bila Sanity tak terjangkau (`BLOG_ALLOW_EMPTY=1` hanya untuk dev/PR).
-- **Database game bot = Neon PostgreSQL** (proyek `vanillate-game`, acuan
-  `docs/database-neon.md` repo bot). Supabase di repo ini tetap **khusus CMS &
-  website** — jangan memindahkan data pemain ke Supabase atau sebaliknya.
+- **Database game bot = proyek Supabase TERPISAH "Vanillate Game"**
+  (`ggsshrnpgnfqvlhzxnoq`, acuan `docs/database-game.md` repo bot; data baru
+  untuk game/fitur sosial: `docs/database-fitur-baru.md`). Proyek Supabase di
+  repo ini (`lvfwopnvvqncopvathop`) tetap **khusus CMS & website** — jangan
+  memindahkan data pemain ke proyek CMS, dan jangan memasang URL/key proyek
+  game di website (semua tabelnya dikunci RLS; hanya bot yang mengakses).
 - Versi & changelog bot **read-only** di sini (SSoT `version.json` /
   `CHANGELOG.json` di repo bot).
 
