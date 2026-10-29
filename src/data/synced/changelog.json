@@ -1,5 +1,23 @@
 [
   {
+    "version": "3.29.2",
+    "date": "2026-10-29",
+    "title": "Perbaikan pemeriksaan data saat pindah ke cloud",
+    "highlights": [
+      "🛠️ Pemeriksaan keutuhan data pemain saat pindah ke database cloud kini lebih akurat",
+      "🔍 Masalah data lebih cepat ditemukan bila ada yang tidak cocok"
+    ]
+  },
+  {
+    "version": "3.29.1",
+    "date": "2026-10-29",
+    "title": "Perbaikan pemindahan data pemain ke cloud",
+    "highlights": [
+      "🛠️ Pemindahan data pemain ke database cloud kini berjalan lancar di server",
+      "🗄️ Statistik & riwayat lama dari fitur yang sudah pensiun tetap tersimpan, tidak ada data yang hilang"
+    ]
+  },
+  {
     "version": "3.29.0",
     "date": "2026-10-29",
     "title": "Data pemain kini tersimpan aman di cloud",
