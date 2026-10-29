@@ -72,7 +72,7 @@ export function progressPct(p: Progress | null | undefined): number | null {
   return Math.min(100, Math.round(((p.done ?? 0) / p.total) * 100));
 }
 
-/** Waktu dari epoch ms ATAU teks ISO/SQLite → epoch ms. */
+/** Waktu dari epoch ms ATAU teks ISO / "YYYY-MM-DD HH:MM:SS" UTC (database bot) → epoch ms. */
 export function toEpoch(v: number | string | null | undefined): number | null {
   if (v === null || v === undefined || v === '') return null;
   if (typeof v === 'number') return Number.isFinite(v) ? v : null;
