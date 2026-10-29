@@ -431,7 +431,7 @@ Tidak ada server-side rendering; GitHub Pages memang hanya melayani file statis.
 
 Seluruh **backend** (API, game logic, database, auth) tetap terpisah:
 - Bot Discord dijalankan via PM2 (Node.js di Windows)
-- Database game: better-sqlite3 (.db file lokal)
+- Database game: PostgreSQL di proyek Supabase terpisah "Vanillate Game" (acuan `docs/database-game.md` di repo bot) — bukan proyek Supabase CMS ini; Sanity tetap untuk blog
 - OG images & assets: CDN atau hosted terpisah
 
 Benefit: deployment sederhana (push ke GitHub), cepat (static files), dan murah (free GitHub Pages).

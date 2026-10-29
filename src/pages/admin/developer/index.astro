@@ -110,7 +110,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       ${stat('Pemain terdaftar', fmtAngka(db.players), `${fmtAngka(db.banned)} banned`)}
       ${stat('Total coin beredar', fmtAngka(db.coins))}
       ${stat('Boost di inventory', fmtAngka(db.inventoryTotal))}
-      ${stat('Ukuran database', fmtBytes(db.sizeBytes))}
+      ${stat('Ukuran database game', fmtBytes(db.sizeBytes), db.conn ? `query rata-rata ${db.conn.avgMs} ms · maks ${db.conn.maxMs} ms` : '')}
       ${stat('Class aktif', fmtAngka(db.activeClasses), `${fmtAngka(db.classes)} terdaftar · ${fmtAngka(db.talents)} talent`)}
       ${stat('Quest selesai hari ini', fmtAngka(db.questsToday), `${fmtAngka(db.questPlayersToday)} pemain mengerjakan`)}
       ${stat('Quest mingguan selesai', fmtAngka(db.questsWeek))}
