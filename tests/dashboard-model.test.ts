@@ -12,6 +12,9 @@ import {
   formatWib,
   inviteUrl,
   isDirty,
+  isNotUsed,
+  NOT_USED,
+  supportsNotUsed,
   missingPermissions,
   normalizeState,
   permissionWarnings,
@@ -187,4 +190,24 @@ test('inviteUrl mengunci ke server yang dipilih', () => {
   assert.equal(u.searchParams.get('disable_guild_select'), 'true');
   assert.equal(u.searchParams.get('scope'), 'bot applications.commands');
   assert.equal(inviteUrl('', '0', '900000000000000001'), null);
+});
+
+test('🚫 Tidak dipakai: hanya fitur dengan setelan not_used dari bot, hanya saat OFF', () => {
+  const social: Feature = { ...registry[0], settings_schema: { properties: { [NOT_USED]: { type: 'boolean' } } } };
+  assert.equal(supportsNotUsed(social), true);
+  assert.equal(supportsNotUsed(registry[1]), false);
+  assert.equal(supportsNotUsed(registry[0]), false);
+
+  assert.equal(isNotUsed({ enabled: false, settings: { not_used: true }, channels: {} }), true);
+  assert.equal(isNotUsed({ enabled: false, settings: { not_used: false }, channels: {} }), false);
+  assert.equal(isNotUsed({ enabled: true, settings: { not_used: true }, channels: {} }), false);
+  assert.equal(isNotUsed(undefined), false);
+
+  // Ikut payload simpan & tercatat rapi di audit.
+  const st = normalizeState({ SOCIAL_COUNT: { enabled: false, settings: { not_used: true }, channels: {} } }, [social]);
+  assert.deepEqual(buildSavePayload(st, [social]).features.SOCIAL_COUNT, { enabled: false, settings: { not_used: true } });
+  assert.equal(
+    formatAuditChange({ path: 'SOCIAL_COUNT.settings.not_used', from: null, to: true }, { registry: [social], snapshot }),
+    'Counting · Tidak dipakai: ya',
+  );
 });

@@ -48,6 +48,24 @@ export interface FeatureState {
 
 export type ConfigState = Record<string, FeatureState>;
 
+// ─── 🚫 Tidak dipakai (fitur sosial) ─────────────────────────────────────────
+// Bot menerbitkan setelan `not_used` di settings_schema fitur sosial. Dicentang
+// saat fitur OFF = admin sengaja tidak memakai fitur itu: 🧭 onboarding bot
+// berhenti menanyakannya (dulu tombol "🚫 Tidak Dipakai" di /pengaturan).
+// `false` eksplisit = keputusan dibatalkan; tanpa key = belum pernah diubah.
+export const NOT_USED = 'not_used';
+
+/** Apakah fitur ini punya pilihan "Tidak dipakai" (diterbitkan bot). */
+export function supportsNotUsed(f: Feature): boolean {
+  const props = (f.settings_schema as { properties?: Record<string, unknown> } | undefined)?.properties;
+  return Boolean(props && typeof props === 'object' && NOT_USED in props);
+}
+
+/** Fitur OFF yang ditandai "Tidak dipakai". */
+export function isNotUsed(s: FeatureState | undefined): boolean {
+  return Boolean(s && !s.enabled && s.settings[NOT_USED] === true);
+}
+
 export interface SnapshotChannel {
   id: string;
   name: string;
@@ -498,7 +516,7 @@ export function describeError(code: string | null | undefined, detail?: Record<s
     case 'BOT_NOT_INSTALLED':
       return 'Bot belum ada di server ini. Undang bot terlebih dahulu.';
     case 'BOT_NOT_READY':
-      return 'Bot Vanillate sedang diperbarui untuk mendukung dashboard. Simpan bisa dilakukan setelah bot versi terbaru aktif — pengaturan lama dari /pengaturan akan ikut terbawa.';
+      return 'Bot Vanillate sedang diperbarui untuk mendukung dashboard. Simpan bisa dilakukan setelah bot versi terbaru aktif — pengaturan lama dari Discord akan ikut terbawa.';
     case 'STALE_REVISION': {
       const rev = detail?.current_revision;
       return `Konfigurasi server ini baru saja diubah di tempat lain${rev != null ? ` (revisi ${rev})` : ''}. Muat ulang untuk melihat versi terbaru, lalu ulangi perubahanmu.`;
@@ -569,7 +587,7 @@ export interface AuditRow {
 
 export const AUDIT_ACTION: Record<string, string> = {
   'config.save': 'Mengubah konfigurasi',
-  'config.discord': 'Mengubah lewat /pengaturan di Discord',
+  'config.discord': 'Mengubah dari Discord',
   'config.import': 'Mengimpor pengaturan lama',
   'sync.applied': 'Bot menerapkan revisi',
   'sync.failed': 'Bot gagal menerapkan revisi',
@@ -598,6 +616,9 @@ export function formatAuditChange(change: unknown, ctx: TextContext): string {
   if (field === 'channels') {
     const label = f?.purposes.find((p) => p.key === sub)?.label ?? sub;
     return `${name} · ${label}: ${show(c.from, true, ctx)} → ${show(c.to, true, ctx)}`;
+  }
+  if (field === 'settings' && sub === NOT_USED) {
+    return `${name} · Tidak dipakai: ${c.to === true ? 'ya' : 'tidak'}`;
   }
   return `${name} · ${sub ?? field}: ${show(c.from, false, ctx)} → ${show(c.to, false, ctx)}`;
 }

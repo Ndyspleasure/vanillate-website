@@ -31,14 +31,17 @@ import {
   guildIconUrl,
   guildInitials,
   inviteUrl,
+  isNotUsed,
   isSnowflake,
   missingPermissions,
+  NOT_USED,
   normalizeState,
   permissionWarnings,
   relativeTime,
   serverIssues,
   sortedRegistry,
   STATUS_META,
+  supportsNotUsed,
   validateDraft,
   type AuditRow,
   type ConfigState,
@@ -163,8 +166,8 @@ export function mountServerPage(cfg: PageConfig): void {
       applyData(next, { keepDraft });
     } catch (err) {
       pageError = err instanceof DashboardError ? { code: err.code, detail: err.detail } : { code: 'NETWORK', detail: null };
-      if (pageError.code === 'NOT_AUTHENTICATED') return rememberNextAndGoToLogin(location.pathname + location.search);
-      if (pageError.code === 'DISCORD_RELOGIN') return rememberNextAndGoToLogin(location.pathname + location.search);
+      if (pageError.code === 'NOT_AUTHENTICATED') return rememberNextAndGoToLogin(location.pathname + location.search + location.hash);
+      if (pageError.code === 'DISCORD_RELOGIN') return rememberNextAndGoToLogin(location.pathname + location.search + location.hash);
     }
   }
 
@@ -233,7 +236,7 @@ export function mountServerPage(cfg: PageConfig): void {
         toast('Bot menemukan masalah saat menerapkan konfigurasi. Lihat bagian Perlu perhatian.', 'danger', 6000);
       }
       if (now && now.revision > (was?.revision ?? 0) && was && !justSaved && now.updated_source !== 'web') {
-        toast('Konfigurasi baru saja diubah dari Discord (/pengaturan).', 'info', 6000);
+        toast('Konfigurasi baru saja diubah dari luar dashboard (bot atau tim Vanillate).', 'info', 6000);
       }
       if (audit !== null && auditSignature(was) !== auditSignature(now)) {
         audit = null;
@@ -524,12 +527,26 @@ export function mountServerPage(cfg: PageConfig): void {
       ${missing.length ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Izin bot kurang di #${esc(ch!.name)}: ${esc(missing.join(', '))}.</p>` : ''}`;
   }
 
+  /** Centang "🚫 Tidak dipakai" untuk fitur sosial yang OFF. */
+  function notUsedHtml(f: Feature, checked: boolean, disabled: boolean): string {
+    return `
+      <div>
+        <label class="inline-flex cursor-pointer items-center gap-2 text-sm font-medium">
+          <input type="checkbox" class="h-4 w-4 rounded accent-amber-600" data-not-used="${esc(f.key)}" data-focus="nu-${esc(f.key)}"
+            ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} />
+          🚫 Tidak dipakai di server ini
+        </label>
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Centang bila server ini sengaja tidak memakai fitur ini — pengingat setup dari bot berhenti menanyakannya. Bisa diaktifkan kapan saja.</p>
+      </div>`;
+  }
+
   function featureCardHtml(f: Feature): string {
     const s = draft[f.key];
     const status = featureIssues(f);
+    const notUsed = isNotUsed(s);
     const statusPill =
       status.level === 'off'
-        ? pill('Nonaktif', 'neutral')
+        ? pill(notUsed ? 'Tidak dipakai' : 'Nonaktif', 'neutral')
         : status.level === 'error'
           ? pill('Perlu perhatian', 'danger')
           : status.level === 'warn'
@@ -568,6 +585,7 @@ export function mountServerPage(cfg: PageConfig): void {
                 ? `<p class="text-xs text-ink-500 dark:text-cream-300/60">Tersimpan: ${esc(savedChannels.join(' · '))} — dipakai lagi saat fitur diaktifkan.</p>`
                 : ''
           }
+          ${!s.enabled && supportsNotUsed(f) ? notUsedHtml(f, notUsed, disabled) : ''}
         </div>
         <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-ink-900/5 pt-4 dark:border-cream-100/5">
           <span class="text-xs text-ink-500 dark:text-cream-300/60">Status:</span> ${statusPill}
@@ -850,7 +868,17 @@ export function mountServerPage(cfg: PageConfig): void {
     if (toggle && !toggle.disabled && data) {
       const key = toggle.dataset.toggle!;
       draft[key].enabled = !draft[key].enabled;
+      // Diaktifkan = keputusan "Tidak dipakai" batal.
+      if (draft[key].enabled && draft[key].settings[NOT_USED] === true) draft[key].settings[NOT_USED] = false;
       attemptIssues = attemptIssues.filter((i) => i.feature !== key);
+      renderAll();
+      return;
+    }
+
+    const notUsed = target.closest<HTMLInputElement>('input[data-not-used]');
+    if (notUsed && !notUsed.disabled && data) {
+      const key = notUsed.dataset.notUsed!;
+      draft[key].settings[NOT_USED] = notUsed.checked;
       renderAll();
       return;
     }
@@ -974,7 +1002,7 @@ export function mountServerPage(cfg: PageConfig): void {
       return renderError();
     }
     const session = await getSession();
-    if (!session) return rememberNextAndGoToLogin(location.pathname + location.search);
+    if (!session) return rememberNextAndGoToLogin(location.pathname + location.search + location.hash);
 
     await load(false);
     const loaded = current();

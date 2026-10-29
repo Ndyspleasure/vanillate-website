@@ -83,7 +83,7 @@ export function mountServersPage(cfg: PageConfig): void {
             </button>
             ${
               disabled
-                ? `<p class="text-sm text-amber-800 dark:text-amber-300">Login Discord sedang disiapkan oleh tim Vanillate. Sementara itu, admin server bisa mengatur bot langsung di Discord lewat <code class="font-mono">/pengaturan</code>.</p>`
+                ? `<p class="text-sm text-amber-800 dark:text-amber-300">Login Discord sedang disiapkan oleh tim Vanillate. Coba lagi beberapa saat lagi — pengaturan bot di server kamu tetap berjalan seperti biasa.</p>`
                 : ''
             }
             <p data-el="login-error" class="hidden text-sm text-red-600 dark:text-red-400" role="alert"></p>

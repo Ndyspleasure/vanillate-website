@@ -3,7 +3,7 @@
 // Website TIDAK menyimpan konfigurasi Share Server. Status & riwayat dibaca
 // dari share_guild_state (diterbitkan bot) lewat RPC share_dashboard_get;
 // setiap aksi dikirim sebagai permintaan (RPC share_request_submit) yang
-// dijalankan bot dengan aturan yang sama dengan /pengaturan di Discord, setelah
+// dijalankan bot (src/social/share/service.js, satu pintu aksi Share Server), setelah
 // izin Manage Server user diperiksa ulang di Discord. Hasilnya tampil di sini.
 // Acuan: docs/DASHBOARD-SERVER.md › Share Server.
 
