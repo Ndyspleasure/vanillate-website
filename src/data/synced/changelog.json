@@ -1,5 +1,25 @@
 [
   {
+    "version": "3.31.1",
+    "date": "2026-10-30",
+    "title": "Pusat Bantuan diperbarui untuk alur Sambung Kata baru",
+    "highlights": [
+      "🛟 Jawaban Pusat Bantuan kini mengarahkan ke /game › 🔤 Sambung Kata dan tombol 📊 Dashboard",
+      "🃏 Info game di /game diperjelas: Sambung Kata game utama, game sampingan tetap santai"
+    ]
+  },
+  {
+    "version": "3.31.0",
+    "date": "2026-10-30",
+    "title": "Sambung Kata kini di /game + 📊 Dashboard serba ada",
+    "highlights": [
+      "🎮 Sambung Kata sekarang dibuka lewat /game › 🔤 Sambung Kata — satu pintu untuk semua game Vanillate",
+      "📊 Tombol Dashboard baru di menu Sambung Kata: Kamus, Stats, Leaderboard, Class, Quest, Shop, Inventory & Claim dalam satu tempat",
+      "🔎 Kamus kini lewat form pencarian (awalan + halaman), Stats bisa pilih pemain lain atau cari Player ID langsung",
+      "🧹 Daftar slash command jadi ringkas: /sambungkata, /kamus, /stats, /leaderboard, /class, /quest, /shop, /inventory & /claim digabung ke Dashboard"
+    ]
+  },
+  {
     "version": "3.30.0",
     "date": "2026-10-30",
     "title": "🥟 Game baru: Tahu Bulat hadir di /game!",

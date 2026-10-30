@@ -7,7 +7,8 @@
   "features": [
     "Kamus Bahasa Indonesia 25.000+ kata dengan validasi otomatis",
     "Empat mode Sambung Kata: PvP hingga 10 pemain, PvB (Battle Skill & Klasik), Player vs Server lintas server, dan Dungeon",
-    "Game sampingan lewat /game: Werewolf (Klasik & Lanjutan 54 peran), Pengacara persidangan roleplay, UNO, dan Tebak Lagu",
+    "Semua game lewat /game: Sambung Kata (game utama), Werewolf (Klasik & Lanjutan 54 peran), Pengacara persidangan roleplay, UNO, Tebak Lagu, dan Tahu Bulat",
+    "📊 Dashboard Sambung Kata: Kamus, Stats, Leaderboard, Class, Quest, Shop, Inventory, dan Claim dalam satu tombol",
     "9 Class dengan passive unik plus Talent Tree",
     "Boost system 5 jenis dengan rarity Common hingga Legendary",
     "Quest harian dan mingguan, promo code, serta event in-game acak",
@@ -17,28 +18,8 @@
   ],
   "commands": [
     {
-      "name": "/sambungkata",
-      "description": "Mulai Sambung Kata: PvP, PvB, Player vs Server, atau Dungeon"
-    },
-    {
       "name": "/game",
-      "description": "Game sampingan: Werewolf, Pengacara, UNO, dan Tebak Lagu"
-    },
-    {
-      "name": "/stats",
-      "description": "Statistik lengkap dan Player ID"
-    },
-    {
-      "name": "/class",
-      "description": "Pilih class dan beli talent"
-    },
-    {
-      "name": "/quest",
-      "description": "Dashboard quest harian dan mingguan"
-    },
-    {
-      "name": "/shop",
-      "description": "Beli boost dan Golden Key dengan Coin"
+      "description": "Game Hub: Sambung Kata (beserta 📊 Dashboard: Kamus, Stats, Leaderboard, Class, Quest, Shop, Inventory, Claim), Werewolf, Pengacara, UNO, Tebak Lagu, dan Tahu Bulat"
     },
     {
       "name": "/sosial",
