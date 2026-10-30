@@ -32,7 +32,7 @@ lama → baru, cara menambah aksi).
 |---|---|
 | `viewer` | Melihat semua halaman & snapshot. **Tidak bisa** mengirim perintah (ditolak RLS). |
 | `admin` | Semua perintah biasa (pemain, game, broadcast biasa, kata, promo, event, error, tutorial per pemain, campaign, sosial). |
-| `owner` | Semua di atas + perintah `sys.*`: restart/update bot, backup DB, bersihkan log, reset tutorial massal, keputusan & kontrol Auto-Heal, broadcast 🚨 Darurat. |
+| `owner` | Semua di atas + perintah `sys.*`: restart/update bot, deploy slash command, backup DB, bersihkan log, reset tutorial massal, keputusan & kontrol Auto-Heal, broadcast 🚨 Darurat. |
 
 Lapisan penjaga: RLS INSERT `bot_commands` (admin, `created_by = auth.uid()`) →
 trigger `bot_commands_owner_guard` (`sys.*` hanya owner) → bot membaca ulang peran
@@ -44,7 +44,7 @@ pembuat dari `admin_users` → validasi payload per handler. Konfirmasi ketik di
 | Halaman | Isi |
 |---|---|
 | `/admin/developer` | Ringkasan & sistem (server, game aktif, kesehatan, versi & changelog read-only, maintenance/pengumuman, statistik DB & ekonomi), **Live Log** (`log.tail`: ≤ 500 baris terakhir dari memori bot sejak menyala — bot tidak menulis file log; riwayat 30 hari di `/admin/logs`) |
-| `/admin/developer/kontrol-server` | **Owner**: cek update → Update & Restart (ketik `UPDATE`), Restart (ketik `RESTART`), backup DB + unduh (signed URL) + hapus, bersihkan log, **Konsol** allowlist baca-saja (`sys.console.catalog`/`sys.console.run`: git · npm · pm2 · node, tanpa shell; aktif bila `DEV_CONSOLE_ENABLED=1` di host bot) |
+| `/admin/developer/kontrol-server` | **Owner**: cek update → Update & Restart (ketik `UPDATE`), Restart (ketik `RESTART`), 🚀 **Slash Command** (`sys.commands.preview` → pratinjau tambah/hapus/tetap → `sys.commands.deploy`, ketik `DEPLOY`; setara `npm run deploy`, daftar dari command yang dimuat bot), backup DB + unduh (signed URL) + hapus, bersihkan log, **Konsol** allowlist baca-saja (`sys.console.catalog`/`sys.console.run`: git · npm · pm2 · node, tanpa shell; aktif bila `DEV_CONSOLE_ENABLED=1` di host bot) |
 | `/admin/games` | Monitor game semua mode + aksi per room (End, Force Turn, Set Word, Eliminate, Revive, Spawn Event) + broadcast ke semua game aktif |
 | `/admin/pemain` | Cermin `bot_players` + **Kelola pemain** (profil live `player.view` + semua aksi per pemain), **Ranking live** (`player.list`), **Banned** (`player.banned`, unban) |
 | `/admin/kata` | Statistik (snapshot `words`), antrean pending (terima/tolak), cari kata, review ulang cepat, export TXT/CSV (membuat sesi), review massal (`word.bulk`) |

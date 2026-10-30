@@ -5,6 +5,8 @@
 // Semua perintah di sini bertipe `sys.*`: ditolak trigger database untuk
 // non-owner DAN diperiksa ulang bot dari admin_users. Restart/update
 // menghentikan bot sebentar; hasil akhirnya ditulis bot setelah hidup lagi.
+// 🚀 Slash Command = `npm run deploy` (sys.commands.preview → sys.commands.deploy):
+// bot mengganti daftar command global dengan command yang sedang ia muat.
 // Backup diunggah bot ke bucket privat `bot-backups`; unduhan memakai signed
 // URL 10 menit (hanya owner yang lolos RLS storage), dihapus otomatis 24 jam.
 import AdminLayout from '@layouts/AdminLayout.astro';
@@ -15,7 +17,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   <AdminPageHeader
     eyebrow="Discord Bot · khusus owner"
     title="Kontrol Server"
-    description="Restart, update kode dari origin/main, backup database, dan bersihkan log lama di server bot."
+    description="Restart, update kode dari origin/main, deploy slash command, backup database, dan bersihkan log lama di server bot."
   />
 
   <div class="px-6 lg:px-10 py-8 max-w-4xl space-y-10" id="ks-root"></div>
@@ -54,6 +56,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         </div>
         <div id="ks-out" class="space-y-3"></div>
       </div>`, 'Update = git fetch → pratinjau → fast-forward ke SHA yang dipratinjau → restart. Dependensi dipasang saat boot bila berubah; gagal boot → rollback otomatis.'),
+      section('Slash Command', `<div class="${KELAS.kartu} space-y-4">
+        <div class="flex flex-wrap gap-3">
+          <button type="button" id="ks-cmd-check" class="${KELAS.tombol}">Cek slash command</button>
+        </div>
+        <div id="ks-cmd-out" class="space-y-3"></div>
+      </div>`, 'Sama dengan npm run deploy: daftar command global di Discord diganti dengan command yang sedang dimuat bot — command yang tidak ada ikut terhapus. Jalankan setelah Update & Restart. Perubahan bisa butuh beberapa menit sampai tampil di Discord.'),
       section('Backup database', `<div class="${KELAS.kartu} space-y-4">
         <div class="flex flex-wrap items-center gap-3">
           <button type="button" id="ks-backup" class="${KELAS.tombol}">Buat backup sekarang</button>
@@ -88,6 +96,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     document.getElementById('ks-check')!.addEventListener('click', cekUpdate);
     document.getElementById('ks-restart')!.addEventListener('click', restart);
     document.getElementById('ks-backup')!.addEventListener('click', backup);
+    document.getElementById('ks-cmd-check')!.addEventListener('click', cekCommand);
     void daftarBackup();
   });
 
@@ -155,6 +164,61 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     out().innerHTML = '<p id="ks-restart-status" class="text-xs"></p>';
     await tungguDeferred('sys.bot.restart', {}, document.getElementById('ks-restart-status')!);
     b.disabled = false;
+  }
+
+  const cmdOut = () => document.getElementById('ks-cmd-out')!;
+  const daftarCmd = (xs: string[] = []) => (xs.length ? xs.map((n) => `<code class="text-xs">/${esc(n)}</code>`).join(' ') : '—');
+
+  /** Pratinjau: command yang akan ditambah / dihapus / tetap di Discord. */
+  async function cekCommand(ev: Event) {
+    const b = ev.currentTarget as HTMLButtonElement;
+    b.disabled = true;
+    cmdOut().innerHTML = notice('info', 'Membandingkan command bot dengan daftar di Discord…');
+    const o = await kirimPerintah('sys.commands.preview', {}, { timeoutMs: 60_000 });
+    b.disabled = false;
+    if (!o.ok) { cmdOut().innerHTML = notice('error', o.error ?? 'Gagal membaca daftar command.'); return; }
+    const r = o.result;
+    const tambah = r.add?.length ?? 0;
+    const hapus = r.remove?.length ?? 0;
+    cmdOut().innerHTML = `
+      ${table(['Perubahan', 'Command'], [
+        ['Ditambah', daftarCmd(r.add)],
+        ['Dihapus dari Discord', daftarCmd(r.remove)],
+        ['Tetap (diperbarui)', daftarCmd(r.keep)],
+      ])}
+      ${tambah + hapus
+        ? notice('warn', `Akan ada ${tambah} command baru dan ${hapus} command dihapus.`)
+        : notice('ok', 'Nama command di Discord sudah sama dengan bot. Deploy tetap memperbarui deskripsi & opsi.')}
+      <div class="flex items-center gap-3">
+        <button type="button" id="ks-cmd-deploy" data-remove="${esc(hapus)}" class="${hapus ? KELAS.tombolBahaya : KELAS.tombol}">Deploy ${esc(r.local?.length ?? 0)} command sekarang</button>
+        <p id="ks-cmd-status" class="text-xs" role="status" aria-live="polite"></p>
+      </div>`;
+    document.getElementById('ks-cmd-deploy')?.addEventListener('click', deployCommand);
+  }
+
+  async function deployCommand(ev: Event) {
+    const b = ev.currentTarget as HTMLButtonElement;
+    const hapus = Number(b.dataset.remove ?? 0);
+    const tanya = hapus
+      ? `${hapus} command akan dihapus dari daftar Discord. Ketik DEPLOY untuk melanjutkan:`
+      : 'Daftar slash command di Discord akan diperbarui. Ketik DEPLOY untuk melanjutkan:';
+    if (window.prompt(tanya) !== 'DEPLOY') return;
+    const st = document.getElementById('ks-cmd-status')!;
+    b.disabled = true;
+    st.textContent = 'Bot sedang mengirim daftar command ke Discord…';
+    st.className = `text-xs ${KELAS.muted}`;
+    const o = await kirimPerintah('sys.commands.deploy', {}, { timeoutMs: 90_000 });
+    if (!o.ok) {
+      b.disabled = false;
+      st.textContent = o.error ?? 'Deploy gagal.';
+      st.className = 'text-xs text-red-600 dark:text-red-400';
+      return;
+    }
+    const r = o.result;
+    const garis = (xs: string[] = []) => xs.map((n) => `/${n}`).join(', ');
+    st.textContent = `Berhasil: ${r.count} command terdaftar (${garis(r.deployed)}).`
+      + (r.remove?.length ? ` Dihapus: ${garis(r.remove)}.` : '');
+    st.className = 'text-xs text-teal-700 dark:text-teal-300';
   }
 
   async function backup(ev: Event) {
