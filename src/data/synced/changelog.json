@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.30.0",
+    "date": "2026-10-30",
+    "title": "🥟 Game baru: Tahu Bulat hadir di /game!",
+    "highlights": [
+      "🥟 Tahu Bulat kini bisa dimainkan lewat /game — kembangkan usaha tahu bulat dari gerobak hingga jadi sultan tahu",
+      "💾 Progres & coin Tahu Bulat tersimpan permanen (terpisah dari coin Sambung Kata) dan tetap jalan saat kamu offline",
+      "🔧 Upgrade kendaraan, peralatan, bahan & pelanggan, buka kota ekspansi, promosi, dan Rebirth untuk bonus permanen",
+      "🤝 Kotak donasi bersama untuk membantu pemain baru, plus misi harian, achievement & peringkat",
+      "📖 Panduan lengkap Tahu Bulat tersedia langsung di dalam game"
+    ]
+  },
+  {
     "version": "3.29.2",
     "date": "2026-10-29",
     "title": "Perbaikan pemeriksaan data saat pindah ke cloud",
