@@ -155,7 +155,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
     return `
       <div class="${CARD} p-5">
         <div class="flex flex-wrap items-center gap-3">
-          <h2 class="font-display text-lg font-semibold">📣 Share Server</h2>
+          <h2 class="flex items-center gap-2 font-display text-lg font-semibold">${icon('radio', 'h-5 w-5 text-amber-600')} Share Server</h2>
           ${pill(meta.label, meta.tone)}
           ${s.test ? `<span class="inline-flex items-center gap-2 text-xs text-ink-500">${spinner()} Pesan Uji berjalan…</span>` : ''}
         </div>
@@ -166,7 +166,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
         <div class="mt-4 grid gap-4 md:grid-cols-2">
           <div>
             <h3 class="text-xs font-semibold uppercase tracking-wide text-ink-500">Syarat aktivasi</h3>
-            <ul class="mt-2 space-y-1 text-sm">${s.checklist.map((c) => `<li>${c.ok ? '✅' : '⬜'} ${esc(c.label)}</li>`).join('')}</ul>
+            <ul class="mt-2 space-y-1 text-sm">${s.checklist.map((c) => `<li class="flex items-start gap-2">${c.ok ? icon('circle-check', 'mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400') : '<span class="mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 border-ink-300 dark:border-cream-100/30" aria-hidden="true"></span>'}<span>${esc(c.label)}</span></li>`).join('')}</ul>
           </div>
           ${q.length ? `<div><h3 class="text-xs font-semibold uppercase tracking-wide text-ink-500">Antrean & masa jaga</h3><ul class="mt-2 space-y-1 text-sm">${q.join('')}</ul></div>` : ''}
         </div>
@@ -251,7 +251,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
     if (error && !dash) return `<div class="${CARD} p-6 text-sm">${esc(error)}</div>`;
     const s = st();
     const offline = !dash?.bot_online;
-    const intro = `<p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Promosikan server ini ke server peserta lain lewat broadcast global. Member vote Vanillate.ID di Top.gg lewat panel vote → server naik antrean. Wajib timbal balik: server peserta juga menerima promosi, dan iklan yang diterima wajib bertahan 24 jam.</p>`;
+    const intro = `<p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Ajak member baru dari server lain: promosi server ini disebarkan bot ke channel promosi server peserta Share Server. Makin banyak member yang vote Vanillate.ID di Top.gg, makin cepat giliran promosimu tiba. Sifatnya timbal balik — server ini juga menerima promosi dari peserta lain, dan iklan yang diterima wajib bertahan 24 jam.</p>`;
     const warn = [
       offline ? 'Bot sedang offline — perubahan baru diproses saat bot kembali.' : null,
       dash && isStale(dash.updated_at) && dash.state ? 'Status dari bot belum diperbarui beberapa saat.' : null,

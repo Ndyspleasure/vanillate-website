@@ -78,14 +78,41 @@ const HUBS: { id: Hub; label: string }[] = [
 ];
 
 const SERVER_TABS: { id: Tab; label: string; ic: IconName }[] = [
-  { id: 'verification', label: 'Verification', ic: 'shield' },
-  { id: 'leveling', label: 'Leveling', ic: 'trophy' },
+  { id: 'verification', label: 'Verification', ic: 'shield-check' },
+  { id: 'leveling', label: 'Leveling', ic: 'trending-up' },
   { id: 'share-server', label: 'Share Server', ic: 'radio' },
   { id: 'channels', label: 'Channel', ic: 'hash' },
   { id: 'audit-log', label: 'Riwayat', ic: 'history' },
 ];
 
 const TAB_IDS: Tab[] = ['overview', 'game-hub', 'social-hub', ...SERVER_TABS.map((t) => t.id)];
+
+// Ikon SVG per fitur (pengganti emoji dari registry bot), dikunci runtime_key.
+// Fitur baru yang belum terdaftar memakai ikon bagiannya.
+const FEATURE_ICON: Record<string, IconName> = {
+  sambungkata: 'type',
+  werewolf: 'moon',
+  werewolf_adv: 'moon-star',
+  pengacara: 'scale',
+  uno: 'layers',
+  tebaklagu: 'music',
+  tahu: 'store',
+  counting: 'list-ordered',
+  streak_harian: 'flame',
+  verification: 'shield-check',
+  leveling: 'trending-up',
+};
+const SECTION_ICON: Record<string, IconName> = { game: 'gamepad-2', social: 'users', verification: 'shield-check', leveling: 'trending-up' };
+
+function featureIcon(f: Feature): IconName {
+  const runtimeKey = typeof f.meta?.runtime_key === 'string' ? f.meta.runtime_key : '';
+  return FEATURE_ICON[runtimeKey] ?? SECTION_ICON[f.section] ?? 'settings-2';
+}
+
+/** Ikon fitur kecil sebaris teks (daftar Ringkasan, tabel Channel). */
+function featureLabel(f: Feature): string {
+  return `<span class="inline-flex min-w-0 items-center gap-2">${icon(featureIcon(f), 'h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400')}<span class="truncate">${esc(f.name)}</span></span>`;
+}
 
 function hubOf(tab: Tab): Hub {
   return SERVER_TABS.some((t) => t.id === tab) ? 'server-hub' : (tab as Hub);
@@ -499,14 +526,15 @@ export function mountServerPage(cfg: PageConfig): void {
     if (tab === 'share-server') return share.html(data!.snapshot ?? null);
     const section = SECTION_OF_TAB[tab]!;
     const feats = registry().filter((f) => f.section === section);
+    // Pengantar bagian; sinopsis tiap fitur ada di kartunya (description registry bot).
     const intro =
       section === 'game'
-        ? 'Matikan game yang tidak ingin dimainkan di server ini, atau kunci game ke satu channel khusus. Game tanpa channel khusus bisa dibuka di channel mana pun.'
+        ? 'Kumpulan game yang bisa dimainkan member lewat /game. Matikan game yang tidak ingin dimainkan di server ini, atau kunci game ke satu channel khusus — game tanpa channel khusus bisa dibuka di channel mana pun.'
         : section === 'verification'
-          ? 'Member menyelesaikan tantangan emoji lewat tombol di channel verifikasi. Lulus minimal 80% benar (angka tetap) = otomatis mendapat Verified Role. Bot butuh izin Manage Roles dan role bot harus berada di atas Verified Role.'
+          ? 'Syarat: bot butuh izin Manage Roles dan role bot harus berada di atas Verified Role. Jumlah langkah bisa diatur; batas lulus 80% benar ditetapkan sistem.'
           : section === 'leveling'
-            ? 'Member mendapat XP dari chat dan naik level (dilihat lewat /rank). Atur XP, cooldown, channel/role yang tidak menghasilkan XP, dan pesan naik level. Batas XP dan cooldown ditetapkan sistem Vanillate. Vote bot di Top.gg memberi +100% XP selama 12 jam (otomatis, semua server).'
-            : 'Fitur sosial berjalan di channel khusus pilihanmu. Fitur yang belum diberi channel tidak aktif. Satu channel hanya untuk satu fitur sosial.';
+            ? 'Batas XP dan cooldown ditetapkan sistem Vanillate. Vote bot di Top.gg memberi +100% XP selama 12 jam (otomatis, semua server).'
+            : 'Kegiatan harian yang bikin member rajin mampir ke server. Setiap fitur berjalan di channel khusus pilihanmu; fitur yang belum diberi channel tidak aktif, dan satu channel hanya untuk satu fitur sosial.';
     if (!feats.length) return `<p class="text-sm text-ink-500">Belum ada fitur di bagian ini.</p>`;
     return `
       <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">${intro}</p>
@@ -585,14 +613,14 @@ export function mountServerPage(cfg: PageConfig): void {
       ${missing.length ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Izin bot kurang di #${esc(ch!.name)}: ${esc(missing.join(', '))}.</p>` : ''}`;
   }
 
-  /** Centang "🚫 Tidak dipakai" untuk fitur sosial yang OFF. */
+  /** Centang "Tidak dipakai" untuk fitur sosial yang OFF. */
   function notUsedHtml(f: Feature, checked: boolean, disabled: boolean): string {
     return `
       <div>
         <label class="inline-flex cursor-pointer items-center gap-2 text-sm font-medium">
           <input type="checkbox" class="h-4 w-4 rounded accent-amber-600" data-not-used="${esc(f.key)}" data-focus="nu-${esc(f.key)}"
             ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} />
-          🚫 Tidak dipakai di server ini
+          Tidak dipakai di server ini
         </label>
         <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Centang bila server ini sengaja tidak memakai fitur ini — pengingat setup dari bot berhenti menanyakannya. Bisa diaktifkan kapan saja.</p>
       </div>`;
@@ -679,7 +707,7 @@ export function mountServerPage(cfg: PageConfig): void {
           const chosen = new Set(Array.isArray(cur) ? (cur as string[]) : []);
           const opts = (d.snapshot?.channels ?? []).filter((c) => c.type === 0 || c.type === 5 || c.type === 2).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
           return `<select multiple size="6" ${base} class="${cls}">${opts
-            .map((c) => `<option value="${esc(c.id)}" ${chosen.has(c.id) ? 'selected' : ''}>${c.type === 2 ? '🔊' : '#'}${esc(c.name)}</option>`)
+            .map((c) => `<option value="${esc(c.id)}" ${chosen.has(c.id) ? 'selected' : ''}>${c.type === 2 ? 'Voice: ' : '#'}${esc(c.name)}</option>`)
             .join('')}</select>`;
         }
         default:
@@ -725,9 +753,12 @@ export function mountServerPage(cfg: PageConfig): void {
     return `
       <article class="${CARD} p-4 sm:p-5 ${s.enabled ? '' : 'opacity-90'}" aria-labelledby="feat-${esc(f.key)}">
         <div class="flex items-start justify-between gap-4">
-          <div class="min-w-0">
-            <h3 id="feat-${esc(f.key)}" class="font-display text-lg font-semibold">${f.emoji ? `<span aria-hidden="true">${esc(f.emoji)}</span> ` : ''}${esc(f.name)}</h3>
-            ${command ? `<p class="mt-0.5 font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(command)}</p>` : ''}
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300">${icon(featureIcon(f), 'h-5 w-5')}</span>
+            <div class="min-w-0">
+              <h3 id="feat-${esc(f.key)}" class="font-display text-lg font-semibold leading-tight">${esc(f.name)}</h3>
+              ${command ? `<p class="mt-0.5 font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(command)}</p>` : ''}
+            </div>
           </div>
           <button type="button" role="switch" aria-checked="${s.enabled}" aria-label="${esc(f.name)}: ${s.enabled ? 'aktif' : 'nonaktif'}"
             data-toggle="${esc(f.key)}" data-focus="tg-${esc(f.key)}" ${disabled ? 'disabled' : ''}
@@ -775,8 +806,8 @@ export function mountServerPage(cfg: PageConfig): void {
     const sections = [
       { id: 'game-hub', title: 'Game Hub', section: 'game', ic: 'gamepad-2' as const },
       { id: 'social-hub', title: 'Social Hub', section: 'social', ic: 'users' as const },
-      { id: 'verification', title: 'Verification', section: 'verification', ic: 'users' as const },
-      { id: 'leveling', title: 'Leveling', section: 'leveling', ic: 'users' as const },
+      { id: 'verification', title: 'Verification', section: 'verification', ic: 'shield-check' as const },
+      { id: 'leveling', title: 'Leveling', section: 'leveling', ic: 'trending-up' as const },
     ];
     return `
       <div class="grid grid-cols-3 gap-2 sm:gap-4">
@@ -801,7 +832,7 @@ export function mountServerPage(cfg: PageConfig): void {
                     const ch = f.purposes.map((p) => s.channels[p.key]).find(Boolean);
                     const where = !s.enabled ? 'Nonaktif' : ch ? channelLabel(ctx(), ch) : f.purposes.some((p) => p.required) ? 'Belum ada channel' : 'Semua channel';
                     return `<li class="flex items-center justify-between gap-3 py-2.5 text-sm">
-                      <span class="truncate">${f.emoji ? `${esc(f.emoji)} ` : ''}${esc(f.name)}</span>
+                      ${featureLabel(f)}
                       <span class="shrink-0 text-xs ${s.enabled ? 'text-ink-600 dark:text-cream-300' : 'text-ink-400'}">${esc(where)}</span></li>`;
                   })
                   .join('')}
@@ -830,7 +861,7 @@ export function mountServerPage(cfg: PageConfig): void {
         }
         const sectionTab = (Object.keys(SECTION_OF_TAB) as Tab[]).find((t) => SECTION_OF_TAB[t] === f.section) ?? 'game-hub';
         return `<tr class="border-t border-ink-900/5 dark:border-cream-100/5">
-          <td class="py-3 pr-4">${f.emoji ? `${esc(f.emoji)} ` : ''}${esc(f.name)}</td>
+          <td class="py-3 pr-4">${featureLabel(f)}</td>
           <td class="py-3 pr-4 text-ink-600 dark:text-cream-300/80">${esc(p.label)}</td>
           <td class="py-3 pr-4 font-mono text-xs">${id ? esc(channelLabel(ctx(), id)) : '—'}</td>
           <td class="py-3 pr-4">${status}</td>
@@ -839,7 +870,7 @@ export function mountServerPage(cfg: PageConfig): void {
       }),
     );
     return `
-      <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Pemetaan channel yang <strong>tersimpan</strong> untuk setiap fitur, diperiksa terhadap data Discord terbaru. Ubah lewat Game Hub, Social Hub, atau submenu fiturnya di Server Hub.</p>
+      <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Peta lengkap channel yang dipakai setiap fitur bot di server ini, dicek langsung dengan data Discord terbaru — channel yang hilang atau izin bot yang kurang langsung kelihatan di sini. Ubah lewat Game Hub, Social Hub, atau submenu fiturnya di Server Hub.</p>
       <div class="${CARD} mt-5 overflow-x-auto p-5">
         <table class="w-full min-w-[640px] text-left text-sm">
           <thead class="text-xs uppercase tracking-wide text-ink-500 dark:text-cream-300/60">
@@ -854,15 +885,17 @@ export function mountServerPage(cfg: PageConfig): void {
 
   const SOURCE_LABEL: Record<string, string> = { web: 'Website', discord: 'Discord', import: 'Impor', bot: 'Bot' };
 
+  const AUDIT_INTRO = `<p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Catatan setiap perubahan pengaturan server ini: siapa yang mengubah, dari mana (website, Discord, atau bot), apa saja yang berubah, dan apakah bot sudah menerapkannya.</p>`;
+
   function auditHtml(): string {
     if (audit === null && auditError) {
       return `<div class="text-sm text-ink-600 dark:text-cream-300">Gagal memuat riwayat.
         <button type="button" data-action="audit-retry" class="ml-1 font-medium text-amber-700 underline dark:text-amber-300">Coba lagi</button></div>`;
     }
     if (audit === null) return loadingBlock('Memuat riwayat…');
-    if (!audit.length) return `<p class="text-sm text-ink-500">Belum ada riwayat perubahan untuk server ini.</p>`;
-    return `
-      <ol class="space-y-3">
+    if (!audit.length) return `${AUDIT_INTRO}<p class="mt-4 text-sm text-ink-500">Belum ada riwayat perubahan untuk server ini.</p>`;
+    return `${AUDIT_INTRO}
+      <ol class="mt-4 space-y-3">
         ${audit
           .map((a) => {
             const items = Array.isArray(a.changed_fields) ? (a.changed_fields as unknown[]) : [];
