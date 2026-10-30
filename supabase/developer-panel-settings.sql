@@ -54,3 +54,14 @@ insert into public.bot_settings (key, label, value, kind, category, help, min_va
   ('onboarding_channel_existing', 'Channel juga untuk server lama', null, 'boolean', 'onboarding',
    'Server lama (bergabung sebelum channel dinyalakan) yang setupnya belum selesai ikut dibuatkan channel #konfigurasi-vanillate, dicicil ±18 server per jam. Hanya berlaku bila setting channel juga menyala.', null, null, 30)
 on conflict (key) do nothing;
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 🔑 Intent Server Members (bot: src/utils/intents.js)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Bawaan MATI: bot berjalan penuh tanpa intent privileged ini. Baris NULL diisi
+-- bot dengan nilai lokalnya (false), jadi memasang bagian ini tidak mengubah
+-- apa pun. Berlaku pada restart berikutnya (intent hanya dikirim saat login).
+insert into public.bot_settings (key, label, value, kind, category, help, min_value, max_value, sort) values
+  ('guild_members_intent', 'Intent Server Members', null, 'boolean', 'fitur',
+   'Bawaan MATI — bot berjalan penuh tanpa intent ini. Nyalakan HANYA setelah mengaktifkan "Server Members Intent" di Discord Developer Portal, lalu Restart bot (berlaku saat bot login). Bila Discord menolak, bot otomatis restart tanpa intent dan setting ini kembali OFF. Tanpa intent, Verification hanya memakai Verified Role (member yang keluar tidak terdeteksi).', null, null, 90)
+on conflict (key) do nothing;

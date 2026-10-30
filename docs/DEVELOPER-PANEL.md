@@ -60,7 +60,7 @@ pembuat dari `admin_users` → validasi payload per handler. Konfirmasi ketik di
 | `/admin/developer/tahu-bulat` | 🥟 Tahu Bulat (game idle di hub `/game`, pengganti `/developer` bot Tahu Bulat lama): ringkasan pemain, kolam donasi, 10 besar, aktivitas terbaru; detail, export User ID aktif, reset progres satu pemain (ketik `RESET`). Snapshot `tahu`; perintah `tahu.detail`, `tahu.reset`, `tahu.exportIds`. Data pemain di database game bot (tabel `tahu_*`), bukan proyek CMS |
 | `/admin/developer/autoheal` | Status & breaker, approval tertunda (keputusan owner), buka kunci deploy, uji sandbox, simulasi heal, incident, izin aktif |
 | `/admin/operasi` | Konsol semua aksi sederhana + **riwayat perintah** |
-| `/admin/kontrol` | Setting (state): maintenance, pengumuman (+ judul), changelog di lobby, gerbang tutorial, DM campaign/hari, mode, tunable, fitur |
+| `/admin/kontrol` | Setting (state): maintenance, pengumuman (+ judul), changelog di lobby, gerbang tutorial, DM campaign/hari, mode, tunable, fitur, **Intent Server Members** (`guild_members_intent`, bawaan MATI, berlaku saat restart; bila Discord menolak, bot restart sendiri tanpa intent dan setting kembali OFF — acuan bot: `docs/verification.md`) |
 
 Semua halaman: status loading → menunggu bot → hasil/error dari bot, peringatan
 "bot mungkin offline" bila snapshot > 2 menit, dan perintah yang belum dijawab
