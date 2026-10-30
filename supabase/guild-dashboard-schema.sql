@@ -36,7 +36,7 @@
 create table if not exists public.guild_feature_registry (
   bot_slug        text not null default 'sambung-kata',
   feature_key     text not null check (feature_key ~ '^[A-Z][A-Z0-9_]{1,47}$'),
-  section         text not null default 'game' check (section in ('game', 'social', 'other')),
+  section         text not null default 'game' check (section in ('game', 'social', 'verification', 'leveling', 'other')),
   name            text not null,
   emoji           text,
   description     text,
@@ -49,6 +49,22 @@ create table if not exists public.guild_feature_registry (
   updated_at      timestamptz not null default now(),
   primary key (bot_slug, feature_key)
 );
+
+-- Tabel lama dibuat dengan daftar section yang lebih pendek: perluas constraint
+-- (tanpa menyentuh data) bila belum memuat 'verification'/'leveling'.
+do $$
+begin
+  if exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.guild_feature_registry'::regclass
+      and conname = 'guild_feature_registry_section_check'
+      and pg_get_constraintdef(oid) not like '%verification%'
+  ) then
+    alter table public.guild_feature_registry drop constraint guild_feature_registry_section_check;
+    alter table public.guild_feature_registry add constraint guild_feature_registry_section_check
+      check (section in ('game', 'social', 'verification', 'leveling', 'other'));
+  end if;
+end $$;
 
 comment on table public.guild_feature_registry is
   'Registry fitur yang bisa diatur per server di /dashboard. Diterbitkan bot (service_role) saat start; dibaca website. Jangan diedit manual — SSoT-nya kode bot (src/dashboard/registry.js).';
@@ -183,6 +199,12 @@ create table if not exists public.guild_discord_snapshot (
   refreshed_at    timestamptz,
   primary key (bot_slug, guild_id)
 );
+
+-- Role server (untuk role picker: Verified Role, Level Rewards, blacklist) dan
+-- posisi role tertinggi bot (peringatan "role bot harus di atas role target").
+-- Aditif & idempoten — snapshot lama tetap valid (roles = []).
+alter table public.guild_discord_snapshot add column if not exists roles jsonb not null default '[]'::jsonb;
+alter table public.guild_discord_snapshot add column if not exists bot_top_position integer;
 
 -- Heartbeat sinkronisasi bot (ditulis tiap poll, dibatasi ±15 dtk).
 create table if not exists public.guild_dashboard_bot_state (
@@ -434,9 +456,13 @@ declare
   v_seen     jsonb := '{}'::jsonb;   -- "scope|channel" → feature_key
   v_skey     text;
   v_props    jsonb;
+  v_prop     jsonb;
+  v_val      jsonb;
+  v_type     text;
+  v_item     text;
   v_no_data  boolean := false;
 begin
-  select s.channels, s.refreshed_at into v_snap
+  select s.channels, s.roles, s.refreshed_at into v_snap
   from public.guild_discord_snapshot s
   where s.bot_slug = p_bot_slug and s.guild_id = p_guild_id;
 
@@ -449,9 +475,9 @@ begin
     v_feat := p_new -> v_reg.feature_key;
     if v_feat is null then continue; end if;
 
-    -- Settings: objek kecil; bila schema punya "properties", key wajib dikenal.
+    -- Settings: objek kecil (≤ 8000 karakter: daftar role reward 25 baris + blacklist masih muat); bila schema punya "properties", key wajib dikenal.
     if jsonb_typeof(v_feat -> 'settings') is distinct from 'object'
-       or length((v_feat -> 'settings')::text) > 4000 then
+       or length((v_feat -> 'settings')::text) > 8000 then
       v_issues := v_issues || jsonb_build_array(jsonb_build_object(
         'code', 'SETTINGS_INVALID', 'feature', v_reg.feature_key));
     else
@@ -462,6 +488,130 @@ begin
         v_issues := v_issues || jsonb_build_array(jsonb_build_object(
           'code', 'SETTINGS_INVALID', 'feature', v_reg.feature_key));
       end if;
+    end if;
+
+    -- Setelan bertipe (schema `properties.<key>.type`): tipe, rentang, wajib
+    -- (hanya fitur aktif) dan keberadaan role di snapshot Discord. Aturan yang
+    -- sama diulang bot (src/dashboard/typed.js) sebelum menerapkan.
+    if jsonb_typeof(v_feat -> 'settings') = 'object' and jsonb_typeof(v_props) = 'object' then
+      for v_pkey, v_prop in select key, value from jsonb_each(v_props) loop
+        v_type := v_prop ->> 'type';
+        if v_type is null then continue; end if;
+        v_val := v_feat -> 'settings' -> v_pkey;
+
+        if v_val is null or v_val = 'null'::jsonb or v_val = '""'::jsonb then
+          if coalesce((v_prop ->> 'required')::boolean, false)
+             and coalesce((v_feat ->> 'enabled')::boolean, false) then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_REQUIRED', 'feature', v_reg.feature_key, 'key', v_pkey));
+          end if;
+          continue;
+        end if;
+
+        if v_type = 'boolean' then
+          if jsonb_typeof(v_val) <> 'boolean' then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          end if;
+        elsif v_type = 'integer' then
+          if jsonb_typeof(v_val) <> 'number' or (v_val #>> '{}') !~ '^-?[0-9]+$' then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          elsif ((v_prop ? 'min') and (v_val #>> '{}')::numeric < (v_prop ->> 'min')::numeric)
+             or ((v_prop ? 'max') and (v_val #>> '{}')::numeric > (v_prop ->> 'max')::numeric) then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_OUT_OF_RANGE', 'feature', v_reg.feature_key, 'key', v_pkey,
+              'min', v_prop -> 'min', 'max', v_prop -> 'max'));
+          end if;
+        elsif v_type = 'string' then
+          if jsonb_typeof(v_val) <> 'string'
+             or ((v_prop ? 'max_length') and length(v_val #>> '{}') > (v_prop ->> 'max_length')::int) then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          end if;
+        elsif v_type = 'enum' then
+          if jsonb_typeof(v_prop -> 'values') is distinct from 'array' or not ((v_prop -> 'values') @> jsonb_build_array(v_val)) then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          end if;
+        elsif v_type = 'reward_list' then
+          -- [{category, level, role_id}]: kategori ∈ limits, level 1..max_level, role snowflake;
+          -- jumlah per kategori ≤ limits[kategori]; (kategori, level) unik.
+          if jsonb_typeof(v_val) <> 'array' or exists (
+              select 1
+              from jsonb_array_elements(v_val) e,
+                   lateral (select case when jsonb_typeof(e -> 'level') = 'number' and (e ->> 'level') ~ '^[0-9]{1,6}$'
+                                        then (e ->> 'level')::int end as lv) x
+              where jsonb_typeof(e) <> 'object'
+                 or not coalesce((v_prop -> 'limits') ? (e ->> 'category'), false)
+                 or x.lv is null or x.lv < 1 or x.lv > coalesce((v_prop ->> 'max_level')::int, 1000)
+                 or coalesce(e ->> 'role_id', '') !~ '^[0-9]{15,22}$') then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          else
+            for v_item in
+              select lim.key from jsonb_each(coalesce(v_prop -> 'limits', '{}'::jsonb)) lim
+              where (select count(*) from jsonb_array_elements(v_val) e where e ->> 'category' = lim.key) > (lim.value #>> '{}')::int
+            loop
+              v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+                'code', 'REWARD_LIMIT', 'feature', v_reg.feature_key, 'key', v_pkey, 'category', v_item,
+                'max', (v_prop -> 'limits' ->> v_item)::int));
+            end loop;
+            for v_item in
+              select e ->> 'category' from jsonb_array_elements(v_val) e
+              group by e ->> 'category', e ->> 'level' having count(*) > 1
+            loop
+              v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+                'code', 'REWARD_DUPLICATE', 'feature', v_reg.feature_key, 'key', v_pkey, 'category', v_item));
+            end loop;
+            -- Role baru wajib ada di data Discord terbaru dari bot.
+            for v_item in
+              select distinct e ->> 'role_id' from jsonb_array_elements(v_val) e
+              where not exists (
+                select 1 from jsonb_array_elements(
+                  case when jsonb_typeof(p_old -> v_reg.feature_key -> 'settings' -> v_pkey) = 'array'
+                       then p_old -> v_reg.feature_key -> 'settings' -> v_pkey else '[]'::jsonb end) o
+                where o ->> 'role_id' = e ->> 'role_id')
+            loop
+              if v_snap.refreshed_at is null then
+                v_no_data := true;
+              elsif not exists (select 1 from jsonb_array_elements(v_snap.roles) r where r ->> 'id' = v_item) then
+                v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+                  'code', 'ROLE_NOT_FOUND', 'feature', v_reg.feature_key, 'key', v_pkey, 'role_id', v_item));
+              end if;
+            end loop;
+          end if;
+        elsif v_type in ('role', 'role_list', 'channel_list') then
+          if v_type = 'role' and not (jsonb_typeof(v_val) = 'string' and (v_val #>> '{}') ~ '^[0-9]{15,22}$') then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          elsif v_type <> 'role' and (
+              jsonb_typeof(v_val) <> 'array'
+              or ((v_prop ? 'max_items') and jsonb_array_length(v_val) > (v_prop ->> 'max_items')::int)
+              or exists (select 1 from jsonb_array_elements(v_val) e
+                         where jsonb_typeof(e) <> 'string' or (e #>> '{}') !~ '^[0-9]{15,22}$')) then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          elsif v_type in ('role', 'role_list') then
+            -- Role yang baru/berubah wajib ada di data Discord terbaru dari bot.
+            for v_item in
+              select e #>> '{}' from jsonb_array_elements(
+                case when v_type = 'role' then jsonb_build_array(v_val) else v_val end) e
+            loop
+              if (p_old -> v_reg.feature_key -> 'settings' -> v_pkey) @> to_jsonb(v_item)
+                 or (p_old -> v_reg.feature_key -> 'settings' -> v_pkey) = to_jsonb(v_item) then
+                continue;
+              end if;
+              if v_snap.refreshed_at is null then
+                v_no_data := true;
+              elsif not exists (select 1 from jsonb_array_elements(v_snap.roles) r where r ->> 'id' = v_item) then
+                v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+                  'code', 'ROLE_NOT_FOUND', 'feature', v_reg.feature_key, 'key', v_pkey, 'role_id', v_item));
+              end if;
+            end loop;
+          end if;
+        end if;
+      end loop;
     end if;
 
     -- Channel per tujuan.
@@ -757,7 +907,9 @@ begin
       'requested_at', v_snap.requested_at,
       'bot_present', v_snap.bot_present,
       'bot_permissions', v_snap.bot_permissions,
-      'channels', v_snap.channels
+      'channels', v_snap.channels,
+      'roles', v_snap.roles,
+      'bot_top_position', v_snap.bot_top_position
     ) end,
     'viewer', jsonb_build_object(
       'discord_id', v_me.discord_id,
@@ -1469,11 +1621,13 @@ begin
 
   insert into public.guild_discord_snapshot as s
     (bot_slug, guild_id, guild_name, icon_hash, owner_id, member_count, bot_present,
-     bot_permissions, channels, refreshed_at)
+     bot_permissions, channels, roles, bot_top_position, refreshed_at)
   select p_bot_slug, i ->> 'guild_id', i ->> 'guild_name', i ->> 'icon_hash', i ->> 'owner_id',
          (i ->> 'member_count')::int, coalesce((i ->> 'bot_present')::boolean, true),
          i ->> 'bot_permissions',
          case when jsonb_typeof(i -> 'channels') = 'array' then i -> 'channels' else '[]'::jsonb end,
+         case when jsonb_typeof(i -> 'roles') = 'array' then i -> 'roles' else '[]'::jsonb end,
+         nullif(i ->> 'bot_top_position', '')::int,
          now()
   from jsonb_array_elements(p_items) i
   where i ->> 'guild_id' ~ '^[0-9]{15,22}$'
@@ -1481,7 +1635,8 @@ begin
     guild_name = excluded.guild_name, icon_hash = excluded.icon_hash,
     owner_id = excluded.owner_id, member_count = excluded.member_count,
     bot_present = excluded.bot_present, bot_permissions = excluded.bot_permissions,
-    channels = excluded.channels, refreshed_at = now();
+    channels = excluded.channels, roles = excluded.roles,
+    bot_top_position = excluded.bot_top_position, refreshed_at = now();
 
   get diagnostics v_n = row_count;
   return jsonb_build_object('ok', true, 'count', v_n);

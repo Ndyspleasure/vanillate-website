@@ -66,6 +66,163 @@ export function isNotUsed(s: FeatureState | undefined): boolean {
   return Boolean(s && !s.enabled && s.settings[NOT_USED] === true);
 }
 
+// ─── Setelan bertipe (settings_schema.properties) ────────────────────────────
+// Aturan yang sama diulang di RPC guild_config_validate (final) dan bot
+// (src/dashboard/typed.js); di sini hanya umpan balik sebelum menyimpan.
+
+export type SettingType = 'boolean' | 'integer' | 'string' | 'enum' | 'role' | 'role_list' | 'channel_list' | 'reward_list';
+
+export interface SettingProp {
+  key: string;
+  type: SettingType;
+  title: string;
+  required: boolean;
+  min?: number;
+  max?: number;
+  max_length?: number;
+  max_items?: number;
+  values?: string[];
+  default?: unknown;
+  help?: string;
+  /** reward_list: batas jumlah per kategori & level tertinggi. */
+  limits?: Record<string, number>;
+  max_level?: number;
+}
+
+export interface RewardRow {
+  category: string;
+  level: number | null;
+  role_id: string;
+}
+
+const SETTING_TYPES = new Set<string>(['boolean', 'integer', 'string', 'enum', 'role', 'role_list', 'channel_list', 'reward_list']);
+
+/** Properti bertipe sebuah fitur (urutan seperti diterbitkan bot). */
+export function typedSettings(f: Feature): SettingProp[] {
+  const props = (f.settings_schema as { properties?: Record<string, Record<string, unknown>> } | undefined)?.properties;
+  if (!props || typeof props !== 'object') return [];
+  const out: SettingProp[] = [];
+  for (const [key, p] of Object.entries(props)) {
+    if (!p || typeof p.type !== 'string' || !SETTING_TYPES.has(p.type)) continue;
+    out.push({
+      key,
+      type: p.type as SettingType,
+      title: typeof p.title === 'string' ? p.title : key,
+      required: p.required === true,
+      min: typeof p.min === 'number' ? p.min : undefined,
+      max: typeof p.max === 'number' ? p.max : undefined,
+      max_length: typeof p.max_length === 'number' ? p.max_length : undefined,
+      max_items: typeof p.max_items === 'number' ? p.max_items : undefined,
+      values: Array.isArray(p.values) ? (p.values as string[]) : undefined,
+      default: p.default,
+      help: typeof p.help === 'string' ? p.help : undefined,
+      limits: p.limits && typeof p.limits === 'object' ? (p.limits as Record<string, number>) : undefined,
+      max_level: typeof p.max_level === 'number' ? p.max_level : undefined,
+    });
+  }
+  return out;
+}
+
+/** Nilai efektif sebuah setelan: tersimpan, atau default schema. */
+export function settingValue(f: Feature, s: FeatureState | undefined, key: string): unknown {
+  const v = s?.settings?.[key];
+  if (v !== undefined && v !== null && v !== '') return v;
+  return typedSettings(f).find((p) => p.key === key)?.default;
+}
+
+/** Semua id role yang dirujuk sebuah setelan (role, daftar role, atau reward). */
+export function settingRoleIds(value: unknown, type: SettingType): string[] {
+  if (type === 'reward_list') {
+    return Array.isArray(value) ? [...new Set((value as RewardRow[]).map((r) => String(r?.role_id ?? '')).filter(Boolean))] : [];
+  }
+  if (Array.isArray(value)) return value as string[];
+  return value ? [String(value)] : [];
+}
+
+/** Masalah satu fitur dari setelan bertipenya (tanpa konteks Discord). */
+export function validateSettingValues(f: Feature, s: FeatureState): Issue[] {
+  const issues: Issue[] = [];
+  const snowflake = /^[0-9]{15,22}$/;
+  for (const p of typedSettings(f)) {
+    const v = s.settings[p.key];
+    if (v === undefined || v === null || v === '') {
+      if (p.required && s.enabled) issues.push({ code: 'SETTING_REQUIRED', feature: f.key, key: p.key });
+      continue;
+    }
+    const bad = () => issues.push({ code: 'SETTING_INVALID', feature: f.key, key: p.key });
+    switch (p.type) {
+      case 'boolean':
+        if (typeof v !== 'boolean') bad();
+        break;
+      case 'integer':
+        if (typeof v !== 'number' || !Number.isInteger(v)) bad();
+        else if ((p.min != null && v < p.min) || (p.max != null && v > p.max)) {
+          issues.push({ code: 'SETTING_OUT_OF_RANGE', feature: f.key, key: p.key, min: p.min ?? null, max: p.max ?? null });
+        }
+        break;
+      case 'string':
+        if (typeof v !== 'string' || (p.max_length != null && v.length > p.max_length)) bad();
+        break;
+      case 'enum':
+        if (!p.values?.includes(v as string)) bad();
+        break;
+      case 'role':
+        if (typeof v !== 'string' || !snowflake.test(v)) bad();
+        break;
+      case 'reward_list': {
+        const limits = p.limits ?? {};
+        const counts: Record<string, number> = {};
+        const seen = new Set<string>();
+        let malformed = !Array.isArray(v);
+        for (const r of malformed ? [] : (v as RewardRow[])) {
+          if (!r || typeof r !== 'object' || !(r.category in limits) || !Number.isInteger(r.level) || (r.level as number) < 1
+            || (r.level as number) > (p.max_level ?? 1000) || !snowflake.test(String(r.role_id ?? ''))) {
+            malformed = true;
+            break;
+          }
+          counts[r.category] = (counts[r.category] ?? 0) + 1;
+          const id = `${r.category}|${r.level}`;
+          if (seen.has(id)) issues.push({ code: 'REWARD_DUPLICATE', feature: f.key, key: p.key, category: r.category, level: r.level as number });
+          seen.add(id);
+        }
+        if (malformed) bad();
+        else {
+          for (const [category, max] of Object.entries(limits)) {
+            if ((counts[category] ?? 0) > max) issues.push({ code: 'REWARD_LIMIT', feature: f.key, key: p.key, category, max });
+          }
+        }
+        break;
+      }
+      default:
+        if (!Array.isArray(v) || (p.max_items != null && v.length > p.max_items) || v.some((x) => typeof x !== 'string' || !snowflake.test(x))) bad();
+    }
+  }
+  return issues;
+}
+
+export function roleById(snapshot: Snapshot | null | undefined, id: string | null | undefined): SnapshotRole | null {
+  if (!id) return null;
+  return snapshot?.roles?.find((r) => r.id === id) ?? null;
+}
+
+/** Role untuk dropdown: posisi tertinggi di atas (seperti urutan di Discord). */
+export function roleOptions(snapshot: Snapshot | null | undefined): SnapshotRole[] {
+  return [...(snapshot?.roles ?? [])].sort((a, b) => b.position - a.position || a.name.localeCompare(b.name));
+}
+
+/**
+ * Role yang akan diberikan bot tapi tidak bisa: dikelola integrasi, atau
+ * posisinya tidak di bawah role tertinggi bot. Peringatan (bot memvalidasi ulang).
+ */
+export function roleGrantProblem(snapshot: Snapshot | null | undefined, roleId: string | null | undefined): string | null {
+  const role = roleById(snapshot, roleId);
+  if (!role) return null;
+  if (role.managed) return 'dikelola integrasi (bot tidak bisa memberikannya)';
+  const top = snapshot?.bot_top_position;
+  if (typeof top === 'number' && role.position >= top) return 'posisinya sejajar atau di atas role tertinggi bot';
+  return null;
+}
+
 export interface SnapshotChannel {
   id: string;
   name: string;
@@ -75,12 +232,22 @@ export interface SnapshotChannel {
   perms?: string;
 }
 
+export interface SnapshotRole {
+  id: string;
+  name: string;
+  position: number;
+  managed?: boolean;
+  color?: number;
+}
+
 export interface Snapshot {
   refreshed_at: string | null;
   requested_at: string | null;
   bot_present?: boolean;
   bot_permissions?: string | null;
   channels: SnapshotChannel[];
+  roles?: SnapshotRole[];
+  bot_top_position?: number | null;
 }
 
 export interface Issue {
@@ -92,6 +259,13 @@ export interface Issue {
   missing?: string[];
   other_feature?: string;
   detail?: string;
+  key?: string;
+  role_id?: string;
+  min?: number | null;
+  max?: number | null;
+  reason?: string;
+  category?: string;
+  level?: number;
 }
 
 export interface ConfigInfo {
@@ -352,6 +526,35 @@ export function validateDraft(
       }
     }
   }
+  for (const f of sortedRegistry(registry)) {
+    const s = draft[f.key];
+    if (!s) continue;
+    issues.push(...validateSettingValues(f, s));
+    // Role yang baru/berubah wajib ada di data Discord terbaru.
+    for (const p of typedSettings(f)) {
+      if (p.type !== 'role' && p.type !== 'role_list' && p.type !== 'reward_list') continue;
+      const ids = settingRoleIds(s.settings[p.key], p.type);
+      const oldIds = settingRoleIds(base[f.key]?.settings[p.key], p.type);
+      for (const id of ids.filter((x) => !oldIds.includes(x))) {
+        if (!snapshot?.refreshed_at) noData = true;
+        else if (!roleById(snapshot, id)) issues.push({ code: 'ROLE_NOT_FOUND', feature: f.key, key: p.key, role_id: id });
+      }
+    }
+  }
+  // Verified Role terpisah dari Level Rewards.
+  const verified = new Set<string>();
+  for (const f of registry) for (const p of typedSettings(f)) {
+    if (p.key === 'verified_role' && typeof draft[f.key]?.settings[p.key] === 'string') verified.add(draft[f.key].settings[p.key] as string);
+  }
+  for (const f of sortedRegistry(registry)) {
+    const s = draft[f.key];
+    for (const p of typedSettings(f)) {
+      if (p.type !== 'reward_list' || !s) continue;
+      for (const id of settingRoleIds(s.settings[p.key], p.type)) {
+        if (verified.has(id)) issues.push({ code: 'ROLE_CONFLICT', feature: f.key, key: p.key, role_id: id });
+      }
+    }
+  }
   if (noData) issues.push({ code: 'NO_DISCORD_DATA' });
   return issues;
 }
@@ -370,6 +573,14 @@ export function permissionWarnings(state: ConfigState, registry: Feature[], snap
       const missing = missingPermissions(ch, p);
       if (missing.length) {
         out.push({ code: 'MISSING_PERMISSIONS', feature: f.key, purpose: p.key, channel_id: id, channel_name: ch.name, missing });
+      }
+    }
+    // Role yang akan diberikan bot (Verified Role) harus bisa diberikan.
+    for (const p of typedSettings(f)) {
+      if (p.type !== 'role' && p.type !== 'reward_list') continue;
+      for (const id of settingRoleIds(s.settings[p.key], p.type)) {
+        const reason = roleGrantProblem(snapshot, id);
+        if (reason) out.push({ code: 'ROLE_UNUSABLE', feature: f.key, key: p.key, role_id: id, reason });
       }
     }
   }
@@ -456,6 +667,21 @@ export function channelLabel(ctx: TextContext, id: string | null | undefined, fa
   return `#channel-terhapus (${id})`;
 }
 
+function settingTitle(ctx: TextContext, issue: Issue): string {
+  const f = ctx.registry.find((x) => x.key === issue.feature);
+  return (f && typedSettings(f).find((p) => p.key === issue.key)?.title) || issue.key || 'setelan';
+}
+
+export function roleLabel(ctx: TextContext, id: string | null | undefined): string {
+  if (!id) return '—';
+  const r = roleById(ctx.snapshot, id);
+  return r ? `@${r.name}` : `@role-terhapus (${id})`;
+}
+
+export function categoryLabel(category: string | undefined): string {
+  return category === 'chat' ? 'Chat' : category === 'voice' ? 'Voice' : category === 'combined' ? 'Combined' : category ?? '';
+}
+
 function listJoin(items: string[]): string {
   if (items.length <= 1) return items.join('');
   return `${items.slice(0, -1).join(', ')} & ${items[items.length - 1]}`;
@@ -476,6 +702,22 @@ export function describeIssue(issue: Issue, ctx: TextContext): string {
       return `${name} butuh channel selama aktif. Pilih channel atau matikan fitur ini.`;
     case 'CHANNEL_CONFLICT':
       return `${name} dan ${featureName(ctx, issue.other_feature)} tidak boleh memakai channel yang sama (${ch}).`;
+    case 'SETTING_REQUIRED':
+      return `${name}: ${settingTitle(ctx, issue)} wajib diisi selama fitur aktif.`;
+    case 'SETTING_OUT_OF_RANGE':
+      return `${name}: ${settingTitle(ctx, issue)} harus antara ${issue.min ?? '…'} dan ${issue.max ?? '…'}.`;
+    case 'SETTING_INVALID':
+      return `${name}: nilai ${settingTitle(ctx, issue)} tidak valid.`;
+    case 'ROLE_NOT_FOUND':
+      return `${name}: role untuk ${settingTitle(ctx, issue)} tidak ditemukan di server (mungkin sudah dihapus). Tekan Refresh Discord Data lalu pilih role lain.`;
+    case 'ROLE_UNUSABLE':
+      return `${name}: role ${roleLabel(ctx, issue.role_id)} tidak bisa diberikan bot — ${issue.reason ?? 'periksa izin Manage Roles dan posisi role bot'}. Naikkan role bot di atas role ini di Pengaturan Server › Role.`;
+    case 'REWARD_LIMIT':
+      return `${name}: reward ${categoryLabel(issue.category)} melebihi batas (maks. ${issue.max ?? '…'}). Hapus sebagian baris.`;
+    case 'REWARD_DUPLICATE':
+      return `${name}: ada dua reward ${categoryLabel(issue.category)} dengan level yang sama${issue.level ? ` (level ${issue.level})` : ''}. Satu level hanya boleh punya satu reward per kategori.`;
+    case 'ROLE_CONFLICT':
+      return `${name}: role ${roleLabel(ctx, issue.role_id)} adalah Verified Role, jadi tidak boleh dipakai sebagai reward level.`;
     case 'NO_DISCORD_DATA':
       return 'Daftar channel dari Discord belum tersedia. Tekan Refresh Discord Data dan tunggu beberapa detik.';
     case 'BOT_NOT_IN_GUILD':

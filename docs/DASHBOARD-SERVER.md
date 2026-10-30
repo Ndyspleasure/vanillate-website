@@ -198,6 +198,34 @@ penyaring akun dilakukan bot. Tes: `tests/topgg-webhook.test.ts`.
 
 URL untuk dashboard Top.gg: `https://<project>.supabase.co/functions/v1/topgg-webhook`.
 
+## 5b. Setelan bertipe, role, & fitur manajemen server (✅ Verification)
+
+Selain game dan sosial, registry bot kini memuat bagian **manajemen server**
+(`section = 'verification'`, nanti `'leveling'`) dengan tab sendiri.
+Perubahan skema (aditif & idempoten, `supabase/guild-dashboard-schema.sql`):
+
+| Perubahan | Isi |
+|---|---|
+| `guild_feature_registry.section` | Constraint diperluas: `game`, `social`, `verification`, `leveling`, `other` |
+| `guild_discord_snapshot.roles`, `.bot_top_position` | Role server (id, nama, posisi, managed) + posisi role tertinggi bot, diterbitkan bot lewat `guild_bot_publish_snapshot`; dikirim ke website di `guild_dashboard_get → snapshot` |
+| `guild_config_validate` | Memvalidasi `settings_schema.properties.<k>.type` (`boolean`, `integer` + `min`/`max`, `string` + `max_length`, `enum`, `role`, `role_list`, `channel_list` + `max_items`), `required` (hanya fitur aktif), dan role baru/berubah harus ada di snapshot. Kode: `SETTING_INVALID`, `SETTING_OUT_OF_RANGE`, `SETTING_REQUIRED`, `ROLE_NOT_FOUND` |
+
+Validasi final berada di RPC (bukan hanya UI) dan diulang bot sebelum
+menerapkan (`ROLE_UNUSABLE` bila bot tak bisa memberi role). UI
+(`model.ts`: `typedSettings`, `validateSettingValues`, `roleGrantProblem`)
+hanya memberi umpan balik cepat — rentang yang sama persis dengan yang diterbitkan bot.
+
+Tes: `tests/dashboard-model.test.ts` (model) dan
+`supabase/tests/guild-dashboard.test.sql` (RPC, `npm run test:sql`).
+Sisi bot: `sambung-kata-bot/docs/verification.md` dan `docs/leveling.md`.
+Setelan bertipe **`reward_list`** (Level Rewards): `[{category, level, role_id}]` dengan `limits`
+per kategori (Chat 10 · Voice 10 · Combined 5) dan `max_level` dari schema bot. RPC memvalidasi bentuk,
+batas per kategori (`REWARD_LIMIT`), level unik per kategori (`REWARD_DUPLICATE`), dan role harus ada di
+snapshot. Batas ukuran `settings` per fitur dinaikkan 4000 → 8000 karakter agar 25 reward + blacklist muat.
+Role yang sama dengan Verified Role ditolak UI dan bot (`ROLE_CONFLICT`). Editor baris reward ada di tab Leveling.
+
+Tab **Leveling** memakai mekanisme yang sama (`channel_list` untuk channel tanpa XP, `help` per setelan untuk daftar variabel pesan).
+
 ## 6. Pengembangan & tes
 
 ```bash
