@@ -38,10 +38,14 @@ import {
   normalizeState,
   permissionWarnings,
   relativeTime,
+  roleLabel,
+  roleOptions,
   serverIssues,
+  settingValue,
   sortedRegistry,
   STATUS_META,
   supportsNotUsed,
+  typedSettings,
   validateDraft,
   type AuditRow,
   type ConfigState,
@@ -49,6 +53,7 @@ import {
   type GuildData,
   type Issue,
   type Purpose,
+  type SettingProp,
   type TextContext,
   type Tone,
 } from './model';
@@ -56,18 +61,19 @@ import { rememberNextAndGoToLogin } from './servers-page';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
 import { createShareController } from './share-server';
 
-type Tab = 'overview' | 'game-hub' | 'social-hub' | 'share-server' | 'channels' | 'audit-log';
+type Tab = 'overview' | 'game-hub' | 'social-hub' | 'verification' | 'share-server' | 'channels' | 'audit-log';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Ringkasan' },
   { id: 'game-hub', label: 'Game Hub' },
   { id: 'social-hub', label: 'Social Hub' },
+  { id: 'verification', label: 'Verification' },
   { id: 'share-server', label: 'Share Server' },
   { id: 'channels', label: 'Channel' },
   { id: 'audit-log', label: 'Riwayat' },
 ];
 
-const SECTION_OF_TAB: Partial<Record<Tab, string>> = { 'game-hub': 'game', 'social-hub': 'social' };
+const SECTION_OF_TAB: Partial<Record<Tab, string>> = { 'game-hub': 'game', 'social-hub': 'social', verification: 'verification' };
 
 const FAST_POLL_MS = 2500;
 const SLOW_POLL_MS = 15000;
@@ -448,7 +454,9 @@ export function mountServerPage(cfg: PageConfig): void {
     const intro =
       section === 'game'
         ? 'Matikan game yang tidak ingin dimainkan di server ini, atau kunci game ke satu channel khusus. Game tanpa channel khusus bisa dibuka di channel mana pun.'
-        : 'Fitur sosial berjalan di channel khusus pilihanmu. Fitur yang belum diberi channel tidak aktif. Satu channel hanya untuk satu fitur sosial.';
+        : section === 'verification'
+          ? 'Member menyelesaikan tantangan emoji lewat tombol di channel verifikasi. Lulus minimal 80% benar (angka tetap) = otomatis mendapat Verified Role. Bot butuh izin Manage Roles dan role bot harus berada di atas Verified Role.'
+          : 'Fitur sosial berjalan di channel khusus pilihanmu. Fitur yang belum diberi channel tidak aktif. Satu channel hanya untuk satu fitur sosial.';
     if (!feats.length) return `<p class="text-sm text-ink-500">Belum ada fitur di bagian ini.</p>`;
     return `
       <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">${intro}</p>
@@ -540,6 +548,62 @@ export function mountServerPage(cfg: PageConfig): void {
       </div>`;
   }
 
+  /** Kontrol setelan bertipe (settings_schema) untuk fitur aktif. */
+  function settingsHtml(f: Feature): string {
+    const props = typedSettings(f);
+    if (!props.length) return '';
+    const disabled = !editable() || saving;
+    const d = data!;
+    const s = draft[f.key];
+    const cls = 'mt-1.5 w-full rounded-xl border border-ink-900/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500 disabled:opacity-60 dark:border-cream-100/15 dark:bg-ink-800';
+    const field = (p: SettingProp): string => {
+      const id = `${esc(f.key)}|${esc(p.key)}`;
+      const base = `data-setting="${id}" data-type="${p.type}" data-focus="st-${esc(f.key)}-${esc(p.key)}" ${disabled ? 'disabled' : ''}`;
+      const cur = settingValue(f, s, p.key);
+      switch (p.type) {
+        case 'integer':
+          return `<input type="number" step="1" ${p.min != null ? `min="${p.min}"` : ''} ${p.max != null ? `max="${p.max}"` : ''} ${base} value="${cur ?? ''}" class="${cls}" />`;
+        case 'string': {
+          const long = (p.max_length ?? 0) > 120;
+          const v = typeof s.settings[p.key] === 'string' ? (s.settings[p.key] as string) : '';
+          return long
+            ? `<textarea rows="4" ${p.max_length ? `maxlength="${p.max_length}"` : ''} ${base} class="${cls}">${esc(v)}</textarea>`
+            : `<input type="text" ${p.max_length ? `maxlength="${p.max_length}"` : ''} ${base} value="${esc(v)}" class="${cls}" />`;
+        }
+        case 'boolean':
+          return `<label class="mt-1.5 inline-flex items-center gap-2 text-sm"><input type="checkbox" class="h-4 w-4 rounded accent-amber-600" ${base} ${cur === true ? 'checked' : ''} /> Aktif</label>`;
+        case 'enum':
+          return `<select ${base} class="${cls}">${(p.values ?? []).map((v) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+        case 'role': {
+          const roles = roleOptions(d.snapshot);
+          const known = roles.some((r) => r.id === cur);
+          return `<select ${base} class="${cls}">
+            <option value="" ${cur ? '' : 'selected'}>— Pilih role —</option>
+            ${cur && !known ? `<option value="${esc(String(cur))}" selected>${esc(roleLabel(ctx(), String(cur)))}</option>` : ''}
+            ${roles.map((r) => `<option value="${esc(r.id)}" ${r.id === cur ? 'selected' : ''}>@${esc(r.name)}${r.managed ? ' (integrasi)' : ''}</option>`).join('')}
+          </select>`;
+        }
+        case 'role_list': {
+          const chosen = new Set(Array.isArray(cur) ? (cur as string[]) : []);
+          return `<select multiple size="5" ${base} class="${cls}">${roleOptions(d.snapshot)
+            .map((r) => `<option value="${esc(r.id)}" ${chosen.has(r.id) ? 'selected' : ''}>@${esc(r.name)}</option>`)
+            .join('')}</select>`;
+        }
+        default:
+          return '';
+      }
+    };
+    const hint = (p: SettingProp) =>
+      p.type === 'integer' && (p.min != null || p.max != null)
+        ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Rentang ${p.min ?? '…'}–${p.max ?? '…'}${p.default != null ? `, bawaan ${p.default}` : ''}.</p>`
+        : p.type === 'string' && p.max_length
+          ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Maksimal ${p.max_length} karakter. Kosongkan untuk teks bawaan.</p>`
+          : '';
+    return props
+      .map((p) => `<div><span class="text-xs font-medium text-ink-600 dark:text-cream-300">${esc(p.title)}${p.required ? ' <span class="text-red-600">*</span>' : ''}</span>${field(p)}${hint(p)}</div>`)
+      .join('');
+  }
+
   function featureCardHtml(f: Feature): string {
     const s = draft[f.key];
     const status = featureIssues(f);
@@ -580,7 +644,7 @@ export function mountServerPage(cfg: PageConfig): void {
         <div class="mt-4 space-y-4">
           ${
             s.enabled
-              ? f.purposes.map((p) => `<div>${selectHtml(f, p)}</div>`).join('')
+              ? f.purposes.map((p) => `<div>${selectHtml(f, p)}</div>`).join('') + settingsHtml(f)
               : savedChannels.length
                 ? `<p class="text-xs text-ink-500 dark:text-cream-300/60">Tersimpan: ${esc(savedChannels.join(' · '))} — dipakai lagi saat fitur diaktifkan.</p>`
                 : ''
@@ -613,6 +677,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const sections = [
       { id: 'game-hub', title: 'Game Hub', section: 'game', ic: 'gamepad-2' as const },
       { id: 'social-hub', title: 'Social Hub', section: 'social', ic: 'users' as const },
+      { id: 'verification', title: 'Verification', section: 'verification', ic: 'users' as const },
     ];
     return `
       <div class="grid gap-4 sm:grid-cols-3">
@@ -946,6 +1011,24 @@ export function mountServerPage(cfg: PageConfig): void {
     const shareField = (e.target as HTMLElement).closest<HTMLElement>('[data-share-field]');
     if (shareField) {
       share.onInput(shareField);
+      return;
+    }
+    const setting = (e.target as HTMLElement).closest<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-setting]');
+    if (setting && data) {
+      const [fKey, pKey] = setting.dataset.setting!.split('|');
+      if (!draft[fKey]) return;
+      const t = setting.dataset.type;
+      const st = draft[fKey].settings;
+      if (t === 'boolean') st[pKey] = (setting as HTMLInputElement).checked;
+      else if (t === 'integer') {
+        if (setting.value.trim() === '') delete st[pKey];
+        else st[pKey] = Number(setting.value);
+      } else if (t === 'role_list') {
+        st[pKey] = [...(setting as HTMLSelectElement).selectedOptions].map((o) => o.value);
+      } else if (setting.value === '') delete st[pKey];
+      else st[pKey] = setting.value;
+      attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
+      renderAll();
       return;
     }
     const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('select[data-channel]');

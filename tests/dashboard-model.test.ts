@@ -15,6 +15,10 @@ import {
   isNotUsed,
   NOT_USED,
   supportsNotUsed,
+  typedSettings,
+  settingValue,
+  roleGrantProblem,
+  roleOptions,
   missingPermissions,
   normalizeState,
   permissionWarnings,
@@ -210,4 +214,83 @@ test('🚫 Tidak dipakai: hanya fitur dengan setelan not_used dari bot, hanya sa
     formatAuditChange({ path: 'SOCIAL_COUNT.settings.not_used', from: null, to: true }, { registry: [social], snapshot }),
     'Counting · Tidak dipakai: ya',
   );
+});
+
+// ─── Setelan bertipe + role (Verification) ──────────────────────────────────
+const ROLE_A = '700000000000000001';
+const ROLE_B = '700000000000000002';
+const verification: Feature = {
+  key: 'VERIFICATION', section: 'verification', name: 'Verification', sort: 5, default_enabled: false,
+  purposes: [{ key: 'verify_channel', label: 'Channel verifikasi', required: true, channel_types: [0], permissions: [VIEW] }],
+  settings_schema: {
+    properties: {
+      verified_role: { type: 'role', required: true, title: 'Verified Role' },
+      steps: { type: 'integer', min: 1, max: 5, default: 3, title: 'Jumlah langkah' },
+      panel_title: { type: 'string', max_length: 80, title: 'Judul panel' },
+    },
+  },
+};
+const roleSnapshot: Snapshot = {
+  ...snapshot,
+  bot_top_position: 5,
+  roles: [
+    { id: ROLE_A, name: 'Verified', position: 3 },
+    { id: ROLE_B, name: 'Admin', position: 8 },
+    { id: '700000000000000003', name: 'Bot-Integrasi', position: 1, managed: true },
+  ],
+};
+const vState = (settings: Record<string, unknown>, enabled = true) =>
+  normalizeState({ VERIFICATION: { enabled, settings, channels: { verify_channel: C1 } } }, [verification]);
+
+test('typedSettings membaca schema; settingValue jatuh ke default', () => {
+  assert.deepEqual(typedSettings(verification).map((p) => p.key), ['verified_role', 'steps', 'panel_title']);
+  assert.equal(typedSettings(registry[0]).length, 0);
+  assert.equal(settingValue(verification, vState({}).VERIFICATION, 'steps'), 3);
+  assert.equal(settingValue(verification, vState({ steps: 5 }).VERIFICATION, 'steps'), 5);
+});
+
+test('validateDraft: rentang, wajib, tipe, role tak dikenal (cermin RPC)', () => {
+  const codes = (settings: Record<string, unknown>, enabled = true) =>
+    validateDraft(vState(settings, enabled), vState({}, false), [verification], roleSnapshot).map((i) => `${i.code}:${i.key ?? ''}`);
+  assert.deepEqual(codes({ verified_role: ROLE_A, steps: 3 }), []);
+  assert.deepEqual(codes({ verified_role: ROLE_A, steps: 6 }), ['SETTING_OUT_OF_RANGE:steps']);
+  assert.deepEqual(codes({ verified_role: ROLE_A, steps: 0 }), ['SETTING_OUT_OF_RANGE:steps']);
+  assert.deepEqual(codes({ verified_role: ROLE_A, steps: 2.5 }), ['SETTING_INVALID:steps']);
+  assert.deepEqual(codes({ steps: 3 }), ['SETTING_REQUIRED:verified_role']);
+  assert.deepEqual(codes({}, false), []); // wajib hanya bila aktif
+  assert.deepEqual(codes({ verified_role: '700000000000000099' }), ['ROLE_NOT_FOUND:verified_role']);
+  assert.deepEqual(codes({ verified_role: ROLE_A, panel_title: 'x'.repeat(81) }), ['SETTING_INVALID:panel_title']);
+});
+
+test('role yang sudah tersimpan tidak diperiksa ulang terhadap snapshot', () => {
+  const base = vState({ verified_role: '700000000000000099' });
+  const issues = validateDraft(vState({ verified_role: '700000000000000099' }), base, [verification], roleSnapshot);
+  assert.equal(issues.some((i) => i.code === 'ROLE_NOT_FOUND'), false);
+});
+
+test('roleGrantProblem & peringatan: managed / posisi >= role bot', () => {
+  assert.equal(roleGrantProblem(roleSnapshot, ROLE_A), null);
+  assert.match(roleGrantProblem(roleSnapshot, ROLE_B) ?? '', /sejajar atau di atas/);
+  assert.match(roleGrantProblem(roleSnapshot, '700000000000000003') ?? '', /integrasi/);
+  assert.equal(roleGrantProblem(roleSnapshot, null), null);
+  const w = permissionWarnings(vState({ verified_role: ROLE_B }), [verification], roleSnapshot);
+  assert.deepEqual(w.map((i) => i.code), ['ROLE_UNUSABLE']);
+  assert.match(describeIssue(w[0], { registry: [verification], snapshot: roleSnapshot }), /@Admin tidak bisa diberikan bot/);
+  assert.deepEqual(permissionWarnings(vState({ verified_role: ROLE_A }), [verification], roleSnapshot), []);
+});
+
+test('roleOptions: posisi tertinggi dulu; describeIssue memberi kalimat untuk kode setelan', () => {
+  assert.deepEqual(roleOptions(roleSnapshot).map((r) => r.name), ['Admin', 'Verified', 'Bot-Integrasi']);
+  const ctx = { registry: [verification], snapshot: roleSnapshot };
+  assert.match(describeIssue({ code: 'SETTING_OUT_OF_RANGE', feature: 'VERIFICATION', key: 'steps', min: 1, max: 5 }, ctx), /Jumlah langkah harus antara 1 dan 5/);
+  assert.match(describeIssue({ code: 'SETTING_REQUIRED', feature: 'VERIFICATION', key: 'verified_role' }, ctx), /Verified Role wajib diisi/);
+  assert.match(describeIssue({ code: 'ROLE_NOT_FOUND', feature: 'VERIFICATION', key: 'verified_role' }, ctx), /Refresh Discord Data/);
+});
+
+test('buildSavePayload membawa setelan bertipe apa adanya', () => {
+  const st = vState({ verified_role: ROLE_A, steps: 4 });
+  assert.deepEqual(buildSavePayload(st, [verification]).features.VERIFICATION, {
+    enabled: true,
+    settings: { verified_role: ROLE_A, steps: 4 },
+  });
 });
