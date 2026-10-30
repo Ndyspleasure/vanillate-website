@@ -83,6 +83,7 @@ export interface SettingProp {
   max_items?: number;
   values?: string[];
   default?: unknown;
+  help?: string;
 }
 
 const SETTING_TYPES = new Set<string>(['boolean', 'integer', 'string', 'enum', 'role', 'role_list', 'channel_list']);
@@ -105,6 +106,7 @@ export function typedSettings(f: Feature): SettingProp[] {
       max_items: typeof p.max_items === 'number' ? p.max_items : undefined,
       values: Array.isArray(p.values) ? (p.values as string[]) : undefined,
       default: p.default,
+      help: typeof p.help === 'string' ? p.help : undefined,
     });
   }
   return out;

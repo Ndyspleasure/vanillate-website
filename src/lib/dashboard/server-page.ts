@@ -61,19 +61,20 @@ import { rememberNextAndGoToLogin } from './servers-page';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
 import { createShareController } from './share-server';
 
-type Tab = 'overview' | 'game-hub' | 'social-hub' | 'verification' | 'share-server' | 'channels' | 'audit-log';
+type Tab = 'overview' | 'game-hub' | 'social-hub' | 'verification' | 'leveling' | 'share-server' | 'channels' | 'audit-log';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Ringkasan' },
   { id: 'game-hub', label: 'Game Hub' },
   { id: 'social-hub', label: 'Social Hub' },
   { id: 'verification', label: 'Verification' },
+  { id: 'leveling', label: 'Leveling' },
   { id: 'share-server', label: 'Share Server' },
   { id: 'channels', label: 'Channel' },
   { id: 'audit-log', label: 'Riwayat' },
 ];
 
-const SECTION_OF_TAB: Partial<Record<Tab, string>> = { 'game-hub': 'game', 'social-hub': 'social', verification: 'verification' };
+const SECTION_OF_TAB: Partial<Record<Tab, string>> = { 'game-hub': 'game', 'social-hub': 'social', verification: 'verification', leveling: 'leveling' };
 
 const FAST_POLL_MS = 2500;
 const SLOW_POLL_MS = 15000;
@@ -456,7 +457,9 @@ export function mountServerPage(cfg: PageConfig): void {
         ? 'Matikan game yang tidak ingin dimainkan di server ini, atau kunci game ke satu channel khusus. Game tanpa channel khusus bisa dibuka di channel mana pun.'
         : section === 'verification'
           ? 'Member menyelesaikan tantangan emoji lewat tombol di channel verifikasi. Lulus minimal 80% benar (angka tetap) = otomatis mendapat Verified Role. Bot butuh izin Manage Roles dan role bot harus berada di atas Verified Role.'
-          : 'Fitur sosial berjalan di channel khusus pilihanmu. Fitur yang belum diberi channel tidak aktif. Satu channel hanya untuk satu fitur sosial.';
+          : section === 'leveling'
+            ? 'Member mendapat XP dari chat dan naik level (dilihat lewat /rank). Atur XP, cooldown, channel/role yang tidak menghasilkan XP, dan pesan naik level. Batas XP dan cooldown ditetapkan sistem Vanillate. Vote bot di Top.gg memberi +100% XP selama 12 jam (otomatis, semua server).'
+            : 'Fitur sosial berjalan di channel khusus pilihanmu. Fitur yang belum diberi channel tidak aktif. Satu channel hanya untuk satu fitur sosial.';
     if (!feats.length) return `<p class="text-sm text-ink-500">Belum ada fitur di bagian ini.</p>`;
     return `
       <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">${intro}</p>
@@ -589,16 +592,28 @@ export function mountServerPage(cfg: PageConfig): void {
             .map((r) => `<option value="${esc(r.id)}" ${chosen.has(r.id) ? 'selected' : ''}>@${esc(r.name)}</option>`)
             .join('')}</select>`;
         }
+        case 'channel_list': {
+          const chosen = new Set(Array.isArray(cur) ? (cur as string[]) : []);
+          const opts = (d.snapshot?.channels ?? []).filter((c) => c.type === 0 || c.type === 5 || c.type === 2).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+          return `<select multiple size="6" ${base} class="${cls}">${opts
+            .map((c) => `<option value="${esc(c.id)}" ${chosen.has(c.id) ? 'selected' : ''}>${c.type === 2 ? '🔊' : '#'}${esc(c.name)}</option>`)
+            .join('')}</select>`;
+        }
         default:
           return '';
       }
     };
-    const hint = (p: SettingProp) =>
-      p.type === 'integer' && (p.min != null || p.max != null)
-        ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Rentang ${p.min ?? '…'}–${p.max ?? '…'}${p.default != null ? `, bawaan ${p.default}` : ''}.</p>`
-        : p.type === 'string' && p.max_length
-          ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Maksimal ${p.max_length} karakter. Kosongkan untuk teks bawaan.</p>`
-          : '';
+    const hint = (p: SettingProp) => {
+      const note = (t: string) => `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(t)}</p>`;
+      const parts: string[] = [];
+      if (p.help) parts.push(note(p.help));
+      if (p.type === 'integer' && (p.min != null || p.max != null)) {
+        parts.push(note(`Rentang ${p.min ?? '…'}–${p.max ?? '…'}${p.default != null ? `, bawaan ${p.default}` : ''}.`));
+      } else if (p.type === 'string' && p.max_length) {
+        parts.push(note(`Maksimal ${p.max_length} karakter. Kosongkan untuk teks bawaan.`));
+      }
+      return parts.join('');
+    };
     return props
       .map((p) => `<div><span class="text-xs font-medium text-ink-600 dark:text-cream-300">${esc(p.title)}${p.required ? ' <span class="text-red-600">*</span>' : ''}</span>${field(p)}${hint(p)}</div>`)
       .join('');
@@ -678,6 +693,7 @@ export function mountServerPage(cfg: PageConfig): void {
       { id: 'game-hub', title: 'Game Hub', section: 'game', ic: 'gamepad-2' as const },
       { id: 'social-hub', title: 'Social Hub', section: 'social', ic: 'users' as const },
       { id: 'verification', title: 'Verification', section: 'verification', ic: 'users' as const },
+      { id: 'leveling', title: 'Leveling', section: 'leveling', ic: 'users' as const },
     ];
     return `
       <div class="grid gap-4 sm:grid-cols-3">
@@ -1023,7 +1039,7 @@ export function mountServerPage(cfg: PageConfig): void {
       else if (t === 'integer') {
         if (setting.value.trim() === '') delete st[pKey];
         else st[pKey] = Number(setting.value);
-      } else if (t === 'role_list') {
+      } else if (t === 'role_list' || t === 'channel_list') {
         st[pKey] = [...(setting as HTMLSelectElement).selectedOptions].map((o) => o.value);
       } else if (setting.value === '') delete st[pKey];
       else st[pKey] = setting.value;

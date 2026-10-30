@@ -217,7 +217,8 @@ hanya memberi umpan balik cepat — rentang yang sama persis dengan yang diterbi
 
 Tes: `tests/dashboard-model.test.ts` (model) dan
 `supabase/tests/guild-dashboard.test.sql` (RPC, `npm run test:sql`).
-Sisi bot: `sambung-kata-bot/docs/verification.md`.
+Sisi bot: `sambung-kata-bot/docs/verification.md` dan `docs/leveling.md`.
+Tab **Leveling** memakai mekanisme yang sama (`channel_list` untuk channel tanpa XP, `help` per setelan untuk daftar variabel pesan).
 
 ## 6. Pengembangan & tes
 

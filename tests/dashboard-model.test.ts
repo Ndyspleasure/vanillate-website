@@ -16,6 +16,7 @@ import {
   NOT_USED,
   supportsNotUsed,
   typedSettings,
+  validateSettingValues,
   settingValue,
   roleGrantProblem,
   roleOptions,
@@ -293,4 +294,30 @@ test('buildSavePayload membawa setelan bertipe apa adanya', () => {
     enabled: true,
     settings: { verified_role: ROLE_A, steps: 4 },
   });
+});
+
+test('setelan Leveling: daftar channel/role, help, rentang XP & cooldown', () => {
+  const leveling: Feature = {
+    key: 'LEVELING', section: 'leveling', name: 'Leveling', sort: 6, default_enabled: false,
+    purposes: [{ key: 'levelup_channel', label: 'Channel naik level', required: false, channel_types: [0] }],
+    settings_schema: {
+      properties: {
+        chat_xp: { type: 'integer', min: 1, max: 100, default: 10, title: 'XP per pesan' },
+        chat_cooldown: { type: 'integer', min: 30, max: 3600, default: 60, title: 'Cooldown XP chat (detik)' },
+        blacklist_channels: { type: 'channel_list', max_items: 2, title: 'Channel tanpa XP' },
+        levelup_message: { type: 'string', max_length: 500, title: 'Pesan naik level', help: 'Variabel: {tag} {level}' },
+      },
+    },
+  };
+  assert.equal(typedSettings(leveling).find((p) => p.key === 'levelup_message')?.help, 'Variabel: {tag} {level}');
+  const st = (settings: Record<string, unknown>) => normalizeState({ LEVELING: { enabled: true, settings, channels: {} } }, [leveling]).LEVELING;
+  const codes = (settings: Record<string, unknown>) => validateSettingValues(leveling, st(settings)).map((i) => `${i.code}:${i.key}`);
+  assert.deepEqual(codes({ chat_xp: 100, chat_cooldown: 30 }), []);
+  assert.deepEqual(codes({ chat_xp: 101 }), ['SETTING_OUT_OF_RANGE:chat_xp']);
+  assert.deepEqual(codes({ chat_xp: 0 }), ['SETTING_OUT_OF_RANGE:chat_xp']);
+  assert.deepEqual(codes({ chat_cooldown: 29 }), ['SETTING_OUT_OF_RANGE:chat_cooldown']);
+  assert.deepEqual(codes({ blacklist_channels: [C1, C2, VOICE] }), ['SETTING_INVALID:blacklist_channels']);
+  assert.deepEqual(codes({ blacklist_channels: [C1, 'abc'] }), ['SETTING_INVALID:blacklist_channels']);
+  assert.deepEqual(codes({ blacklist_channels: [C1, C2] }), []);
+  assert.deepEqual(codes({ levelup_message: 'x'.repeat(501) }), ['SETTING_INVALID:levelup_message']);
 });
