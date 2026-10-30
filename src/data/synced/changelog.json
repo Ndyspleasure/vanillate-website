@@ -1,5 +1,27 @@
 [
   {
+    "version": "3.32.0",
+    "date": "2026-10-30",
+    "title": "Verifikasi emoji, Leveling chat & voice, role reward, dan /rank",
+    "highlights": [
+      "✅ Verifikasi Emoji: member baru menebak emoji di channel verifikasi untuk mendapatkan role Verified",
+      "📈 Leveling: kumpulkan XP dari chat dan dari berada di voice channel, lalu naik level (Chat, Voice, dan Combined)",
+      "🏅 Role reward otomatis saat mencapai level tertentu",
+      "🚀 Vote bot di Top.gg untuk +100% XP selama 12 jam di semua server",
+      "🔎 Command baru /rank untuk melihat level, XP, dan peringkat kamu di server",
+      "⚙️ Admin server mengatur semuanya dari Vanillate Dashboard, termasuk pesan naik level"
+    ]
+  },
+  {
+    "version": "3.31.2",
+    "date": "2026-10-30",
+    "title": "Tombol lebih responsif & pemantauan koneksi",
+    "highlights": [
+      "🛠️ Tombol gabung lobby Sambung Kata dibalas lebih cepat sehingga lebih jarang gagal",
+      "📶 Gangguan koneksi sesaat kini dicatat lebih rapi dan pulih lebih jelas"
+    ]
+  },
+  {
     "version": "3.31.1",
     "date": "2026-10-30",
     "title": "Pusat Bantuan diperbarui untuk alur Sambung Kata baru",
