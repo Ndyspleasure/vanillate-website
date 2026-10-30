@@ -574,7 +574,10 @@ select public.guild_bot_publish_registry('sambung-kata', $json$[
      "panel_title":{"type":"string","max_length":80},
      "mode":{"type":"enum","values":["a","b"]},
      "skip":{"type":"boolean"},
-     "blacklist":{"type":"role_list","max_items":2}}}}
+     "blacklist":{"type":"role_list","max_items":2}}}},
+  {"key":"LEVELING","section":"leveling","name":"Leveling","sort":6,"default_enabled":false,"purposes":[],
+   "settings_schema":{"properties":{
+     "rewards":{"type":"reward_list","limits":{"chat":2,"voice":1,"combined":1},"max_level":1000}}}}
 ]$json$::jsonb);
 select public.guild_bot_publish_snapshot('sambung-kata', $json$[{
   "guild_id":"900000000000000001","guild_name":"Server Uji","bot_present":true,"bot_top_position":9,
@@ -676,5 +679,79 @@ select tests.ok((
   select (settings ->> 'steps')::int = 5 from public.guild_feature_config
   where guild_id = '900000000000000001' and feature_key = 'VERIFICATION'
 ), 'nilai setelan bertipe tersimpan');
+
+-- ─── Role reward (reward_list) ──────────────────────────────────────────────
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', false);
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"REWARD_LIMIT"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"chat","level":1,"role_id":"700000000000000001"},{"category":"chat","level":2,"role_id":"700000000000000001"},{"category":"chat","level":3,"role_id":"700000000000000001"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'reward melebihi batas per kategori ditolak') x
+), 'reward melebihi batas per kategori ditolak (REWARD_LIMIT)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"REWARD_LIMIT"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"voice","level":1,"role_id":"700000000000000001"},{"category":"voice","level":2,"role_id":"700000000000000002"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'batas voice ditegakkan') x
+), 'batas voice ditegakkan (REWARD_LIMIT)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"REWARD_DUPLICATE"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"chat","level":5,"role_id":"700000000000000001"},{"category":"chat","level":5,"role_id":"700000000000000002"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'level ganda di satu kategori ditolak') x
+), 'level ganda di satu kategori ditolak (REWARD_DUPLICATE)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"SETTING_INVALID"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"chat","level":0,"role_id":"700000000000000001"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'level 0 ditolak') x
+), 'level 0 ditolak (SETTING_INVALID)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"SETTING_INVALID"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"chat","level":1001,"role_id":"700000000000000001"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'level di atas maksimum ditolak') x
+), 'level di atas maksimum ditolak (SETTING_INVALID)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"SETTING_INVALID"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"chat","level":2.5,"role_id":"700000000000000001"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'level pecahan ditolak') x
+), 'level pecahan ditolak (SETTING_INVALID)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"SETTING_INVALID"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"lain","level":1,"role_id":"700000000000000001"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'kategori tak dikenal ditolak') x
+), 'kategori tak dikenal ditolak (SETTING_INVALID)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"SETTING_INVALID"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"chat","level":1,"role_id":"abc"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'role reward bukan snowflake ditolak') x
+), 'role reward bukan snowflake ditolak (SETTING_INVALID)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"ROLE_NOT_FOUND"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"chat","level":1,"role_id":"700000000000000099"}]}}}', '[]')$$,
+    'VALIDATION_FAILED', 'role reward yang tidak ada di server ditolak') x
+), 'role reward yang tidak ada di server ditolak (ROLE_NOT_FOUND)');
+select tests.ok((
+  select x::jsonb -> 'issues' @> '[{"code":"SETTING_INVALID"}]'
+  from tests.throws($$select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":"bukan array"}}}', '[]')$$,
+    'VALIDATION_FAILED', 'reward bukan array ditolak') x
+), 'reward bukan array ditolak (SETTING_INVALID)');
+select tests.ok((
+  select (r ->> 'changed')::boolean
+  from (select public.guild_config_save('900000000000000001', pg_temp.rev(),
+    '{"LEVELING":{"enabled":true,"settings":{"rewards":[{"category":"chat","level":5,"role_id":"700000000000000001"},{"category":"chat","level":10,"role_id":"700000000000000002"},{"category":"voice","level":3,"role_id":"700000000000000001"},{"category":"combined","level":10,"role_id":"700000000000000002"}]}}}', '[]') r) x
+), 'reward yang sah (role sama di beberapa kategori) tersimpan');
+reset role;
+select tests.ok((
+  select jsonb_array_length(settings -> 'rewards') = 4 from public.guild_feature_config
+  where guild_id = '900000000000000001' and feature_key = 'LEVELING'
+), 'daftar reward tersimpan utuh');
 
 select 'SEMUA TES LULUS' as hasil;

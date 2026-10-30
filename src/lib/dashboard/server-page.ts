@@ -38,6 +38,7 @@ import {
   normalizeState,
   permissionWarnings,
   relativeTime,
+  categoryLabel,
   roleLabel,
   roleOptions,
   serverIssues,
@@ -53,6 +54,7 @@ import {
   type GuildData,
   type Issue,
   type Purpose,
+  type RewardRow,
   type SettingProp,
   type TextContext,
   type Tone,
@@ -592,6 +594,42 @@ export function mountServerPage(cfg: PageConfig): void {
             .map((r) => `<option value="${esc(r.id)}" ${chosen.has(r.id) ? 'selected' : ''}>@${esc(r.name)}</option>`)
             .join('')}</select>`;
         }
+        case 'reward_list': {
+          const rows = (Array.isArray(s.settings[p.key]) ? s.settings[p.key] : []) as RewardRow[];
+          const cats = Object.keys(p.limits ?? {});
+          const roles = roleOptions(d.snapshot);
+          const count = (c: string) => rows.filter((r) => r.category === c).length;
+          const rowCls = 'rounded-xl border border-ink-900/15 bg-white px-2.5 py-2 text-sm outline-none focus:border-amber-500 disabled:opacity-60 dark:border-cream-100/15 dark:bg-ink-800';
+          const rowHtml = rows
+            .map((r, i) => `
+              <div class="flex flex-wrap items-center gap-2" data-reward-row="${esc(f.key)}|${esc(p.key)}|${i}">
+                <select data-reward-field="category" aria-label="Kategori" ${disabled ? 'disabled' : ''} class="${rowCls}">
+                  ${cats.map((c) => `<option value="${esc(c)}" ${r.category === c ? 'selected' : ''}>${esc(categoryLabel(c))}</option>`).join('')}
+                </select>
+                <label class="inline-flex items-center gap-1.5 text-xs">Level
+                  <input type="number" min="1" max="${p.max_level ?? 1000}" step="1" data-reward-field="level" ${disabled ? 'disabled' : ''}
+                    value="${r.level ?? ''}" class="${rowCls} w-24" />
+                </label>
+                <select data-reward-field="role_id" aria-label="Role" ${disabled ? 'disabled' : ''} class="${rowCls} min-w-[10rem] flex-1">
+                  <option value="" ${r.role_id ? '' : 'selected'}>— Pilih role —</option>
+                  ${r.role_id && !roles.some((x) => x.id === r.role_id) ? `<option value="${esc(r.role_id)}" selected>${esc(roleLabel(ctx(), r.role_id))}</option>` : ''}
+                  ${roles.map((x) => `<option value="${esc(x.id)}" ${x.id === r.role_id ? 'selected' : ''}>@${esc(x.name)}${x.managed ? ' (integrasi)' : ''}</option>`).join('')}
+                </select>
+                <button type="button" data-reward-del="${esc(f.key)}|${esc(p.key)}|${i}" ${disabled ? 'disabled' : ''}
+                  class="rounded-lg px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60 dark:text-red-300 dark:hover:bg-red-950/30" aria-label="Hapus reward">Hapus</button>
+              </div>`)
+            .join('');
+          const full = cats.every((c) => count(c) >= (p.limits?.[c] ?? 0));
+          return `
+            <div class="mt-1.5 space-y-2" data-focus="st-${esc(f.key)}-${esc(p.key)}">
+              ${rowHtml || '<p class="text-xs text-ink-500 dark:text-cream-300/60">Belum ada reward.</p>'}
+              <div class="flex flex-wrap items-center gap-3">
+                <button type="button" data-reward-add="${esc(f.key)}|${esc(p.key)}" ${disabled || full ? 'disabled' : ''}
+                  class="rounded-lg border border-ink-900/15 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 disabled:opacity-50 dark:border-cream-100/15 dark:hover:bg-cream-100/5">+ Tambah reward</button>
+                <span class="text-xs text-ink-500 dark:text-cream-300/60">${cats.map((c) => `${esc(categoryLabel(c))} ${count(c)}/${p.limits?.[c] ?? 0}`).join(' · ')}</span>
+              </div>
+            </div>`;
+        }
         case 'channel_list': {
           const chosen = new Set(Array.isArray(cur) ? (cur as string[]) : []);
           const opts = (d.snapshot?.channels ?? []).filter((c) => c.type === 0 || c.type === 5 || c.type === 2).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
@@ -956,6 +994,32 @@ export function mountServerPage(cfg: PageConfig): void {
       return;
     }
 
+    const rwAdd = target.closest<HTMLButtonElement>('[data-reward-add]');
+    if (rwAdd && !rwAdd.disabled && data) {
+      const [fKey, pKey] = rwAdd.dataset.rewardAdd!.split('|');
+      const prop = typedSettings(registry().find((x) => x.key === fKey)!).find((x) => x.key === pKey);
+      if (!draft[fKey] || !prop) return;
+      const rows = (Array.isArray(draft[fKey].settings[pKey]) ? draft[fKey].settings[pKey] : []) as RewardRow[];
+      const category = Object.keys(prop.limits ?? {}).find((c) => rows.filter((r) => r.category === c).length < (prop.limits?.[c] ?? 0));
+      if (!category) return;
+      const used = rows.filter((r) => r.category === category).map((r) => Number(r.level) || 0);
+      draft[fKey].settings[pKey] = [...rows, { category, level: (used.length ? Math.max(...used) : 0) + 5, role_id: '' }];
+      attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
+      renderAll();
+      return;
+    }
+    const rwDel = target.closest<HTMLButtonElement>('[data-reward-del]');
+    if (rwDel && !rwDel.disabled && data) {
+      const [fKey, pKey, idx] = rwDel.dataset.rewardDel!.split('|');
+      const rows = (Array.isArray(draft[fKey]?.settings[pKey]) ? draft[fKey].settings[pKey] : []) as RewardRow[];
+      const next = rows.filter((_, i) => i !== Number(idx));
+      if (next.length) draft[fKey].settings[pKey] = next;
+      else delete draft[fKey].settings[pKey];
+      attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
+      renderAll();
+      return;
+    }
+
     const notUsed = target.closest<HTMLInputElement>('input[data-not-used]');
     if (notUsed && !notUsed.disabled && data) {
       const key = notUsed.dataset.notUsed!;
@@ -1027,6 +1091,21 @@ export function mountServerPage(cfg: PageConfig): void {
     const shareField = (e.target as HTMLElement).closest<HTMLElement>('[data-share-field]');
     if (shareField) {
       share.onInput(shareField);
+      return;
+    }
+    const rwField = (e.target as HTMLElement).closest<HTMLInputElement | HTMLSelectElement>('[data-reward-field]');
+    if (rwField && data) {
+      const rowEl = rwField.closest<HTMLElement>('[data-reward-row]');
+      const [fKey, pKey, idx] = (rowEl?.dataset.rewardRow ?? '').split('|');
+      const rows = (Array.isArray(draft[fKey]?.settings[pKey]) ? draft[fKey].settings[pKey] : []) as RewardRow[];
+      const row = rows[Number(idx)];
+      if (!row) return;
+      const field = rwField.dataset.rewardField;
+      if (field === 'level') row.level = rwField.value.trim() === '' ? null : Number(rwField.value);
+      else if (field === 'category') row.category = rwField.value;
+      else if (field === 'role_id') row.role_id = rwField.value;
+      attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
+      renderAll();
       return;
     }
     const setting = (e.target as HTMLElement).closest<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-setting]');

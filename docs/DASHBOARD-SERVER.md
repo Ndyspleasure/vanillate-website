@@ -218,6 +218,12 @@ hanya memberi umpan balik cepat — rentang yang sama persis dengan yang diterbi
 Tes: `tests/dashboard-model.test.ts` (model) dan
 `supabase/tests/guild-dashboard.test.sql` (RPC, `npm run test:sql`).
 Sisi bot: `sambung-kata-bot/docs/verification.md` dan `docs/leveling.md`.
+Setelan bertipe **`reward_list`** (Level Rewards): `[{category, level, role_id}]` dengan `limits`
+per kategori (Chat 10 · Voice 10 · Combined 5) dan `max_level` dari schema bot. RPC memvalidasi bentuk,
+batas per kategori (`REWARD_LIMIT`), level unik per kategori (`REWARD_DUPLICATE`), dan role harus ada di
+snapshot. Batas ukuran `settings` per fitur dinaikkan 4000 → 8000 karakter agar 25 reward + blacklist muat.
+Role yang sama dengan Verified Role ditolak UI dan bot (`ROLE_CONFLICT`). Editor baris reward ada di tab Leveling.
+
 Tab **Leveling** memakai mekanisme yang sama (`channel_list` untuk channel tanpa XP, `help` per setelan untuk daftar variabel pesan).
 
 ## 6. Pengembangan & tes

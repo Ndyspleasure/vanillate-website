@@ -321,3 +321,31 @@ test('setelan Leveling: daftar channel/role, help, rentang XP & cooldown', () =>
   assert.deepEqual(codes({ blacklist_channels: [C1, C2] }), []);
   assert.deepEqual(codes({ levelup_message: 'x'.repeat(501) }), ['SETTING_INVALID:levelup_message']);
 });
+
+test('reward_list: batas per kategori, level unik, role konflik Verified Role, role tak bisa diberikan', () => {
+  const lev: Feature = {
+    key: 'LEVELING', section: 'leveling', name: 'Leveling', sort: 6, default_enabled: false, purposes: [],
+    settings_schema: { properties: { rewards: { type: 'reward_list', title: 'Role reward', limits: { chat: 2, voice: 1, combined: 1 }, max_level: 1000 } } },
+  };
+  const both = [verification, lev];
+  const mk = (rewards: unknown, verified = ROLE_A) =>
+    normalizeState({
+      VERIFICATION: { enabled: true, settings: { verified_role: verified }, channels: { verify_channel: C1 } },
+      LEVELING: { enabled: true, settings: { rewards }, channels: {} },
+    }, both);
+  const codes = (rewards: unknown, verified = ROLE_A) =>
+    validateDraft(mk(rewards, verified), mk([], verified), both, roleSnapshot).map((i) => i.code).filter((c) => c !== 'ROLE_NOT_FOUND' || true);
+  const r = (category: string, level: number, role_id = ROLE_B) => ({ category, level, role_id });
+  assert.deepEqual(codes([r('chat', 5), r('chat', 10), r('voice', 3), r('combined', 10)]), []);
+  assert.ok(codes([r('chat', 1), r('chat', 2), r('chat', 3)]).includes('REWARD_LIMIT'));
+  assert.ok(codes([r('voice', 1), r('voice', 2)]).includes('REWARD_LIMIT'));
+  assert.ok(codes([r('chat', 5), r('chat', 5)]).includes('REWARD_DUPLICATE'));
+  assert.ok(codes([{ category: 'chat', level: 0, role_id: ROLE_B }]).includes('SETTING_INVALID'));
+  assert.ok(codes([{ category: 'chat', level: null, role_id: '' }]).includes('SETTING_INVALID'));
+  assert.ok(codes([r('chat', 5, '700000000000000099')]).includes('ROLE_NOT_FOUND'));
+  assert.ok(codes([r('chat', 5, ROLE_A)]).includes('ROLE_CONFLICT'));
+  const w = permissionWarnings(mk([r('chat', 5, ROLE_B)]), both, roleSnapshot).filter((i) => i.feature === 'LEVELING');
+  assert.deepEqual(w.map((i) => i.code), ['ROLE_UNUSABLE']);
+  assert.match(describeIssue({ code: 'REWARD_LIMIT', feature: 'LEVELING', category: 'combined', max: 5 }, { registry: both, snapshot: roleSnapshot }), /Combined melebihi batas \(maks\. 5\)/);
+  assert.match(describeIssue({ code: 'ROLE_CONFLICT', feature: 'LEVELING', role_id: ROLE_A }, { registry: both, snapshot: roleSnapshot }), /Verified Role/);
+});

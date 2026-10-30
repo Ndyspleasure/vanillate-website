@@ -475,9 +475,9 @@ begin
     v_feat := p_new -> v_reg.feature_key;
     if v_feat is null then continue; end if;
 
-    -- Settings: objek kecil; bila schema punya "properties", key wajib dikenal.
+    -- Settings: objek kecil (≤ 8000 karakter: daftar role reward 25 baris + blacklist masih muat); bila schema punya "properties", key wajib dikenal.
     if jsonb_typeof(v_feat -> 'settings') is distinct from 'object'
-       or length((v_feat -> 'settings')::text) > 4000 then
+       or length((v_feat -> 'settings')::text) > 8000 then
       v_issues := v_issues || jsonb_build_array(jsonb_build_object(
         'code', 'SETTINGS_INVALID', 'feature', v_reg.feature_key));
     else
@@ -533,6 +533,53 @@ begin
           if jsonb_typeof(v_prop -> 'values') is distinct from 'array' or not ((v_prop -> 'values') @> jsonb_build_array(v_val)) then
             v_issues := v_issues || jsonb_build_array(jsonb_build_object(
               'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          end if;
+        elsif v_type = 'reward_list' then
+          -- [{category, level, role_id}]: kategori ∈ limits, level 1..max_level, role snowflake;
+          -- jumlah per kategori ≤ limits[kategori]; (kategori, level) unik.
+          if jsonb_typeof(v_val) <> 'array' or exists (
+              select 1
+              from jsonb_array_elements(v_val) e,
+                   lateral (select case when jsonb_typeof(e -> 'level') = 'number' and (e ->> 'level') ~ '^[0-9]{1,6}$'
+                                        then (e ->> 'level')::int end as lv) x
+              where jsonb_typeof(e) <> 'object'
+                 or not coalesce((v_prop -> 'limits') ? (e ->> 'category'), false)
+                 or x.lv is null or x.lv < 1 or x.lv > coalesce((v_prop ->> 'max_level')::int, 1000)
+                 or coalesce(e ->> 'role_id', '') !~ '^[0-9]{15,22}$') then
+            v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+              'code', 'SETTING_INVALID', 'feature', v_reg.feature_key, 'key', v_pkey));
+          else
+            for v_item in
+              select lim.key from jsonb_each(coalesce(v_prop -> 'limits', '{}'::jsonb)) lim
+              where (select count(*) from jsonb_array_elements(v_val) e where e ->> 'category' = lim.key) > (lim.value #>> '{}')::int
+            loop
+              v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+                'code', 'REWARD_LIMIT', 'feature', v_reg.feature_key, 'key', v_pkey, 'category', v_item,
+                'max', (v_prop -> 'limits' ->> v_item)::int));
+            end loop;
+            for v_item in
+              select e ->> 'category' from jsonb_array_elements(v_val) e
+              group by e ->> 'category', e ->> 'level' having count(*) > 1
+            loop
+              v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+                'code', 'REWARD_DUPLICATE', 'feature', v_reg.feature_key, 'key', v_pkey, 'category', v_item));
+            end loop;
+            -- Role baru wajib ada di data Discord terbaru dari bot.
+            for v_item in
+              select distinct e ->> 'role_id' from jsonb_array_elements(v_val) e
+              where not exists (
+                select 1 from jsonb_array_elements(
+                  case when jsonb_typeof(p_old -> v_reg.feature_key -> 'settings' -> v_pkey) = 'array'
+                       then p_old -> v_reg.feature_key -> 'settings' -> v_pkey else '[]'::jsonb end) o
+                where o ->> 'role_id' = e ->> 'role_id')
+            loop
+              if v_snap.refreshed_at is null then
+                v_no_data := true;
+              elsif not exists (select 1 from jsonb_array_elements(v_snap.roles) r where r ->> 'id' = v_item) then
+                v_issues := v_issues || jsonb_build_array(jsonb_build_object(
+                  'code', 'ROLE_NOT_FOUND', 'feature', v_reg.feature_key, 'key', v_pkey, 'role_id', v_item));
+              end if;
+            end loop;
           end if;
         elsif v_type in ('role', 'role_list', 'channel_list') then
           if v_type = 'role' and not (jsonb_typeof(v_val) = 'string' and (v_val #>> '{}') ~ '^[0-9]{15,22}$') then
