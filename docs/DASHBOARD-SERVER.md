@@ -129,6 +129,13 @@ tombol tautan ke `/dashboard/server/?id=<guildId>` (tab lewat hash, mis.
 dashboard (Social Monitor CMS, channel dihapus) tetap tercatat sebagai revisi
 baru (sumber "Discord") — dashboard & bot selalu sama.
 
+**Navigasi.** Kategori utama di atas: **Ringkasan · Game Hub · Social Hub ·
+Server Hub**. Server Hub punya sidebar kiri (di HP: baris submenu yang bisa
+digeser) berisi **Verification · Leveling · Share Server · Channel · Riwayat**.
+Hash URL tetap id tab (`#overview`, `#game-hub`, `#social-hub`,
+`#verification`, `#leveling`, `#share-server`, `#channels`, `#audit-log`);
+`#server-hub` membuka submenu Server Hub terakhir (bawaan Verification).
+
 **🚫 Tidak dipakai (fitur sosial).** Bot menerbitkan setelan `not_used` di
 `settings_schema` fitur sosial. Saat fitur OFF, kartu menampilkan centang
 "🚫 Tidak dipakai di server ini" (`settings.not_used = true`); bot mencatatnya

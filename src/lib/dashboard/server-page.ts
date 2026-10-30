@@ -60,21 +60,36 @@ import {
   type Tone,
 } from './model';
 import { rememberNextAndGoToLogin } from './servers-page';
+import type { IconName } from '@data/icons';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
 import { createShareController } from './share-server';
 
 type Tab = 'overview' | 'game-hub' | 'social-hub' | 'verification' | 'leveling' | 'share-server' | 'channels' | 'audit-log';
+type Hub = 'overview' | 'game-hub' | 'social-hub' | 'server-hub';
 
-const TABS: { id: Tab; label: string }[] = [
+// Navigasi dua tingkat: kategori utama di atas, submenu Server Hub di sidebar.
+// Hash URL tetap id tab (#verification, #share-server, …) supaya tautan lama
+// & tautan dari bot (dashboardLink) tetap berlaku; #server-hub = submenu terakhir.
+const HUBS: { id: Hub; label: string }[] = [
   { id: 'overview', label: 'Ringkasan' },
   { id: 'game-hub', label: 'Game Hub' },
   { id: 'social-hub', label: 'Social Hub' },
-  { id: 'verification', label: 'Verification' },
-  { id: 'leveling', label: 'Leveling' },
-  { id: 'share-server', label: 'Share Server' },
-  { id: 'channels', label: 'Channel' },
-  { id: 'audit-log', label: 'Riwayat' },
+  { id: 'server-hub', label: 'Server Hub' },
 ];
+
+const SERVER_TABS: { id: Tab; label: string; ic: IconName }[] = [
+  { id: 'verification', label: 'Verification', ic: 'shield' },
+  { id: 'leveling', label: 'Leveling', ic: 'trophy' },
+  { id: 'share-server', label: 'Share Server', ic: 'radio' },
+  { id: 'channels', label: 'Channel', ic: 'hash' },
+  { id: 'audit-log', label: 'Riwayat', ic: 'history' },
+];
+
+const TAB_IDS: Tab[] = ['overview', 'game-hub', 'social-hub', ...SERVER_TABS.map((t) => t.id)];
+
+function hubOf(tab: Tab): Hub {
+  return SERVER_TABS.some((t) => t.id === tab) ? 'server-hub' : (tab as Hub);
+}
 
 const SECTION_OF_TAB: Partial<Record<Tab, string>> = { 'game-hub': 'game', 'social-hub': 'social', verification: 'verification', leveling: 'leveling' };
 
@@ -98,7 +113,10 @@ export function mountServerPage(cfg: PageConfig): void {
   let data: GuildData | null = null;
   let base: ConfigState = {};
   let draft: ConfigState = {};
+  // Submenu Server Hub yang terakhir dibuka (tujuan klik "Server Hub").
+  let lastServerTab: Tab = 'verification';
   let tab: Tab = parseTab(location.hash);
+  if (hubOf(tab) === 'server-hub') lastServerTab = tab;
   let saving = false;
   let justSaved = false;
   let attemptIssues: Issue[] = []; // dari percobaan simpan (klien/server)
@@ -133,8 +151,9 @@ export function mountServerPage(cfg: PageConfig): void {
   const share = createShareController(guildId, () => renderAll(), root);
 
   function parseTab(hash: string): Tab {
-    const id = hash.replace(/^#/, '') as Tab;
-    return TABS.some((t) => t.id === id) ? id : 'overview';
+    const id = hash.replace(/^#/, '');
+    if (id === 'server-hub') return lastServerTab;
+    return TAB_IDS.includes(id as Tab) ? (id as Tab) : 'overview';
   }
 
   // ─── Data ────────────────────────────────────────────────────────────────
@@ -290,21 +309,47 @@ export function mountServerPage(cfg: PageConfig): void {
       </a>
       <div class="mt-4" data-region="header">${headerHtml()}</div>
       <div data-region="attention">${attentionHtml()}</div>
-      <div class="mt-6 overflow-x-auto" role="tablist" aria-label="Bagian konfigurasi">
-        <div class="flex min-w-max gap-1 rounded-full border border-ink-900/10 bg-white/60 p-1 dark:border-cream-100/10 dark:bg-ink-900/40">
-          ${TABS.map(
-            (t) => `<button type="button" role="tab" id="tab-${t.id}" aria-controls="panel" aria-selected="${t.id === tab}" data-tab="${t.id}"
-              class="rounded-full px-4 py-2 text-sm font-medium transition ${t.id === tab ? 'bg-amber-500 text-ink-950' : 'text-ink-600 hover:bg-ink-900/5 dark:text-cream-300 dark:hover:bg-cream-100/5'}">${t.label}</button>`,
-          ).join('')}
-        </div>
-      </div>
-      <section id="panel" role="tabpanel" aria-labelledby="tab-${tab}" class="mt-6 pb-28">${panelHtml()}</section>
+      ${navHtml()}
       ${saveBarHtml()}`;
     wireAvatars(root);
     if (focusSel) root.querySelector<HTMLElement>(focusSel)?.focus();
     if (tab === 'audit-log' && audit === null && !auditLoading && !auditError) void loadAudit();
     if (tab === 'share-server') share.activate();
     else share.deactivate();
+  }
+
+  // ─── Navigasi ────────────────────────────────────────────────────────────
+
+  function navHtml(): string {
+    const hub = hubOf(tab);
+    const panel = `<section id="panel" role="tabpanel" aria-labelledby="${hub === 'server-hub' ? `subtab-${tab}` : `tab-${hub}`}" class="min-w-0 pb-6 sm:pb-10">${panelHtml()}</section>`;
+    const top = `
+      <div class="mt-4 sm:mt-6" role="tablist" aria-label="Kategori pengaturan">
+        <div class="grid grid-cols-4 gap-1 rounded-2xl border border-ink-900/10 bg-white/60 p-1 sm:inline-flex sm:rounded-full dark:border-cream-100/10 dark:bg-ink-900/40">
+          ${HUBS.map(
+            (h) => `<button type="button" role="tab" id="tab-${h.id}" aria-controls="panel" aria-selected="${h.id === hub}" data-tab="${h.id}"
+              class="rounded-xl px-1.5 py-2 text-xs font-medium leading-tight transition sm:rounded-full sm:px-4 sm:text-sm ${h.id === hub ? 'bg-amber-500 text-ink-950' : 'text-ink-600 hover:bg-ink-900/5 dark:text-cream-300 dark:hover:bg-cream-100/5'}">${h.label}</button>`,
+          ).join('')}
+        </div>
+      </div>`;
+    if (hub !== 'server-hub') return `${top}<div class="mt-4 sm:mt-6">${panel}</div>`;
+    // Server Hub: sidebar kiri (md ke atas) · baris submenu bergeser di HP.
+    const side = `
+      <nav aria-label="Submenu Server Hub" class="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
+        <div role="tablist" class="flex min-w-max gap-1 md:sticky md:top-24 md:min-w-0 md:flex-col md:rounded-2xl md:border md:border-ink-900/10 md:bg-white/60 md:p-2 dark:md:border-cream-100/10 dark:md:bg-ink-900/40">
+          ${SERVER_TABS.map((t) => {
+            const on = t.id === tab;
+            return `<button type="button" role="tab" id="subtab-${t.id}" aria-controls="panel" aria-selected="${on}" data-tab="${t.id}"
+              class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition md:w-full md:rounded-xl md:border-0 md:px-3 md:py-2.5 md:text-left ${
+                on
+                  ? 'border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200'
+                  : 'border-ink-900/10 text-ink-600 hover:bg-ink-900/5 dark:border-cream-100/10 dark:text-cream-300 dark:hover:bg-cream-100/5'
+              }">${icon(t.ic, 'h-4 w-4 shrink-0')} ${t.label}</button>`;
+          }).join('')}
+        </div>
+      </nav>`;
+    return `${top}
+      <div class="mt-3 grid gap-4 sm:mt-4 md:mt-6 md:grid-cols-[12rem_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">${side}${panel}</div>`;
   }
 
   function renderError(): void {
@@ -339,10 +384,10 @@ export function mountServerPage(cfg: PageConfig): void {
         : pill('Bot offline', 'neutral');
     const source = c?.updated_source === 'discord' ? 'Discord' : c?.updated_source === 'import' ? 'impor otomatis' : 'website';
     return `
-      <div class="${CARD} p-5 sm:p-6">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div class="flex min-w-0 items-center gap-4">
-            ${guildAvatar(guildIconUrl(guildId, d.guild.icon), guildInitials(name), 'h-14 w-14 text-lg')}
+      <div class="${CARD} p-4 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+          <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+            ${guildAvatar(guildIconUrl(guildId, d.guild.icon), guildInitials(name), 'h-12 w-12 text-base sm:h-14 sm:w-14 sm:text-lg')}
             <div class="min-w-0">
               <p class="eyebrow">Sedang mengatur</p>
               <h1 class="truncate font-display text-2xl font-semibold sm:text-3xl" title="${esc(name)}">${esc(name)}</h1>
@@ -355,24 +400,24 @@ export function mountServerPage(cfg: PageConfig): void {
           </div>
           <div class="flex flex-wrap items-center gap-2">${bot}${pill(st.label, st.tone)}</div>
         </div>
-        <div class="mt-5 grid gap-3 text-sm sm:grid-cols-3">
-          <div class="rounded-xl bg-ink-900/[0.03] px-4 py-3 dark:bg-cream-100/[0.04]">
+        <div class="mt-4 grid grid-cols-3 gap-2 text-sm sm:mt-5 sm:gap-3">
+          <div class="min-w-0 rounded-xl bg-ink-900/[0.03] px-3 py-2.5 sm:px-4 sm:py-3 dark:bg-cream-100/[0.04]">
             <p class="text-xs text-ink-500 dark:text-cream-300/70">Revisi tersimpan</p>
-            <p class="mt-0.5 font-display text-xl font-semibold">${c?.revision ?? 0}</p>
+            <p class="mt-0.5 font-display text-lg font-semibold sm:text-xl">${c?.revision ?? 0}</p>
           </div>
-          <div class="rounded-xl bg-ink-900/[0.03] px-4 py-3 dark:bg-cream-100/[0.04]">
+          <div class="min-w-0 rounded-xl bg-ink-900/[0.03] px-3 py-2.5 sm:px-4 sm:py-3 dark:bg-cream-100/[0.04]">
             <p class="text-xs text-ink-500 dark:text-cream-300/70">Diterapkan bot</p>
-            <p class="mt-0.5 font-display text-xl font-semibold">${c?.applied_revision ?? 0}</p>
+            <p class="mt-0.5 font-display text-lg font-semibold sm:text-xl">${c?.applied_revision ?? 0}</p>
           </div>
-          <div class="rounded-xl bg-ink-900/[0.03] px-4 py-3 dark:bg-cream-100/[0.04]">
+          <div class="min-w-0 rounded-xl bg-ink-900/[0.03] px-3 py-2.5 sm:px-4 sm:py-3 dark:bg-cream-100/[0.04]">
             <p class="text-xs text-ink-500 dark:text-cream-300/70">Sinkron terakhir</p>
-            <p class="mt-0.5 font-medium" title="${esc(formatWib(c?.applied_at))}">${c ? esc(relativeTime(c.applied_at)) : 'Pengaturan bawaan'}</p>
+            <p class="mt-0.5 truncate font-medium" title="${esc(formatWib(c?.applied_at))}">${c ? esc(relativeTime(c.applied_at)) : 'Pengaturan bawaan'}</p>
           </div>
         </div>
         <p class="mt-3 text-xs text-ink-500 dark:text-cream-300/70">${esc(st.hint)}${
           c ? ` Diubah terakhir oleh <strong>${esc(c.updated_by_name ?? c.updated_by ?? '—')}</strong> lewat ${source}, ${esc(formatWib(c.updated_at))}.` : ''
         }</p>
-        <div class="mt-4 flex flex-wrap gap-2">
+        <div class="mt-3 flex flex-wrap gap-2 sm:mt-4">
           <button type="button" data-action="resync" class="${BTN_SECONDARY}" ${c && d.bot.installed ? '' : 'disabled'}>${icon('refresh-cw')} Retry Sync</button>
           <button type="button" data-action="discord-refresh" class="${BTN_SECONDARY}" ${d.bot.installed && !refreshWatch ? '' : 'disabled'}>
             ${refreshWatch ? spinner() : icon('refresh-cw')} Refresh Discord Data</button>
@@ -466,7 +511,7 @@ export function mountServerPage(cfg: PageConfig): void {
     return `
       <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">${intro}</p>
       ${data!.snapshot?.refreshed_at ? `<p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">Daftar channel dari Discord: ${esc(relativeTime(data!.snapshot.refreshed_at))}.</p>` : ''}
-      <div class="mt-5 grid gap-4 lg:grid-cols-2">${feats.map(featureCardHtml).join('')}</div>`;
+      <div class="mt-4 grid gap-3 sm:mt-5 sm:gap-4 lg:grid-cols-2">${feats.map(featureCardHtml).join('')}</div>`;
   }
 
   function featureIssues(f: Feature): { level: 'ok' | 'warn' | 'error' | 'off' | 'dirty'; messages: string[] } {
@@ -678,7 +723,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const disabled = !editable() || saving;
 
     return `
-      <article class="${CARD} p-5 ${s.enabled ? '' : 'opacity-90'}" aria-labelledby="feat-${esc(f.key)}">
+      <article class="${CARD} p-4 sm:p-5 ${s.enabled ? '' : 'opacity-90'}" aria-labelledby="feat-${esc(f.key)}">
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0">
             <h3 id="feat-${esc(f.key)}" class="font-display text-lg font-semibold">${f.emoji ? `<span aria-hidden="true">${esc(f.emoji)}</span> ` : ''}${esc(f.name)}</h3>
@@ -722,10 +767,10 @@ export function mountServerPage(cfg: PageConfig): void {
     const active = feats.filter((f) => base[f.key]?.enabled).length;
     const mapped = feats.reduce((n, f) => n + Object.keys(base[f.key]?.channels ?? {}).length, 0);
     const tile = (label: string, value: string, sub = '') => `
-      <div class="${CARD} p-5">
+      <div class="${CARD} min-w-0 p-3 sm:p-5">
         <p class="text-xs text-ink-500 dark:text-cream-300/70">${label}</p>
-        <p class="mt-1 font-display text-3xl font-semibold">${value}</p>
-        ${sub ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${sub}</p>` : ''}
+        <p class="mt-1 font-display text-xl font-semibold sm:text-3xl">${value}</p>
+        ${sub ? `<p class="mt-1 hidden text-xs text-ink-500 sm:block dark:text-cream-300/60">${sub}</p>` : ''}
       </div>`;
     const sections = [
       { id: 'game-hub', title: 'Game Hub', section: 'game', ic: 'gamepad-2' as const },
@@ -734,22 +779,22 @@ export function mountServerPage(cfg: PageConfig): void {
       { id: 'leveling', title: 'Leveling', section: 'leveling', ic: 'users' as const },
     ];
     return `
-      <div class="grid gap-4 sm:grid-cols-3">
-        ${tile('Fitur aktif', `${active}<span class="text-lg text-ink-400"> / ${feats.length}</span>`)}
+      <div class="grid grid-cols-3 gap-2 sm:gap-4">
+        ${tile('Fitur aktif', `${active}<span class="text-sm text-ink-400 sm:text-lg"> / ${feats.length}</span>`)}
         ${tile('Channel diatur', String(mapped), 'Pemetaan fitur → channel')}
         ${tile('Status bot', d.bot.installed ? (d.bot.online ? 'Online' : 'Offline') : 'Tidak ada', d.bot.version ? `Versi ${esc(d.bot.version)}` : '')}
       </div>
-      <div class="mt-4 grid gap-4 lg:grid-cols-2">
+      <div class="mt-3 grid gap-3 sm:mt-4 sm:gap-4 lg:grid-cols-2">
         ${sections
           .map((sec) => {
             const list = feats.filter((f) => f.section === sec.section);
             return `
-            <div class="${CARD} p-5">
+            <div class="${CARD} p-4 sm:p-5">
               <div class="flex items-center justify-between gap-3">
                 <h2 class="flex items-center gap-2 font-display text-lg font-semibold">${icon(sec.ic, 'h-5 w-5 text-amber-600')} ${sec.title}</h2>
                 <button type="button" data-tab="${sec.id}" data-focus="go-${sec.id}" class="text-sm font-medium text-amber-700 hover:underline dark:text-amber-300">Atur →</button>
               </div>
-              <ul class="mt-4 divide-y divide-ink-900/5 dark:divide-cream-100/5">
+              <ul class="mt-2 divide-y divide-ink-900/5 sm:mt-4 dark:divide-cream-100/5">
                 ${list
                   .map((f) => {
                     const s = base[f.key];
@@ -783,7 +828,7 @@ export function mountServerPage(cfg: PageConfig): void {
           const missing = missingPermissions(ch, p);
           status = missing.length ? pill(`Izin kurang: ${missing.join(', ')}`, 'warning') : pill('OK', 'success');
         }
-        const sectionTab = f.section === 'social' ? 'social-hub' : 'game-hub';
+        const sectionTab = (Object.keys(SECTION_OF_TAB) as Tab[]).find((t) => SECTION_OF_TAB[t] === f.section) ?? 'game-hub';
         return `<tr class="border-t border-ink-900/5 dark:border-cream-100/5">
           <td class="py-3 pr-4">${f.emoji ? `${esc(f.emoji)} ` : ''}${esc(f.name)}</td>
           <td class="py-3 pr-4 text-ink-600 dark:text-cream-300/80">${esc(p.label)}</td>
@@ -794,7 +839,7 @@ export function mountServerPage(cfg: PageConfig): void {
       }),
     );
     return `
-      <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Pemetaan channel yang <strong>tersimpan</strong> untuk setiap fitur, diperiksa terhadap data Discord terbaru. Ubah lewat tab Game Hub atau Social Hub.</p>
+      <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Pemetaan channel yang <strong>tersimpan</strong> untuk setiap fitur, diperiksa terhadap data Discord terbaru. Ubah lewat Game Hub, Social Hub, atau submenu fiturnya di Server Hub.</p>
       <div class="${CARD} mt-5 overflow-x-auto p-5">
         <table class="w-full min-w-[640px] text-left text-sm">
           <thead class="text-xs uppercase tracking-wide text-ink-500 dark:text-cream-300/60">
@@ -971,17 +1016,19 @@ export function mountServerPage(cfg: PageConfig): void {
     }
   }
 
-  function setTab(next: Tab): void {
+  function setTab(target: Tab | Hub): void {
+    const next: Tab = target === 'server-hub' ? lastServerTab : target;
     tab = next;
+    if (hubOf(next) === 'server-hub') lastServerTab = next;
     history.replaceState(null, '', `${location.pathname}${location.search}#${next}`);
     renderAll();
-    root.querySelector<HTMLElement>(`#tab-${next}`)?.focus();
+    root.querySelector<HTMLElement>(target === 'server-hub' ? '#tab-server-hub' : `[role="tab"][data-tab="${next}"]`)?.focus();
   }
 
   root.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     const tabBtn = target.closest<HTMLElement>('[data-tab]');
-    if (tabBtn) return setTab(tabBtn.dataset.tab as Tab);
+    if (tabBtn) return setTab(tabBtn.dataset.tab as Tab | Hub);
 
     const toggle = target.closest<HTMLButtonElement>('[data-toggle]');
     if (toggle && !toggle.disabled && data) {
@@ -1152,6 +1199,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const next = parseTab(location.hash);
     if (next !== tab) {
       tab = next;
+      if (hubOf(next) === 'server-hub') lastServerTab = next;
       renderAll();
     }
   });
