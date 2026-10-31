@@ -13,7 +13,7 @@
 
 import { getSupabase } from './supabase';
 import { pesanError } from './admin-ui';
-import { normalisasiKode, pesanKirimKode, validasiPasswordBaru } from './admin-auth-model';
+import { bacaHashAuth, normalisasiKode, pesanKirimKode, validasiPasswordBaru } from './admin-auth-model';
 
 export interface AdminProfile {
   id: string;
@@ -104,15 +104,44 @@ export interface KirimKodeResult extends LoginResult {
  * Kirim kode sekali pakai untuk masuk tanpa password. `shouldCreateUser:
  * false` mencegah email asing membuat akun baru lewat form ini.
  */
-export async function kirimKodeLogin(identifier: string): Promise<KirimKodeResult> {
+export async function kirimKodeLogin(identifier: string, redirectTo: string): Promise<KirimKodeResult> {
   return kirimKode(identifier, (email) =>
-    getSupabase()!.auth.signInWithOtp({ email, options: { shouldCreateUser: false } }),
+    getSupabase()!.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: redirectTo } }),
   );
 }
 
-/** Kirim kode untuk mengganti password yang lupa. */
-export async function kirimKodeReset(identifier: string): Promise<KirimKodeResult> {
-  return kirimKode(identifier, (email) => getSupabase()!.auth.resetPasswordForEmail(email));
+/**
+ * Kirim kode untuk mengganti password yang lupa. `redirectTo` = halaman login
+ * admin: bila template email masih berisi link (bukan kode), link itu kembali
+ * ke /admin dan ditangani masukDariLinkEmail().
+ */
+export async function kirimKodeReset(identifier: string, redirectTo: string): Promise<KirimKodeResult> {
+  return kirimKode(identifier, (email) => getSupabase()!.auth.resetPasswordForEmail(email, { redirectTo }));
+}
+
+export interface LinkEmailResult extends LoginResult {
+  /** 'recovery' = lanjut buat password baru; selain itu langsung masuk. */
+  type?: string;
+}
+
+/**
+ * Tangani link dari email Supabase (template bawaan). Klien sengaja memakai
+ * `detectSessionInUrl: false`, jadi token di fragmen URL dipasang manual di
+ * sini. Null bila URL tidak membawa token/error auth.
+ */
+export async function masukDariLinkEmail(hash: string): Promise<LinkEmailResult | null> {
+  const data = bacaHashAuth(hash);
+  if (!data) return null;
+  if (data.kind === 'error') return { ok: false, error: data.pesan };
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Koneksi ke Supabase belum dikonfigurasi.' };
+  const { error } = await supabase.auth.setSession({
+    access_token: data.accessToken,
+    refresh_token: data.refreshToken,
+  });
+  if (error) return { ok: false, error: 'Link di email tidak valid. Minta kode/link baru.' };
+  const hasil = await selesaikanLogin();
+  return { ...hasil, type: data.type };
 }
 
 async function kirimKode(

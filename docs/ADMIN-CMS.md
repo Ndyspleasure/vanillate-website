@@ -165,6 +165,16 @@ supaya email berisi kode, tambahkan `{{ .Token }}` di template **Magic Link**
 <p>Berlaku sebentar dan hanya sekali pakai. Abaikan email ini bila kamu tidak memintanya.</p>
 ```
 
+Template **belum** diubah juga tetap jalan: email berisi link, dan link itu
+kembali ke `/admin/` (`redirectTo`/`emailRedirectTo`, host yang sama dengan
+Site URL sehingga tidak perlu Redirect URL tambahan). Halaman login memasang
+sesi dari fragmen `#access_token…&type=recovery|magiclink` (klien memakai
+`detectSessionInUrl: false`, jadi dipasang manual oleh `masukDariLinkEmail`),
+link reset lanjut ke langkah password baru, lalu token dihapus dari address
+bar. Link lama yang jatuh ke beranda diteruskan ke `/admin/` oleh skrip kecil
+di `BaseLayout.astro`. Link kedaluwarsa (`otp_expired`) menampilkan pesan
+minta kode baru.
+
 Tanpa SMTP sendiri, Supabase memakai pengirim bawaan: kuotanya kecil (beberapa
 email per jam) dan hanya mengirim ke alamat anggota tim organisasi Supabase.
 Untuk tim kecil biasanya cukup; bila email tidak sampai ke admin lain, pasang
