@@ -231,6 +231,11 @@ batas per kategori (`REWARD_LIMIT`), level unik per kategori (`REWARD_DUPLICATE`
 snapshot. Batas ukuran `settings` per fitur dinaikkan 4000 → 8000 karakter agar 25 reward + blacklist muat.
 Role yang sama dengan Verified Role ditolak UI dan bot (`ROLE_CONFLICT`). Editor baris reward ada di tab Leveling.
 
+Opsi **Role belum terverifikasi** (`unverified_role`, tab Verification) diberikan bot saat member masuk
+dan dicabut saat lulus. Opsi ini butuh intent Server Members: bot menerbitkan `available: false` di
+properti schema bila intent mati, lalu `typedSettings` menyembunyikannya (nilai tersimpan tetap ikut
+disimpan apa adanya). Role ini tidak boleh sama dengan Verified Role atau dipakai sebagai reward (`ROLE_CONFLICT`).
+
 Tab **Leveling** memakai mekanisme yang sama (`channel_list` untuk channel tanpa XP, `help` per setelan untuk daftar variabel pesan).
 
 ## 6. Pengembangan & tes

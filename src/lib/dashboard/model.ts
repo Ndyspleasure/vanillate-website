@@ -104,6 +104,9 @@ export function typedSettings(f: Feature): SettingProp[] {
   const out: SettingProp[] = [];
   for (const [key, p] of Object.entries(props)) {
     if (!p || typeof p.type !== 'string' || !SETTING_TYPES.has(p.type)) continue;
+    // Opsi yang dikunci bot (mis. role belum terverifikasi tanpa intent Server
+    // Members): disembunyikan; nilai tersimpan tetap ikut disimpan apa adanya.
+    if (p.available === false) continue;
     out.push({
       key,
       type: p.type as SettingType,
@@ -541,10 +544,17 @@ export function validateDraft(
       }
     }
   }
-  // Verified Role terpisah dari Level Rewards.
+  // Role Verification (Verified Role & role belum terverifikasi) terpisah dari
+  // Level Rewards, dan keduanya tidak boleh role yang sama.
   const verified = new Set<string>();
-  for (const f of registry) for (const p of typedSettings(f)) {
-    if (p.key === 'verified_role' && typeof draft[f.key]?.settings[p.key] === 'string') verified.add(draft[f.key].settings[p.key] as string);
+  for (const f of registry) {
+    const keys = typedSettings(f).map((p) => p.key);
+    const st = draft[f.key]?.settings ?? {};
+    const v = keys.includes('verified_role') && typeof st.verified_role === 'string' ? st.verified_role : '';
+    const u = keys.includes('unverified_role') && typeof st.unverified_role === 'string' ? st.unverified_role : '';
+    if (v) verified.add(v);
+    if (u) verified.add(u);
+    if (v && u && v === u && draft[f.key]?.enabled) issues.push({ code: 'ROLE_CONFLICT', feature: f.key, key: 'unverified_role', role_id: u });
   }
   for (const f of sortedRegistry(registry)) {
     const s = draft[f.key];
@@ -660,11 +670,11 @@ function featureName(ctx: TextContext, key: string | undefined): string {
 }
 
 export function channelLabel(ctx: TextContext, id: string | null | undefined, fallbackName?: string | null): string {
-  if (!id) return '—';
+  if (!id) return 'tidak diatur';
   const ch = channelById(ctx.snapshot, id);
   if (ch) return `#${ch.name}`;
   if (fallbackName) return `#${fallbackName}`;
-  return `#channel-terhapus (${id})`;
+  return `#channel terhapus (${id})`;
 }
 
 function settingTitle(ctx: TextContext, issue: Issue): string {
@@ -673,9 +683,9 @@ function settingTitle(ctx: TextContext, issue: Issue): string {
 }
 
 export function roleLabel(ctx: TextContext, id: string | null | undefined): string {
-  if (!id) return '—';
+  if (!id) return 'tidak diatur';
   const r = roleById(ctx.snapshot, id);
-  return r ? `@${r.name}` : `@role-terhapus (${id})`;
+  return r ? `@${r.name}` : `@role terhapus (${id})`;
 }
 
 export function categoryLabel(category: string | undefined): string {
@@ -711,13 +721,15 @@ export function describeIssue(issue: Issue, ctx: TextContext): string {
     case 'ROLE_NOT_FOUND':
       return `${name}: role untuk ${settingTitle(ctx, issue)} tidak ditemukan di server (mungkin sudah dihapus). Tekan Refresh Discord Data lalu pilih role lain.`;
     case 'ROLE_UNUSABLE':
-      return `${name}: role ${roleLabel(ctx, issue.role_id)} tidak bisa diberikan bot — ${issue.reason ?? 'periksa izin Manage Roles dan posisi role bot'}. Naikkan role bot di atas role ini di Pengaturan Server › Role.`;
+      return `${name}: role ${roleLabel(ctx, issue.role_id)} tidak bisa diberikan bot karena ${issue.reason ?? 'periksa izin Manage Roles dan posisi role bot'}. Naikkan role bot di atas role ini di Pengaturan Server › Role.`;
     case 'REWARD_LIMIT':
       return `${name}: reward ${categoryLabel(issue.category)} melebihi batas (maks. ${issue.max ?? '…'}). Hapus sebagian baris.`;
     case 'REWARD_DUPLICATE':
       return `${name}: ada dua reward ${categoryLabel(issue.category)} dengan level yang sama${issue.level ? ` (level ${issue.level})` : ''}. Satu level hanya boleh punya satu reward per kategori.`;
     case 'ROLE_CONFLICT':
-      return `${name}: role ${roleLabel(ctx, issue.role_id)} adalah Verified Role, jadi tidak boleh dipakai sebagai reward level.`;
+      return issue.key === 'unverified_role'
+        ? `${name}: role belum terverifikasi tidak boleh sama dengan Verified Role. Pilih role lain.`
+        : `${name}: role ${roleLabel(ctx, issue.role_id)} sudah dipakai sebagai Verified Role atau role belum terverifikasi, jadi tidak boleh dipakai sebagai reward level.`;
     case 'NO_DISCORD_DATA':
       return 'Daftar channel dari Discord belum tersedia. Tekan Refresh Discord Data dan tunggu beberapa detik.';
     case 'BOT_NOT_IN_GUILD':
@@ -725,7 +737,7 @@ export function describeIssue(issue: Issue, ctx: TextContext): string {
     case 'ACTOR_FORBIDDEN':
       return 'Bot menolak perubahan ini karena penyimpannya tidak lagi punya izin Manage Server di server ini. Admin lain bisa menekan Retry Sync untuk menyetujui & menerapkannya, atau mengubah lalu menyimpan ulang.';
     case 'APPLY_FAILED':
-      return 'Bot gagal menerapkan konfigurasi ini. Konfigurasi lama tetap berlaku — coba Retry Sync sebentar lagi.';
+      return 'Bot gagal menerapkan konfigurasi ini. Konfigurasi lama tetap berlaku. Coba Retry Sync sebentar lagi.';
     case 'UNKNOWN_FEATURE':
       return `Fitur ${issue.feature ?? ''} tidak dikenal oleh bot versi ini.`.replace(/\s+/g, ' ');
     case 'UNKNOWN_PURPOSE':
@@ -758,7 +770,7 @@ export function describeError(code: string | null | undefined, detail?: Record<s
     case 'BOT_NOT_INSTALLED':
       return 'Bot belum ada di server ini. Undang bot terlebih dahulu.';
     case 'BOT_NOT_READY':
-      return 'Bot Vanillate sedang diperbarui untuk mendukung dashboard. Simpan bisa dilakukan setelah bot versi terbaru aktif — pengaturan lama dari Discord akan ikut terbawa.';
+      return 'Bot Vanillate sedang diperbarui untuk mendukung dashboard. Simpan bisa dilakukan setelah bot versi terbaru aktif, dan pengaturan lama dari Discord akan ikut terbawa.';
     case 'STALE_REVISION': {
       const rev = detail?.current_revision;
       return `Konfigurasi server ini baru saja diubah di tempat lain${rev != null ? ` (revisi ${rev})` : ''}. Muat ulang untuk melihat versi terbaru, lalu ulangi perubahanmu.`;
@@ -794,16 +806,16 @@ const WIB = new Intl.DateTimeFormat('id-ID', {
 
 /** Timestamp UTC dari backend → teks WIB, mis. "4 Okt 2026, 00.30 WIB". */
 export function formatWib(iso: string | null | undefined): string {
-  if (!iso) return '—';
+  if (!iso) return 'belum ada';
   const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return '—';
+  if (!Number.isFinite(t)) return 'belum ada';
   return `${WIB.format(new Date(t))} WIB`;
 }
 
 export function relativeTime(iso: string | null | undefined, now = Date.now()): string {
   if (!iso) return 'belum pernah';
   const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return '—';
+  if (!Number.isFinite(t)) return 'belum pernah';
   const s = Math.max(0, Math.round((now - t) / 1000));
   if (s < 10) return 'baru saja';
   if (s < 60) return `${s} detik lalu`;
@@ -838,7 +850,7 @@ export const AUDIT_ACTION: Record<string, string> = {
 };
 
 function show(value: unknown, isChannel: boolean, ctx: TextContext): string {
-  if (value === null || value === undefined) return isChannel ? 'tidak diatur' : '—';
+  if (value === null || value === undefined) return isChannel ? 'tidak diatur' : 'kosong';
   if (typeof value === 'boolean') return value ? 'ON' : 'OFF';
   if (isChannel && typeof value === 'string') return channelLabel(ctx, value);
   return typeof value === 'string' ? value : JSON.stringify(value);
@@ -848,7 +860,7 @@ function show(value: unknown, isChannel: boolean, ctx: TextContext): string {
 export function formatAuditChange(change: unknown, ctx: TextContext): string {
   const c = change as { path?: string; from?: unknown; to?: unknown; previous_actor_id?: string; previous_actor_name?: string | null };
   if (c?.previous_actor_id !== undefined) {
-    return `Sebelumnya atas nama ${c.previous_actor_name ?? c.previous_actor_id ?? '—'}`;
+    return `Sebelumnya atas nama ${c.previous_actor_name ?? c.previous_actor_id ?? 'tidak diketahui'}`;
   }
   if (!c?.path) return describeIssue(change as Issue, ctx);
   const [fk, field, sub] = c.path.split('.');

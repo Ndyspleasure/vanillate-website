@@ -176,7 +176,7 @@ test('pesan error jelas & bisa ditindaklanjuti', () => {
   assert.match(describeError('apa-ini'), /Coba lagi/);
   assert.match(describeIssue({ code: 'CHANNEL_REQUIRED', feature: 'SOCIAL_STREAK' }, ctx), /Streak Harian butuh channel/);
   assert.match(describeIssue({ code: 'CHANNEL_CONFLICT', feature: 'SOCIAL_STREAK', other_feature: 'SOCIAL_COUNT', channel_id: C2 }, ctx), /Streak Harian dan Counting/);
-  assert.match(describeIssue({ code: 'CHANNEL_NOT_FOUND', feature: 'SAMBUNG_KATA', channel_id: '800000000000000099' }, ctx), /channel-terhapus/);
+  assert.match(describeIssue({ code: 'CHANNEL_NOT_FOUND', feature: 'SAMBUNG_KATA', channel_id: '800000000000000099' }, ctx), /channel terhapus/);
 });
 
 test('audit & waktu ditampilkan dalam bahasa manusia (WIB)', () => {
@@ -320,6 +320,25 @@ test('setelan Leveling: daftar channel/role, help, rentang XP & cooldown', () =>
   assert.deepEqual(codes({ blacklist_channels: [C1, 'abc'] }), ['SETTING_INVALID:blacklist_channels']);
   assert.deepEqual(codes({ blacklist_channels: [C1, C2] }), []);
   assert.deepEqual(codes({ levelup_message: 'x'.repeat(501) }), ['SETTING_INVALID:levelup_message']);
+});
+
+test('role belum terverifikasi: tersembunyi bila bot menguncinya, tidak boleh sama dengan Verified Role', () => {
+  const withUnverified = (available: boolean): Feature => ({
+    ...verification,
+    settings_schema: { properties: {
+      ...(verification.settings_schema as { properties: Record<string, unknown> }).properties,
+      unverified_role: { type: 'role', title: 'Role belum terverifikasi', requires: 'guild_members_intent', available },
+    } },
+  });
+  assert.ok(!typedSettings(withUnverified(false)).some((p) => p.key === 'unverified_role'));
+  assert.ok(typedSettings(withUnverified(true)).some((p) => p.key === 'unverified_role'));
+  const reg = [withUnverified(true)];
+  const mk = (u: string) => normalizeState({ VERIFICATION: { enabled: true, settings: { verified_role: ROLE_A, unverified_role: u }, channels: { verify_channel: C1 } } }, reg);
+  const conflict = (r: Feature[], u: string) => validateDraft(mk(u), mk(u), r, roleSnapshot).filter((i) => i.code === 'ROLE_CONFLICT');
+  assert.deepEqual(conflict(reg, ROLE_A).map((i) => i.key), ['unverified_role']);
+  assert.deepEqual(conflict(reg, ROLE_B), []);
+  assert.deepEqual(conflict([withUnverified(false)], ROLE_A), []);
+  assert.match(describeIssue({ code: 'ROLE_CONFLICT', feature: 'VERIFICATION', key: 'unverified_role', role_id: ROLE_A }, { registry: reg, snapshot: roleSnapshot }), /tidak boleh sama dengan Verified Role/);
 });
 
 test('reward_list: batas per kategori, level unik, role konflik Verified Role, role tak bisa diberikan', () => {

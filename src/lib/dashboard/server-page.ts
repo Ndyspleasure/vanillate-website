@@ -278,7 +278,7 @@ export function mountServerPage(cfg: PageConfig): void {
           toast('Data channel dari Discord diperbarui.', 'success');
         } else if (Date.now() > refreshWatch.until) {
           refreshWatch = null;
-          toast(data.bot.online ? 'Bot belum mengirim data channel. Coba lagi sebentar lagi.' : 'Bot sedang offline — data channel diperbarui saat bot online.', 'warning', 6000);
+          toast(data.bot.online ? 'Bot belum mengirim data channel. Coba lagi sebentar lagi.' : 'Bot sedang offline. Data channel diperbarui saat bot online.', 'warning', 6000);
         }
       }
       const was = before?.config;
@@ -442,7 +442,7 @@ export function mountServerPage(cfg: PageConfig): void {
           </div>
         </div>
         <p class="mt-3 text-xs text-ink-500 dark:text-cream-300/70">${esc(st.hint)}${
-          c ? ` Diubah terakhir oleh <strong>${esc(c.updated_by_name ?? c.updated_by ?? '—')}</strong> lewat ${source}, ${esc(formatWib(c.updated_at))}.` : ''
+          c ? ` Diubah terakhir oleh <strong>${esc(c.updated_by_name ?? c.updated_by ?? 'tidak diketahui')}</strong> lewat ${source}, ${esc(formatWib(c.updated_at))}.` : ''
         }</p>
         <div class="mt-3 flex flex-wrap gap-2 sm:mt-4">
           <button type="button" data-action="resync" class="${BTN_SECONDARY}" ${c && d.bot.installed ? '' : 'disabled'}>${icon('refresh-cw')} Retry Sync</button>
@@ -529,7 +529,7 @@ export function mountServerPage(cfg: PageConfig): void {
     // Pengantar bagian; sinopsis tiap fitur ada di kartunya (description registry bot).
     const intro =
       section === 'game'
-        ? 'Kumpulan game yang bisa dimainkan member lewat /game. Matikan game yang tidak ingin dimainkan di server ini, atau kunci game ke satu channel khusus — game tanpa channel khusus bisa dibuka di channel mana pun.'
+        ? 'Kumpulan game yang bisa dimainkan member lewat /game. Matikan game yang tidak ingin dimainkan di server ini, atau kunci game ke satu channel khusus. Game tanpa channel khusus bisa dibuka di channel mana pun.'
         : section === 'verification'
           ? 'Syarat: bot butuh izin Manage Roles dan role bot harus berada di atas Verified Role. Jumlah langkah bisa diatur; batas lulus 80% benar ditetapkan sistem.'
           : section === 'leveling'
@@ -591,7 +591,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const known = options.some((o) => o.id === current);
     const optHtml = (o: { id: string; name: string }) => `<option value="${esc(o.id)}" ${o.id === current ? 'selected' : ''}>#${esc(o.name)}</option>`;
     const missingCurrent = current && !known ? `<option value="${esc(current)}" selected>${esc(channelLabel(ctx(), current))}</option>` : '';
-    const empty = p.required ? '— Pilih channel —' : p.empty_label ?? 'Tidak diatur';
+    const empty = p.required ? 'Pilih channel' : p.empty_label ?? 'Tidak diatur';
     const disabled = !editable() || saving;
 
     const ch = channelById(d.snapshot, current);
@@ -609,7 +609,7 @@ export function mountServerPage(cfg: PageConfig): void {
         </select>
       </label>
       ${p.help ? `<p class="mt-1.5 text-xs text-ink-500 dark:text-cream-300/60">${esc(p.help)}</p>` : ''}
-      ${!d.snapshot?.refreshed_at ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Daftar channel belum dimuat — tekan Refresh Discord Data.</p>` : ''}
+      ${!d.snapshot?.refreshed_at ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Daftar channel belum dimuat. Tekan Refresh Discord Data.</p>` : ''}
       ${missing.length ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Izin bot kurang di #${esc(ch!.name)}: ${esc(missing.join(', '))}.</p>` : ''}`;
   }
 
@@ -622,7 +622,7 @@ export function mountServerPage(cfg: PageConfig): void {
             ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} />
           Tidak dipakai di server ini
         </label>
-        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Centang bila server ini sengaja tidak memakai fitur ini — pengingat setup dari bot berhenti menanyakannya. Bisa diaktifkan kapan saja.</p>
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Centang bila server ini sengaja tidak memakai fitur ini, supaya pengingat setup dari bot berhenti menanyakannya. Bisa diaktifkan kapan saja.</p>
       </div>`;
   }
 
@@ -656,7 +656,7 @@ export function mountServerPage(cfg: PageConfig): void {
           const roles = roleOptions(d.snapshot);
           const known = roles.some((r) => r.id === cur);
           return `<select ${base} class="${cls}">
-            <option value="" ${cur ? '' : 'selected'}>— Pilih role —</option>
+            <option value="" ${cur ? '' : 'selected'}>Pilih role</option>
             ${cur && !known ? `<option value="${esc(String(cur))}" selected>${esc(roleLabel(ctx(), String(cur)))}</option>` : ''}
             ${roles.map((r) => `<option value="${esc(r.id)}" ${r.id === cur ? 'selected' : ''}>@${esc(r.name)}${r.managed ? ' (integrasi)' : ''}</option>`).join('')}
           </select>`;
@@ -684,7 +684,7 @@ export function mountServerPage(cfg: PageConfig): void {
                     value="${r.level ?? ''}" class="${rowCls} w-24" />
                 </label>
                 <select data-reward-field="role_id" aria-label="Role" ${disabled ? 'disabled' : ''} class="${rowCls} min-w-[10rem] flex-1">
-                  <option value="" ${r.role_id ? '' : 'selected'}>— Pilih role —</option>
+                  <option value="" ${r.role_id ? '' : 'selected'}>Pilih role</option>
                   ${r.role_id && !roles.some((x) => x.id === r.role_id) ? `<option value="${esc(r.role_id)}" selected>${esc(roleLabel(ctx(), r.role_id))}</option>` : ''}
                   ${roles.map((x) => `<option value="${esc(x.id)}" ${x.id === r.role_id ? 'selected' : ''}>@${esc(x.name)}${x.managed ? ' (integrasi)' : ''}</option>`).join('')}
                 </select>
@@ -719,7 +719,7 @@ export function mountServerPage(cfg: PageConfig): void {
       const parts: string[] = [];
       if (p.help) parts.push(note(p.help));
       if (p.type === 'integer' && (p.min != null || p.max != null)) {
-        parts.push(note(`Rentang ${p.min ?? '…'}–${p.max ?? '…'}${p.default != null ? `, bawaan ${p.default}` : ''}.`));
+        parts.push(note(`Rentang ${p.min ?? '…'} sampai ${p.max ?? '…'}${p.default != null ? `, bawaan ${p.default}` : ''}.`));
       } else if (p.type === 'string' && p.max_length) {
         parts.push(note(`Maksimal ${p.max_length} karakter. Kosongkan untuk teks bawaan.`));
       }
@@ -775,7 +775,7 @@ export function mountServerPage(cfg: PageConfig): void {
             s.enabled
               ? f.purposes.map((p) => `<div>${selectHtml(f, p)}</div>`).join('') + settingsHtml(f)
               : savedChannels.length
-                ? `<p class="text-xs text-ink-500 dark:text-cream-300/60">Tersimpan: ${esc(savedChannels.join(' · '))} — dipakai lagi saat fitur diaktifkan.</p>`
+                ? `<p class="text-xs text-ink-500 dark:text-cream-300/60">Tersimpan: ${esc(savedChannels.join(' · '))}, dipakai lagi saat fitur diaktifkan.</p>`
                 : ''
           }
           ${!s.enabled && supportsNotUsed(f) ? notUsedHtml(f, notUsed, disabled) : ''}
@@ -863,14 +863,14 @@ export function mountServerPage(cfg: PageConfig): void {
         return `<tr class="border-t border-ink-900/5 dark:border-cream-100/5">
           <td class="py-3 pr-4">${featureLabel(f)}</td>
           <td class="py-3 pr-4 text-ink-600 dark:text-cream-300/80">${esc(p.label)}</td>
-          <td class="py-3 pr-4 font-mono text-xs">${id ? esc(channelLabel(ctx(), id)) : '—'}</td>
+          <td class="py-3 pr-4 font-mono text-xs">${id ? esc(channelLabel(ctx(), id)) : 'Tidak diatur'}</td>
           <td class="py-3 pr-4">${status}</td>
           <td class="py-3 text-right"><button type="button" data-tab="${sectionTab}" data-focus="edit-${esc(f.key)}-${esc(p.key)}" class="text-xs font-medium text-amber-700 hover:underline dark:text-amber-300">Ubah</button></td>
         </tr>`;
       }),
     );
     return `
-      <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Peta lengkap channel yang dipakai setiap fitur bot di server ini, dicek langsung dengan data Discord terbaru — channel yang hilang atau izin bot yang kurang langsung kelihatan di sini. Ubah lewat Game Hub, Social Hub, atau submenu fiturnya di Server Hub.</p>
+      <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Peta lengkap channel yang dipakai setiap fitur bot di server ini, dicek langsung dengan data Discord terbaru. Channel yang hilang atau izin bot yang kurang langsung kelihatan di sini. Ubah lewat Game Hub, Social Hub, atau submenu fiturnya di Server Hub.</p>
       <div class="${CARD} mt-5 overflow-x-auto p-5">
         <table class="w-full min-w-[640px] text-left text-sm">
           <thead class="text-xs uppercase tracking-wide text-ink-500 dark:text-cream-300/60">
@@ -910,7 +910,7 @@ export function mountServerPage(cfg: PageConfig): void {
                 items.length
                   ? `<ul class="mt-2 space-y-1 text-sm text-ink-700 dark:text-cream-200">${items
                       .slice(0, 20)
-                      .map((c) => `<li class="flex gap-2"><span class="text-ink-400">–</span><span>${esc(formatAuditChange(c, ctx()))}</span></li>`)
+                      .map((c) => `<li class="flex gap-2"><span class="text-ink-400">•</span><span>${esc(formatAuditChange(c, ctx()))}</span></li>`)
                       .join('')}</ul>`
                   : ''
               }
@@ -1023,7 +1023,7 @@ export function mountServerPage(cfg: PageConfig): void {
     try {
       const r = await requestResync(guildId);
       syncWatchUntil = Date.now() + SYNC_TIMEOUT_MS;
-      toast(r.bot_online ? 'Bot diminta memuat ulang konfigurasi terbaru…' : 'Permintaan tercatat. Bot sedang offline — dijalankan saat online.', r.bot_online ? 'info' : 'warning');
+      toast(r.bot_online ? 'Bot diminta memuat ulang konfigurasi terbaru…' : 'Permintaan tercatat. Bot sedang offline, perintah dijalankan saat online.', r.bot_online ? 'info' : 'warning');
       await load(true);
       renderAll();
       if (pollTimer) clearTimeout(pollTimer);
@@ -1039,7 +1039,7 @@ export function mountServerPage(cfg: PageConfig): void {
       const prev = data?.snapshot?.refreshed_at ?? null;
       const r = await requestDiscordRefresh(guildId);
       refreshWatch = { prev, until: Date.now() + REFRESH_TIMEOUT_MS };
-      if (!r.bot_online) toast('Bot sedang offline — data channel diperbarui saat bot online.', 'warning');
+      if (!r.bot_online) toast('Bot sedang offline. Data channel diperbarui saat bot online.', 'warning');
       renderAll();
       if (pollTimer) clearTimeout(pollTimer);
       pollTimer = setTimeout(poll, FAST_POLL_MS);
