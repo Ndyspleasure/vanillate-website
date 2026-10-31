@@ -144,6 +144,34 @@ Sekarang buka `/admin` dan login dengan username `andi` + password tadi.
 > di sana tidak dianggap admin dan tidak bisa melihat apa pun — jadi menambah
 > user di Dashboard saja tidak otomatis memberi akses.
 
+### Masuk dengan kode email & lupa password
+
+Di form login ada dua tautan: **Kirimi saya kode sekali pakai** (masuk tanpa
+password) dan **Lupa password?** (kode lalu buat password baru). Keduanya
+memakai kode angka di email, bukan link, jadi tidak butuh halaman reset atau
+Redirect URL. Username tetap bisa dipakai (ditukar lewat `resolve_admin_login`),
+akun tetap wajib punya baris di `admin_users`, dan pesannya selalu "bila akun
+terdaftar, kode sudah dikirim" supaya tidak bisa dipakai menebak akun. Kode
+login dikirim dengan `shouldCreateUser: false`, jadi email asing tidak bisa
+membuat akun.
+
+Setup sekali di Dashboard Supabase (Authentication › Emails › Templates):
+supaya email berisi kode, tambahkan `{{ .Token }}` di template **Magic Link**
+(kode masuk) dan **Reset Password** (lupa password). Contoh isi:
+
+```html
+<h2>Kode masuk Panel Admin Vanillate</h2>
+<p>Kode kamu: <strong style="font-size:24px;letter-spacing:4px">{{ .Token }}</strong></p>
+<p>Berlaku sebentar dan hanya sekali pakai. Abaikan email ini bila kamu tidak memintanya.</p>
+```
+
+Tanpa SMTP sendiri, Supabase memakai pengirim bawaan: kuotanya kecil (beberapa
+email per jam) dan hanya mengirim ke alamat anggota tim organisasi Supabase.
+Untuk tim kecil biasanya cukup; bila email tidak sampai ke admin lain, pasang
+SMTP sendiri di Authentication › SMTP. Jeda kirim ulang ke alamat yang sama
+60 detik. Aturan kode ada di `src/lib/admin-auth-model.ts` (dites di
+`tests/admin-auth-model.test.ts`).
+
 ### Peran
 
 | Peran | Bisa |
@@ -400,7 +428,8 @@ pemeriksaan jalan ada di tab Actions.
 | `supabase/seed-faq.sql` | Isi awal FAQ (hasil migrasi dokumentasi lama) — **digenerate** |
 | `scripts/faq-seed-data.mjs` | Sumber isi awal FAQ; `scripts/build-faq-seed.mjs` yang menuliskannya |
 | `src/lib/supabase.ts` | Inisialisasi klien Supabase |
-| `src/lib/admin-auth.ts` | Login, guard sesi, profil admin |
+| `src/lib/admin-auth.ts` | Login (password, kode email, lupa password), guard sesi, profil admin |
+| `src/lib/admin-auth-model.ts` | Aturan murni kode email & password baru (dites) |
 | `src/lib/admin-ui.ts` | Escaping & blok status tampilan |
 | `src/lib/admin-chart.ts` | Grafik tren di halaman statistik |
 | `src/layouts/AdminLayout.astro` | Kerangka panel + penjaga sesi |

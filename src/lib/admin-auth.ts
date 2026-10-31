@@ -3,6 +3,9 @@
 //
 // Alur singkat:
 //   1. login() menukar username/email + password ke Supabase Auth -> dapat JWT.
+//      Alternatif: kirimKodeLogin() + masukDenganKode() (kode sekali pakai di
+//      email), atau kirimKodeReset() + verifikasiKodeReset() + gantiPassword()
+//      untuk lupa password. Semua berakhir di cek admin_users yang sama.
 //   2. JWT disimpan di localStorage oleh supabase-js.
 //   3. Tiap query berikutnya membawa JWT itu; RLS di Supabase yang memutuskan
 //      baris mana yang boleh terbaca. Halaman ini tidak pernah memegang data
@@ -10,6 +13,7 @@
 
 import { getSupabase } from './supabase';
 import { pesanError } from './admin-ui';
+import { normalisasiKode, pesanKirimKode, validasiPasswordBaru } from './admin-auth-model';
 
 export interface AdminProfile {
   id: string;
@@ -38,22 +42,15 @@ export async function login(identifier: string, password: string): Promise<Login
     return { ok: false, error: 'Koneksi ke Supabase belum dikonfigurasi.' };
   }
 
-  const id = identifier.trim();
-  if (!id || !password) {
+  if (!identifier.trim() || !password) {
     return { ok: false, error: 'Username dan password wajib diisi.' };
   }
 
-  let email = id;
-
-  // Bukan email -> anggap username, resolve ke email lewat RPC.
-  if (!id.includes('@')) {
-    const { data, error } = await supabase.rpc('resolve_admin_login', { p_username: id });
-    if (error || !data) {
-      // Sengaja pakai pesan yang sama dengan password salah, supaya tidak
-      // bisa dipakai menebak username mana yang terdaftar.
-      return { ok: false, error: 'Username atau password salah.' };
-    }
-    email = data as string;
+  const email = await resolveEmail(identifier);
+  if (!email) {
+    // Sengaja pakai pesan yang sama dengan password salah, supaya tidak
+    // bisa dipakai menebak username mana yang terdaftar.
+    return { ok: false, error: 'Username atau password salah.' };
   }
 
   const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
@@ -61,15 +58,122 @@ export async function login(identifier: string, password: string): Promise<Login
     return { ok: false, error: 'Username atau password salah.' };
   }
 
-  // Pastikan akun ini memang terdaftar sebagai admin. User Supabase yang ada
-  // tapi tidak punya baris di admin_users tidak boleh masuk.
+  return selesaikanLogin();
+}
+
+/**
+ * Ubah username/email jadi email. Supabase Auth sendiri hanya mengenal email,
+ * jadi identifier tanpa "@" ditukar lewat RPC `resolve_admin_login`
+ * (SECURITY DEFINER). Null bila username tidak dikenal.
+ */
+async function resolveEmail(identifier: string): Promise<string | null> {
+  const supabase = getSupabase();
+  const id = identifier.trim();
+  if (!supabase || !id) return null;
+  if (id.includes('@')) return id;
+  const { data, error } = await supabase.rpc('resolve_admin_login', { p_username: id });
+  if (error || !data) return null;
+  return data as string;
+}
+
+/**
+ * Langkah akhir semua cara masuk (password, kode, reset): akun wajib punya
+ * baris di admin_users. User Supabase tanpa baris itu langsung dikeluarkan.
+ */
+async function selesaikanLogin(): Promise<LoginResult> {
+  const supabase = getSupabase();
   const { profile, dbError } = await getAdminProfile();
   if (!profile) {
-    await supabase.auth.signOut();
+    await supabase?.auth.signOut();
     return { ok: false, error: dbError ?? 'Akun ini tidak punya akses admin.' };
   }
-
   await touchLastLogin();
+  return { ok: true };
+}
+
+export interface KirimKodeResult extends LoginResult {
+  /**
+   * Email tujuan untuk langkah verifikasi. Tidak pernah ditampilkan; untuk
+   * username yang tidak dikenal berisi identifier apa adanya supaya alurnya
+   * tetap terlihat sama (verifikasi nanti gagal dengan pesan umum).
+   */
+  email?: string;
+}
+
+/**
+ * Kirim kode sekali pakai untuk masuk tanpa password. `shouldCreateUser:
+ * false` mencegah email asing membuat akun baru lewat form ini.
+ */
+export async function kirimKodeLogin(identifier: string): Promise<KirimKodeResult> {
+  return kirimKode(identifier, (email) =>
+    getSupabase()!.auth.signInWithOtp({ email, options: { shouldCreateUser: false } }),
+  );
+}
+
+/** Kirim kode untuk mengganti password yang lupa. */
+export async function kirimKodeReset(identifier: string): Promise<KirimKodeResult> {
+  return kirimKode(identifier, (email) => getSupabase()!.auth.resetPasswordForEmail(email));
+}
+
+async function kirimKode(
+  identifier: string,
+  kirim: (email: string) => Promise<{ error: { status?: number; code?: string; message?: string } | null }>,
+): Promise<KirimKodeResult> {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Koneksi ke Supabase belum dikonfigurasi.' };
+  const id = identifier.trim();
+  if (!id) return { ok: false, error: 'Isi username atau email dulu.' };
+
+  const email = await resolveEmail(id);
+  // Username tak dikenal tetap dianggap "terkirim" (lihat pesanKirimKode).
+  if (!email) return { ok: true, email: id };
+
+  const hasil = pesanKirimKode((await kirim(email)).error);
+  return hasil.ok ? { ok: true, email } : hasil;
+}
+
+/** Masuk dengan kode dari email "Kode masuk". */
+export async function masukDenganKode(email: string, kodeInput: string): Promise<LoginResult> {
+  return verifikasiKode(email, kodeInput, 'email');
+}
+
+/**
+ * Cek kode dari email reset password. Bila benar, sesi admin langsung aktif
+ * dan langkah berikutnya adalah gantiPassword().
+ */
+export async function verifikasiKodeReset(email: string, kodeInput: string): Promise<LoginResult> {
+  return verifikasiKode(email, kodeInput, 'recovery');
+}
+
+async function verifikasiKode(email: string, kodeInput: string, type: 'email' | 'recovery'): Promise<LoginResult> {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Koneksi ke Supabase belum dikonfigurasi.' };
+  const token = normalisasiKode(kodeInput);
+  if (!token) return { ok: false, error: 'Kode berupa 6 digit angka dari email.' };
+
+  const { error } = await supabase.auth.verifyOtp({ email, token, type });
+  if (error) return { ok: false, error: 'Kode salah atau sudah kedaluwarsa. Minta kode baru bila perlu.' };
+  return selesaikanLogin();
+}
+
+/** Simpan password baru untuk sesi yang sedang aktif (setelah kode reset benar). */
+export async function gantiPassword(password: string, ulang: string): Promise<LoginResult> {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Koneksi ke Supabase belum dikonfigurasi.' };
+  const invalid = validasiPasswordBaru(password, ulang);
+  if (invalid) return { ok: false, error: invalid };
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    const msg = (error.message ?? '').toLowerCase();
+    if (msg.includes('different from the old')) {
+      return { ok: false, error: 'Password baru harus berbeda dari password lama.' };
+    }
+    if (msg.includes('weak') || msg.includes('password should')) {
+      return { ok: false, error: 'Password terlalu lemah. Pakai kombinasi huruf dan angka yang lebih panjang.' };
+    }
+    return { ok: false, error: pesanError(error) };
+  }
   return { ok: true };
 }
 
