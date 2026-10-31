@@ -31,6 +31,7 @@ import { url } from '@utils/url';
           </p>
         </div>
       ) : (
+        <div>
         <form id="login-form" class="space-y-4" novalidate>
           <div>
             <label for="identifier" class="block text-sm font-medium mb-1.5">Username atau email</label>
@@ -70,7 +71,82 @@ import { url } from '@utils/url';
           >
             Masuk
           </button>
+
+          <div class="flex items-center justify-between gap-4 text-xs">
+            <button type="button" data-mode="kode" class="text-ink-500 dark:text-cream-300/60 hover:text-amber-600 dark:hover:text-amber-400 underline-offset-4 hover:underline transition-colors">Kirimi saya kode sekali pakai</button>
+            <button type="button" data-mode="reset" class="text-ink-500 dark:text-cream-300/60 hover:text-amber-600 dark:hover:text-amber-400 underline-offset-4 hover:underline transition-colors">Lupa password?</button>
+          </div>
         </form>
+
+        <!-- Masuk dengan kode email & lupa password memakai panel yang sama:
+             langkah 1 minta kode, langkah 2 isi kode, langkah 3 (khusus reset)
+             isi password baru. -->
+        <div id="otp-panel" class="hidden space-y-4">
+          <div>
+            <p id="otp-title" class="font-display font-semibold"></p>
+            <p id="otp-desc" class="mt-1 text-sm text-ink-500 dark:text-cream-300/60"></p>
+          </div>
+
+          <form id="otp-step-kirim" class="space-y-4" novalidate>
+            <div>
+              <label for="otp-identifier" class="block text-sm font-medium mb-1.5">Username atau email</label>
+              <input id="otp-identifier" type="text" autocomplete="username" required class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors" />
+            </div>
+            <button type="submit" id="otp-kirim" class="w-full rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">Kirim kode</button>
+          </form>
+
+          <form id="otp-step-kode" class="hidden space-y-4" novalidate>
+            <div>
+              <label for="otp-kode" class="block text-sm font-medium mb-1.5">Kode dari email</label>
+              <input
+                id="otp-kode"
+                type="text"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="12"
+                placeholder="123456"
+                required
+                class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-center font-mono text-lg tracking-[0.4em] outline-none focus:border-amber-500 transition-colors"
+              />
+            </div>
+            <button type="submit" id="otp-verifikasi" class="w-full rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">Masuk</button>
+            <button type="button" id="otp-kirim-ulang" class="w-full text-xs text-ink-500 dark:text-cream-300/60 hover:text-amber-600 dark:hover:text-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+              Kirim ulang kode
+            </button>
+          </form>
+
+          <form id="otp-step-password" class="hidden space-y-4" novalidate>
+            <div>
+              <label for="pw-baru" class="block text-sm font-medium mb-1.5">Password baru</label>
+              <input id="pw-baru" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors" />
+            </div>
+            <div>
+              <label for="pw-ulang" class="block text-sm font-medium mb-1.5">Ulangi password baru</label>
+              <input id="pw-ulang" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors" />
+            </div>
+            <button type="submit" id="pw-simpan" class="w-full rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">Simpan password</button>
+            <button type="button" id="pw-lewati" class="w-full text-xs text-ink-500 dark:text-cream-300/60 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+              Lewati, langsung masuk
+            </button>
+          </form>
+
+          <p
+            id="otp-info"
+            class="hidden rounded-xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
+            aria-live="polite"
+          ></p>
+          <p
+            id="otp-error"
+            class="hidden rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400"
+            role="alert"
+            aria-live="polite"
+          ></p>
+
+          <div class="text-center text-xs">
+            <button type="button" data-mode="password" class="text-ink-500 dark:text-cream-300/60 hover:text-amber-600 dark:hover:text-amber-400 underline-offset-4 hover:underline transition-colors">Kembali ke masuk dengan password</button>
+          </div>
+        </div>
+        </div>
       )}
 
       <p class="mt-8 text-center text-xs text-ink-400 dark:text-cream-300/40">
@@ -81,7 +157,16 @@ import { url } from '@utils/url';
 </AdminLayout>
 
 <script>
-  import { login, getAdminProfile } from '@/lib/admin-auth';
+  import {
+    login,
+    getAdminProfile,
+    kirimKodeLogin,
+    kirimKodeReset,
+    masukDenganKode,
+    verifikasiKodeReset,
+    gantiPassword,
+  } from '@/lib/admin-auth';
+  import { JEDA_KIRIM_ULANG_DETIK } from '@/lib/admin-auth-model';
   import { url } from '@/utils/url';
 
   const form = document.getElementById('login-form') as HTMLFormElement | null;
@@ -127,4 +212,158 @@ import { url } from '@utils/url';
     submit.disabled = false;
     submit.textContent = 'Masuk';
   });
+
+  // ── Kode sekali pakai & lupa password ──────────────────────────────────
+  type Mode = 'password' | 'kode' | 'reset';
+  type Langkah = 'kirim' | 'kode' | 'password';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const panel = $<HTMLDivElement>('otp-panel');
+  const langkahEl: Record<Langkah, HTMLFormElement> = {
+    kirim: $('otp-step-kirim'),
+    kode: $('otp-step-kode'),
+    password: $('otp-step-password'),
+  };
+  const infoEl = $<HTMLParagraphElement>('otp-info');
+  const errEl = $<HTMLParagraphElement>('otp-error');
+  const kirimUlangBtn = $<HTMLButtonElement>('otp-kirim-ulang');
+
+  const TEKS: Record<'kode' | 'reset', { judul: string; desc: string; tombol: string }> = {
+    kode: {
+      judul: 'Masuk dengan kode',
+      desc: 'Kami kirim kode sekali pakai ke email akun admin. Kode berlaku sebentar dan hanya bisa dipakai sekali.',
+      tombol: 'Masuk',
+    },
+    reset: {
+      judul: 'Lupa password',
+      desc: 'Kami kirim kode ke email akun admin. Setelah kode benar, kamu bisa membuat password baru.',
+      tombol: 'Lanjut',
+    },
+  };
+
+  let mode: Mode = 'password';
+  let emailTujuan = '';
+  let hitungMundur: ReturnType<typeof setInterval> | null = null;
+
+  function pesan(el: HTMLElement, teks: string | null) {
+    el.textContent = teks ?? '';
+    el.classList.toggle('hidden', !teks);
+  }
+
+  function tampilLangkah(l: Langkah) {
+    for (const [k, el] of Object.entries(langkahEl)) el.classList.toggle('hidden', k !== l);
+    const fokus = { kirim: 'otp-identifier', kode: 'otp-kode', password: 'pw-baru' }[l];
+    $<HTMLInputElement>(fokus).focus();
+  }
+
+  function gantiMode(m: Mode) {
+    mode = m;
+    pesan(infoEl, null);
+    pesan(errEl, null);
+    form?.classList.toggle('hidden', m !== 'password');
+    panel.classList.toggle('hidden', m === 'password');
+    if (m === 'password') return;
+    $('otp-title').textContent = TEKS[m].judul;
+    $('otp-desc').textContent = TEKS[m].desc;
+    $('otp-verifikasi').textContent = TEKS[m].tombol;
+    // Bawa isian username dari form password supaya tidak mengetik ulang.
+    const idAwal = (document.getElementById('identifier') as HTMLInputElement | null)?.value ?? '';
+    const idOtp = $<HTMLInputElement>('otp-identifier');
+    if (!idOtp.value) idOtp.value = idAwal;
+    $<HTMLInputElement>('otp-kode').value = '';
+    tampilLangkah('kirim');
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => gantiMode(btn.dataset.mode as Mode));
+  });
+
+  function mulaiHitungMundur() {
+    if (hitungMundur) clearInterval(hitungMundur);
+    let sisa = JEDA_KIRIM_ULANG_DETIK;
+    kirimUlangBtn.disabled = true;
+    const render = () => {
+      kirimUlangBtn.textContent = sisa > 0 ? `Kirim ulang kode (${sisa} dtk)` : 'Kirim ulang kode';
+      if (sisa <= 0) {
+        kirimUlangBtn.disabled = false;
+        if (hitungMundur) clearInterval(hitungMundur);
+      }
+      sisa -= 1;
+    };
+    render();
+    hitungMundur = setInterval(render, 1000);
+  }
+
+  async function mintaKode(tombol: HTMLButtonElement) {
+    if (mode === 'password') return;
+    pesan(errEl, null);
+    pesan(infoEl, null);
+    const label = tombol.textContent;
+    tombol.disabled = true;
+    tombol.textContent = 'Mengirim…';
+    const identifier = $<HTMLInputElement>('otp-identifier').value;
+    const res = mode === 'kode' ? await kirimKodeLogin(identifier) : await kirimKodeReset(identifier);
+    tombol.disabled = false;
+    tombol.textContent = label;
+    if (!res.ok) {
+      pesan(errEl, res.error ?? 'Gagal mengirim kode.');
+      return;
+    }
+    emailTujuan = res.email ?? '';
+    // Pesan sama untuk akun terdaftar maupun tidak, supaya tidak bisa
+    // dipakai menebak akun.
+    pesan(infoEl, 'Bila akun terdaftar, kode sudah dikirim ke email akun. Cek juga folder spam.');
+    tampilLangkah('kode');
+    mulaiHitungMundur();
+  }
+
+  langkahEl.kirim.addEventListener('submit', (e) => {
+    e.preventDefault();
+    mintaKode($('otp-kirim'));
+  });
+  kirimUlangBtn.addEventListener('click', () => mintaKode(kirimUlangBtn));
+
+  langkahEl.kode.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (mode === 'password') return;
+    pesan(errEl, null);
+    const tombol = $<HTMLButtonElement>('otp-verifikasi');
+    tombol.disabled = true;
+    tombol.textContent = 'Memeriksa…';
+    const kode = $<HTMLInputElement>('otp-kode').value;
+    const res = mode === 'kode' ? await masukDenganKode(emailTujuan, kode) : await verifikasiKodeReset(emailTujuan, kode);
+    tombol.disabled = false;
+    tombol.textContent = TEKS[mode].tombol;
+    if (!res.ok) {
+      pesan(errEl, res.error ?? 'Kode tidak valid.');
+      return;
+    }
+    if (mode === 'kode') {
+      window.location.replace(tujuanSetelahLogin());
+      return;
+    }
+    if (hitungMundur) clearInterval(hitungMundur);
+    pesan(infoEl, 'Kode benar. Buat password baru untuk akunmu.');
+    tampilLangkah('password');
+  });
+
+  langkahEl.password.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    pesan(errEl, null);
+    const tombol = $<HTMLButtonElement>('pw-simpan');
+    tombol.disabled = true;
+    tombol.textContent = 'Menyimpan…';
+    const res = await gantiPassword($<HTMLInputElement>('pw-baru').value, $<HTMLInputElement>('pw-ulang').value);
+    tombol.disabled = false;
+    tombol.textContent = 'Simpan password';
+    if (!res.ok) {
+      pesan(errEl, res.error ?? 'Gagal menyimpan password.');
+      return;
+    }
+    window.location.replace(tujuanSetelahLogin());
+  });
+
+  // Sesi sudah aktif setelah kode reset benar, jadi admin boleh masuk tanpa
+  // mengganti password (mis. ternyata ingat lagi).
+  $('pw-lewati').addEventListener('click', () => window.location.replace(tujuanSetelahLogin()));
 </script>
