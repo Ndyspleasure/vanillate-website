@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.32.1",
+    "date": "2026-10-30",
+    "title": "Deskripsi fitur baru di Vanillate Dashboard",
+    "highlights": [
+      "📝 Setiap game, fitur sosial, Verification, dan Leveling di Vanillate Dashboard kini punya deskripsi singkat yang menjelaskan fitur itu apa",
+      "🧭 Pengaturan server di website dirapikan: kategori baru Server Hub berisi Verification, Leveling, Share Server, Channel, dan Riwayat",
+      "📱 Tampilan dashboard di HP lebih rapat dan nyaman dibaca"
+    ]
+  },
+  {
     "version": "3.32.0",
     "date": "2026-10-30",
     "title": "Verifikasi emoji, Leveling chat & voice, role reward, dan /rank",
