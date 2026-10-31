@@ -52,3 +52,30 @@ export function pesanKirimKode(err: { status?: number; code?: string; message?: 
   }
   return { ok: true };
 }
+
+export type HashAuth =
+  | { kind: 'sesi'; type: string; accessToken: string; refreshToken: string }
+  | { kind: 'error'; pesan: string };
+
+/**
+ * Baca fragmen URL setelah admin mengeklik link di email Supabase (template
+ * bawaan berisi link, bukan kode). Supabase mengarahkan ke
+ * `/admin/#access_token=…&refresh_token=…&type=recovery|magiclink`, atau
+ * `#error=…&error_code=otp_expired` bila link sudah dipakai/kedaluwarsa.
+ * Null bila fragmen bukan dari Supabase Auth.
+ */
+export function bacaHashAuth(hash: string): HashAuth | null {
+  const p = new URLSearchParams((hash ?? '').replace(/^#/, ''));
+  if (p.get('error') || p.get('error_code')) {
+    const kode = p.get('error_code') ?? '';
+    const pesan =
+      kode === 'otp_expired'
+        ? 'Link di email sudah dipakai atau kedaluwarsa. Minta kode/link baru.'
+        : 'Link di email tidak valid. Minta kode/link baru.';
+    return { kind: 'error', pesan };
+  }
+  const accessToken = p.get('access_token');
+  const refreshToken = p.get('refresh_token');
+  if (!accessToken || !refreshToken) return null;
+  return { kind: 'sesi', type: p.get('type') ?? '', accessToken, refreshToken };
+}

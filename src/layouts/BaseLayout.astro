@@ -37,6 +37,14 @@ const { title, description, image, imageAlt, noindex, article, rawTitle } = Astr
     <link rel="apple-touch-icon" sizes="180x180" href={url('/apple-touch-icon.png')} />
     <link rel="alternate" type="application/xml" href={url('/sitemap-index.xml')} title="Sitemap" />
 
+    <!-- Link email Panel Admin (reset password / masuk) yang jatuh ke beranda
+         karena Supabase memakai Site URL: teruskan ke /admin beserta tokennya. -->
+    <script is:inline define:vars={{ adminUrl: url('/admin/') }}>
+      if (location.pathname === '/' && /(?:^#|&)type=(?:recovery|magiclink)(?:&|$)/.test(location.hash)) {
+        location.replace(adminUrl + location.hash);
+      }
+    </script>
+
     <!-- Anti-flash theme init: harus inline sebelum CSS untuk hindari FOUC -->
     <script is:inline>
       (function () {

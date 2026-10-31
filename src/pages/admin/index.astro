@@ -165,6 +165,7 @@ import { url } from '@utils/url';
     masukDenganKode,
     verifikasiKodeReset,
     gantiPassword,
+    masukDariLinkEmail,
   } from '@/lib/admin-auth';
   import { JEDA_KIRIM_ULANG_DETIK } from '@/lib/admin-auth-model';
   import { url } from '@/utils/url';
@@ -182,11 +183,6 @@ import { url } from '@utils/url';
     return url('/admin/dashboard');
   }
 
-  // Sudah punya sesi aktif? Langsung masuk, jangan suruh login lagi.
-  (async () => {
-    const { profile } = await getAdminProfile();
-    if (profile) window.location.replace(tujuanSetelahLogin());
-  })();
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -302,7 +298,9 @@ import { url } from '@utils/url';
     tombol.disabled = true;
     tombol.textContent = 'Mengirim…';
     const identifier = $<HTMLInputElement>('otp-identifier').value;
-    const res = mode === 'kode' ? await kirimKodeLogin(identifier) : await kirimKodeReset(identifier);
+    // Bila template email masih berisi link, link itu kembali ke halaman ini.
+    const kembaliKe = new URL(url('/admin/'), window.location.origin).href;
+    const res = mode === 'kode' ? await kirimKodeLogin(identifier, kembaliKe) : await kirimKodeReset(identifier, kembaliKe);
     tombol.disabled = false;
     tombol.textContent = label;
     if (!res.ok) {
@@ -312,7 +310,7 @@ import { url } from '@utils/url';
     emailTujuan = res.email ?? '';
     // Pesan sama untuk akun terdaftar maupun tidak, supaya tidak bisa
     // dipakai menebak akun.
-    pesan(infoEl, 'Bila akun terdaftar, kode sudah dikirim ke email akun. Cek juga folder spam.');
+    pesan(infoEl, 'Bila akun terdaftar, kode sudah dikirim ke email akun. Cek juga folder spam. Bila email berisi link, klik saja linknya.');
     tampilLangkah('kode');
     mulaiHitungMundur();
   }
@@ -366,4 +364,33 @@ import { url } from '@utils/url';
   // Sesi sudah aktif setelah kode reset benar, jadi admin boleh masuk tanpa
   // mengganti password (mis. ternyata ingat lagi).
   $('pw-lewati').addEventListener('click', () => window.location.replace(tujuanSetelahLogin()));
+
+  // Datang dari link di email (template Supabase bawaan berisi link, bukan
+  // kode)? Pasang sesinya; link reset lanjut ke langkah password baru.
+  // Selain itu: sudah punya sesi aktif? Langsung masuk.
+  (async () => {
+    const hash = window.location.hash;
+    if (hash) {
+      const link = await masukDariLinkEmail(hash);
+      if (link) {
+        // Token jangan tertinggal di address bar / riwayat browser.
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        if (!link.ok) {
+          gantiMode('reset');
+          pesan(errEl, link.error ?? 'Link di email tidak valid.');
+          return;
+        }
+        if (link.type === 'recovery') {
+          gantiMode('reset');
+          pesan(infoEl, 'Link reset valid. Buat password baru untuk akunmu.');
+          tampilLangkah('password');
+          return;
+        }
+        window.location.replace(tujuanSetelahLogin());
+        return;
+      }
+    }
+    const { profile } = await getAdminProfile();
+    if (profile) window.location.replace(tujuanSetelahLogin());
+  })();
 </script>
