@@ -75,7 +75,7 @@ export function mountServersPage(cfg: PageConfig): void {
           <h1 class="mt-3 font-display text-4xl font-semibold leading-tight sm:text-5xl">Atur bot Vanillate di server Discord-mu.</h1>
           <p class="mt-4 max-w-xl text-base leading-relaxed text-ink-600 dark:text-cream-300">
             Masuk dengan Discord untuk memilih fitur yang aktif dan channel tiap fitur di server tempat kamu menjadi admin.
-            Perubahan disimpan di sini lalu diterapkan otomatis oleh bot — lengkap dengan status sinkronisasi.
+            Perubahan disimpan di sini lalu diterapkan otomatis oleh bot, lengkap dengan status sinkronisasi.
           </p>
           <div class="mt-8 flex flex-col items-start gap-3">
             <button type="button" data-action="login" class="${BTN_DISCORD}" ${disabled ? 'disabled' : ''}>
@@ -83,7 +83,7 @@ export function mountServersPage(cfg: PageConfig): void {
             </button>
             ${
               disabled
-                ? `<p class="text-sm text-amber-800 dark:text-amber-300">Login Discord sedang disiapkan oleh tim Vanillate. Coba lagi beberapa saat lagi — pengaturan bot di server kamu tetap berjalan seperti biasa.</p>`
+                ? `<p class="text-sm text-amber-800 dark:text-amber-300">Login Discord sedang disiapkan oleh tim Vanillate. Coba lagi beberapa saat lagi. Pengaturan bot di server kamu tetap berjalan seperti biasa.</p>`
                 : ''
             }
             <p data-el="login-error" class="hidden text-sm text-red-600 dark:text-red-400" role="alert"></p>
@@ -96,7 +96,7 @@ export function mountServersPage(cfg: PageConfig): void {
         </div>
         <ul class="${CARD} space-y-5 p-6 sm:p-8">
           ${[
-            ['shield', 'Hanya server milikmu', 'Server tampil bila kamu pemiliknya atau punya izin Manage Server — diverifikasi langsung ke Discord.'],
+            ['shield', 'Hanya server milikmu', 'Server tampil bila kamu pemiliknya atau punya izin Manage Server, diverifikasi langsung ke Discord.'],
             ['gamepad-2', 'Game Hub & Social Hub', 'Aktifkan atau matikan tiap game dan fitur sosial, lalu pilih channel khususnya.'],
             ['refresh-cw', 'Status sinkronisasi jelas', 'Lihat kapan bot sudah menerapkan perubahanmu, dan apa yang perlu diperbaiki bila gagal.'],
             ['history', 'Riwayat perubahan', 'Setiap perubahan tercatat: siapa, kapan, dan apa yang diubah.'],

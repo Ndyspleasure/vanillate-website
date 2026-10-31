@@ -11,6 +11,11 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
 
 - **Browser hanya memakai anon key + JWT admin.** Token bot, `service_role`
   key, dan kredensial database **tidak pernah** masuk ke kode website.
+- **Teks untuk pengguna tanpa tanda pisah.** Di dashboard (Server Hub, Game
+  Hub, Social Hub, dst.) jangan memakai `—`, `–`, atau ` - ` sebagai penghubung
+  kalimat; pakai titik, koma, atau kata ("sampai", "karena"). Placeholder kosong
+  ditulis dengan kata ("tidak diatur", "belum ada"), bukan `—`. Kata ulang baku
+  (kata-kata, berturut-turut) tetap boleh. Teks dari registry bot ikut aturan ini.
 - Semua teks dari bot/Discord yang masuk `innerHTML` **wajib** lewat `esc()`
   (`src/lib/admin-ui.ts`).
 - Aksi ke bot = INSERT ke `bot_commands` lewat `src/lib/dev-panel/client.ts`

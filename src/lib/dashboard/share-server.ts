@@ -32,7 +32,7 @@ const SELECT =
 
 function fmtTime(ms: number | string | null | undefined): string {
   const t = typeof ms === 'string' ? Date.parse(ms) : Number(ms);
-  if (!Number.isFinite(t) || !t) return '—';
+  if (!Number.isFinite(t) || !t) return 'belum ada';
   return new Date(t).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }) + ' WIB';
 }
 
@@ -134,7 +134,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
     const val = (draft as Record<string, string | undefined>)[name] ?? current ?? '';
     return `<select data-share-field="${name}" data-focus="share-${name}" class="${SELECT}">
       <option value="">${esc(placeholder)}</option>
-      ${opts.map((o) => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>#${esc(o.name)}${o.category ? ` — ${esc(o.category)}` : ''}</option>`).join('')}
+      ${opts.map((o) => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>#${esc(o.name)}${o.category ? ` (${esc(o.category)})` : ''}</option>`).join('')}
     </select>`;
   }
 
@@ -214,7 +214,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
             <span class="mt-1 block text-xs font-normal text-ink-500">${desc.length}/${max} karakter · tanpa tautan, mention, atau @everyone/@here.</span></label>
         </div>
         <fieldset class="space-y-2">
-          <legend class="text-sm font-medium">Link undangan ${c?.inviteUrl ? `— sekarang ${esc(c.inviteUrl)} ${pill(c.inviteStatus === 'ACTIVE' ? 'Terverifikasi' : 'Perlu diperbarui', c.inviteStatus === 'ACTIVE' ? 'success' : 'warning')}` : ''}</legend>
+          <legend class="text-sm font-medium">Link undangan ${c?.inviteUrl ? `saat ini ${esc(c.inviteUrl)} ${pill(c.inviteStatus === 'ACTIVE' ? 'Terverifikasi' : 'Perlu diperbarui', c.inviteStatus === 'ACTIVE' ? 'success' : 'warning')}` : ''}</legend>
           <label class="mr-4 text-sm"><input type="radio" name="inviteMode" value="manual" data-share-field="inviteMode" ${mode === 'manual' ? 'checked' : ''}/> Manual</label>
           <label class="text-sm"><input type="radio" name="inviteMode" value="auto" data-share-field="inviteMode" ${mode === 'auto' ? 'checked' : ''}/> Buat otomatis</label>
           ${mode === 'manual'
@@ -232,8 +232,8 @@ export function createShareController(guildId: string, rerender: () => void, roo
       ${pill(REQUEST_LABEL[r.type] ?? r.type, r.status === 'done' ? 'success' : r.status === 'error' ? 'danger' : 'info')}
       <span class="text-xs text-ink-500">${esc(fmtTime(r.created_at))}${r.actor_name ? ` · ${esc(r.actor_name)}` : ''}</span>
       ${r.result?.message || r.error ? `<span class="w-full text-xs text-ink-600 dark:text-cream-300">${esc((r.result?.message ?? r.error ?? '').replace(/\*\*/g, ''))}</span>` : ''}</li>`);
-    const bc = s.broadcasts.map((b) => `<li>${esc(fmtTime(b.createdAt))} — ${b.sent} terkirim · ${b.failed + b.skipped + b.blocked} gagal/dilewati · ${b.removed} dihapus${b.pending ? ` · ${b.pending} antre` : ''}</li>`);
-    const audit = s.audit.slice(0, 10).map((a) => `<li>${esc(fmtTime(a.at))} — ${esc(AUDIT_LABEL[a.action] ?? a.action)}${a.detail ? ` <span class="text-ink-500">(${esc(a.detail)})</span>` : ''}</li>`);
+    const bc = s.broadcasts.map((b) => `<li>${esc(fmtTime(b.createdAt))}: ${b.sent} terkirim · ${b.failed + b.skipped + b.blocked} gagal/dilewati · ${b.removed} dihapus${b.pending ? ` · ${b.pending} antre` : ''}</li>`);
+    const audit = s.audit.slice(0, 10).map((a) => `<li>${esc(fmtTime(a.at))}: ${esc(AUDIT_LABEL[a.action] ?? a.action)}${a.detail ? ` <span class="text-ink-500">(${esc(a.detail)})</span>` : ''}</li>`);
     const block = (title: string, items: string[], empty: string) => `<div><h3 class="text-xs font-semibold uppercase tracking-wide text-ink-500">${title}</h3>
       <ul class="mt-2 space-y-1 text-sm">${items.length ? items.join('') : `<li class="text-ink-500">${empty}</li>`}</ul></div>`;
     return `<div class="${CARD} mt-6 grid gap-5 p-5 md:grid-cols-2">
@@ -251,9 +251,9 @@ export function createShareController(guildId: string, rerender: () => void, roo
     if (error && !dash) return `<div class="${CARD} p-6 text-sm">${esc(error)}</div>`;
     const s = st();
     const offline = !dash?.bot_online;
-    const intro = `<p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Ajak member baru dari server lain: promosi server ini disebarkan bot ke channel promosi server peserta Share Server. Makin banyak member yang vote Vanillate.ID di Top.gg, makin cepat giliran promosimu tiba. Sifatnya timbal balik — server ini juga menerima promosi dari peserta lain, dan iklan yang diterima wajib bertahan 24 jam.</p>`;
+    const intro = `<p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Ajak member baru dari server lain: promosi server ini disebarkan bot ke channel promosi server peserta Share Server. Makin banyak member yang vote Vanillate.ID di Top.gg, makin cepat giliran promosimu tiba. Sifatnya timbal balik. Server ini juga menerima promosi dari peserta lain, dan iklan yang diterima wajib bertahan 24 jam.</p>`;
     const warn = [
-      offline ? 'Bot sedang offline — perubahan baru diproses saat bot kembali.' : null,
+      offline ? 'Bot sedang offline. Perubahan baru diproses saat bot kembali.' : null,
       dash && isStale(dash.updated_at) && dash.state ? 'Status dari bot belum diperbarui beberapa saat.' : null,
       s && !s.feature ? 'Share Server belum dibuka oleh Tim Vanillate. Pengaturan bisa disiapkan lebih dulu.' : null,
     ].filter(Boolean).map((w) => `<p class="mt-3 rounded-xl bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-300">${esc(w!)}</p>`).join('');
