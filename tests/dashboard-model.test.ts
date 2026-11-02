@@ -388,3 +388,31 @@ test('reward_list: batas per kategori, level unik, role konflik Verified Role, r
   assert.match(describeIssue({ code: 'REWARD_LIMIT', feature: 'LEVELING', category: 'combined', max: 5 }, { registry: both, snapshot: roleSnapshot }), /Combined melebihi batas \(maks\. 5\)/);
   assert.match(describeIssue({ code: 'ROLE_CONFLICT', feature: 'LEVELING', role_id: ROLE_A }, { registry: both, snapshot: roleSnapshot }), /Verified Role/);
 });
+
+test('gaya pesan: color & guide_list divalidasi; enum membawa label, kategori & batas keterangan', () => {
+  const feat: Feature = {
+    ...verification,
+    key: 'LEVELING',
+    settings_schema: {
+      properties: {
+        levelup_thumb: { type: 'enum', values: ['none', 'member', 'server'], labels: { none: 'Tanpa gambar', member: 'Foto profil member', server: 'Ikon server' }, default: 'none', title: 'Gambar', group: 'Pengumuman', category: 'message', order: 0 },
+        levelup_color: { type: 'color', title: 'Warna', group: 'Pengumuman', category: 'message', order: 1 },
+        levelup_guide: { type: 'guide_list', max_items: 2, max_text: 10, title: 'Panduan', group: 'Pengumuman', category: 'message', order: 2 },
+      },
+    },
+  };
+  const props = typedSettings(feat);
+  assert.equal(props[0].labels?.server, 'Ikon server');
+  assert.equal(props[1].category, 'message');
+  assert.equal(props[2].max_text, 10);
+  const st = (settings: Record<string, unknown>) => normalizeState({ LEVELING: { enabled: true, settings, channels: {} } }, [feat]).LEVELING;
+  const codes = (settings: Record<string, unknown>) => validateSettingValues(feat, st(settings)).map((i) => `${i.code}:${i.key}`);
+  const ch = '123456789012345678';
+  assert.deepEqual(codes({ levelup_color: '#12ab9F', levelup_thumb: 'member', levelup_guide: [{ channel_id: ch, text: 'rules' }] }), []);
+  assert.deepEqual(codes({ levelup_color: 'merah' }), ['SETTING_INVALID:levelup_color']);
+  assert.deepEqual(codes({ levelup_color: '#12ab9' }), ['SETTING_INVALID:levelup_color']);
+  assert.deepEqual(codes({ levelup_thumb: 'url' }), ['SETTING_INVALID:levelup_thumb']);
+  assert.deepEqual(codes({ levelup_guide: [{ channel_id: '', text: 'x' }] }), ['SETTING_INVALID:levelup_guide']);
+  assert.deepEqual(codes({ levelup_guide: [{ channel_id: ch, text: 'x'.repeat(11) }] }), ['SETTING_INVALID:levelup_guide']);
+  assert.deepEqual(codes({ levelup_guide: [{ channel_id: ch, text: 'a' }, { channel_id: ch, text: 'b' }, { channel_id: ch, text: 'c' }] }), ['SETTING_INVALID:levelup_guide']);
+});

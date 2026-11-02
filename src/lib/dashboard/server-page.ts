@@ -55,6 +55,7 @@ import {
   type Issue,
   type Purpose,
   type RewardRow,
+  type GuideRow,
   type SettingProp,
   type TextContext,
   type Tone,
@@ -63,6 +64,7 @@ import { rememberNextAndGoToLogin } from './servers-page';
 import type { IconName } from '@data/icons';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
 import { createShareController } from './share-server';
+import { previewHtml, previewKind, type PreviewContext } from './message-preview';
 
 /** Kartu terakhir yang ganjil melebar penuh, jadi tidak ada slot kosong di kanan (desktop). */
 const SPAN_LAST = 'lg:[&>*:last-child:nth-child(odd)]:col-span-2';
@@ -640,7 +642,7 @@ export function mountServerPage(cfg: PageConfig): void {
   }
 
   /** Kontrol setelan bertipe (settings_schema) per kelompok (`group`) untuk fitur aktif. */
-  function settingsBlocks(f: Feature): { group?: string; text: boolean; html: string }[] {
+  function settingsBlocks(f: Feature): { group?: string; text: boolean; html: string; props: SettingProp[] }[] {
     const props = typedSettings(f);
     if (!props.length) return [];
     const disabled = !editable() || saving;
@@ -658,13 +660,13 @@ export function mountServerPage(cfg: PageConfig): void {
           const long = (p.max_length ?? 0) > 120;
           const v = typeof s.settings[p.key] === 'string' ? (s.settings[p.key] as string) : '';
           return long
-            ? `<textarea rows="4" ${p.max_length ? `maxlength="${p.max_length}"` : ''} ${base} class="${cls}">${esc(v)}</textarea>`
-            : `<input type="text" ${p.max_length ? `maxlength="${p.max_length}"` : ''} ${base} value="${esc(v)}" class="${cls}" />`;
+            ? `<textarea rows="4" ${p.max_length ? `maxlength="${p.max_length}"` : ''} ${p.placeholder ? `placeholder="${esc(p.placeholder)}"` : ''} ${base} class="${cls}">${esc(v)}</textarea>`
+            : `<input type="text" ${p.max_length ? `maxlength="${p.max_length}"` : ''} ${p.placeholder ? `placeholder="${esc(p.placeholder)}"` : ''} ${base} value="${esc(v)}" class="${cls}" />`;
         }
         case 'boolean':
           return `<label class="inline-flex cursor-pointer items-center gap-2 text-sm font-medium"><input type="checkbox" class="h-4 w-4 shrink-0 rounded accent-amber-600" ${base} ${cur === true ? 'checked' : ''} /> ${esc(p.title)}</label>`;
         case 'enum':
-          return `<select ${base} class="${cls}">${(p.values ?? []).map((v) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+          return `<select ${base} class="${cls}">${(p.values ?? []).map((v) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(p.labels?.[v] ?? v)}</option>`).join('')}</select>`;
         case 'role': {
           const roles = roleOptions(d.snapshot);
           const known = roles.some((r) => r.id === cur);
@@ -709,6 +711,46 @@ export function mountServerPage(cfg: PageConfig): void {
                 <button type="button" data-reward-add="${esc(f.key)}|${esc(p.key)}" ${disabled || full ? 'disabled' : ''}
                   class="rounded-lg border border-ink-900/15 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 disabled:opacity-50 dark:border-cream-100/15 dark:hover:bg-cream-100/5">+ Tambah reward</button>
                 <span class="text-xs text-ink-500 dark:text-cream-300/60">${cats.map((c) => `${esc(categoryLabel(c))} ${count(c)}/${p.limits?.[c] ?? 0}`).join(' · ')}</span>
+              </div>
+            </div>`;
+        }
+        case 'color': {
+          const v = typeof s.settings[p.key] === 'string' ? (s.settings[p.key] as string) : '';
+          const ok = /^#[0-9a-fA-F]{6}$/.test(v);
+          return `<div class="mt-1.5 flex items-center gap-2">
+            <input type="color" aria-label="Pilih warna" ${base.replace(/data-focus="[^"]*"/, '')} value="${ok ? esc(v) : '#5865f2'}"
+              class="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-ink-900/15 bg-white p-1 disabled:opacity-60 dark:border-cream-100/15 dark:bg-ink-800" />
+            <input type="text" inputmode="text" maxlength="7" placeholder="${esc(p.placeholder ?? '#RRGGBB')} (kosong = bawaan)" ${base} value="${esc(v)}" class="${cls} !mt-0 font-mono" />
+          </div>`;
+        }
+        case 'guide_list': {
+          const rows = (Array.isArray(s.settings[p.key]) ? s.settings[p.key] : []) as GuideRow[];
+          const chans = (d.snapshot?.channels ?? [])
+            .filter((c) => c.type === 0 || c.type === 5 || c.type === 2)
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+          const rowCls = 'rounded-xl border border-ink-900/15 bg-white px-2.5 py-2 text-sm outline-none focus:border-amber-500 disabled:opacity-60 dark:border-cream-100/15 dark:bg-ink-800';
+          const rowHtml = rows
+            .map((r, i) => `
+              <div class="flex flex-wrap items-center gap-2" data-guide-row="${esc(f.key)}|${esc(p.key)}|${i}">
+                <select data-guide-field="channel_id" aria-label="Channel" ${disabled ? 'disabled' : ''} class="${rowCls} min-w-[9rem] flex-1">
+                  <option value="" ${r.channel_id ? '' : 'selected'}>Pilih channel</option>
+                  ${r.channel_id && !chans.some((c) => c.id === r.channel_id) ? `<option value="${esc(r.channel_id)}" selected>${esc(channelLabel(ctx(), r.channel_id))}</option>` : ''}
+                  ${chans.map((c) => `<option value="${esc(c.id)}" ${c.id === r.channel_id ? 'selected' : ''}>${c.type === 2 ? 'Voice: ' : '#'}${esc(c.name)}</option>`).join('')}
+                </select>
+                <input type="text" data-guide-field="text" aria-label="Keterangan" placeholder="Keterangan, mis. baca rules" ${p.max_text ? `maxlength="${p.max_text}"` : ''}
+                  ${disabled ? 'disabled' : ''} value="${esc(r.text ?? '')}" class="${rowCls} min-w-[9rem] flex-[2]" />
+                <button type="button" data-guide-del="${esc(f.key)}|${esc(p.key)}|${i}" ${disabled ? 'disabled' : ''}
+                  class="rounded-lg px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60 dark:text-red-300 dark:hover:bg-red-950/30" aria-label="Hapus baris">Hapus</button>
+              </div>`)
+            .join('');
+          const full = p.max_items != null && rows.length >= p.max_items;
+          return `
+            <div class="mt-1.5 space-y-2" data-focus="st-${esc(f.key)}-${esc(p.key)}">
+              ${rowHtml || '<p class="text-xs text-ink-500 dark:text-cream-300/60">Belum ada baris.</p>'}
+              <div class="flex flex-wrap items-center gap-3">
+                <button type="button" data-guide-add="${esc(f.key)}|${esc(p.key)}" ${disabled || full ? 'disabled' : ''}
+                  class="rounded-lg border border-ink-900/15 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 disabled:opacity-50 dark:border-cream-100/15 dark:hover:bg-cream-100/5">+ Tambah channel</button>
+                <span class="text-xs text-ink-500 dark:text-cream-300/60">${rows.length}${p.max_items != null ? ` dari maksimal ${p.max_items}` : ''} baris</span>
               </div>
             </div>`;
         }
@@ -780,8 +822,9 @@ export function mountServerPage(cfg: PageConfig): void {
     return blocks.map((b) => ({
       group: b.group,
       // Kelompok yang isinya hanya teks (judul, isi pesan, tombol) = kategori "Pesan teks".
-      text: b.items.every((p) => p.type === 'string'),
+      text: b.items.some((p) => p.category === 'message') || b.items.every((p) => p.type === 'string'),
       html: b.items.map(item).join(''),
+      props: b.items,
     }));
   }
 
@@ -799,6 +842,18 @@ export function mountServerPage(cfg: PageConfig): void {
       .join('');
   }
 
+  /** Preview kartu dari draft setelan (belum disimpan) untuk satu kelompok pesan. */
+  function previewFor(f: Feature, props: SettingProp[]): string {
+    const d = data!;
+    const ctxPreview: PreviewContext = {
+      guildName: d.guild.name ?? `Server ${guildId}`,
+      guildIconUrl: guildIconUrl(guildId, d.guild.icon),
+      viewerName: d.viewer.name || 'Member',
+      channelName: (id) => channelById(d.snapshot, id)?.name ?? null,
+    };
+    return previewHtml(props, draft[f.key]?.settings ?? {}, ctxPreview);
+  }
+
   /**
    * Bagian dengan satu fitur besar (Verification, Leveling): kartu utama penuh,
    * lalu konfigurasi dan pesan teks dipisah per kategori, tiap kelompok satu kartu.
@@ -806,17 +861,27 @@ export function mountServerPage(cfg: PageConfig): void {
   function featureSectionHtml(f: Feature): string {
     const s = draft[f.key];
     const blocks = s.enabled ? settingsBlocks(f) : [];
-    const groupCard = (b: { group?: string; html: string }) => `
-      <section class="${CARD} min-w-0 space-y-4 p-4 sm:p-5">
-        <h4 class="text-sm font-semibold text-ink-900 dark:text-cream-50">${esc(b.group ?? 'Umum')}</h4>
-        ${b.html}
+    const groupCard = (b: { group?: string; html: string; props: SettingProp[] }) => {
+      const kind = previewKind(b.props);
+      const head = `<h4 class="text-sm font-semibold text-ink-900 dark:text-cream-50">${esc(b.group ?? 'Umum')}</h4>`;
+      if (!kind) {
+        return `<section class="${CARD} min-w-0 space-y-4 p-4 sm:p-5">${head}${b.html}</section>`;
+      }
+      // Kelompok pesan: kolom isian di kiri, preview kartu menempel di kanan.
+      return `<section class="${CARD} min-w-0 p-4 sm:p-5">
+        ${head}
+        <div class="mt-3 grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <div class="min-w-0 space-y-4">${b.html}</div>
+          <div class="min-w-0"><div class="lg:sticky lg:top-24" data-preview="${esc(f.key)}|${esc(kind)}">${previewFor(f, b.props)}</div></div>
+        </div>
       </section>`;
+    };
     const category = (title: string, hint: string, list: typeof blocks) =>
       list.length
         ? `<div class="mt-6">
             <h3 class="font-display text-base font-semibold">${title}</h3>
             <p class="mt-0.5 text-xs text-ink-500 dark:text-cream-300/60">${hint}</p>
-            <div class="${SPAN_LAST} mt-3 grid gap-3 sm:gap-4 lg:grid-cols-2">${list.map(groupCard).join('')}</div>
+            <div class="${list.some((b) => previewKind(b.props)) ? 'grid gap-3 sm:gap-4' : `${SPAN_LAST} grid gap-3 sm:gap-4 lg:grid-cols-2`} mt-3">${list.map(groupCard).join('')}</div>
           </div>`
         : '';
     return `${featureCardHtml(f, false)}
@@ -1194,6 +1259,30 @@ export function mountServerPage(cfg: PageConfig): void {
       return;
     }
 
+    const gAdd = target.closest<HTMLButtonElement>('[data-guide-add]');
+    if (gAdd && !gAdd.disabled && data) {
+      const [fKey, pKey] = gAdd.dataset.guideAdd!.split('|');
+      const prop = typedSettings(registry().find((x) => x.key === fKey)!).find((x) => x.key === pKey);
+      if (!draft[fKey] || !prop) return;
+      const rows = (Array.isArray(draft[fKey].settings[pKey]) ? draft[fKey].settings[pKey] : []) as GuideRow[];
+      if (prop.max_items != null && rows.length >= prop.max_items) return;
+      draft[fKey].settings[pKey] = [...rows, { channel_id: '', text: '' }];
+      attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
+      renderAll();
+      return;
+    }
+    const gDel = target.closest<HTMLButtonElement>('[data-guide-del]');
+    if (gDel && !gDel.disabled && data) {
+      const [fKey, pKey, idx] = gDel.dataset.guideDel!.split('|');
+      const rows = (Array.isArray(draft[fKey]?.settings[pKey]) ? draft[fKey].settings[pKey] : []) as GuideRow[];
+      const next = rows.filter((_, i) => i !== Number(idx));
+      if (next.length) draft[fKey].settings[pKey] = next;
+      else delete draft[fKey].settings[pKey];
+      attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
+      renderAll();
+      return;
+    }
+
     const notUsed = target.closest<HTMLInputElement>('input[data-not-used]');
     if (notUsed && !notUsed.disabled && data) {
       const key = notUsed.dataset.notUsed!;
@@ -1247,6 +1336,22 @@ export function mountServerPage(cfg: PageConfig): void {
     }
   });
 
+  // Preview kartu ikut berubah saat mengetik (draft diperbarui tanpa menggambar ulang halaman).
+  root.addEventListener('input', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLInputElement | HTMLTextAreaElement>('[data-setting]');
+    if (!el || !data || (el.dataset.type !== 'string' && el.dataset.type !== 'color')) return;
+    const [fKey, pKey] = el.dataset.setting!.split('|');
+    if (!draft[fKey]) return;
+    if (el.value === '') delete draft[fKey].settings[pKey];
+    else draft[fKey].settings[pKey] = el.value;
+    const feat = registry().find((x) => x.key === fKey);
+    const box = el.closest('section')?.querySelector<HTMLElement>('[data-preview]');
+    if (!feat || !box) return;
+    const kind = box.dataset.preview!.split('|')[1];
+    const props = typedSettings(feat).filter((p) => p.key.startsWith(`${kind}_`) || (kind === 'levelup' && p.key.startsWith('levelup')));
+    box.innerHTML = previewFor(feat, props.length ? props : typedSettings(feat));
+  });
+
   // Formulir 📣 Share Server (draft disimpan di controller-nya).
   root.addEventListener('input', (e) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-share-field]');
@@ -1278,6 +1383,19 @@ export function mountServerPage(cfg: PageConfig): void {
       if (field === 'level') row.level = rwField.value.trim() === '' ? null : Number(rwField.value);
       else if (field === 'category') row.category = rwField.value;
       else if (field === 'role_id') row.role_id = rwField.value;
+      attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
+      renderAll();
+      return;
+    }
+    const gField = (e.target as HTMLElement).closest<HTMLInputElement | HTMLSelectElement>('[data-guide-field]');
+    if (gField && data) {
+      const rowEl = gField.closest<HTMLElement>('[data-guide-row]');
+      const [fKey, pKey, idx] = (rowEl?.dataset.guideRow ?? '').split('|');
+      const rows = (Array.isArray(draft[fKey]?.settings[pKey]) ? draft[fKey].settings[pKey] : []) as GuideRow[];
+      const row = rows[Number(idx)];
+      if (!row) return;
+      if (gField.dataset.guideField === 'text') row.text = gField.value;
+      else row.channel_id = gField.value;
       attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
       renderAll();
       return;

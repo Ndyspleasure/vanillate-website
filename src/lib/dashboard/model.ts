@@ -70,7 +70,7 @@ export function isNotUsed(s: FeatureState | undefined): boolean {
 // Aturan yang sama diulang di RPC guild_config_validate (final) dan bot
 // (src/dashboard/typed.js); di sini hanya umpan balik sebelum menyimpan.
 
-export type SettingType = 'boolean' | 'integer' | 'string' | 'enum' | 'role' | 'role_list' | 'channel_list' | 'reward_list';
+export type SettingType = 'boolean' | 'integer' | 'string' | 'enum' | 'role' | 'role_list' | 'channel_list' | 'reward_list' | 'color' | 'guide_list';
 
 export interface SettingProp {
   key: string;
@@ -91,6 +91,20 @@ export interface SettingProp {
   group?: string;
   /** Urutan tampil dari bot (kolom JSONB tidak menyimpan urutan key). */
   order?: number;
+  /** enum: teks tampil per nilai (nilai tersimpan tetap kode aslinya). */
+  labels?: Record<string, string>;
+  /** guide_list: batas panjang keterangan tiap baris. */
+  max_text?: number;
+  /** Nilai bawaan yang dipakai bot bila kosong (teks atau warna); dipakai untuk placeholder & preview. */
+  placeholder?: string;
+  /** 'message' = kelompok pengaturan pesan teks; selain itu konfigurasi. */
+  category?: string;
+}
+
+/** Satu baris daftar channel panduan (guide_list). */
+export interface GuideRow {
+  channel_id: string;
+  text: string;
 }
 
 export interface RewardRow {
@@ -99,7 +113,7 @@ export interface RewardRow {
   role_id: string;
 }
 
-const SETTING_TYPES = new Set<string>(['boolean', 'integer', 'string', 'enum', 'role', 'role_list', 'channel_list', 'reward_list']);
+const SETTING_TYPES = new Set<string>(['boolean', 'integer', 'string', 'enum', 'role', 'role_list', 'channel_list', 'reward_list', 'color', 'guide_list']);
 
 /**
  * Properti bertipe sebuah fitur, urut menurut `order` dari bot. JSONB
@@ -131,6 +145,10 @@ export function typedSettings(f: Feature): SettingProp[] {
       max_level: typeof p.max_level === 'number' ? p.max_level : undefined,
       group: typeof p.group === 'string' && p.group.trim() ? p.group : undefined,
       order: typeof p.order === 'number' ? p.order : undefined,
+      labels: p.labels && typeof p.labels === 'object' ? (p.labels as Record<string, string>) : undefined,
+      max_text: typeof p.max_text === 'number' ? p.max_text : undefined,
+      category: typeof p.category === 'string' ? p.category : undefined,
+      placeholder: typeof p.placeholder === 'string' ? p.placeholder : undefined,
     });
   }
   return out
@@ -184,6 +202,14 @@ export function validateSettingValues(f: Feature, s: FeatureState): Issue[] {
         break;
       case 'role':
         if (typeof v !== 'string' || !snowflake.test(v)) bad();
+        break;
+      case 'color':
+        if (typeof v !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(v)) bad();
+        break;
+      case 'guide_list':
+        if (!Array.isArray(v) || (p.max_items != null && v.length > p.max_items)
+          || (v as GuideRow[]).some((r) => !r || typeof r !== 'object' || !snowflake.test(String(r.channel_id ?? ''))
+            || (r.text != null && (typeof r.text !== 'string' || (p.max_text != null && r.text.length > p.max_text))))) bad();
         break;
       case 'reward_list': {
         const limits = p.limits ?? {};
