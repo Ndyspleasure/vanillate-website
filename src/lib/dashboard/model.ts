@@ -87,6 +87,10 @@ export interface SettingProp {
   /** reward_list: batas jumlah per kategori & level tertinggi. */
   limits?: Record<string, number>;
   max_level?: number;
+  /** Judul bagian (mis. "Chat", "Voice"); setelan berurutan dengan group sama dikelompokkan. */
+  group?: string;
+  /** Urutan tampil dari bot (kolom JSONB tidak menyimpan urutan key). */
+  order?: number;
 }
 
 export interface RewardRow {
@@ -97,7 +101,11 @@ export interface RewardRow {
 
 const SETTING_TYPES = new Set<string>(['boolean', 'integer', 'string', 'enum', 'role', 'role_list', 'channel_list', 'reward_list']);
 
-/** Properti bertipe sebuah fitur (urutan seperti diterbitkan bot). */
+/**
+ * Properti bertipe sebuah fitur, urut menurut `order` dari bot. JSONB
+ * menyusun ulang key menurut panjang namanya, jadi urutan objek tidak dipakai
+ * kecuali `order` belum diterbitkan (bot lama).
+ */
 export function typedSettings(f: Feature): SettingProp[] {
   const props = (f.settings_schema as { properties?: Record<string, Record<string, unknown>> } | undefined)?.properties;
   if (!props || typeof props !== 'object') return [];
@@ -121,9 +129,14 @@ export function typedSettings(f: Feature): SettingProp[] {
       help: typeof p.help === 'string' ? p.help : undefined,
       limits: p.limits && typeof p.limits === 'object' ? (p.limits as Record<string, number>) : undefined,
       max_level: typeof p.max_level === 'number' ? p.max_level : undefined,
+      group: typeof p.group === 'string' && p.group.trim() ? p.group : undefined,
+      order: typeof p.order === 'number' ? p.order : undefined,
     });
   }
-  return out;
+  return out
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => (a.p.order ?? Infinity) - (b.p.order ?? Infinity) || a.i - b.i)
+    .map(({ p }) => p);
 }
 
 /** Nilai efektif sebuah setelan: tersimpan, atau default schema. */

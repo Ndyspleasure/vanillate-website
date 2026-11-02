@@ -250,6 +250,26 @@ test('typedSettings membaca schema; settingValue jatuh ke default', () => {
   assert.equal(settingValue(verification, vState({ steps: 5 }).VERIFICATION, 'steps'), 5);
 });
 
+test('typedSettings: urut menurut `order` dari bot (JSONB mengacak urutan key) & membawa group', () => {
+  // Urutan objek di sini meniru JSONB (key pendek dulu), bukan urutan registry.
+  const leveling = {
+    ...verification,
+    key: 'LEVELING',
+    settings_schema: {
+      properties: {
+        chat_xp: { type: 'integer', title: 'XP per pesan', group: 'Chat', order: 1 },
+        voice_xp: { type: 'integer', title: 'XP voice', group: 'Voice', order: 2 },
+        chat_enabled: { type: 'boolean', title: 'Chat aktif', group: 'Chat', order: 0 },
+        blacklist_roles: { type: 'role_list', title: 'Role tanpa XP', group: 'Pengecualian', order: 4 },
+        combined_enabled: { type: 'boolean', title: 'Combined', group: 'Combined', order: 3 },
+      },
+    },
+  } as typeof verification;
+  const props = typedSettings(leveling);
+  assert.deepEqual(props.map((p) => p.key), ['chat_enabled', 'chat_xp', 'voice_xp', 'combined_enabled', 'blacklist_roles']);
+  assert.deepEqual(props.map((p) => p.group), ['Chat', 'Chat', 'Voice', 'Combined', 'Pengecualian']);
+});
+
 test('validateDraft: rentang, wajib, tipe, role tak dikenal (cermin RPC)', () => {
   const codes = (settings: Record<string, unknown>, enabled = true) =>
     validateDraft(vState(settings, enabled), vState({}, false), [verification], roleSnapshot).map((i) => `${i.code}:${i.key ?? ''}`);
