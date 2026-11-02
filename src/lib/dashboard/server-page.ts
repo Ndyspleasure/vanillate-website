@@ -64,6 +64,9 @@ import type { IconName } from '@data/icons';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
 import { createShareController } from './share-server';
 
+/** Kartu terakhir yang ganjil melebar penuh, jadi tidak ada slot kosong di kanan (desktop). */
+const SPAN_LAST = 'lg:[&>*:last-child:nth-child(odd)]:col-span-2';
+
 type Tab = 'overview' | 'game-hub' | 'social-hub' | 'verification' | 'leveling' | 'share-server' | 'channels' | 'audit-log';
 type Hub = 'overview' | 'game-hub' | 'social-hub' | 'server-hub';
 
@@ -545,7 +548,11 @@ export function mountServerPage(cfg: PageConfig): void {
     return `
       <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">${intro}</p>
       ${data!.snapshot?.refreshed_at ? `<p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">Daftar channel dari Discord: ${esc(relativeTime(data!.snapshot.refreshed_at))}.</p>` : ''}
-      <div class="mt-4 grid gap-3 sm:mt-5 sm:gap-4 lg:grid-cols-2">${feats.map(featureCardHtml).join('')}</div>`;
+      ${
+        feats.length === 1
+          ? `<div class="mt-4 sm:mt-5">${featureSectionHtml(feats[0])}</div>`
+          : `<div class="${SPAN_LAST} mt-4 grid gap-3 sm:mt-5 sm:gap-4 lg:grid-cols-2">${feats.map((f) => featureCardHtml(f)).join('')}</div>`
+      }`;
   }
 
   function featureIssues(f: Feature): { level: 'ok' | 'warn' | 'error' | 'off' | 'dirty'; messages: string[] } {
@@ -632,10 +639,10 @@ export function mountServerPage(cfg: PageConfig): void {
       </div>`;
   }
 
-  /** Kontrol setelan bertipe (settings_schema) untuk fitur aktif. */
-  function settingsHtml(f: Feature): string {
+  /** Kontrol setelan bertipe (settings_schema) per kelompok (`group`) untuk fitur aktif. */
+  function settingsBlocks(f: Feature): { group?: string; text: boolean; html: string }[] {
     const props = typedSettings(f);
-    if (!props.length) return '';
+    if (!props.length) return [];
     const disabled = !editable() || saving;
     const d = data!;
     const s = draft[f.key];
@@ -770,19 +777,54 @@ export function mountServerPage(cfg: PageConfig): void {
       if (last && p.group && last.group === p.group) last.items.push(p);
       else blocks.push({ group: p.group, items: [p] });
     }
-    return blocks
+    return blocks.map((b) => ({
+      group: b.group,
+      // Kelompok yang isinya hanya teks (judul, isi pesan, tombol) = kategori "Pesan teks".
+      text: b.items.every((p) => p.type === 'string'),
+      html: b.items.map(item).join(''),
+    }));
+  }
+
+  /** Setelan bertipe dalam satu kolom (fitur di daftar dua kolom, mis. Game/Social Hub). */
+  function settingsHtml(f: Feature): string {
+    return settingsBlocks(f)
       .map((b) =>
         b.group
           ? `<fieldset class="space-y-4 border-t border-ink-900/10 pt-4 dark:border-cream-100/10">
               <legend class="pr-2 text-sm font-semibold text-ink-900 dark:text-cream-50">${esc(b.group)}</legend>
-              ${b.items.map(item).join('')}
+              ${b.html}
             </fieldset>`
-          : b.items.map(item).join(''),
+          : b.html,
       )
       .join('');
   }
 
-  function featureCardHtml(f: Feature): string {
+  /**
+   * Bagian dengan satu fitur besar (Verification, Leveling): kartu utama penuh,
+   * lalu konfigurasi dan pesan teks dipisah per kategori, tiap kelompok satu kartu.
+   */
+  function featureSectionHtml(f: Feature): string {
+    const s = draft[f.key];
+    const blocks = s.enabled ? settingsBlocks(f) : [];
+    const groupCard = (b: { group?: string; html: string }) => `
+      <section class="${CARD} min-w-0 space-y-4 p-4 sm:p-5">
+        <h4 class="text-sm font-semibold text-ink-900 dark:text-cream-50">${esc(b.group ?? 'Umum')}</h4>
+        ${b.html}
+      </section>`;
+    const category = (title: string, hint: string, list: typeof blocks) =>
+      list.length
+        ? `<div class="mt-6">
+            <h3 class="font-display text-base font-semibold">${title}</h3>
+            <p class="mt-0.5 text-xs text-ink-500 dark:text-cream-300/60">${hint}</p>
+            <div class="${SPAN_LAST} mt-3 grid gap-3 sm:gap-4 lg:grid-cols-2">${list.map(groupCard).join('')}</div>
+          </div>`
+        : '';
+    return `${featureCardHtml(f, false)}
+      ${category('Konfigurasi', 'Aturan, batas, dan role yang dipakai fitur ini.', blocks.filter((b) => !b.text))}
+      ${category('Pesan teks', 'Teks yang dilihat member di Discord. Kosongkan kolom untuk memakai teks bawaan.', blocks.filter((b) => b.text))}`;
+  }
+
+  function featureCardHtml(f: Feature, withSettings = true): string {
     const s = draft[f.key];
     const status = featureIssues(f);
     const notUsed = isNotUsed(s);
@@ -825,7 +867,7 @@ export function mountServerPage(cfg: PageConfig): void {
         <div class="mt-4 space-y-4">
           ${
             s.enabled
-              ? f.purposes.map((p) => `<div>${selectHtml(f, p)}</div>`).join('') + settingsHtml(f)
+              ? f.purposes.map((p) => `<div>${selectHtml(f, p)}</div>`).join('') + (withSettings ? settingsHtml(f) : '')
               : savedChannels.length
                 ? `<p class="text-xs text-ink-500 dark:text-cream-300/60">Tersimpan: ${esc(savedChannels.join(' · '))}, dipakai lagi saat fitur diaktifkan.</p>`
                 : ''
