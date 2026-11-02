@@ -329,6 +329,8 @@ export function mountServerPage(cfg: PageConfig): void {
     deferredRender = false;
     if (!data) return renderError();
     const focusSel = focusSelector(document.activeElement as HTMLElement | null);
+    // Posisi gulir daftar pilihan (role/channel) ikut dipulihkan.
+    const scrolls = [...root.querySelectorAll<HTMLElement>('[data-scroll-keep]')].map((el) => [el.dataset.scrollKeep!, el.scrollTop] as const);
 
     root.innerHTML = `
       <a href="/dashboard/" class="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900 dark:text-cream-300 dark:hover:text-cream-50">
@@ -339,7 +341,11 @@ export function mountServerPage(cfg: PageConfig): void {
       ${navHtml()}
       ${saveBarHtml()}`;
     wireAvatars(root);
-    if (focusSel) root.querySelector<HTMLElement>(focusSel)?.focus();
+    for (const [k, top] of scrolls) {
+      const el = root.querySelector<HTMLElement>(`[data-scroll-keep="${CSS.escape(k)}"]`);
+      if (el) el.scrollTop = top;
+    }
+    if (focusSel) root.querySelector<HTMLElement>(focusSel)?.focus({ preventScroll: true });
     if (tab === 'audit-log' && audit === null && !auditLoading && !auditError) void loadAudit();
     if (tab === 'share-server') share.activate();
     else share.deactivate();
@@ -649,7 +655,7 @@ export function mountServerPage(cfg: PageConfig): void {
             : `<input type="text" ${p.max_length ? `maxlength="${p.max_length}"` : ''} ${base} value="${esc(v)}" class="${cls}" />`;
         }
         case 'boolean':
-          return `<label class="mt-1.5 inline-flex items-center gap-2 text-sm"><input type="checkbox" class="h-4 w-4 rounded accent-amber-600" ${base} ${cur === true ? 'checked' : ''} /> Aktif</label>`;
+          return `<label class="inline-flex cursor-pointer items-center gap-2 text-sm font-medium"><input type="checkbox" class="h-4 w-4 shrink-0 rounded accent-amber-600" ${base} ${cur === true ? 'checked' : ''} /> ${esc(p.title)}</label>`;
         case 'enum':
           return `<select ${base} class="${cls}">${(p.values ?? []).map((v) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
         case 'role': {
@@ -661,12 +667,8 @@ export function mountServerPage(cfg: PageConfig): void {
             ${roles.map((r) => `<option value="${esc(r.id)}" ${r.id === cur ? 'selected' : ''}>@${esc(r.name)}${r.managed ? ' (integrasi)' : ''}</option>`).join('')}
           </select>`;
         }
-        case 'role_list': {
-          const chosen = new Set(Array.isArray(cur) ? (cur as string[]) : []);
-          return `<select multiple size="5" ${base} class="${cls}">${roleOptions(d.snapshot)
-            .map((r) => `<option value="${esc(r.id)}" ${chosen.has(r.id) ? 'selected' : ''}>@${esc(r.name)}</option>`)
-            .join('')}</select>`;
-        }
+        case 'role_list':
+          return checkList(f, p, cur, roleOptions(d.snapshot).filter((r) => r.id !== guildId && r.name !== '@everyone').map((r) => ({ id: r.id, label: `@${r.name}` })), (id) => roleLabel(ctx(), id), 'role');
         case 'reward_list': {
           const rows = (Array.isArray(s.settings[p.key]) ? s.settings[p.key] : []) as RewardRow[];
           const cats = Object.keys(p.limits ?? {});
@@ -704,15 +706,47 @@ export function mountServerPage(cfg: PageConfig): void {
             </div>`;
         }
         case 'channel_list': {
-          const chosen = new Set(Array.isArray(cur) ? (cur as string[]) : []);
-          const opts = (d.snapshot?.channels ?? []).filter((c) => c.type === 0 || c.type === 5 || c.type === 2).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-          return `<select multiple size="6" ${base} class="${cls}">${opts
-            .map((c) => `<option value="${esc(c.id)}" ${chosen.has(c.id) ? 'selected' : ''}>${c.type === 2 ? 'Voice: ' : '#'}${esc(c.name)}</option>`)
-            .join('')}</select>`;
+          const opts = (d.snapshot?.channels ?? [])
+            .filter((c) => c.type === 0 || c.type === 5 || c.type === 2 || c.type === 4)
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+            .map((c) => ({ id: c.id, label: c.type === 4 ? `Kategori: ${c.name}` : c.type === 2 ? `Voice: ${c.name}` : `#${c.name}` }));
+          return checkList(f, p, cur, opts, (id) => channelLabel(ctx(), id), 'channel');
         }
         default:
           return '';
       }
+    };
+    /** Daftar centang untuk role_list/channel_list (pengganti select multiple). */
+    const checkList = (
+      f: Feature,
+      p: SettingProp,
+      cur: unknown,
+      options: { id: string; label: string }[],
+      missingLabel: (id: string) => string,
+      noun: string,
+    ): string => {
+      const chosen = Array.isArray(cur) ? (cur as string[]) : [];
+      const set = new Set(chosen);
+      const known = new Set(options.map((o) => o.id));
+      // Pilihan tersimpan yang sudah tidak ada di Discord tetap tampil agar bisa dilepas.
+      const all = [...chosen.filter((id) => !known.has(id)).map((id) => ({ id, label: missingLabel(id) })), ...options];
+      const full = p.max_items != null && chosen.length >= p.max_items;
+      const key = `${f.key}|${p.key}`;
+      const rows = all
+        .map((o) => {
+          const on = set.has(o.id);
+          return `<label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-ink-900/5 dark:hover:bg-cream-100/5 ${on ? 'font-medium' : ''}">
+            <input type="checkbox" class="h-4 w-4 shrink-0 rounded accent-amber-600" data-list="${esc(key)}" value="${esc(o.id)}"
+              data-focus="ls-${esc(f.key)}-${esc(p.key)}-${esc(o.id)}" ${on ? 'checked' : ''} ${disabled || (full && !on) ? 'disabled' : ''} />
+            <span class="min-w-0 truncate">${esc(o.label)}</span>
+          </label>`;
+        })
+        .join('');
+      return `
+        <div class="mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 dark:border-cream-100/15 dark:bg-ink-800" data-scroll-keep="${esc(key)}">
+          ${rows || `<p class="px-2 py-1.5 text-xs text-ink-500 dark:text-cream-300/60">Belum ada ${noun} yang bisa dipilih. Tekan Refresh Discord Data.</p>`}
+        </div>
+        <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${chosen.length} dipilih${p.max_items != null ? ` dari maksimal ${p.max_items}` : ''}.</p>`;
     };
     const hint = (p: SettingProp) => {
       const note = (t: string) => `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(t)}</p>`;
@@ -721,12 +755,30 @@ export function mountServerPage(cfg: PageConfig): void {
       if (p.type === 'integer' && (p.min != null || p.max != null)) {
         parts.push(note(`Rentang ${p.min ?? '…'} sampai ${p.max ?? '…'}${p.default != null ? `, bawaan ${p.default}` : ''}.`));
       } else if (p.type === 'string' && p.max_length) {
-        parts.push(note(`Maksimal ${p.max_length} karakter. Kosongkan untuk teks bawaan.`));
+        parts.push(note(`Maksimal ${p.max_length} karakter.${p.help?.includes('Kosongkan') ? '' : ' Kosongkan untuk teks bawaan.'}`));
       }
       return parts.join('');
     };
-    return props
-      .map((p) => `<div><span class="text-xs font-medium text-ink-600 dark:text-cream-300">${esc(p.title)}${p.required ? ' <span class="text-red-600">*</span>' : ''}</span>${field(p)}${hint(p)}</div>`)
+    const item = (p: SettingProp) =>
+      p.type === 'boolean'
+        ? `<div>${field(p)}${hint(p)}</div>`
+        : `<div><span class="block text-xs font-medium text-ink-600 dark:text-cream-300">${esc(p.title)}${p.required ? ' <span class="text-red-600">*</span>' : ''}</span>${field(p)}${hint(p)}</div>`;
+    // Setelan berurutan dengan `group` sama dikumpulkan di bawah satu judul.
+    const blocks: { group?: string; items: SettingProp[] }[] = [];
+    for (const p of props) {
+      const last = blocks[blocks.length - 1];
+      if (last && p.group && last.group === p.group) last.items.push(p);
+      else blocks.push({ group: p.group, items: [p] });
+    }
+    return blocks
+      .map((b) =>
+        b.group
+          ? `<fieldset class="space-y-4 border-t border-ink-900/10 pt-4 dark:border-cream-100/10">
+              <legend class="pr-2 text-sm font-semibold text-ink-900 dark:text-cream-50">${esc(b.group)}</legend>
+              ${b.items.map(item).join('')}
+            </fieldset>`
+          : b.items.map(item).join(''),
+      )
       .join('');
   }
 
@@ -1188,6 +1240,20 @@ export function mountServerPage(cfg: PageConfig): void {
       renderAll();
       return;
     }
+    const listBox = (e.target as HTMLElement).closest<HTMLInputElement>('input[data-list]');
+    if (listBox && data) {
+      const [fKey, pKey] = listBox.dataset.list!.split('|');
+      if (!draft[fKey]) return;
+      const st = draft[fKey].settings;
+      const cur = Array.isArray(st[pKey]) ? (st[pKey] as string[]) : [];
+      const next = cur.filter((id) => id !== listBox.value);
+      if (listBox.checked) next.push(listBox.value);
+      if (next.length) st[pKey] = next;
+      else delete st[pKey];
+      attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
+      renderAll();
+      return;
+    }
     const setting = (e.target as HTMLElement).closest<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-setting]');
     if (setting && data) {
       const [fKey, pKey] = setting.dataset.setting!.split('|');
@@ -1198,8 +1264,6 @@ export function mountServerPage(cfg: PageConfig): void {
       else if (t === 'integer') {
         if (setting.value.trim() === '') delete st[pKey];
         else st[pKey] = Number(setting.value);
-      } else if (t === 'role_list' || t === 'channel_list') {
-        st[pKey] = [...(setting as HTMLSelectElement).selectedOptions].map((o) => o.value);
       } else if (setting.value === '') delete st[pKey];
       else st[pKey] = setting.value;
       attemptIssues = attemptIssues.filter((i) => i.feature !== fKey);
