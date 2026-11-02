@@ -475,9 +475,9 @@ begin
     v_feat := p_new -> v_reg.feature_key;
     if v_feat is null then continue; end if;
 
-    -- Settings: objek kecil (≤ 8000 karakter: daftar role reward 25 baris + blacklist masih muat); bila schema punya "properties", key wajib dikenal.
+    -- Settings: objek kecil (≤ 20000 karakter: role reward 25 baris + blacklist + teks pesan & gaya pesan kustom masih muat); bila schema punya "properties", key wajib dikenal.
     if jsonb_typeof(v_feat -> 'settings') is distinct from 'object'
-       or length((v_feat -> 'settings')::text) > 8000 then
+       or length((v_feat -> 'settings')::text) > 20000 then
       v_issues := v_issues || jsonb_build_array(jsonb_build_object(
         'code', 'SETTINGS_INVALID', 'feature', v_reg.feature_key));
     else

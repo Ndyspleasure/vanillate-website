@@ -215,7 +215,7 @@ Perubahan skema (aditif & idempoten, `supabase/guild-dashboard-schema.sql`):
 |---|---|
 | `guild_feature_registry.section` | Constraint diperluas: `game`, `social`, `verification`, `leveling`, `other` |
 | `guild_discord_snapshot.roles`, `.bot_top_position` | Role server (id, nama, posisi, managed) + posisi role tertinggi bot, diterbitkan bot lewat `guild_bot_publish_snapshot`; dikirim ke website di `guild_dashboard_get → snapshot` |
-| `guild_config_validate` | Memvalidasi `settings_schema.properties.<k>.type` (`boolean`, `integer` + `min`/`max`, `string` + `max_length`, `enum`, `role`, `role_list`, `channel_list` + `max_items`), `required` (hanya fitur aktif), dan role baru/berubah harus ada di snapshot. Kode: `SETTING_INVALID`, `SETTING_OUT_OF_RANGE`, `SETTING_REQUIRED`, `ROLE_NOT_FOUND` |
+| `guild_config_validate` | Memvalidasi `settings_schema.properties.<k>.type` (`boolean`, `integer` + `min`/`max`, `string` + `max_length`, `enum`, `role`, `role_list`, `channel_list` + `max_items`; `color` (#RRGGBB) dan `guide_list` tidak punya cabang SQL, divalidasi bot + website), `required` (hanya fitur aktif), dan role baru/berubah harus ada di snapshot. Kode: `SETTING_INVALID`, `SETTING_OUT_OF_RANGE`, `SETTING_REQUIRED`, `ROLE_NOT_FOUND` |
 
 Validasi final berada di RPC (bukan hanya UI) dan diulang bot sebelum
 menerapkan (`ROLE_UNUSABLE` bila bot tak bisa memberi role). UI
@@ -261,3 +261,16 @@ Deploy ulang Edge Function setelah mengubahnya (MCP Supabase atau
 `supabase functions deploy dashboard-discord`, verify JWT aktif). Mengubah
 skema: edit `supabase/guild-dashboard-schema.sql` (tetap idempoten), jalankan
 `npm run test:sql`, lalu terapkan sebagai migration baru.
+
+
+### Pengaturan pesan (gaya kartu) dan preview
+
+Kelompok setelan dengan `category: 'message'` tampil di bagian **Pesan teks**
+(sisanya **Konfigurasi**). Setelan gaya pesan bertipe `enum` + `labels`
+(gambar kecil: tanpa/foto member/ikon server), `color` (`#RRGGBB`), dan
+`guide_list` (`[{channel_id, text}]`, `max_items`, `max_text`). `placeholder`
+berisi teks/warna bawaan bot. `src/lib/dashboard/message-preview.ts` menggambar
+**preview kartu** dari draft yang belum disimpan (data contoh, kartu mengikuti
+tampilan Components V2); tes `tests/message-preview.test.ts`. Batas ukuran
+`settings` di `guild_config_validate` naik ke 20000 karakter
+(`supabase/guild-dashboard-schema.sql`, harus diterapkan ke proyek CMS).
