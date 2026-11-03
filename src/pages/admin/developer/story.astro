@@ -1,0 +1,196 @@
+---
+// Panel Developer: 🌇 Vanillate Story (game di hub /game bot Vanillate.ID).
+// Ringkasan dari snapshot `story`; aksi lewat bot_commands dengan tipe yang
+// sama persis dengan handler bot (src/cms/handlers/story.js): story.detail,
+// story.reset, story.exportIds. Data pemain ada di database game, bukan di proyek ini.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Vanillate Story" active="dev-story">
+  <AdminPageHeader
+    eyebrow="Discord Bot"
+    title="Vanillate Story"
+    description="Game cerita di hub /game: ringkasan pemain, aktivitas terbaru, detail, export User ID & reset progres per pemain."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-10">
+    <p id="st-fresh"></p>
+    <div id="st-body" class="space-y-10"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
+  import { FPLAYER } from '@/lib/dev-panel/actions';
+  import { KELAS, fmtJam, formCard, freshness, pasangAksi, section, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
+
+  let role = 'viewer';
+
+  document.addEventListener('admin:ready', (e) => {
+    role = (e as CustomEvent).detail?.role ?? 'viewer';
+    void muat();
+  });
+
+  const ada = (v: unknown) => v !== undefined && v !== null && v !== '';
+  const teks = (v: unknown) => (ada(v) ? esc(v) : `<span class="${KELAS.muted}">belum ada</span>`);
+  const angka = (v: unknown) => (ada(v) ? fmtAngka(v as number) : `<span class="${KELAS.muted}">belum ada</span>`);
+  const waktu = (v: unknown) => (ada(v) ? esc(fmtJam(v as string)) : `<span class="${KELAS.muted}">belum ada</span>`);
+
+  const pemain = (id: string, nama?: string | null) =>
+    `${esc(nama ?? 'Pemain')}<br><code class="text-xs ${KELAS.muted}">${esc(id)}</code>`;
+
+  const SKILL: [string, string][] = [
+    ['strength', 'Kekuatan'], ['intelligence', 'Kecerdasan'], ['communication', 'Komunikasi'], ['luck', 'Keberuntungan'],
+  ];
+
+  function detailHtml(d: any): string {
+    const skills = SKILL.map(([k, l]) => `${l} ${angka(d.skills?.[k])}`).join(' · ');
+    const bab = ada(d.chapter)
+      ? `${angka(d.chapter)}${ada(d.chapterTitle) ? ` · ${esc(d.chapterTitle)}` : ''}`
+      : '<span class="' + KELAS.muted + '">belum ada</span>';
+    const baris: [string, string][] = [
+      ['Pemain', pemain(d.userId, d.name)],
+      ['Hari', `${angka(d.day)} / ${angka(d.totalDays)} (minggu ${angka(d.week)})`],
+      ['Jam & lokasi', `${teks(d.clock)} · ${teks(d.location)}`],
+      ['Uang', angka(d.money)],
+      ['Tabungan', angka(d.savings)],
+      ['Energi', `${angka(d.energy)} / ${angka(d.energyMax)}`],
+      ['Sisa utang', angka(d.debtRemaining)],
+      ['Tagihan minggu ini', angka(d.weekDue)],
+      ['Skill', skills],
+      ['Kontak', angka(d.contacts)],
+      ['Pacaran / menikah', `${angka(d.couples?.dating)} / ${angka(d.couples?.married)}`],
+      ['Anak', angka(d.children)],
+      ['Bab cerita utama', bab],
+      ['Quest aktif', angka(d.questsActive)],
+      ['Quest selesai', angka(d.questsDone)],
+      ['Mulai main', waktu(d.createdAt)],
+      ['Aktif terakhir', waktu(d.lastActive)],
+    ];
+    return `<div class="${KELAS.kartu}"><dl class="grid gap-x-6 gap-y-2 sm:grid-cols-2 text-sm">${baris
+      .map(([k, v]) => `<div><dt class="text-xs ${KELAS.muted}">${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl></div>`;
+  }
+
+  function kekalahanHtml(o: any): string {
+    if (!o || !Array.isArray(o.byWeek)) return `<p class="text-sm ${KELAS.muted}">belum ada data</p>`;
+    const rows = o.byWeek.map((w: any) => {
+      const pct = typeof w.lossRatePercent === 'number' ? w.lossRatePercent : null;
+      return [
+        angka(w.week), angka(w.due), angka(w.reached), angka(w.lost),
+        pct === null ? `<span class="${KELAS.muted}">belum ada data</span>` : pill(`${fmtAngka(pct)}%`, pct >= 30 ? 'bad' : 'ok'),
+        ada(w.avgShortfall) ? fmtAngka(w.avgShortfall) : `<span class="${KELAS.muted}">belum ada data</span>`,
+      ];
+    });
+    return `<div class="grid gap-4 sm:grid-cols-2 mb-4">${stat('Total menang', fmtAngka(o.wins))}${stat('Total kalah', fmtAngka(o.losses))}</div>`
+      + table(['Minggu', 'Cicilan', 'Pemain mencapai', 'Kalah', 'Persen kalah', 'Rata-rata kekurangan uang'], rows, 'Belum ada data.');
+  }
+
+  function renderAturan(r: any) {
+    const el = document.getElementById('st-rules')!;
+    if (!r || !r.defs) { el.innerHTML = `<p class="text-sm ${KELAS.muted}">belum ada data</p>`; return; }
+    const keys = Object.keys(r.defs);
+    const eff = r.effective ?? {};
+    const daftar = (a: unknown) => (Array.isArray(a) && a.length ? a.map((n) => fmtAngka(n as number)).join(', ') : 'belum ada');
+    const cicilan = `<div class="${KELAS.kartu} text-sm space-y-1">
+      <p><span class="${KELAS.muted}">Cicilan berlaku (minggu 1 sampai 7):</span> ${esc(daftar(r.dues))}</p>
+      <p><span class="${KELAS.muted}">Cicilan dasar:</span> ${esc(daftar(r.baseDues))}</p>
+      <p><span class="${KELAS.muted}">Total utang:</span> ${angka(r.totalDebt)}</p></div>`;
+    if (role !== 'owner') {
+      el.innerHTML = notice('info', 'Mengubah aturan khusus owner.')
+        + table(['Aturan', 'Nilai', 'Bawaan', 'Batas'], keys.map((k) => { const d = r.defs[k]; return [esc(d.label ?? k), `<strong>${esc(eff[k])}</strong>`, esc(d.def), `${esc(d.min)} sampai ${esc(d.max)}`]; }))
+        + cicilan;
+      return;
+    }
+    el.innerHTML = `<form id="st-rules-form" class="${KELAS.kartu} space-y-3">
+      <div class="grid gap-3 sm:grid-cols-2">${keys.map((k) => { const d = r.defs[k]; return `<label class="${KELAS.label}">${esc(d.label ?? k)}
+        <input type="number" name="${esc(k)}" min="${esc(d.min)}" max="${esc(d.max)}" step="1" value="${esc(eff[k])}" class="${KELAS.input}" />
+        <span class="text-xs ${KELAS.muted}">bawaan ${esc(d.def)}, batas ${esc(d.min)} sampai ${esc(d.max)}</span></label>`; }).join('')}</div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="submit" class="${KELAS.tombol}">Simpan aturan</button>
+        <button type="button" id="st-rules-reset" class="${KELAS.tombolBahaya}">Reset ke bawaan</button>
+        <p class="text-xs" role="status" aria-live="polite" data-status></p>
+      </div></form>${cicilan}`;
+    const form = el.querySelector<HTMLFormElement>('#st-rules-form')!;
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    pasangAksi(form, {
+      type: 'sys.story.rules',
+      confirm: 'Ubah aturan kesulitan Vanillate Story? Berlaku seketika untuk semua pemain.',
+      payload: (f) => {
+        const values: Record<string, number> = {};
+        f.querySelectorAll<HTMLInputElement>('input[type=number]').forEach((i) => {
+          if (i.value !== '' && Number(i.value) !== Number(eff[i.name])) values[i.name] = Number(i.value);
+        });
+        return { values };
+      },
+      success: () => 'Aturan disimpan.',
+      onDone: (o) => { if (o.ok) void muat(); },
+    });
+    el.querySelector<HTMLButtonElement>('#st-rules-reset')!.addEventListener('click', async () => {
+      if (!window.confirm('Kembalikan semua aturan kesulitan ke bawaan?')) return;
+      status.textContent = 'Mengirim...';
+      const o = await kirimPerintah('sys.story.rules', { reset: true });
+      status.textContent = o.ok ? 'Aturan dikembalikan ke bawaan.' : `Gagal: ${o.error ?? 'galat tidak diketahui'}`;
+      if (o.ok) void muat();
+    });
+  }
+
+  async function muat() {
+    const s = await bacaSnapshot('story');
+    document.getElementById('st-fresh')!.innerHTML = freshness(s.updatedAt);
+    const body = document.getElementById('st-body')!;
+    if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data. Pastikan bot sudah memakai versi dengan Vanillate Story.'); return; }
+    const t = s.data;
+    const editor = role === 'owner' || role === 'admin';
+
+    body.innerHTML = [
+      section('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${stat('Total pemain', fmtAngka(t.summary?.total))}
+        ${stat('Aktif 30 hari', fmtAngka(t.summary?.active))}
+        ${stat('Pemain baru hari ini', fmtAngka(t.summary?.newToday), 'WIB')}
+        ${stat('Utang lunas', fmtAngka(t.summary?.cleared))}
+        ${stat('Hari tertinggi', fmtAngka(t.summary?.dayMax), `dari ${fmtAngka(t.summary?.totalDays)} hari`)}
+      </div>`),
+      section('Aktivitas terbaru', table(['Pemain', 'Hari', 'Bab', 'Uang', 'Tabungan', 'Sisa utang', 'Lokasi', 'Aktif terakhir'], (t.recent ?? []).map((r: any) => [
+        pemain(r.userId, r.name), fmtAngka(r.day), ada(r.chapter) ? fmtAngka(r.chapter) : 'belum ada',
+        fmtAngka(r.money), fmtAngka(r.savings), fmtAngka(r.debtRemaining), esc(r.location ?? 'belum ada'),
+        `<span class="text-xs">${esc(fmtJam(r.lastActive))}</span>`,
+      ]), 'Belum ada pemain.')),
+      section('Tingkat kekalahan per minggu', kekalahanHtml(t.outcomes), 'Kalah = tidak sanggup membayar cicilan mingguan. Persen kalah 30 atau lebih ditandai merah.'),
+      section('Aturan kesulitan', '<div id="st-rules"></div>', 'Berlaku seketika di bot tanpa restart. Mengubah hanya untuk owner.'),
+      editor ? section('Alat bantu', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${formCard({ id: 'st-detail', title: 'Lihat detail pemain', fields: [FPLAYER], submit: 'Lihat' })}
+        ${formCard({ id: 'st-export', title: 'Export User ID pemain aktif', submit: 'Export',
+          fields: [{ name: 'days', label: 'Aktif dalam (hari)', type: 'number', value: '30', step: '1', required: true }] })}
+        ${formCard({ id: 'st-reset', title: 'Reset progres pemain', danger: true, submit: 'Reset',
+          desc: 'Menghapus SELURUH progres Vanillate Story pemain ini (uang, skill, hubungan, quest). Tidak bisa dibatalkan. Data game lain tidak tersentuh.',
+          fields: [FPLAYER, { name: 'confirm', label: 'Ketik RESET', required: true, placeholder: 'RESET' }] })}
+      </div>
+      <div id="st-detail-out"></div>`) : '',
+    ].join('');
+
+    renderAturan(t.rules);
+
+    if (!editor) return;
+    pasangAksi(document.getElementById('st-detail') as HTMLFormElement, {
+      type: 'story.detail',
+      success: (o) => { document.getElementById('st-detail-out')!.innerHTML = detailHtml(o.result ?? {}); return 'Detail dimuat di bawah.'; },
+    });
+    pasangAksi(document.getElementById('st-export') as HTMLFormElement, {
+      type: 'story.exportIds',
+      success: (o) => {
+        const ids: string[] = o.result?.ids ?? [];
+        unduhTeks(`vanillate-story-aktif-${o.result?.days ?? ''}hari.txt`, ids.join('\n'));
+        return `${fmtAngka(ids.length)} User ID diunduh.`;
+      },
+    });
+    pasangAksi(document.getElementById('st-reset') as HTMLFormElement, {
+      type: 'story.reset',
+      confirm: (p) => (String(p.confirm).toUpperCase() === 'RESET' ? `Hapus seluruh progres Vanillate Story "${p.player}"?` : null),
+      success: () => 'Progres pemain dihapus.',
+      resetOnSuccess: true,
+      onDone: (o) => { if (o.ok) setTimeout(() => void muat(), 1500); },
+    });
+  }
+</script>
