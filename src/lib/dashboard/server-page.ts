@@ -38,6 +38,7 @@ import {
   normalizeState,
   permissionWarnings,
   relativeTime,
+  parseSecuritySummary,
   categoryLabel,
   roleLabel,
   roleOptions,
@@ -559,6 +560,7 @@ export function mountServerPage(cfg: PageConfig): void {
                   ? 'Syarat: bot butuh izin View Audit Log di server, serta View Channel dan Send Messages di channel log. Pilih minimal satu role admin atau moderator. Kategori alasan dipilih lewat tombol tanpa input teks bebas, dan catatan hanya tersimpan di server ini.'
                   : 'Kegiatan harian yang bikin member rajin mampir ke server. Setiap fitur berjalan di channel khusus pilihanmu; fitur yang belum diberi channel tidak aktif, dan satu channel hanya untuk satu fitur sosial.';
     if (!feats.length) return `<p class="text-sm text-ink-500">Belum ada fitur di bagian ini.</p>`;
+    const summaryBlock = section === 'security' ? securitySummaryHtml() : '';
     return `
       <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">${intro}</p>
       ${data!.snapshot?.refreshed_at ? `<p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">Daftar channel dari Discord: ${esc(relativeTime(data!.snapshot.refreshed_at))}.</p>` : ''}
@@ -566,7 +568,50 @@ export function mountServerPage(cfg: PageConfig): void {
         feats.length === 1
           ? `<div class="mt-4 sm:mt-5">${featureSectionHtml(feats[0])}</div>`
           : `<div class="${SPAN_LAST} mt-4 grid gap-3 sm:mt-5 sm:gap-4 lg:grid-cols-2">${feats.map((f) => featureCardHtml(f)).join('')}</div>`
-      }`;
+      }${summaryBlock}`;
+  }
+
+  /** Ringkasan data lokal Security Center: hanya angka agregat dari bot, tanpa nama atau ID. */
+  function securitySummaryHtml(): string {
+    const s = parseSecuritySummary(data!.snapshot?.security_summary);
+    if (!s) {
+      return `<div class="${CARD} mt-4 p-4 sm:mt-5 sm:p-5">
+        <h3 class="font-display text-base font-semibold">Ringkasan data server</h3>
+        <p class="mt-1 text-sm text-ink-500 dark:text-cream-300/70">Belum ada ringkasan. Ringkasan muncul setelah Security Center diaktifkan dan bot menerbitkannya (kurang dari semenit). Tekan Refresh Discord Data bila belum muncul.</p>
+      </div>`;
+    }
+    const tile = (label: string, value: number, hint = '') => `
+      <div class="rounded-xl border border-ink-900/10 p-3 dark:border-cream-100/10">
+        <p class="text-xs text-ink-500 dark:text-cream-300/60">${esc(label)}</p>
+        <p class="mt-1 font-display text-xl font-semibold sm:text-2xl">${value}</p>
+        ${hint ? `<p class="mt-0.5 text-xs text-ink-500 dark:text-cream-300/60">${esc(hint)}</p>` : ''}
+      </div>`;
+    const max = Math.max(1, ...s.by_reason.map((c) => c.count));
+    const bars = s.by_reason.length
+      ? s.by_reason.map((c) => `
+        <li class="flex items-center gap-3 text-sm">
+          <span class="w-40 shrink-0 truncate sm:w-52">${esc(c.label)}</span>
+          <span class="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-ink-900/10 dark:bg-cream-100/10"><span class="block h-full rounded-full bg-amber-500" style="width:${Math.round((c.count / max) * 100)}%"></span></span>
+          <span class="w-8 shrink-0 text-right tabular-nums">${c.count}</span>
+        </li>`).join('')
+      : `<li class="text-sm text-ink-500 dark:text-cream-300/70">Belum ada catatan dengan kategori alasan.</li>`;
+    return `<div class="${CARD} mt-4 p-4 sm:mt-5 sm:p-5">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 class="font-display text-base font-semibold">Ringkasan data server</h3>
+        <p class="text-xs text-ink-500 dark:text-cream-300/60">${s.updated_at ? `Diperbarui ${esc(relativeTime(s.updated_at))}` : ''}</p>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        ${tile('Kick aktif', s.kick_active)}
+        ${tile('Ban aktif', s.ban_active)}
+        ${tile('Menunggu kategori', s.pending, 'belum dipilih moderator')}
+        ${tile('Alasan tidak jelas', s.not_provided, 'lewat 24 jam')}
+        ${tile('Dicabut', s.revoked, 'dihapus dalam 7 hari')}
+        ${tile('7 hari terakhir', s.last7_kick + s.last7_ban, `${s.last7_kick} kick dan ${s.last7_ban} ban`)}
+      </div>
+      <h4 class="mt-4 text-sm font-semibold">Kategori alasan (catatan aktif)</h4>
+      <ul class="mt-2 grid gap-2">${bars}</ul>
+      <p class="mt-4 text-xs text-ink-500 dark:text-cream-300/60">${s.last_at ? `Kejadian terakhir ${esc(relativeTime(s.last_at))}. ` : ''}Hanya angka gabungan untuk server ini. Tidak ada nama atau ID di halaman ini, dan catatan tidak dibagikan ke server lain. Catatan aktif disimpan maksimal 90 hari.</p>
+    </div>`;
   }
 
   function featureIssues(f: Feature): { level: 'ok' | 'warn' | 'error' | 'off' | 'dirty'; messages: string[] } {
