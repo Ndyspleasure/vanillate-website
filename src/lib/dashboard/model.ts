@@ -292,6 +292,58 @@ export interface Snapshot {
   channels: SnapshotChannel[];
   roles?: SnapshotRole[];
   bot_top_position?: number | null;
+  /** Ringkasan Security Center (angka agregat dari bot; null/absen = belum diterbitkan). */
+  security_summary?: unknown;
+}
+
+/** Kategori alasan Security Center (urutan sama dengan tombol di Discord). */
+export const SECURITY_CATEGORIES: { code: string; label: string }[] = [
+  { code: 'spam_flood', label: 'Spam / Flood' },
+  { code: 'scam_phishing', label: 'Scam / Phishing' },
+  { code: 'raid_bot_attack', label: 'Raid / Bot Attack' },
+  { code: 'harassment_bullying', label: 'Harassment / Bullying' },
+  { code: 'malicious_links', label: 'Malicious Links' },
+  { code: 'toxic_behavior', label: 'Toxic Behavior' },
+  { code: 'ban_evasion', label: 'Ban Evasion' },
+  { code: 'other_violation', label: 'Other Violation' },
+];
+
+export interface SecuritySummary {
+  updated_at: string | null;
+  enabled: boolean;
+  kick_active: number;
+  ban_active: number;
+  pending: number;
+  not_provided: number;
+  revoked: number;
+  last7_kick: number;
+  last7_ban: number;
+  last_at: string | null;
+  by_reason: { code: string; label: string; count: number }[];
+}
+
+/**
+ * Baca ringkasan dari bot dengan aman: bentuk yang salah → null, angka dipaksa
+ * bilangan bulat >= 0, kategori tak dikenal dibuang (bot bisa lebih baru dari website).
+ */
+export function parseSecuritySummary(raw: unknown): SecuritySummary | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+  const by = r.by_reason && typeof r.by_reason === 'object' && !Array.isArray(r.by_reason) ? (r.by_reason as Record<string, unknown>) : {};
+  return {
+    updated_at: typeof r.updated_at === 'string' ? r.updated_at : null,
+    enabled: r.enabled === true,
+    kick_active: n(r.kick_active),
+    ban_active: n(r.ban_active),
+    pending: n(r.pending),
+    not_provided: n(r.not_provided),
+    revoked: n(r.revoked),
+    last7_kick: n(r.last7_kick),
+    last7_ban: n(r.last7_ban),
+    last_at: typeof r.last_at === 'string' ? r.last_at : null,
+    by_reason: SECURITY_CATEGORIES.map((c) => ({ ...c, count: n(by[c.code]) })).filter((c) => c.count > 0),
+  };
 }
 
 export interface Issue {

@@ -3,6 +3,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  parseSecuritySummary,
+  SECURITY_CATEGORIES,
   buildSavePayload,
   describeError,
   describeIssue,
@@ -455,4 +457,20 @@ test('role_list wajib (Security Center): daftar kosong ditolak, terisi lolos, ma
   const ctx = { registry: [security], snapshot: roleSnapshot };
   assert.match(describeIssue({ code: 'MISSING_GUILD_PERMISSIONS', feature: 'SECURITY', missing: ['View Audit Log'] }, ctx), /izin server View Audit Log/);
   assert.match(describeIssue({ code: 'ROLE_UNUSABLE', feature: 'SECURITY', key: 'notify_roles', role_id: ROLE_A, reason: 'Role @everyone tidak boleh dipakai.' }, ctx), /penerima notifikasi/);
+});
+
+test('parseSecuritySummary: angka dibersihkan, kategori tak dikenal dibuang, bentuk salah → null', () => {
+  assert.equal(parseSecuritySummary(null), null);
+  assert.equal(parseSecuritySummary('x'), null);
+  assert.equal(parseSecuritySummary([]), null);
+  const s = parseSecuritySummary({
+    updated_at: '2026-11-03T10:00:00.000Z', enabled: true, kick_active: 2, ban_active: 1.9, pending: -3, not_provided: 'x',
+    revoked: 1, last7_kick: 2, last7_ban: 1, last_at: '2026-11-03T09:00:00.000Z',
+    by_reason: { toxic_behavior: 2, spam_flood: 5, kategori_baru: 9, scam_phishing: 0 },
+  })!;
+  assert.deepEqual([s.kick_active, s.ban_active, s.pending, s.not_provided, s.revoked], [2, 1, 0, 0, 1]);
+  assert.deepEqual(s.by_reason.map((c) => [c.code, c.count]), [['spam_flood', 5], ['toxic_behavior', 2]]);
+  assert.equal(s.enabled, true);
+  assert.equal(SECURITY_CATEGORIES.length, 8);
+  assert.equal(parseSecuritySummary({})!.by_reason.length, 0);
 });
