@@ -439,3 +439,20 @@ test('gaya pesan: color & guide_list divalidasi; enum membawa label, kategori & 
   assert.deepEqual(codes({ levelup_guide: [{ channel_id: ch, text: 'x'.repeat(11) }] }), ['SETTING_INVALID:levelup_guide']);
   assert.deepEqual(codes({ levelup_guide: [{ channel_id: ch, text: 'a' }, { channel_id: ch, text: 'b' }, { channel_id: ch, text: 'c' }] }), ['SETTING_INVALID:levelup_guide']);
 });
+
+test('role_list wajib (Security Center): daftar kosong ditolak, terisi lolos, mati tidak diperiksa', () => {
+  const security = {
+    key: 'SECURITY', section: 'security', name: 'Security Center', emoji: null, description: null, sort: 9, default_enabled: false,
+    purposes: [{ key: 'security_log_channel', label: 'Channel log keamanan', required: true, channel_types: [0], unique_scope: null, empty_label: 'Belum dipilih', help: null, permissions: [] }],
+    settings_schema: { properties: { notify_roles: { type: 'role_list', required: true, max_items: 5, title: 'Role admin atau moderator', order: 0 } } },
+    meta: {},
+  } as unknown as typeof verification;
+  const st = (roles: unknown, enabled = true) => ({ SECURITY: { enabled, settings: { notify_roles: roles }, channels: {} } }) as never;
+  const codes = (roles: unknown, enabled = true) => validateDraft(st(roles, enabled), st([], false), [security], roleSnapshot).map((i) => `${i.code}:${i.key ?? ''}`).filter((c) => c.startsWith('SETTING'));
+  assert.deepEqual(codes([]), ['SETTING_REQUIRED:notify_roles']);
+  assert.deepEqual(codes([ROLE_A]), []);
+  assert.deepEqual(codes([], false), []);
+  const ctx = { registry: [security], snapshot: roleSnapshot };
+  assert.match(describeIssue({ code: 'MISSING_GUILD_PERMISSIONS', feature: 'SECURITY', missing: ['View Audit Log'] }, ctx), /izin server View Audit Log/);
+  assert.match(describeIssue({ code: 'ROLE_UNUSABLE', feature: 'SECURITY', key: 'notify_roles', role_id: ROLE_A, reason: 'Role @everyone tidak boleh dipakai.' }, ctx), /penerima notifikasi/);
+});

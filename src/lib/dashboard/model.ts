@@ -179,7 +179,9 @@ export function validateSettingValues(f: Feature, s: FeatureState): Issue[] {
   const snowflake = /^[0-9]{15,22}$/;
   for (const p of typedSettings(f)) {
     const v = s.settings[p.key];
-    if (v === undefined || v === null || v === '') {
+    // Daftar role wajib (mis. penerima notifikasi Security Center) tidak boleh kosong.
+    const emptyRequiredList = p.type === 'role_list' && p.required && Array.isArray(v) && v.length === 0;
+    if (v === undefined || v === null || v === '' || emptyRequiredList) {
       if (p.required && s.enabled) issues.push({ code: 'SETTING_REQUIRED', feature: f.key, key: p.key });
       continue;
     }
@@ -746,6 +748,8 @@ export function describeIssue(issue: Issue, ctx: TextContext): string {
   switch (issue.code) {
     case 'MISSING_PERMISSIONS':
       return `${name} belum dapat diterapkan. Bot tidak memiliki permission ${listJoin(issue.missing ?? [])} di ${ch}. Perbarui permission bot di channel itu atau pilih channel lain.`;
+    case 'MISSING_GUILD_PERMISSIONS':
+      return `${name} belum dapat diterapkan. Bot tidak memiliki izin server ${listJoin(issue.missing ?? [])}. Beri izin itu ke role bot di Pengaturan Server › Role.`;
     case 'CHANNEL_NOT_FOUND':
       return `${name}: channel ${ch} tidak ditemukan di server (mungkin sudah dihapus). Tekan Refresh Discord Data lalu pilih channel lain.`;
     case 'CHANNEL_TYPE_INVALID':
@@ -763,6 +767,7 @@ export function describeIssue(issue: Issue, ctx: TextContext): string {
     case 'ROLE_NOT_FOUND':
       return `${name}: role untuk ${settingTitle(ctx, issue)} tidak ditemukan di server (mungkin sudah dihapus). Tekan Refresh Discord Data lalu pilih role lain.`;
     case 'ROLE_UNUSABLE':
+      if (issue.key === 'notify_roles') return `${name}: role ${roleLabel(ctx, issue.role_id)} tidak bisa dipakai sebagai penerima notifikasi. ${issue.reason ?? 'Pilih role lain.'}`;
       return `${name}: role ${roleLabel(ctx, issue.role_id)} tidak bisa diberikan bot karena ${issue.reason ?? 'periksa izin Manage Roles dan posisi role bot'}. Naikkan role bot di atas role ini di Pengaturan Server › Role.`;
     case 'REWARD_LIMIT':
       return `${name}: reward ${categoryLabel(issue.category)} melebihi batas (maks. ${issue.max ?? '…'}). Hapus sebagian baris.`;
