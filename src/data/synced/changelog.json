@@ -1,5 +1,46 @@
 [
   {
+    "version": "3.35.0",
+    "date": "2026-11-03",
+    "title": "Server Security Center: pantau Kick, Ban, dan Unban di server",
+    "highlights": [
+      "🛡️ Fitur baru Server Security Center untuk owner dan admin: atur di Vanillate Dashboard (channel log, panggil owner, role admin atau moderator)",
+      "👢 Kick, Ban, dan Unban di server tercatat otomatis ke channel log, lengkap dengan siapa moderatornya",
+      "🔘 Moderator memilih kategori alasan lewat tombol (Spam, Scam, Raid, dan lainnya), tanpa perlu mengetik alasan",
+      "⏰ Alasan belum dipilih? Owner dan role moderator diingatkan sampai 5 kali dalam 24 jam, lalu ditandai Alasan tidak jelas",
+      "✅ Saat member di-unban, catatan ban di server itu dicabut dan owner diberi tahu",
+      "🔒 Catatan hanya tersimpan di server masing-masing dan tidak dibagikan ke server lain"
+    ]
+  },
+  {
+    "version": "3.34.0",
+    "date": "2026-11-03",
+    "title": "Auto Role dan Welcome untuk server kamu",
+    "highlights": [
+      "🏷️ Auto Role: member baru dan akun bot otomatis mendapat role pilihan admin, bisa ditunda beberapa detik",
+      "👋 Welcome dan Goodbye: kartu sambutan saat member masuk dan kartu perpisahan saat keluar, lengkap dengan foto, warna, dan daftar channel panduan",
+      "⚙️ Semua diatur lewat Vanillate Dashboard di Server Hub"
+    ]
+  },
+  {
+    "version": "3.33.2",
+    "date": "2026-11-03",
+    "title": "Perbaikan status bot terpasang di Vanillate Dashboard",
+    "highlights": [
+      "🛠️ Dashboard kini membaca dengan benar server yang sudah memiliki bot",
+      "📊 Status server di daftar dashboard lebih akurat"
+    ]
+  },
+  {
+    "version": "3.33.1",
+    "date": "2026-11-03",
+    "title": "Penyimpanan pengaturan dashboard dipindah ke database bot",
+    "highlights": [
+      "🛠️ Pengaturan server di Vanillate Dashboard kini disimpan di database bot agar lebih stabil dan terpisah dari website",
+      "📣 Share Server ikut dipindahkan tanpa mengubah cara pakainya"
+    ]
+  },
+  {
     "version": "3.33.0",
     "date": "2026-11-02",
     "title": "Pesan Verification & Leveling bisa dirias lewat dashboard",
