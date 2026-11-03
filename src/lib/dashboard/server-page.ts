@@ -69,7 +69,7 @@ import { previewHtml, previewKind, type PreviewContext } from './message-preview
 /** Kartu terakhir yang ganjil melebar penuh, jadi tidak ada slot kosong di kanan (desktop). */
 const SPAN_LAST = 'lg:[&>*:last-child:nth-child(odd)]:col-span-2';
 
-type Tab = 'overview' | 'game-hub' | 'social-hub' | 'verification' | 'leveling' | 'autorole' | 'welcome' | 'share-server' | 'channels' | 'audit-log';
+type Tab = 'overview' | 'game-hub' | 'social-hub' | 'verification' | 'leveling' | 'autorole' | 'welcome' | 'security' | 'share-server' | 'channels' | 'audit-log';
 type Hub = 'overview' | 'game-hub' | 'social-hub' | 'server-hub';
 
 // Navigasi dua tingkat: kategori utama di atas, submenu Server Hub di sidebar.
@@ -87,6 +87,7 @@ const SERVER_TABS: { id: Tab; label: string; ic: IconName }[] = [
   { id: 'leveling', label: 'Leveling', ic: 'trending-up' },
   { id: 'autorole', label: 'Auto Role', ic: 'tag' },
   { id: 'welcome', label: 'Welcome', ic: 'handshake' },
+  { id: 'security', label: 'Security Center', ic: 'shield' },
   { id: 'share-server', label: 'Share Server', ic: 'radio' },
   { id: 'channels', label: 'Channel', ic: 'hash' },
   { id: 'audit-log', label: 'Riwayat', ic: 'history' },
@@ -110,8 +111,9 @@ const FEATURE_ICON: Record<string, IconName> = {
   leveling: 'trending-up',
   autorole: 'tag',
   welcome: 'handshake',
+  security: 'shield',
 };
-const SECTION_ICON: Record<string, IconName> = { game: 'gamepad-2', social: 'users', verification: 'shield-check', leveling: 'trending-up', autorole: 'tag', welcome: 'handshake' };
+const SECTION_ICON: Record<string, IconName> = { game: 'gamepad-2', social: 'users', verification: 'shield-check', leveling: 'trending-up', autorole: 'tag', welcome: 'handshake', security: 'shield' };
 
 function featureIcon(f: Feature): IconName {
   const runtimeKey = typeof f.meta?.runtime_key === 'string' ? f.meta.runtime_key : '';
@@ -127,7 +129,7 @@ function hubOf(tab: Tab): Hub {
   return SERVER_TABS.some((t) => t.id === tab) ? 'server-hub' : (tab as Hub);
 }
 
-const SECTION_OF_TAB: Partial<Record<Tab, string>> = { 'game-hub': 'game', 'social-hub': 'social', verification: 'verification', leveling: 'leveling', autorole: 'autorole', welcome: 'welcome' };
+const SECTION_OF_TAB: Partial<Record<Tab, string>> = { 'game-hub': 'game', 'social-hub': 'social', verification: 'verification', leveling: 'leveling', autorole: 'autorole', welcome: 'welcome', security: 'security' };
 
 const FAST_POLL_MS = 2500;
 const SLOW_POLL_MS = 15000;
@@ -553,7 +555,9 @@ export function mountServerPage(cfg: PageConfig): void {
               ? 'Syarat: bot butuh izin Manage Roles dan role bot harus berada di atas role yang diberikan. Bila Verification aktif, role member diberikan setelah member lulus verifikasi. Verified Role tidak boleh dipakai di sini.'
               : section === 'welcome'
                 ? 'Kosongkan channel untuk mematikan salah satu pesan: welcome saat member masuk, goodbye saat member keluar. Akun bot tidak disambut. Syarat: bot butuh izin mengirim pesan di channel yang dipilih.'
-                : 'Kegiatan harian yang bikin member rajin mampir ke server. Setiap fitur berjalan di channel khusus pilihanmu; fitur yang belum diberi channel tidak aktif, dan satu channel hanya untuk satu fitur sosial.';
+                : section === 'security'
+                  ? 'Syarat: bot butuh izin View Audit Log di server, serta View Channel dan Send Messages di channel log. Pilih minimal satu role admin atau moderator. Kategori alasan dipilih lewat tombol tanpa input teks bebas, dan catatan hanya tersimpan di server ini.'
+                  : 'Kegiatan harian yang bikin member rajin mampir ke server. Setiap fitur berjalan di channel khusus pilihanmu; fitur yang belum diberi channel tidak aktif, dan satu channel hanya untuk satu fitur sosial.';
     if (!feats.length) return `<p class="text-sm text-ink-500">Belum ada fitur di bagian ini.</p>`;
     return `
       <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">${intro}</p>
@@ -977,6 +981,7 @@ export function mountServerPage(cfg: PageConfig): void {
       { id: 'leveling', title: 'Leveling', section: 'leveling', ic: 'trending-up' as const },
       { id: 'autorole', title: 'Auto Role', section: 'autorole', ic: 'tag' as const },
       { id: 'welcome', title: 'Welcome', section: 'welcome', ic: 'handshake' as const },
+      { id: 'security', title: 'Security Center', section: 'security', ic: 'shield' as const },
     ];
     return `
       <div class="grid grid-cols-3 gap-2 sm:gap-4">
