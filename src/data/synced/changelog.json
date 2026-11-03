@@ -1,5 +1,25 @@
 [
   {
+    "version": "3.33.0",
+    "date": "2026-11-02",
+    "title": "Pesan Verification & Leveling bisa dirias lewat dashboard",
+    "highlights": [
+      "🎨 Admin server bisa mengatur tampilan pesan Verification dan Leveling: warna kartu, gambar kecil dari foto member atau ikon server, dan catatan kecil",
+      "👋 Teks sapaan di atas kartu untuk panel verifikasi dan pengumuman naik level",
+      "📌 Daftar channel panduan di dalam kartu, seperti rules, guide, dan pick role",
+      "👀 Preview kartu langsung di dashboard sebelum disimpan"
+    ]
+  },
+  {
+    "version": "3.32.2",
+    "date": "2026-11-02",
+    "title": "Tombol game lebih responsif",
+    "highlights": [
+      "🛠️ Mengurangi tombol yang gagal dengan pesan \"interaksi gagal\" saat bot sedang sibuk",
+      "⚡ Pemantauan kesehatan bot diperkuat agar penyebab lag lebih cepat ditemukan"
+    ]
+  },
+  {
     "version": "3.32.1",
     "date": "2026-10-30",
     "title": "Deskripsi fitur baru di Vanillate Dashboard",
