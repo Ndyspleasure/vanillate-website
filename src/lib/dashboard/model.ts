@@ -120,6 +120,41 @@ const SETTING_TYPES = new Set<string>(['boolean', 'integer', 'string', 'enum', '
  * menyusun ulang key menurut panjang namanya, jadi urutan objek tidak dipakai
  * kecuali `order` belum diterbitkan (bot lama).
  */
+export interface LockedSetting {
+  key: string;
+  title: string;
+  /** Penjelasan dari bot (locked_note); null = pakai teks bawaan website. */
+  note: string | null;
+}
+
+/** Teks bawaan bila bot lama belum menerbitkan locked_note. */
+export const LOCK_FALLBACK_NOTE =
+  'Opsi ini butuh izin khusus dari Discord untuk bot Vanillate yang belum aktif. Ini bukan bug dan tidak ada yang perlu Anda ubah di server Anda. Opsi terbuka otomatis setelah izin itu aktif.';
+
+/**
+ * Setelan yang dikunci bot (`available: false`). Tidak ditampilkan sebagai isian,
+ * tetapi WAJIB dijelaskan ke admin supaya tidak dianggap bug. `full` = seluruh
+ * setelan fitur terkunci, jadi fitur belum bisa dipakai sama sekali.
+ */
+export function featureLock(f: Feature): { items: LockedSetting[]; full: boolean } {
+  const props = (f.settings_schema as { properties?: Record<string, Record<string, unknown>> } | undefined)?.properties;
+  const items: LockedSetting[] = [];
+  let usable = 0;
+  if (props && typeof props === 'object') {
+    for (const [key, p] of Object.entries(props)) {
+      if (!p || typeof p.type !== 'string' || !SETTING_TYPES.has(p.type)) continue;
+      if (p.available === false) {
+        items.push({
+          key,
+          title: typeof p.title === 'string' ? p.title : key,
+          note: typeof p.locked_note === 'string' && p.locked_note.trim() ? p.locked_note.trim() : null,
+        });
+      } else usable += 1;
+    }
+  }
+  return { items, full: items.length > 0 && usable === 0 };
+}
+
 export function typedSettings(f: Feature): SettingProp[] {
   const props = (f.settings_schema as { properties?: Record<string, Record<string, unknown>> } | undefined)?.properties;
   if (!props || typeof props !== 'object') return [];
