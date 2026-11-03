@@ -22,7 +22,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 <script>
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { fmtAngka } from '@/lib/admin-auth';
-  import { bacaSnapshot } from '@/lib/dev-panel/client';
+  import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
   import { FPLAYER } from '@/lib/dev-panel/actions';
   import { KELAS, fmtJam, formCard, freshness, pasangAksi, section, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
 
@@ -73,6 +73,69 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       .map(([k, v]) => `<div><dt class="text-xs ${KELAS.muted}">${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl></div>`;
   }
 
+  function kekalahanHtml(o: any): string {
+    if (!o || !Array.isArray(o.byWeek)) return `<p class="text-sm ${KELAS.muted}">belum ada data</p>`;
+    const rows = o.byWeek.map((w: any) => {
+      const pct = typeof w.lossRatePercent === 'number' ? w.lossRatePercent : null;
+      return [
+        angka(w.week), angka(w.due), angka(w.reached), angka(w.lost),
+        pct === null ? `<span class="${KELAS.muted}">belum ada data</span>` : pill(`${fmtAngka(pct)}%`, pct >= 30 ? 'bad' : 'ok'),
+        ada(w.avgShortfall) ? fmtAngka(w.avgShortfall) : `<span class="${KELAS.muted}">belum ada data</span>`,
+      ];
+    });
+    return `<div class="grid gap-4 sm:grid-cols-2 mb-4">${stat('Total menang', fmtAngka(o.wins))}${stat('Total kalah', fmtAngka(o.losses))}</div>`
+      + table(['Minggu', 'Cicilan', 'Pemain mencapai', 'Kalah', 'Persen kalah', 'Rata-rata kekurangan uang'], rows, 'Belum ada data.');
+  }
+
+  function renderAturan(r: any) {
+    const el = document.getElementById('st-rules')!;
+    if (!r || !r.defs) { el.innerHTML = `<p class="text-sm ${KELAS.muted}">belum ada data</p>`; return; }
+    const keys = Object.keys(r.defs);
+    const eff = r.effective ?? {};
+    const daftar = (a: unknown) => (Array.isArray(a) && a.length ? a.map((n) => fmtAngka(n as number)).join(', ') : 'belum ada');
+    const cicilan = `<div class="${KELAS.kartu} text-sm space-y-1">
+      <p><span class="${KELAS.muted}">Cicilan berlaku (minggu 1 sampai 7):</span> ${esc(daftar(r.dues))}</p>
+      <p><span class="${KELAS.muted}">Cicilan dasar:</span> ${esc(daftar(r.baseDues))}</p>
+      <p><span class="${KELAS.muted}">Total utang:</span> ${angka(r.totalDebt)}</p></div>`;
+    if (role !== 'owner') {
+      el.innerHTML = notice('info', 'Mengubah aturan khusus owner.')
+        + table(['Aturan', 'Nilai', 'Bawaan', 'Batas'], keys.map((k) => { const d = r.defs[k]; return [esc(d.label ?? k), `<strong>${esc(eff[k])}</strong>`, esc(d.def), `${esc(d.min)} sampai ${esc(d.max)}`]; }))
+        + cicilan;
+      return;
+    }
+    el.innerHTML = `<form id="st-rules-form" class="${KELAS.kartu} space-y-3">
+      <div class="grid gap-3 sm:grid-cols-2">${keys.map((k) => { const d = r.defs[k]; return `<label class="${KELAS.label}">${esc(d.label ?? k)}
+        <input type="number" name="${esc(k)}" min="${esc(d.min)}" max="${esc(d.max)}" step="1" value="${esc(eff[k])}" class="${KELAS.input}" />
+        <span class="text-xs ${KELAS.muted}">bawaan ${esc(d.def)}, batas ${esc(d.min)} sampai ${esc(d.max)}</span></label>`; }).join('')}</div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="submit" class="${KELAS.tombol}">Simpan aturan</button>
+        <button type="button" id="st-rules-reset" class="${KELAS.tombolBahaya}">Reset ke bawaan</button>
+        <p class="text-xs" role="status" aria-live="polite" data-status></p>
+      </div></form>${cicilan}`;
+    const form = el.querySelector<HTMLFormElement>('#st-rules-form')!;
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    pasangAksi(form, {
+      type: 'sys.story.rules',
+      confirm: 'Ubah aturan kesulitan Vanillate Story? Berlaku seketika untuk semua pemain.',
+      payload: (f) => {
+        const values: Record<string, number> = {};
+        f.querySelectorAll<HTMLInputElement>('input[type=number]').forEach((i) => {
+          if (i.value !== '' && Number(i.value) !== Number(eff[i.name])) values[i.name] = Number(i.value);
+        });
+        return { values };
+      },
+      success: () => 'Aturan disimpan.',
+      onDone: (o) => { if (o.ok) void muat(); },
+    });
+    el.querySelector<HTMLButtonElement>('#st-rules-reset')!.addEventListener('click', async () => {
+      if (!window.confirm('Kembalikan semua aturan kesulitan ke bawaan?')) return;
+      status.textContent = 'Mengirim...';
+      const o = await kirimPerintah('sys.story.rules', { reset: true });
+      status.textContent = o.ok ? 'Aturan dikembalikan ke bawaan.' : `Gagal: ${o.error ?? 'galat tidak diketahui'}`;
+      if (o.ok) void muat();
+    });
+  }
+
   async function muat() {
     const s = await bacaSnapshot('story');
     document.getElementById('st-fresh')!.innerHTML = freshness(s.updatedAt);
@@ -94,6 +157,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         fmtAngka(r.money), fmtAngka(r.savings), fmtAngka(r.debtRemaining), esc(r.location ?? 'belum ada'),
         `<span class="text-xs">${esc(fmtJam(r.lastActive))}</span>`,
       ]), 'Belum ada pemain.')),
+      section('Tingkat kekalahan per minggu', kekalahanHtml(t.outcomes), 'Kalah = tidak sanggup membayar cicilan mingguan. Persen kalah 30 atau lebih ditandai merah.'),
+      section('Aturan kesulitan', '<div id="st-rules"></div>', 'Berlaku seketika di bot tanpa restart. Mengubah hanya untuk owner.'),
       editor ? section('Alat bantu', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${formCard({ id: 'st-detail', title: 'Lihat detail pemain', fields: [FPLAYER], submit: 'Lihat' })}
         ${formCard({ id: 'st-export', title: 'Export User ID pemain aktif', submit: 'Export',
@@ -104,6 +169,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       </div>
       <div id="st-detail-out"></div>`) : '',
     ].join('');
+
+    renderAturan(t.rules);
 
     if (!editor) return;
     pasangAksi(document.getElementById('st-detail') as HTMLFormElement, {
