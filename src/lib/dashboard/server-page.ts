@@ -39,6 +39,8 @@ import {
   permissionWarnings,
   relativeTime,
   parseSecuritySummary,
+  featureLock,
+  LOCK_FALLBACK_NOTE,
   categoryLabel,
   roleLabel,
   roleOptions,
@@ -946,12 +948,33 @@ export function mountServerPage(cfg: PageConfig): void {
       ${category('Pesan teks', 'Teks yang dilihat member di Discord. Kosongkan kolom untuk memakai teks bawaan.', blocks.filter((b) => b.text))}`;
   }
 
+  /** Kotak penjelasan untuk setelan yang dikunci bot, supaya admin tidak mengira itu bug. */
+  function lockNoticeHtml(f: Feature): string {
+    const lock = featureLock(f);
+    if (!lock.items.length) return '';
+    const box = 'rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-200';
+    if (lock.full) {
+      const note = lock.items[0].note ?? LOCK_FALLBACK_NOTE;
+      return `<div class="${box}" role="note">
+        <p class="flex items-center gap-2 font-semibold">${icon('lock', 'h-4 w-4 shrink-0')} Belum tersedia</p>
+        <p class="mt-1">${esc(note)}</p>
+      </div>`;
+    }
+    return `<div class="${box}" role="note">
+      <p class="flex items-center gap-2 font-semibold">${icon('lock', 'h-4 w-4 shrink-0')} Sebagian opsi belum tersedia</p>
+      <ul class="mt-1 space-y-1.5">${lock.items.map((i) => `<li><span class="font-medium">${esc(i.title)}:</span> ${esc(i.note ?? LOCK_FALLBACK_NOTE)}</li>`).join('')}</ul>
+    </div>`;
+  }
+
   function featureCardHtml(f: Feature, withSettings = true): string {
     const s = draft[f.key];
+    const lockFull = featureLock(f).full;
     const status = featureIssues(f);
     const notUsed = isNotUsed(s);
     const statusPill =
-      status.level === 'off'
+      lockFull && !s.enabled
+        ? pill('Belum tersedia', 'neutral')
+        : status.level === 'off'
         ? pill(notUsed ? 'Tidak dipakai' : 'Nonaktif', 'neutral')
         : status.level === 'error'
           ? pill('Perlu perhatian', 'danger')
@@ -965,6 +988,8 @@ export function mountServerPage(cfg: PageConfig): void {
       .filter(Boolean);
     const command = typeof f.meta?.command === 'string' ? f.meta.command : null;
     const disabled = !editable() || saving;
+    // Fitur yang seluruh setelannya terkunci tidak bisa dinyalakan (tidak akan berfungsi).
+    const toggleOff = disabled || (lockFull && !s.enabled);
 
     return `
       <article class="${CARD} p-4 sm:p-5 ${s.enabled ? '' : 'opacity-90'}" aria-labelledby="feat-${esc(f.key)}">
@@ -977,7 +1002,7 @@ export function mountServerPage(cfg: PageConfig): void {
             </div>
           </div>
           <button type="button" role="switch" aria-checked="${s.enabled}" aria-label="${esc(f.name)}: ${s.enabled ? 'aktif' : 'nonaktif'}"
-            data-toggle="${esc(f.key)}" data-focus="tg-${esc(f.key)}" ${disabled ? 'disabled' : ''}
+            data-toggle="${esc(f.key)}" data-focus="tg-${esc(f.key)}" ${toggleOff ? 'disabled' : ''} ${lockFull && !s.enabled ? 'title="Belum tersedia, lihat penjelasan di bawah"' : ''}
             class="group inline-flex shrink-0 items-center gap-2 rounded-full text-xs font-semibold disabled:opacity-60">
             <span class="relative inline-flex h-6 w-11 items-center rounded-full transition ${s.enabled ? 'bg-emerald-500' : 'bg-ink-400/40 dark:bg-ink-600'}">
               <span class="inline-block h-5 w-5 rounded-full bg-white shadow transition ${s.enabled ? 'translate-x-5' : 'translate-x-0.5'}"></span>
@@ -986,6 +1011,7 @@ export function mountServerPage(cfg: PageConfig): void {
           </button>
         </div>
         ${f.description ? `<p class="mt-3 text-sm text-ink-600 dark:text-cream-300/80">${esc(f.description)}</p>` : ''}
+        ${lockFull ? `<div class="mt-3">${lockNoticeHtml(f)}</div>` : ''}
         <div class="mt-4 space-y-4">
           ${
             s.enabled
@@ -995,6 +1021,7 @@ export function mountServerPage(cfg: PageConfig): void {
                 : ''
           }
           ${!s.enabled && supportsNotUsed(f) ? notUsedHtml(f, notUsed, disabled) : ''}
+          ${lockFull ? '' : lockNoticeHtml(f)}
         </div>
         <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-ink-900/5 pt-4 dark:border-cream-100/5">
           <span class="text-xs text-ink-500 dark:text-cream-300/60">Status:</span> ${statusPill}

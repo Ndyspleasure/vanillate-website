@@ -3,6 +3,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  featureLock,
+  LOCK_FALLBACK_NOTE,
   parseSecuritySummary,
   SECURITY_CATEGORIES,
   buildSavePayload,
@@ -473,4 +475,31 @@ test('parseSecuritySummary: angka dibersihkan, kategori tak dikenal dibuang, ben
   assert.equal(s.enabled, true);
   assert.equal(SECURITY_CATEGORIES.length, 8);
   assert.equal(parseSecuritySummary({})!.by_reason.length, 0);
+});
+
+test('featureLock: setelan terkunci dijelaskan, bukan disembunyikan diam-diam', () => {
+  const mk = (properties: Record<string, unknown>) => ({ key: 'X', section: 'welcome', name: 'X', emoji: null, description: null, sort: 1, default_enabled: false, purposes: [], settings_schema: { properties }, meta: {} }) as unknown as typeof verification;
+  const NOTE = 'Butuh izin khusus Discord. Ini bukan bug.';
+  // Seluruh setelan terkunci: fitur belum bisa dipakai.
+  const full = featureLock(mk({
+    a: { type: 'string', title: 'Judul welcome', available: false, locked_note: NOTE },
+    b: { type: 'role_list', title: 'Role member', available: false, locked_note: NOTE },
+  }));
+  assert.equal(full.full, true);
+  assert.deepEqual(full.items.map((i) => [i.key, i.title, i.note]), [['a', 'Judul welcome', NOTE], ['b', 'Role member', NOTE]]);
+  // Sebagian terkunci: fitur tetap berfungsi, opsi terkunci tetap dijelaskan.
+  const partial = featureLock(mk({
+    verified_role: { type: 'role', title: 'Verified Role' },
+    unverified_role: { type: 'role', title: 'Role belum terverifikasi', available: false },
+  }));
+  assert.equal(partial.full, false);
+  assert.deepEqual(partial.items, [{ key: 'unverified_role', title: 'Role belum terverifikasi', note: null }]);
+  assert.ok(!LOCK_FALLBACK_NOTE.includes(' - ') && !/[—–]/.test(LOCK_FALLBACK_NOTE));
+  assert.match(LOCK_FALLBACK_NOTE, /bukan bug/);
+  // Tidak ada yang terkunci / tidak ada setelan: tidak ada kotak, tidak dianggap terkunci penuh.
+  assert.deepEqual(featureLock(mk({ x: { type: 'boolean', title: 'X', available: true } })), { items: [], full: false });
+  assert.deepEqual(featureLock(mk({})), { items: [], full: false });
+  // Catatan kosong → pakai teks bawaan; jenis tak dikenal diabaikan.
+  assert.equal(featureLock(mk({ a: { type: 'string', title: 'A', available: false, locked_note: '   ' } })).items[0].note, null);
+  assert.deepEqual(featureLock(mk({ a: { type: 'aneh', title: 'A', available: false } })).items, []);
 });
