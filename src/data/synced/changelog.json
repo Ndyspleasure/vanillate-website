@@ -1,5 +1,37 @@
 [
   {
+    "version": "3.39.0",
+    "date": "2026-11-03",
+    "title": "Vanillate Story: petunjuk minggu pertama dan dasbor lebih rapi",
+    "highlights": [
+      "🧭 Minggu pertama kini ada \"Langkah berikutnya\" di dasbor Story: petunjuk yang menyesuaikan energi, jam, uang, cicilan, cerita, dan misimu, jadi tidak perlu bingung harus ngapain",
+      "💡 Petunjuk berhenti sendiri di minggu ke-2 dan bisa dimatikan lewat tombol Petunjuk",
+      "🧹 Dasbor Story dirapikan: teks ringkas tanpa emoji berlebihan dan tombol berlabel teks"
+    ]
+  },
+  {
+    "version": "3.38.1",
+    "date": "2026-11-03",
+    "title": "Dasbor Vanillate Story lebih rapi dan mudah dibaca",
+    "highlights": [
+      "🧹 Dasbor Story dirapikan: teks ringkas tanpa emoji berlebihan, waktu, lokasi, energi, uang, utang, dan skill tersusun lebih jelas",
+      "🔘 Tombol aksi memakai label teks saja supaya mudah dibedakan"
+    ]
+  },
+  {
+    "version": "3.38.0",
+    "date": "2026-11-03",
+    "title": "Vanillate Story hadir di Game Hub: novel interaktif dengan 7 bab",
+    "highlights": [
+      "🌇 Game baru di /game: Vanillate Story. Merantau ke Kota Vanillate, cari kerja, akrabi 36 warga, dan lunasi utang keluarga dalam 7 minggu",
+      "📖 Cerita utama 7 bab plus epilog, penuh pilihan yang menentukan akhir (terang, kompromi, atau pahit), dan 7 cerita warga yang saling terhubung",
+      "🎯 Misi di setiap bab: kerja, latihan, ngobrol, hadiah, dan bertahan membayar cicilan, lengkap dengan hadiah",
+      "📈 Ekonomi dikalibrasi ulang: cicilan menanjak, belajar sambil bekerja, dan skill benar-benar membuka pekerjaan bergaji tinggi",
+      "💗 Jatuh cinta, menikah, dan punya anak bersama warga pilihanmu, plus 📱 Vanillagram untuk menelpon kenalan",
+      "💾 Progres Story tersimpan otomatis, uangnya terpisah dari Coin Sambung Kata"
+    ]
+  },
+  {
     "version": "3.37.1",
     "date": "2026-11-03",
     "title": "Dashboard: penjelasan jelas untuk fitur yang belum tersedia",
