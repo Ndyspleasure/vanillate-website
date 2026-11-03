@@ -9,6 +9,19 @@ Website adalah **control plane**; bot adalah **executor**.
 
 > Implementasi dari *Vanillate Dashboard — Server Configuration Specification*
 > (4 Okt 2026). Sisi bot: `sambung-kata-bot/docs/dashboard-sync.md`.
+>
+> **PLAN-001 (2026-11): seluruh backend dashboard pindah dari proyek CMS ke
+> proyek Supabase "Database Bot"** (`ggsshrnpgnfqvlhzxnoq`): login Discord
+> (Supabase Auth), tabel `guild_*` & `share_*`, RPC, Edge Function
+> `dashboard-discord` dan `topgg-webhook`. Website memakai klien kedua dengan
+> `PUBLIC_BOT_SUPABASE_URL` / `PUBLIC_BOT_SUPABASE_ANON_KEY` (hanya URL + anon
+> key). Skema sekarang dimiliki repo bot (`migrations/0012_dashboard.sql`,
+> `0013_share_server.sql`); semua kata "Supabase" di bawah berarti proyek
+> Database Bot, kecuali disebut CMS. `supabase/guild-dashboard-schema.sql` dan
+> `share-server.sql` di repo ini tinggal salinan lama untuk rollback. Runbook
+> cutover: `sambung-kata-bot/docs/rencana-dashboard-ke-database-bot.md` §4a.
+> Pengaturan Auth (provider Discord, Site URL, Redirect URLs) dan secret Edge
+> Function (`TOPGG_WEBHOOK_SECRET`) kini diatur di proyek Database Bot.
 
 ---
 

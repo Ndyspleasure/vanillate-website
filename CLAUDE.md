@@ -33,9 +33,24 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
 - **Database game bot = proyek Supabase TERPISAH "Database Bot" (dulu "Vanillate Game")**
   (`ggsshrnpgnfqvlhzxnoq`, acuan `docs/database-game.md` repo bot; data baru
   untuk game/fitur sosial: `docs/database-fitur-baru.md`). Proyek Supabase di
-  repo ini (`lvfwopnvvqncopvathop`) tetap **khusus CMS & website** — jangan
-  memindahkan data pemain ke proyek CMS, dan jangan memasang URL/key proyek
-  game di website (semua tabelnya dikunci RLS; hanya bot yang mengakses).
+  repo ini (`lvfwopnvvqncopvathop`) tetap **khusus CMS & website** (admin,
+  Panel Developer, blog, FAQ, konten) — jangan memindahkan data pemain ke proyek
+  CMS.
+- **Satu pengecualian (PLAN-001, disetujui pemilik 2026-11-03): Vanillate
+  Dashboard (`/dashboard`) memakai proyek Database Bot** untuk login Discord,
+  RPC `guild_*` & `share_*`, serta Edge Function `dashboard-discord` &
+  `topgg-webhook`. Website memegang **hanya URL + anon key**
+  (`PUBLIC_BOT_SUPABASE_URL` / `PUBLIC_BOT_SUPABASE_ANON_KEY`, klien kedua
+  khusus `src/lib/dashboard/api.ts`). Semua tabelnya RLS tanpa policy; hanya
+  7 RPC (`guild_dashboard_get`, `guild_config_save`, `guild_config_request_resync`,
+  `guild_dashboard_request_refresh`, `guild_config_audit_list`,
+  `share_dashboard_get`, `share_request_submit`) yang bisa dipanggil
+  `authenticated`. **`service_role` dan `DATABASE_URL` Database Bot tetap TIDAK
+  PERNAH di website**, dan website tidak boleh membaca tabel pemain/gameplay.
+  Skema dashboard sekarang dimiliki repo bot (`migrations/0012_dashboard.sql`,
+  `0013_share_server.sql`); `supabase/guild-dashboard-schema.sql` &
+  `share-server.sql` di sini adalah salinan lama proyek CMS (rollback) dan
+  dihapus bersama tabelnya setelah ≥ 7 hari stabil.
 - Versi & changelog bot **read-only** di sini (SSoT `version.json` /
   `CHANGELOG.json` di repo bot).
 
@@ -70,6 +85,6 @@ isi tulisan) tidak dikutip ke issue/PR/commit.
 |---|---|
 | `docs/DEVELOPER-PANEL.md` | Panel Developer: arsitektur antrean & snapshot, peran, halaman, kode, database, cara menambah aksi |
 | `docs/ADMIN-CMS.md` | Model keamanan CMS, setup Supabase, kontrak data bot, Control Panel (`/admin/kontrol`) |
-| `docs/DASHBOARD-SERVER.md` | Vanillate Dashboard (`/dashboard`, admin server login Discord) · §5a 📣 Share Server (tab, `share_*`, Edge Function `topgg-webhook` — `verify_jwt = false`, secret `TOPGG_WEBHOOK_SECRET`) |
+| `docs/DASHBOARD-SERVER.md` | Vanillate Dashboard (`/dashboard`, admin server login Discord; **data & login di proyek Database Bot sejak PLAN-001**) · §5a 📣 Share Server (tab, `share_*`, Edge Function `topgg-webhook` — `verify_jwt = false`, secret `TOPGG_WEBHOOK_SECRET`, di proyek Database Bot) |
 | `docs/PIPELINE-TERBIT.md`, `docs/AUTO-SYNC-DATA.md` | Alur terbit konten & sinkron data dari repo bot |
 | `docs/BLOG.md` | Blog `/blog`: ditulis & diterbitkan di `/admin/blog`, disimpan di **Sanity** (project `62jp784l`, dataset `production` public) lewat Edge Function `blog-admin` (secret `SANITY_WRITE_TOKEN`, `GITHUB_DISPATCH_TOKEN`); halaman dibangun statis saat build |

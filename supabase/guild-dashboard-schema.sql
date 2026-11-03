@@ -3,6 +3,12 @@
 --
 --  Acuan: docs/DASHBOARD-SERVER.md (arsitektur, alur, kontrak bot).
 --
+--  ⚠️ PLAN-001: SSoT skema ini SUDAH PINDAH ke repo bot
+--  (sambung-kata-bot/migrations/0012_dashboard.sql, proyek Supabase "Database
+--  Bot"). Berkas ini tinggal salinan lama proyek CMS: dipertahankan hanya untuk
+--  rollback & tes `npm run test:sql`, dan dihapus bersama tabelnya setelah
+--  cutover stabil ≥ 7 hari. JANGAN menambah perubahan baru di sini.
+--
 --  Dipakai bersama oleh:
 --    • Website /dashboard   — login Discord (Supabase Auth). TIDAK PERNAH
 --      menyentuh tabel langsung: semua baca/tulis lewat fungsi RPC di bawah,

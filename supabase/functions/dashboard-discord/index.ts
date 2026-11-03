@@ -234,7 +234,7 @@ async function servers(userId: string, discordId: string, force: boolean) {
   const configs = new Map<string, { sync_status: string; current_revision: number }>();
   if (ids.length) {
     const bg = (await rest(
-      `bot_guilds?bot_slug=eq.${encodeURIComponent(BOT_SLUG)}&is_active=is.true&guild_id=in.${inList(ids)}&select=guild_id`,
+      `guild_discord_snapshot?bot_slug=eq.${encodeURIComponent(BOT_SLUG)}&bot_present=is.true&guild_id=in.${inList(ids)}&select=guild_id`,
     )) as { guild_id: string }[];
     for (const r of bg ?? []) installed.add(r.guild_id);
     const cfg = (await rest(
