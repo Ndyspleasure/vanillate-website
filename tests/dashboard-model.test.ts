@@ -361,6 +361,29 @@ test('role belum terverifikasi: tersembunyi bila bot menguncinya, tidak boleh sa
   assert.match(describeIssue({ code: 'ROLE_CONFLICT', feature: 'VERIFICATION', key: 'unverified_role', role_id: ROLE_A }, { registry: reg, snapshot: roleSnapshot }), /tidak boleh sama dengan Verified Role/);
 });
 
+test('Auto Role: role yang diberikan tidak boleh Verified Role, dan harus bisa diberikan bot', () => {
+  const autorole: Feature = {
+    key: 'AUTOROLE', section: 'autorole', name: 'Auto Role', sort: 7, default_enabled: false, purposes: [],
+    settings_schema: { properties: {
+      member_roles: { type: 'role_list', title: 'Role untuk member', max_items: 5, available: true },
+      bot_roles: { type: 'role_list', title: 'Role untuk akun bot', max_items: 5, available: true },
+      delay_seconds: { type: 'integer', title: 'Tunda', min: 0, max: 600, available: true },
+    } },
+  };
+  const reg = [verification, autorole];
+  const mk = (settings: Record<string, unknown>) => normalizeState({
+    VERIFICATION: { enabled: true, settings: { verified_role: ROLE_A }, channels: { verify_channel: C1 } },
+    AUTOROLE: { enabled: true, settings, channels: {} },
+  }, reg);
+  const conflicts = (settings: Record<string, unknown>) =>
+    validateDraft(mk(settings), mk(settings), reg, roleSnapshot).filter((i) => i.code === 'ROLE_CONFLICT').map((i) => i.key);
+  assert.deepEqual(conflicts({ member_roles: [ROLE_B] }), []);
+  assert.deepEqual(conflicts({ member_roles: [ROLE_A], bot_roles: [ROLE_A] }), ['member_roles', 'bot_roles']);
+  assert.match(describeIssue({ code: 'ROLE_CONFLICT', feature: 'AUTOROLE', key: 'member_roles', role_id: ROLE_A }, { registry: reg, snapshot: roleSnapshot }), /Verified Role, jadi tidak boleh diberikan otomatis/);
+  // daftar pengecualian Leveling (role tanpa XP) bukan role yang diberikan bot: tidak diperiksa izinnya.
+  assert.deepEqual(typedSettings(autorole).map((p) => p.key), ['member_roles', 'bot_roles', 'delay_seconds']);
+});
+
 test('reward_list: batas per kategori, level unik, role konflik Verified Role, role tak bisa diberikan', () => {
   const lev: Feature = {
     key: 'LEVELING', section: 'leveling', name: 'Leveling', sort: 6, default_enabled: false, purposes: [],
