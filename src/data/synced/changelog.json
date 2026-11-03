@@ -1,5 +1,35 @@
 [
   {
+    "version": "3.37.1",
+    "date": "2026-11-03",
+    "title": "Dashboard: penjelasan jelas untuk fitur yang belum tersedia",
+    "highlights": [
+      "🔒 Fitur yang butuh izin khusus Discord (Auto Role, Welcome, Peringatan member kembali, dan role belum terverifikasi) kini menampilkan penjelasan yang jelas di Vanillate Dashboard, bukan hilang atau tidak bisa diklik tanpa keterangan",
+      "💡 Penjelasannya menegaskan bahwa ini bukan bug dan tidak ada yang perlu diubah di server; opsi terbuka otomatis setelah izin aktif"
+    ]
+  },
+  {
+    "version": "3.37.0",
+    "date": "2026-11-03",
+    "title": "Security Center: ringkasan data server di Vanillate Dashboard",
+    "highlights": [
+      "📊 Tab Security Center kini punya kartu Ringkasan data server: jumlah kick dan ban aktif, yang menunggu kategori, dan rincian per kategori alasan",
+      "🔒 Hanya angka gabungan untuk server itu sendiri, tanpa nama atau ID, dan tidak dibagikan ke server lain",
+      "🛠️ Ringkasan ikut diperbarui otomatis setiap ada kejadian baru atau pencabutan catatan"
+    ]
+  },
+  {
+    "version": "3.36.0",
+    "date": "2026-11-03",
+    "title": "Security Center: peringatan saat member yang pernah di-kick bergabung kembali",
+    "highlights": [
+      "⚠️ Admin server kini mendapat peringatan saat member yang pernah di-kick bergabung lagi, lengkap dengan riwayat kick dan kategori alasannya",
+      "🔘 Dua pilihan di peringatan: Cabut Laporan, atau Kick Kembali yang meminta konfirmasi dulu",
+      "🛡️ Tidak pernah ada kick otomatis, dan hanya owner atau pemegang izin Kick Members yang bisa meng-kick lewat bot",
+      "⚙️ Fitur ini opsional dan diaktifkan sendiri di Vanillate Dashboard › Security Center"
+    ]
+  },
+  {
     "version": "3.35.0",
     "date": "2026-11-03",
     "title": "Server Security Center: pantau Kick, Ban, dan Unban di server",
