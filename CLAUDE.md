@@ -11,6 +11,12 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
 
 - **Browser hanya memakai anon key + JWT admin.** Token bot, `service_role`
   key, dan kredensial database **tidak pernah** masuk ke kode website.
+- **Setelan terkunci wajib dijelaskan.** Opsi atau fitur dashboard dengan
+  `available: false` tampil sebagai kotak/catatan penjelasan (`featureLock`,
+  teks `locked_note` dari bot), tidak boleh hilang diam-diam dan toggle fitur
+  yang seluruhnya terkunci harus mati. Jangan mengarang alasan di website.
+  Acuan: `docs/DASHBOARD-SERVER.md` §5c dan `docs/dashboard-setelan-terkunci.md`
+  di repo bot.
 - **Teks untuk pengguna tanpa tanda pisah.** Di dashboard (Server Hub, Game
   Hub, Social Hub, dst.) jangan memakai `—`, `–`, atau ` - ` sebagai penghubung
   kalimat; pakai titik, koma, atau kata ("sampai", "karena"). Placeholder kosong
