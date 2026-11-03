@@ -247,11 +247,33 @@ Role yang sama dengan Verified Role ditolak UI dan bot (`ROLE_CONFLICT`). Editor
 Opsi **Role belum terverifikasi** (`unverified_role`, tab Verification) diberikan bot saat member masuk
 dan dicabut saat lulus. Opsi ini butuh intent Server Members: bot menerbitkan `available: false` di
 properti schema bila intent mati, lalu `typedSettings` menyembunyikannya (nilai tersimpan tetap ikut
-disimpan apa adanya). Role ini tidak boleh sama dengan Verified Role atau dipakai sebagai reward (`ROLE_CONFLICT`).
+disimpan apa adanya) dan menampilkannya sebagai catatan penjelasan (bagian 5c). Role ini tidak boleh sama dengan Verified Role atau dipakai sebagai reward (`ROLE_CONFLICT`).
 
 Tab **Leveling** memakai mekanisme yang sama (`channel_list` untuk channel tanpa XP, `help` per setelan untuk daftar variabel pesan).
 
-Tab **Auto Role** (`section: autorole`, `role_list` member & bot + tunda) dan **Welcome** (`section: welcome`, dua tujuan channel welcome/goodbye + pesan teks dengan gaya) dibangun dari registry bot dengan mekanisme yang sama. Role Auto Role yang sama dengan Verified Role ditolak (`ROLE_CONFLICT`, `key` `member_roles`/`bot_roles`). Keduanya butuh intent Server Members di bot: selama intent mati, setelannya terkunci (`available: false`) dan tersembunyi, hanya keterangan di kartu yang tampil. Acuan bot: `docs/autorole-welcome.md`.
+Tab **Auto Role** (`section: autorole`, `role_list` member & bot + tunda) dan **Welcome** (`section: welcome`, dua tujuan channel welcome/goodbye + pesan teks dengan gaya) dibangun dari registry bot dengan mekanisme yang sama. Role Auto Role yang sama dengan Verified Role ditolak (`ROLE_CONFLICT`, `key` `member_roles`/`bot_roles`). Keduanya butuh intent Server Members di bot: selama intent mati, setelannya terkunci (`available: false`) dan kartu fitur menampilkan kotak "Belum tersedia" dengan penjelasan dari bot (bagian 5c). Acuan bot: `docs/autorole-welcome.md`.
+
+## 5c. 🔒 Setelan terkunci (`available: false` + `locked_note`)
+
+Fitur atau setelan yang belum bisa dipakai (sekarang: butuh intent Server Members
+yang belum diaktifkan pemilik bot) **harus dijelaskan**, bukan hilang diam-diam,
+supaya admin atau owner server tidak mengira itu bug. Kontrak lengkap, checklist
+fitur baru, dan aturan menulis teksnya ada di repo bot:
+`sambung-kata-bot/docs/dashboard-setelan-terkunci.md`.
+
+Sisi website (`src/lib/dashboard/model.ts` dan `server-page.ts`):
+
+| Keadaan | Tampilan |
+|---|---|
+| **Seluruh setelan fitur terkunci** (Auto Role, Welcome) | Kotak "Belum tersedia" berisi `locked_note`, pill status "Belum tersedia", toggle fitur mati dengan keterangan (fitur tidak akan berfungsi, jadi tidak boleh dinyalakan) |
+| **Sebagian terkunci** (`unverified_role` di Verification, `rejoin_alert` di Security Center) | Fitur berfungsi normal, ditambah catatan "Sebagian opsi belum tersedia" berisi nama opsi dan alasannya |
+| Bot lama tanpa `locked_note` | Memakai teks bawaan `LOCK_FALLBACK_NOTE` |
+
+Aturan:
+- `featureLock(f)` adalah satu-satunya pembaca status terkunci; `typedSettings` tetap menyaring setelan terkunci dari isian dan validasi.
+- Website **tidak boleh mengarang alasan** per fitur: teks penjelasan datang dari bot (`locked_note`).
+- Fitur baru yang punya gerbang serupa cukup menerbitkan `available`, `requires`, dan `locked_note` dari bot; tampilan di website otomatis mengikuti.
+- Tes: `tests/dashboard-model.test.ts` (`featureLock`).
 
 ## 6. Pengembangan & tes
 
