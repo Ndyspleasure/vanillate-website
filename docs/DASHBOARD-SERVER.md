@@ -144,7 +144,7 @@ baru (sumber "Discord") — dashboard & bot selalu sama.
 
 **Navigasi.** Kategori utama di atas: **Ringkasan · Game Hub · Social Hub ·
 Server Hub**. Server Hub punya sidebar kiri (di HP: baris submenu yang bisa
-digeser) berisi **Verification · Leveling · Share Server · Channel · Riwayat**.
+digeser) berisi **Verification · Leveling · Auto Role · Welcome · Share Server · Channel · Riwayat**.
 Hash URL tetap id tab (`#overview`, `#game-hub`, `#social-hub`,
 `#verification`, `#leveling`, `#share-server`, `#channels`, `#audit-log`);
 `#server-hub` membuka submenu Server Hub terakhir (bawaan Verification).
@@ -250,6 +250,8 @@ properti schema bila intent mati, lalu `typedSettings` menyembunyikannya (nilai 
 disimpan apa adanya). Role ini tidak boleh sama dengan Verified Role atau dipakai sebagai reward (`ROLE_CONFLICT`).
 
 Tab **Leveling** memakai mekanisme yang sama (`channel_list` untuk channel tanpa XP, `help` per setelan untuk daftar variabel pesan).
+
+Tab **Auto Role** (`section: autorole`, `role_list` member & bot + tunda) dan **Welcome** (`section: welcome`, dua tujuan channel welcome/goodbye + pesan teks dengan gaya) dibangun dari registry bot dengan mekanisme yang sama. Role Auto Role yang sama dengan Verified Role ditolak (`ROLE_CONFLICT`, `key` `member_roles`/`bot_roles`). Keduanya butuh intent Server Members di bot: selama intent mati, setelannya terkunci (`available: false`) dan tersembunyi, hanya keterangan di kartu yang tampil. Acuan bot: `docs/autorole-welcome.md`.
 
 ## 6. Pengembangan & tes
 

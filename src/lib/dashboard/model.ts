@@ -598,7 +598,7 @@ export function validateDraft(
   for (const f of sortedRegistry(registry)) {
     const s = draft[f.key];
     for (const p of typedSettings(f)) {
-      if (p.type !== 'reward_list' || !s) continue;
+      if (!(p.type === 'reward_list' || GRANTED_ROLE_LISTS.has(p.key)) || !s) continue;
       for (const id of settingRoleIds(s.settings[p.key], p.type)) {
         if (verified.has(id)) issues.push({ code: 'ROLE_CONFLICT', feature: f.key, key: p.key, role_id: id });
       }
@@ -607,6 +607,9 @@ export function validateDraft(
   if (noData) issues.push({ code: 'NO_DISCORD_DATA' });
   return issues;
 }
+
+/** Daftar role yang DIBERIKAN bot (Auto Role); bukan daftar pengecualian seperti role tanpa XP. */
+const GRANTED_ROLE_LISTS = new Set(['member_roles', 'bot_roles']);
 
 /** Peringatan izin bot untuk fitur aktif (tidak memblokir simpan). */
 export function permissionWarnings(state: ConfigState, registry: Feature[], snapshot: Snapshot | null): Issue[] {
@@ -626,7 +629,7 @@ export function permissionWarnings(state: ConfigState, registry: Feature[], snap
     }
     // Role yang akan diberikan bot (Verified Role) harus bisa diberikan.
     for (const p of typedSettings(f)) {
-      if (p.type !== 'role' && p.type !== 'reward_list') continue;
+      if (p.type !== 'role' && p.type !== 'reward_list' && !GRANTED_ROLE_LISTS.has(p.key)) continue;
       for (const id of settingRoleIds(s.settings[p.key], p.type)) {
         const reason = roleGrantProblem(snapshot, id);
         if (reason) out.push({ code: 'ROLE_UNUSABLE', feature: f.key, key: p.key, role_id: id, reason });
@@ -768,7 +771,9 @@ export function describeIssue(issue: Issue, ctx: TextContext): string {
     case 'ROLE_CONFLICT':
       return issue.key === 'unverified_role'
         ? `${name}: role belum terverifikasi tidak boleh sama dengan Verified Role. Pilih role lain.`
-        : `${name}: role ${roleLabel(ctx, issue.role_id)} sudah dipakai sebagai Verified Role atau role belum terverifikasi, jadi tidak boleh dipakai sebagai reward level.`;
+        : issue.key === 'member_roles' || issue.key === 'bot_roles'
+          ? `${name}: role ${roleLabel(ctx, issue.role_id)} dipakai sebagai Verified Role, jadi tidak boleh diberikan otomatis ke member baru. Pilih role lain.`
+          : `${name}: role ${roleLabel(ctx, issue.role_id)} sudah dipakai sebagai Verified Role atau role belum terverifikasi, jadi tidak boleh dipakai sebagai reward level.`;
     case 'NO_DISCORD_DATA':
       return 'Daftar channel dari Discord belum tersedia. Tekan Refresh Discord Data dan tunggu beberapa detik.';
     case 'BOT_NOT_IN_GUILD':
