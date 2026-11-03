@@ -2,7 +2,7 @@
 //  Vanillate Dashboard — klien browser (login Discord + RPC + Edge Function).
 //
 //  Keamanan (lihat docs/DASHBOARD-SERVER.md):
-//    • Hanya anon key di browser. Semua data lewat RPC security definer yang
+//    • Hanya anon key proyek Database Bot di browser. Semua data lewat RPC security definer yang
 //      memeriksa akses guild di server, atau Edge Function dashboard-discord.
 //    • Token OAuth Discord dari login dikirim SEKALI ke Edge Function (aksi
 //      `link`), lalu sesi di-refresh supaya token itu tidak tertinggal di
@@ -14,8 +14,11 @@
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import type { AuditRow, GuildData } from './model';
 
-const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string | undefined;
-const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string | undefined;
+// Sejak PLAN-001 /dashboard memakai proyek Supabase "Database Bot" (login
+// Discord, RPC guild_* & share_*, Edge Function), BUKAN proyek CMS. Hanya URL +
+// anon key (publik); service_role Database Bot tidak pernah ke website.
+const SUPABASE_URL = import.meta.env.PUBLIC_BOT_SUPABASE_URL as string | undefined;
+const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_BOT_SUPABASE_ANON_KEY as string | undefined;
 
 export const BOT_SLUG = 'sambung-kata';
 export const isDashboardConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);

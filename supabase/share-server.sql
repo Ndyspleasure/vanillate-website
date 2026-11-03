@@ -1,6 +1,13 @@
 -- ════════════════════════════════════════════════════════════════════════════
 --  📣 Share Server — Sosial Hub Sambung Kata (broadcast promosi antar server)
 --
+--
+--  ⚠️ PLAN-001: SSoT skema ini SUDAH PINDAH ke repo bot
+--  (sambung-kata-bot/migrations/0013_share_server.sql, proyek Supabase "Database
+--  Bot"). Berkas ini tinggal salinan lama proyek CMS: dipertahankan hanya untuk
+--  rollback & tes `npm run test:sql`, dan dihapus bersama tabelnya setelah
+--  cutover stabil ≥ 7 hari. JANGAN menambah perubahan baru di sini.
+--
 --  Aditif & idempoten (aman dijalankan ulang; tanpa DROP data). Butuh
 --  supabase/guild-dashboard-schema.sql (guild_dashboard_assert_access,
 --  guild_dashboard_bot_online, guild_dashboard_fail). Rollback:
