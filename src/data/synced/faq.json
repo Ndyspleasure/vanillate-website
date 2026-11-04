@@ -62,36 +62,18 @@
       "category": "umum",
       "slug": "produk-vanillate",
       "question": "Produk apa saja yang dibuat Vanillate Studio?",
-      "answer": "Saat ini ada lima produk, semuanya gratis:\n\n- **[Vanillate.ID](/products/vanillateID)** — bot Discord serbaguna untuk game, sosial, dan pengelolaan server.\n- **[Vanillate Hand Sign Camera](/products/hand-sign-camera)** — kamera web yang mengubah 16 gestur tangan menjadi efek visual.\n- **[Vanillate Science](/products/science)** — kalkulator matematika dan sains dengan langkah penyelesaian dan verifikasi.\n- **[Vanillate Convert](/products/convert)** — konverter file di peramban tanpa unggah (Beta).\n- **[Vanillate Play](/products/play)** — game gerak di peramban yang memakai kamera sebagai controller.\n\nPanduan tiap produk ada di kategorinya masing-masing di halaman [FAQ](/faq).",
+      "answer": "Saat ini ada lima produk, semuanya gratis:\n\n- **[Vanillate.ID](/products/sambung-kata)** — bot game sambung kata di Discord, plus game sampingan (Werewolf, Pengacara, UNO, Tebak Lagu) dan Social Hub.\n- **[Vanillate Hand Sign Camera](/products/hand-sign-camera)** — kamera web yang mengubah 16 gestur tangan menjadi efek visual.\n- **[Vanillate Science](/products/science)** — kalkulator matematika dan sains dengan langkah penyelesaian dan verifikasi.\n- **[Vanillate Convert](/products/convert)** — konverter file di peramban tanpa unggah (Beta).\n- **[Vanillate Play](/products/play)** — game gerak di peramban yang memakai kamera sebagai controller.\n\nPanduan tiap produk ada di kategorinya masing-masing di halaman [FAQ](/faq).",
       "sortOrder": 5,
       "updatedAt": "2026-10-28T13:29:11.095608+00:00",
       "aliases": []
     },
     {
-      "category": "hand-sign-camera",
-      "slug": "apa-itu-hand-sign-camera",
-      "question": "Apa itu Vanillate Hand Sign Camera?",
-      "answer": "Vanillate Hand Sign Camera adalah aplikasi kamera web gratis yang mengenali **16 gestur tangan** secara real-time, lalu menampilkan efek visual yang berbeda untuk setiap gestur. Tinju memancarkan gelombang kejut, peace sign melukis jejak pelangi, dan dua tangan membentuk hati raksasa.\n\nAplikasi berjalan langsung di peramban komputer maupun ponsel. Tidak perlu instal, tidak perlu akun, dan video kamera tidak pernah dikirim ke server.\n\nBuka aplikasinya di [handsign.vanillate.id](https://handsign.vanillate.id/).",
-      "sortOrder": 10,
-      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
-      "aliases": []
-    },
-    {
-      "category": "play",
-      "slug": "apa-itu-play",
-      "question": "Apa itu Vanillate Play?",
-      "answer": "Vanillate Play adalah platform game gerak gratis di peramban. Kamera laptop, tablet, atau ponsel membaca gerakan seluruh tubuhmu dan menjadikannya controller: lompat, jongkok, condong, pukul, tendang, atau berpose.\n\nAda **36 game** dengan mode duo, couple, solo, dan party. Sebagian besar dirancang untuk dimainkan berdua di depan satu kamera. Tanpa instal, tanpa akun, dan video kamera tidak pernah dikirim ke server.",
-      "sortOrder": 10,
-      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
-      "aliases": []
-    },
-    {
-      "category": "convert",
-      "slug": "apa-itu-convert",
-      "question": "Apa itu Vanillate Convert?",
-      "answer": "Vanillate Convert adalah konverter dan alat file gratis untuk mengubah gambar, data, subtitle, dan arsip ke format lain langsung di peramban. Ada **205 konversi** dan **16 alat** yang bisa dipakai saat ini, dari JPG ke PNG, CSV ke XLSX, SRT ke VTT, sampai membuat ZIP.\n\nTanpa akun, tanpa iklan, dan file tidak diunggah ke server. Buka di [convert.vanillate.id](https://convert.vanillate.id/).",
-      "sortOrder": 10,
-      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "category": "vanillate-id",
+      "slug": "apa-itu-vanillate-id",
+      "question": "Apa itu Vanillate.ID dan apa saja yang bisa dilakukan?",
+      "answer": "Vanillate.ID adalah bot Discord serbaguna untuk komunitas Indonesia. Fungsinya terbagi dalam tiga hal.\n\n### Game\n\nTempat member bermain bersama teman di server. Semua game dibuka lewat `/game`, dari permainan kata sampai game santai untuk ramai-ramai. Game utamanya punya progres dan hadiah.\n\n### Sosial\n\nKegiatan ringan yang membuat server terasa hidup setiap hari dan membuat member saling berinteraksi. Dibuka lewat `/sosial` dan baru aktif setelah admin memilihnya di dashboard.\n\n### Server\n\nAlat bantu untuk owner dan admin agar server tertata, aman, dan ramah pendatang baru. Semuanya diatur dari [Vanillate Dashboard](https://vanillate.id/dashboard/) tanpa mengetik command.\n\nPemain baru cukup menjalankan `/tutorial`, lalu `/help` kapan saja untuk panduan.",
+      "sortOrder": 5,
+      "updatedAt": "2026-11-04T10:17:29.767288+00:00",
       "aliases": []
     },
     {
@@ -104,21 +86,21 @@
       "aliases": []
     },
     {
-      "category": "bantuan",
-      "slug": "produk-tidak-merespons",
-      "question": "Produknya tidak merespons, apa yang harus dilakukan?",
-      "answer": "Coba beberapa hal ini dulu:\n\n1. Pastikan produk punya izin yang diperlukan di tempat kamu memakainya.\n2. Ulangi aksinya dari awal.\n3. Tunggu beberapa detik bila platformnya sedang lambat.\n\nKalau masih bermasalah, laporkan lewat [Support Center](/support) kami, dan orang yang menulis kodenya akan langsung membantu.",
-      "sortOrder": 10,
-      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
-      "aliases": []
-    },
-    {
       "category": "akun-data",
       "slug": "izin-yang-dibutuhkan",
       "question": "Izin atau akses apa yang dibutuhkan?",
       "answer": "Kami hanya meminta akses yang benar-benar diperlukan agar produk berfungsi, dan tidak pernah meminta hak administratif yang tidak perlu.\n\n- **Sambung Kata (Discord):** izin sebatas mengirim pesan, menyematkan embed, membaca jawaban di channel permainan, dan mengelola komponen interaktif.\n- **Hand Sign Camera dan Play:** akses kamera di peramban, karena kamera adalah cara memakainya. Kamu bisa menolak akses dan tetap mencoba lewat mode demo (Hand Sign Camera) atau keyboard (Play).\n- **Science dan Convert:** tidak meminta izin khusus apa pun.",
       "sortOrder": 10,
       "updatedAt": "2026-10-11T10:53:11.2539+00:00",
+      "aliases": []
+    },
+    {
+      "category": "convert",
+      "slug": "apa-itu-convert",
+      "question": "Apa itu Vanillate Convert?",
+      "answer": "Vanillate Convert adalah konverter dan alat file gratis untuk mengubah gambar, data, subtitle, dan arsip ke format lain langsung di peramban. Ada **205 konversi** dan **16 alat** yang bisa dipakai saat ini, dari JPG ke PNG, CSV ke XLSX, SRT ke VTT, sampai membuat ZIP.\n\nTanpa akun, tanpa iklan, dan file tidak diunggah ke server. Buka di [convert.vanillate.id](https://convert.vanillate.id/).",
+      "sortOrder": 10,
+      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
       "aliases": []
     },
     {
@@ -131,12 +113,39 @@
       "aliases": []
     },
     {
+      "category": "play",
+      "slug": "apa-itu-play",
+      "question": "Apa itu Vanillate Play?",
+      "answer": "Vanillate Play adalah platform game gerak gratis di peramban. Kamera laptop, tablet, atau ponsel membaca gerakan seluruh tubuhmu dan menjadikannya controller: lompat, jongkok, condong, pukul, tendang, atau berpose.\n\nAda **36 game** dengan mode duo, couple, solo, dan party. Sebagian besar dirancang untuk dimainkan berdua di depan satu kamera. Tanpa instal, tanpa akun, dan video kamera tidak pernah dikirim ke server.",
+      "sortOrder": 10,
+      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "aliases": []
+    },
+    {
+      "category": "hand-sign-camera",
+      "slug": "apa-itu-hand-sign-camera",
+      "question": "Apa itu Vanillate Hand Sign Camera?",
+      "answer": "Vanillate Hand Sign Camera adalah aplikasi kamera web gratis yang mengenali **16 gestur tangan** secara real-time, lalu menampilkan efek visual yang berbeda untuk setiap gestur. Tinju memancarkan gelombang kejut, peace sign melukis jejak pelangi, dan dua tangan membentuk hati raksasa.\n\nAplikasi berjalan langsung di peramban komputer maupun ponsel. Tidak perlu instal, tidak perlu akun, dan video kamera tidak pernah dikirim ke server.\n\nBuka aplikasinya di [handsign.vanillate.id](https://handsign.vanillate.id/).",
+      "sortOrder": 10,
+      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
+      "aliases": []
+    },
+    {
       "category": "science",
       "slug": "apa-itu-science",
       "question": "Apa itu Vanillate Science?",
       "answer": "Vanillate Science adalah kalkulator matematika dan sains berbahasa Indonesia yang tidak hanya memberi jawaban. Untuk setiap soal, kamu mendapat langkah penyelesaian yang benar-benar dihitung, penjelasan alasannya, dan verifikasi independen atas hasilnya.\n\nGratis, tanpa akun, dan berjalan langsung di peramban komputer maupun ponsel. Buka di [science.vanillate.id](https://science.vanillate.id/).",
       "sortOrder": 10,
       "updatedAt": "2026-10-11T10:54:14.349164+00:00",
+      "aliases": []
+    },
+    {
+      "category": "bantuan",
+      "slug": "produk-tidak-merespons",
+      "question": "Produknya tidak merespons, apa yang harus dilakukan?",
+      "answer": "Coba beberapa hal ini dulu:\n\n1. Pastikan produk punya izin yang diperlukan di tempat kamu memakainya.\n2. Ulangi aksinya dari awal.\n3. Tunggu beberapa detik bila platformnya sedang lambat.\n\nKalau masih bermasalah, laporkan lewat [Support Center](/support) kami, dan orang yang menulis kodenya akan langsung membantu.",
+      "sortOrder": 10,
+      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
       "aliases": []
     },
     {
@@ -149,21 +158,21 @@
       "aliases": []
     },
     {
+      "category": "play",
+      "slug": "cara-mulai",
+      "question": "Bagaimana cara mulai bermain?",
+      "answer": "1. Buka Vanillate Play dari halaman produk, lalu pilih game.\n2. Izinkan akses kamera, dan tunggu kamera serta pelacakan tubuh siap.\n3. Berdiri di depan kamera. Pemain dikenali dan dikalibrasi otomatis.\n4. Ikuti latihan singkat **cara bermain** yang mengecek setiap gerakan.\n5. **Angkat tangan** untuk mulai. Setelah selesai, angkat tangan lagi untuk main ulang tanpa menyentuh layar.\n\nKamera tetap menyala saat berpindah game, jadi tidak perlu memuat ulang halaman.",
+      "sortOrder": 20,
+      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "aliases": []
+    },
+    {
       "category": "hand-sign-camera",
       "slug": "cara-mulai",
       "question": "Bagaimana cara mulai memakainya?",
       "answer": "1. Buka [handsign.vanillate.id](https://handsign.vanillate.id/) di peramban modern, lalu masuk ke halaman kamera.\n2. Izinkan akses kamera saat peramban meminta.\n3. Tunggu model pelacakan tangan selesai dimuat. Kunjungan pertama mengunduh sekitar 20 MB, kunjungan berikutnya langsung siap.\n4. Tunjukkan tangan ke kamera dan coba gesturnya.\n\nBaru pertama kali? Ikuti **tutorial interaktif**. Tutorial lanjut otomatis begitu gestur yang diminta terdeteksi kamera. Kamu juga bisa membuka **Panduan Gestur** untuk melihat contoh setiap gestur dalam animasi tangan.",
       "sortOrder": 20,
       "updatedAt": "2026-10-11T10:53:48.332521+00:00",
-      "aliases": []
-    },
-    {
-      "category": "bantuan",
-      "slug": "lapor-bug-dan-masukan",
-      "question": "Bagaimana cara memberi masukan atau melaporkan bug?",
-      "answer": "Kirim lewat [Support Center](/support) di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai.\n\nKhusus Sambung Kata, ketik `/help` di Discord lalu tekan tombol **📬 Kirim Masukan**, kemudian pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.\n\nKami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.",
-      "sortOrder": 20,
-      "updatedAt": "2026-10-22T03:02:32.725748+00:00",
       "aliases": []
     },
     {
@@ -176,30 +185,12 @@
       "aliases": []
     },
     {
-      "category": "umum",
-      "slug": "apakah-gratis",
-      "question": "Apakah produk Vanillate gratis?",
-      "answer": "Ya. Semua produk Vanillate bisa dipakai gratis tanpa langganan.\n\n- **Sambung Kata** gratis dimainkan. Item di dalam game seperti Boost dan Golden Key dibeli dengan Coin yang didapat dari bermain, bukan dengan uang.\n- **Hand Sign Camera, Science, Convert, dan Play** gratis, tanpa akun, dan langsung dibuka di peramban.",
+      "category": "bantuan",
+      "slug": "lapor-bug-dan-masukan",
+      "question": "Bagaimana cara memberi masukan atau melaporkan bug?",
+      "answer": "Kirim lewat [Support Center](/support) di situs ini, atau gabung ke komunitas kami dan sampaikan di channel yang sesuai.\n\nKhusus Sambung Kata, ketik `/help` di Discord lalu tekan tombol **📬 Kirim Masukan**, kemudian pilih kategori: Bug, Saran, Pertanyaan, atau Lainnya. Laporan bisa dikirim anonim atau dengan nama, dan langsung diterima tim developer.\n\nKami membaca semua laporan, dan banyak fitur kami justru lahir dari usulan komunitas.",
       "sortOrder": 20,
-      "updatedAt": "2026-10-11T10:52:35.905926+00:00",
-      "aliases": []
-    },
-    {
-      "category": "akun-data",
-      "slug": "keamanan-data",
-      "question": "Apakah progres dan data saya aman?",
-      "answer": "Aman. Kami tidak menjual data ke pihak ketiga, dan tiap produk hanya menyimpan yang diperlukan:\n\n- **Sambung Kata:** progres tersimpan otomatis di server kami dan tidak ada penghapusan berkala.\n- **Hand Sign Camera dan Play:** video kamera diproses di perangkatmu dan tidak pernah dikirim ke server.\n- **Science:** perhitungan berjalan di peramban. Riwayat dan favorit hanya disimpan di perangkatmu.\n- **Convert:** file dikonversi di peramban dan tidak diunggah ke server.\n\nDetail lengkapnya bisa kamu baca di halaman [Kebijakan Privasi](/privacy).",
-      "sortOrder": 20,
-      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
-      "aliases": []
-    },
-    {
-      "category": "convert",
-      "slug": "kenapa-beta",
-      "question": "Kenapa statusnya Beta?",
-      "answer": "Saat ini yang aktif adalah **konversi yang berjalan di peramban**, dan semuanya sudah bisa dipakai.\n\nKonversi yang membutuhkan server sedang disiapkan dan belum dibuka, misalnya:\n\n- dokumen Office,\n- PDF ke gambar,\n- audio dan video,\n- sebagian format arsip dan format khusus.\n\nKonversi tersebut akan muncul di situs setelah aktif, dan status Beta dilepas setelah pemrosesan server berjalan.",
-      "sortOrder": 20,
-      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "updatedAt": "2026-10-22T03:02:32.725748+00:00",
       "aliases": []
     },
     {
@@ -212,48 +203,39 @@
       "aliases": []
     },
     {
-      "category": "play",
-      "slug": "cara-mulai",
-      "question": "Bagaimana cara mulai bermain?",
-      "answer": "1. Buka Vanillate Play dari halaman produk, lalu pilih game.\n2. Izinkan akses kamera, dan tunggu kamera serta pelacakan tubuh siap.\n3. Berdiri di depan kamera. Pemain dikenali dan dikalibrasi otomatis.\n4. Ikuti latihan singkat **cara bermain** yang mengecek setiap gerakan.\n5. **Angkat tangan** untuk mulai. Setelah selesai, angkat tangan lagi untuk main ulang tanpa menyentuh layar.\n\nKamera tetap menyala saat berpindah game, jadi tidak perlu memuat ulang halaman.",
-      "sortOrder": 20,
-      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
-      "aliases": []
-    },
-    {
       "category": "convert",
-      "slug": "cara-konversi",
-      "question": "Bagaimana cara mengonversi file?",
-      "answer": "1. Buka [convert.vanillate.id](https://convert.vanillate.id/) lalu pilih file, atau langsung buka halaman konversi yang kamu butuhkan, misalnya JPG ke PNG.\n2. Sistem mengenali format filemu dan hanya menawarkan konversi yang benar-benar bisa dilakukan.\n3. Pilih format tujuan dan atur opsinya bila perlu, misalnya kualitas gambar.\n4. Unduh hasilnya.\n\nSetiap konversi punya halaman sendiri yang menjelaskan kualitas hasil, batasan, dan statusnya, jadi kamu tahu apa yang akan terjadi sebelum mengonversi.",
-      "sortOrder": 30,
+      "slug": "kenapa-beta",
+      "question": "Kenapa statusnya Beta?",
+      "answer": "Saat ini yang aktif adalah **konversi yang berjalan di peramban**, dan semuanya sudah bisa dipakai.\n\nKonversi yang membutuhkan server sedang disiapkan dan belum dibuka, misalnya:\n\n- dokumen Office,\n- PDF ke gambar,\n- audio dan video,\n- sebagian format arsip dan format khusus.\n\nKonversi tersebut akan muncul di situs setelah aktif, dan status Beta dilepas setelah pemrosesan server berjalan.",
+      "sortOrder": 20,
       "updatedAt": "2026-10-11T10:55:16.693072+00:00",
       "aliases": []
     },
     {
-      "category": "umum",
-      "slug": "cara-mulai-memakai",
-      "question": "Bagaimana cara mulai memakai produknya?",
-      "answer": "Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk:\n\n- **Sambung Kata** diundang ke server Discord lewat tombol **Undang ke Server**.\n- **Hand Sign Camera, Science, Convert, dan Play** adalah aplikasi web. Cukup tekan **Buka Aplikasi**. Sebagian bisa dipasang ke layar utama ponsel atau komputer seperti aplikasi biasa.\n\nSetiap halaman produk menjelaskan langkahnya.",
-      "sortOrder": 30,
-      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
-      "aliases": []
-    },
-    {
       "category": "akun-data",
-      "slug": "progres-antar-komunitas",
-      "question": "Apakah progres saya terbawa antar komunitas atau perangkat?",
-      "answer": "Untuk **Sambung Kata**, ya. Progres, statistik, dan peringkat bersifat global per akun Discord, jadi capaianmu terbawa ke server mana pun kamu bermain, tanpa biaya tambahan.\n\nAplikasi web (**Science** dan **Play**) menyimpan riwayat, favorit, pengaturan, dan rekor di peramban perangkat yang kamu pakai. Karena tidak memakai akun, data itu tidak berpindah ke perangkat atau peramban lain.",
-      "sortOrder": 30,
+      "slug": "keamanan-data",
+      "question": "Apakah progres dan data saya aman?",
+      "answer": "Aman. Kami tidak menjual data ke pihak ketiga, dan tiap produk hanya menyimpan yang diperlukan:\n\n- **Sambung Kata:** progres tersimpan otomatis di server kami dan tidak ada penghapusan berkala.\n- **Hand Sign Camera dan Play:** video kamera diproses di perangkatmu dan tidak pernah dikirim ke server.\n- **Science:** perhitungan berjalan di peramban. Riwayat dan favorit hanya disimpan di perangkatmu.\n- **Convert:** file dikonversi di peramban dan tidak diunggah ke server.\n\nDetail lengkapnya bisa kamu baca di halaman [Kebijakan Privasi](/privacy).",
+      "sortOrder": 20,
       "updatedAt": "2026-10-11T10:53:11.2539+00:00",
       "aliases": []
     },
     {
-      "category": "hand-sign-camera",
-      "slug": "daftar-gestur-dan-efek",
-      "question": "Gestur apa saja yang dikenali, dan apa efeknya?",
-      "answer": "| Gestur | Cara membuat | Efek |\n| --- | --- | --- |\n| Open Palm | lima jari terbuka | Neon Skeleton |\n| Fist | semua jari menggenggam | Shockwave |\n| Peace | telunjuk + jari tengah tegak | Rainbow Trail |\n| Pointing | telunjuk tegak | Laser |\n| Thumbs Up | jempol ke atas, jari lain menggenggam | Star Burst |\n| Thumbs Down | jempol ke bawah, jari lain menggenggam | Rain Cloud |\n| OK | jempol dan telunjuk membentuk lingkaran, jari lain tegak | Halo |\n| Rock | telunjuk + kelingking tegak, jempol dilipat | Lightning |\n| Pinch | ujung jempol dan telunjuk bersentuhan | Particle Spark |\n| Call Me | jempol + kelingking terbuka | Sound Waves |\n| Three | telunjuk, jari tengah, jari manis tegak | Tri-Beam |\n| Four | empat jari tegak, jempol dilipat | Code Rain |\n| I Love You | jempol + telunjuk + kelingking terbuka | Floating Hearts |\n| Wave | telapak terbuka digerakkan ke kiri-kanan | Ripple |\n| Heart Hands (2 tangan) | ujung telunjuk bertemu di atas, jempol di bawah | Big Heart |\n| Double Palm (2 tangan) | kedua telapak terbuka | Energy Beam |\n\nPanduan Gestur di dalam aplikasi juga mengajarkan hitungan jari 1 sampai 10 dengan dua tangan.",
+      "category": "umum",
+      "slug": "apakah-gratis",
+      "question": "Apakah produk Vanillate gratis?",
+      "answer": "Ya. Semua produk Vanillate bisa dipakai gratis tanpa langganan.\n\n- **Sambung Kata** gratis dimainkan. Item di dalam game seperti Boost dan Golden Key dibeli dengan Coin yang didapat dari bermain, bukan dengan uang.\n- **Hand Sign Camera, Science, Convert, dan Play** gratis, tanpa akun, dan langsung dibuka di peramban.",
+      "sortOrder": 20,
+      "updatedAt": "2026-10-11T10:52:35.905926+00:00",
+      "aliases": []
+    },
+    {
+      "category": "science",
+      "slug": "cakupan-soal",
+      "question": "Soal apa saja yang bisa dikerjakan?",
+      "answer": "- **Aljabar:** pecahan, bentuk akar, penyederhanaan dan faktorisasi, persamaan (linear, kuadrat, polinom, eksponen, logaritma, trigonometri, rasional, akar, nilai mutlak), pertidaksamaan, sistem persamaan, bilangan kompleks, matriks dan vektor, teori bilangan, notasi sigma.\n- **Kalkulus:** turunan (termasuk parsial dan implisit), integral tentu dan tak tentu, limit, deret Taylor, titik ekstrem.\n- **Sains:** 113 rumus fisika, kimia, astronomi, teknik, dan geometri.\n- **Kimia:** massa molar, penyetaraan reaksi, rumus empiris, stoikiometri dan pereaksi pembatas, pH, tabel periodik.\n- **Statistika:** statistik deskriptif, regresi, distribusi binomial, Poisson, dan normal, uji t, interval kepercayaan, chi-kuadrat, ANOVA.\n- **Keuangan:** bunga sederhana dan majemuk, cicilan (anuitas, efektif, flat) lengkap dengan tabel angsuran, NPV, IRR, ROI, BEP, depresiasi.\n- **Ilmu komputer:** konversi basis bilangan, komplemen dua, operasi bitwise, subnet IPv4, Base64, aljabar Boolean.\n- **Satuan:** konversi ratusan satuan, termasuk satuan gabungan dan suhu.",
       "sortOrder": 30,
-      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
+      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
       "aliases": []
     },
     {
@@ -275,12 +257,39 @@
       "aliases": []
     },
     {
-      "category": "science",
-      "slug": "cakupan-soal",
-      "question": "Soal apa saja yang bisa dikerjakan?",
-      "answer": "- **Aljabar:** pecahan, bentuk akar, penyederhanaan dan faktorisasi, persamaan (linear, kuadrat, polinom, eksponen, logaritma, trigonometri, rasional, akar, nilai mutlak), pertidaksamaan, sistem persamaan, bilangan kompleks, matriks dan vektor, teori bilangan, notasi sigma.\n- **Kalkulus:** turunan (termasuk parsial dan implisit), integral tentu dan tak tentu, limit, deret Taylor, titik ekstrem.\n- **Sains:** 113 rumus fisika, kimia, astronomi, teknik, dan geometri.\n- **Kimia:** massa molar, penyetaraan reaksi, rumus empiris, stoikiometri dan pereaksi pembatas, pH, tabel periodik.\n- **Statistika:** statistik deskriptif, regresi, distribusi binomial, Poisson, dan normal, uji t, interval kepercayaan, chi-kuadrat, ANOVA.\n- **Keuangan:** bunga sederhana dan majemuk, cicilan (anuitas, efektif, flat) lengkap dengan tabel angsuran, NPV, IRR, ROI, BEP, depresiasi.\n- **Ilmu komputer:** konversi basis bilangan, komplemen dua, operasi bitwise, subnet IPv4, Base64, aljabar Boolean.\n- **Satuan:** konversi ratusan satuan, termasuk satuan gabungan dan suhu.",
+      "category": "umum",
+      "slug": "cara-mulai-memakai",
+      "question": "Bagaimana cara mulai memakai produknya?",
+      "answer": "Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk:\n\n- **Sambung Kata** diundang ke server Discord lewat tombol **Undang ke Server**.\n- **Hand Sign Camera, Science, Convert, dan Play** adalah aplikasi web. Cukup tekan **Buka Aplikasi**. Sebagian bisa dipasang ke layar utama ponsel atau komputer seperti aplikasi biasa.\n\nSetiap halaman produk menjelaskan langkahnya.",
       "sortOrder": 30,
-      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
+      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
+      "aliases": []
+    },
+    {
+      "category": "akun-data",
+      "slug": "progres-antar-komunitas",
+      "question": "Apakah progres saya terbawa antar komunitas atau perangkat?",
+      "answer": "Untuk **Sambung Kata**, ya. Progres, statistik, dan peringkat bersifat global per akun Discord, jadi capaianmu terbawa ke server mana pun kamu bermain, tanpa biaya tambahan.\n\nAplikasi web (**Science** dan **Play**) menyimpan riwayat, favorit, pengaturan, dan rekor di peramban perangkat yang kamu pakai. Karena tidak memakai akun, data itu tidak berpindah ke perangkat atau peramban lain.",
+      "sortOrder": 30,
+      "updatedAt": "2026-10-11T10:53:11.2539+00:00",
+      "aliases": []
+    },
+    {
+      "category": "convert",
+      "slug": "cara-konversi",
+      "question": "Bagaimana cara mengonversi file?",
+      "answer": "1. Buka [convert.vanillate.id](https://convert.vanillate.id/) lalu pilih file, atau langsung buka halaman konversi yang kamu butuhkan, misalnya JPG ke PNG.\n2. Sistem mengenali format filemu dan hanya menawarkan konversi yang benar-benar bisa dilakukan.\n3. Pilih format tujuan dan atur opsinya bila perlu, misalnya kualitas gambar.\n4. Unduh hasilnya.\n\nSetiap konversi punya halaman sendiri yang menjelaskan kualitas hasil, batasan, dan statusnya, jadi kamu tahu apa yang akan terjadi sebelum mengonversi.",
+      "sortOrder": 30,
+      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "aliases": []
+    },
+    {
+      "category": "hand-sign-camera",
+      "slug": "daftar-gestur-dan-efek",
+      "question": "Gestur apa saja yang dikenali, dan apa efeknya?",
+      "answer": "| Gestur | Cara membuat | Efek |\n| --- | --- | --- |\n| Open Palm | lima jari terbuka | Neon Skeleton |\n| Fist | semua jari menggenggam | Shockwave |\n| Peace | telunjuk + jari tengah tegak | Rainbow Trail |\n| Pointing | telunjuk tegak | Laser |\n| Thumbs Up | jempol ke atas, jari lain menggenggam | Star Burst |\n| Thumbs Down | jempol ke bawah, jari lain menggenggam | Rain Cloud |\n| OK | jempol dan telunjuk membentuk lingkaran, jari lain tegak | Halo |\n| Rock | telunjuk + kelingking tegak, jempol dilipat | Lightning |\n| Pinch | ujung jempol dan telunjuk bersentuhan | Particle Spark |\n| Call Me | jempol + kelingking terbuka | Sound Waves |\n| Three | telunjuk, jari tengah, jari manis tegak | Tri-Beam |\n| Four | empat jari tegak, jempol dilipat | Code Rain |\n| I Love You | jempol + telunjuk + kelingking terbuka | Floating Hearts |\n| Wave | telapak terbuka digerakkan ke kiri-kanan | Ripple |\n| Heart Hands (2 tangan) | ujung telunjuk bertemu di atas, jempol di bawah | Big Heart |\n| Double Palm (2 tangan) | kedua telapak terbuka | Energy Beam |\n\nPanduan Gestur di dalam aplikasi juga mengajarkan hitungan jari 1 sampai 10 dengan dua tangan.",
+      "sortOrder": 30,
+      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
       "aliases": []
     },
     {
@@ -293,12 +302,12 @@
       "aliases": []
     },
     {
-      "category": "umum",
-      "slug": "seberapa-sering-diperbarui",
-      "question": "Seberapa sering produknya diperbarui?",
-      "answer": "Rutin. Kami merilis perbaikan bug, penyempurnaan pengalaman, dan fitur baru secara berkala, sering kali setiap pekan.\n\nBagi kami rilis adalah garis start, bukan garis finis, jadi produk terus dirawat setelah diluncurkan.",
+      "category": "science",
+      "slug": "cara-menulis-soal",
+      "question": "Bagaimana cara menulis soal?",
+      "answer": "Tulis seperti di buku dengan keyboard biasa. Contoh:\n\n- `x^2 - 5x + 6 = 0`\n- `turunan x^3 sin(x)`\n- `integral x^2 dari 0 sampai 1`\n\nKolom input menampilkan **pratinjau cara soal dibaca**, jadi kamu bisa memastikan soalnya dipahami dengan benar sebelum dihitung. Di ponsel tersedia tombol simbol matematika. Panduan lengkap cara menulis soal ada di halaman **Panduan** di dalam aplikasi.\n\nUntuk topik tertentu seperti rumus fisika, cicilan, atau statistik, tersedia juga halaman kalkulator khusus dengan kolom isian yang sudah disiapkan.",
       "sortOrder": 40,
-      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
+      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
       "aliases": []
     },
     {
@@ -311,21 +320,12 @@
       "aliases": []
     },
     {
-      "category": "science",
-      "slug": "cara-menulis-soal",
-      "question": "Bagaimana cara menulis soal?",
-      "answer": "Tulis seperti di buku dengan keyboard biasa. Contoh:\n\n- `x^2 - 5x + 6 = 0`\n- `turunan x^3 sin(x)`\n- `integral x^2 dari 0 sampai 1`\n\nKolom input menampilkan **pratinjau cara soal dibaca**, jadi kamu bisa memastikan soalnya dipahami dengan benar sebelum dihitung. Di ponsel tersedia tombol simbol matematika. Panduan lengkap cara menulis soal ada di halaman **Panduan** di dalam aplikasi.\n\nUntuk topik tertentu seperti rumus fisika, cicilan, atau statistik, tersedia juga halaman kalkulator khusus dengan kolom isian yang sudah disiapkan.",
+      "category": "umum",
+      "slug": "seberapa-sering-diperbarui",
+      "question": "Seberapa sering produknya diperbarui?",
+      "answer": "Rutin. Kami merilis perbaikan bug, penyempurnaan pengalaman, dan fitur baru secara berkala, sering kali setiap pekan.\n\nBagi kami rilis adalah garis start, bukan garis finis, jadi produk terus dirawat setelah diluncurkan.",
       "sortOrder": 40,
-      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
-      "aliases": []
-    },
-    {
-      "category": "convert",
-      "slug": "format-didukung",
-      "question": "Format apa saja yang didukung?",
-      "answer": "- **Gambar:** JPG, PNG, WebP, AVIF, GIF, BMP, ICO, TIFF, serta gambar ke PDF.\n- **Data:** JSON, YAML, TOML, XML, CSV, TSV, NDJSON, INI, XLSX, dan tabel HTML.\n- **Subtitle:** SRT, VTT, ASS, SBV, TTML, dan lainnya.\n- **Arsip:** membuat ZIP, serta mengekstrak dan mengemas ulang ZIP, TAR, dan TGZ.\n\nDaftar lengkap setiap pasangan format ada di halaman **Format** di dalam aplikasi.",
-      "sortOrder": 40,
-      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "updatedAt": "2026-08-29T21:46:41.278275+00:00",
       "aliases": []
     },
     {
@@ -347,12 +347,21 @@
       "aliases": []
     },
     {
-      "category": "hand-sign-camera",
-      "slug": "privasi-kamera",
-      "question": "Apakah video kamera saya diunggah?",
-      "answer": "Tidak. Pelacakan tangan dan pengenalan gestur berjalan sepenuhnya di perangkatmu. Video kamera tidak pernah dikirim ke server.\n\nYang diunduh hanya aplikasinya sendiri dan model pelacakan tangan, sekali di kunjungan pertama. Rekaman video yang kamu buat langsung tersimpan di perangkatmu.",
+      "category": "convert",
+      "slug": "format-didukung",
+      "question": "Format apa saja yang didukung?",
+      "answer": "- **Gambar:** JPG, PNG, WebP, AVIF, GIF, BMP, ICO, TIFF, serta gambar ke PDF.\n- **Data:** JSON, YAML, TOML, XML, CSV, TSV, NDJSON, INI, XLSX, dan tabel HTML.\n- **Subtitle:** SRT, VTT, ASS, SBV, TTML, dan lainnya.\n- **Arsip:** membuat ZIP, serta mengekstrak dan mengemas ulang ZIP, TAR, dan TGZ.\n\nDaftar lengkap setiap pasangan format ada di halaman **Format** di dalam aplikasi.",
+      "sortOrder": 40,
+      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
+      "aliases": []
+    },
+    {
+      "category": "play",
+      "slug": "kamera-dan-ruang",
+      "question": "Butuh kamera dan ruang seperti apa?",
+      "answer": "- Ruang kosong sekitar **2–3 meter** di depan kamera.\n- Kamera kira-kira **setinggi dada**, dengan cahaya dari depan pemain, bukan dari belakang.\n- Untuk game yang memakai kaki, seluruh tubuh perlu terlihat di kamera.\n- Kamera laptop, webcam, tablet, atau ponsel bisa dipakai. Pastikan perangkat diletakkan stabil.\n\nSaat pemeriksaan kamera, aplikasi memberi tahu bila posisi atau pencahayaan kurang pas.",
       "sortOrder": 50,
-      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
+      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
       "aliases": []
     },
     {
@@ -365,21 +374,21 @@
       "aliases": []
     },
     {
+      "category": "hand-sign-camera",
+      "slug": "privasi-kamera",
+      "question": "Apakah video kamera saya diunggah?",
+      "answer": "Tidak. Pelacakan tangan dan pengenalan gestur berjalan sepenuhnya di perangkatmu. Video kamera tidak pernah dikirim ke server.\n\nYang diunduh hanya aplikasinya sendiri dan model pelacakan tangan, sekali di kunjungan pertama. Rekaman video yang kamu buat langsung tersimpan di perangkatmu.",
+      "sortOrder": 50,
+      "updatedAt": "2026-10-11T10:53:48.332521+00:00",
+      "aliases": []
+    },
+    {
       "category": "science",
       "slug": "status-verifikasi",
       "question": "Apa arti status verifikasi pada hasil?",
       "answer": "Setiap hasil diperiksa ulang dengan metode lain, misalnya substitusi, turunan balik, uji numerik, atau analisis dimensi. Hasil pemeriksaan ditampilkan dengan jujur:\n\n| Status | Artinya |\n| --- | --- |\n| **Terverifikasi** | Hasil dibuktikan dengan pemeriksaan eksak atau simbolik. |\n| **Terverifikasi numerik** | Hasil diperiksa secara numerik dengan toleransi yang dinyatakan. |\n| **Sebagian terverifikasi** | Sebagian pemeriksaan lolos, sebagian tidak dapat dilakukan atau gagal. |\n| **Belum terverifikasi** | Belum ada metode verifikasi independen untuk hasil ini. |\n| **Verifikasi gagal** | Pemeriksaan independen tidak cocok. Jangan gunakan hasil ini. |",
       "sortOrder": 50,
       "updatedAt": "2026-10-11T10:54:43.291873+00:00",
-      "aliases": []
-    },
-    {
-      "category": "play",
-      "slug": "kamera-dan-ruang",
-      "question": "Butuh kamera dan ruang seperti apa?",
-      "answer": "- Ruang kosong sekitar **2–3 meter** di depan kamera.\n- Kamera kira-kira **setinggi dada**, dengan cahaya dari depan pemain, bukan dari belakang.\n- Untuk game yang memakai kaki, seluruh tubuh perlu terlihat di kamera.\n- Kamera laptop, webcam, tablet, atau ponsel bisa dipakai. Pastikan perangkat diletakkan stabil.\n\nSaat pemeriksaan kamera, aplikasi memberi tahu bila posisi atau pencahayaan kurang pas.",
-      "sortOrder": 50,
-      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
       "aliases": []
     },
     {
@@ -410,6 +419,15 @@
       "aliases": []
     },
     {
+      "category": "science",
+      "slug": "tab-hasil-dan-tingkat-penjelasan",
+      "question": "Apa isi tab hasil dan tingkat penjelasannya?",
+      "answer": "Hasil dibagi ke beberapa tab: **Jawaban**, **Langkah**, **Penjelasan**, **Verifikasi**, **Grafik**, dan **Metode Lain**.\n\nPenjelasan bisa diatur ke lima tingkat sesuai kebutuhanmu:\n\n| Tingkat | Cocok untuk |\n| --- | --- |\n| Dasar | Bahasa sederhana untuk pemula. |\n| Pelajar | Penjelasan konseptual dan rumus. |\n| Universitas | Notasi dan terminologi akademik. |\n| Advanced | Langkah formal beserta asumsinya. |\n| Expert | Teorema, syarat keberlakuan, domain, dan verifikasi tiap langkah. |",
+      "sortOrder": 60,
+      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
+      "aliases": []
+    },
+    {
       "category": "play",
       "slug": "privasi-kamera",
       "question": "Apakah video kamera saya diunggah?",
@@ -428,11 +446,20 @@
       "aliases": []
     },
     {
+      "category": "play",
+      "slug": "tanpa-kamera",
+      "question": "Bagaimana kalau tidak punya kamera?",
+      "answer": "Setiap game bisa dimainkan dengan **keyboard**. Pilih main dengan keyboard di layar pemeriksaan kamera. Gerakan pemain disimulasikan lewat mesin gerak yang sama, jadi aturan permainannya tetap sama.\n\nDi ponsel dan tablet, muncul tombol di layar untuk setiap pemain. Daftar lengkap tombol keyboard ada di lobby. Dalam mode keyboard, Player 3 dan 4 dimainkan komputer.",
+      "sortOrder": 70,
+      "updatedAt": "2026-10-11T10:56:36.832881+00:00",
+      "aliases": []
+    },
+    {
       "category": "science",
-      "slug": "tab-hasil-dan-tingkat-penjelasan",
-      "question": "Apa isi tab hasil dan tingkat penjelasannya?",
-      "answer": "Hasil dibagi ke beberapa tab: **Jawaban**, **Langkah**, **Penjelasan**, **Verifikasi**, **Grafik**, dan **Metode Lain**.\n\nPenjelasan bisa diatur ke lima tingkat sesuai kebutuhanmu:\n\n| Tingkat | Cocok untuk |\n| --- | --- |\n| Dasar | Bahasa sederhana untuk pemula. |\n| Pelajar | Penjelasan konseptual dan rumus. |\n| Universitas | Notasi dan terminologi akademik. |\n| Advanced | Langkah formal beserta asumsinya. |\n| Expert | Teorema, syarat keberlakuan, domain, dan verifikasi tiap langkah. |",
-      "sortOrder": 60,
+      "slug": "cek-pekerjaan-saya",
+      "question": "Apa itu Cek Pekerjaan Saya?",
+      "answer": "Fitur untuk memeriksa pengerjaanmu sendiri. Tempelkan langkah-langkah yang sudah kamu tulis, satu langkah per baris. Sistem akan menunjukkan **baris pertama yang keliru** beserta alasannya, termasuk kesalahan yang terbawa ke langkah-langkah berikutnya.\n\nCocok untuk belajar, karena kamu tahu persis di mana pengerjaanmu mulai salah, bukan sekadar jawaban akhirnya benar atau salah.",
+      "sortOrder": 70,
       "updatedAt": "2026-10-11T10:54:43.291873+00:00",
       "aliases": []
     },
@@ -446,12 +473,12 @@
       "aliases": []
     },
     {
-      "category": "science",
-      "slug": "cek-pekerjaan-saya",
-      "question": "Apa itu Cek Pekerjaan Saya?",
-      "answer": "Fitur untuk memeriksa pengerjaanmu sendiri. Tempelkan langkah-langkah yang sudah kamu tulis, satu langkah per baris. Sistem akan menunjukkan **baris pertama yang keliru** beserta alasannya, termasuk kesalahan yang terbawa ke langkah-langkah berikutnya.\n\nCocok untuk belajar, karena kamu tahu persis di mana pengerjaanmu mulai salah, bukan sekadar jawaban akhirnya benar atau salah.",
+      "category": "vanillate-id",
+      "slug": "quest",
+      "question": "Bagaimana sistem Quest harian dan mingguan?",
+      "answer": "Buka dashboard quest dengan **📊 Dashboard › Quest**. Ada dua jenis quest yang berjalan bersamaan:\n\n- **4 Daily Quest** — reset tengah malam.\n- **6 Weekly Quest** — reset setiap Senin.\n\nSalah satu weekly quest, **Kilat Kata**, meminta 20 jawaban dalam ≤5 detik dan hadiahnya sebuah Golden Key. Menyelesaikan semua quest memberi Bonus Chest berisi Coin dan Mystery Box.\n\nQuest yang selesai diumumkan di akhir match — jangan lupa diklaim.",
       "sortOrder": 70,
-      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
+      "updatedAt": "2026-10-30T02:52:58.81058+00:00",
       "aliases": []
     },
     {
@@ -464,20 +491,20 @@
       "aliases": []
     },
     {
-      "category": "play",
-      "slug": "tanpa-kamera",
-      "question": "Bagaimana kalau tidak punya kamera?",
-      "answer": "Setiap game bisa dimainkan dengan **keyboard**. Pilih main dengan keyboard di layar pemeriksaan kamera. Gerakan pemain disimulasikan lewat mesin gerak yang sama, jadi aturan permainannya tetap sama.\n\nDi ponsel dan tablet, muncul tombol di layar untuk setiap pemain. Daftar lengkap tombol keyboard ada di lobby. Dalam mode keyboard, Player 3 dan 4 dimainkan komputer.",
-      "sortOrder": 70,
-      "updatedAt": "2026-10-11T10:56:36.832881+00:00",
+      "category": "convert",
+      "slug": "status-konversi",
+      "question": "Apa arti label status di setiap konversi?",
+      "answer": "| Status | Artinya |\n| --- | --- |\n| **Stabil** | Sudah diuji dan berjalan baik untuk file pada umumnya. |\n| **Didukung** | Berjalan baik, untuk format yang lebih jarang atau dengan catatan kecil. |\n| **Terbatas** | Berjalan, tetapi ada batasan penting yang ditampilkan di halamannya. |\n| **Eksperimental** | Bisa gagal atau hasilnya kurang sempurna, dan selalu diberi tanda peringatan. |\n\nKonversi eksperimental tidak pernah ditampilkan seolah-olah stabil.",
+      "sortOrder": 80,
+      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
       "aliases": []
     },
     {
       "category": "vanillate-id",
-      "slug": "quest",
-      "question": "Bagaimana sistem Quest harian dan mingguan?",
-      "answer": "Buka dashboard quest dengan **📊 Dashboard › Quest**. Ada dua jenis quest yang berjalan bersamaan:\n\n- **4 Daily Quest** — reset tengah malam.\n- **6 Weekly Quest** — reset setiap Senin.\n\nSalah satu weekly quest, **Kilat Kata**, meminta 20 jawaban dalam ≤5 detik dan hadiahnya sebuah Golden Key. Menyelesaikan semua quest memberi Bonus Chest berisi Coin dan Mystery Box.\n\nQuest yang selesai diumumkan di akhir match — jangan lupa diklaim.",
-      "sortOrder": 70,
+      "slug": "shop",
+      "question": "Apa saja yang dijual di Shop dan berapa harganya?",
+      "answer": "Buka toko dengan **📊 Dashboard › Shop** dan bayar memakai Coin yang kamu kumpulkan dari bermain.\n\n{{shop-table}}\n\nHarga di tabel ini mengikuti data shop yang berlaku di bot, jadi ikut berubah sendiri saat harga di dalam game diperbarui.",
+      "sortOrder": 80,
       "updatedAt": "2026-10-30T02:52:58.81058+00:00",
       "aliases": []
     },
@@ -509,30 +536,12 @@
       "aliases": []
     },
     {
-      "category": "convert",
-      "slug": "status-konversi",
-      "question": "Apa arti label status di setiap konversi?",
-      "answer": "| Status | Artinya |\n| --- | --- |\n| **Stabil** | Sudah diuji dan berjalan baik untuk file pada umumnya. |\n| **Didukung** | Berjalan baik, untuk format yang lebih jarang atau dengan catatan kecil. |\n| **Terbatas** | Berjalan, tetapi ada batasan penting yang ditampilkan di halamannya. |\n| **Eksperimental** | Bisa gagal atau hasilnya kurang sempurna, dan selalu diberi tanda peringatan. |\n\nKonversi eksperimental tidak pernah ditampilkan seolah-olah stabil.",
-      "sortOrder": 80,
-      "updatedAt": "2026-10-11T10:55:16.693072+00:00",
-      "aliases": []
-    },
-    {
-      "category": "vanillate-id",
-      "slug": "shop",
-      "question": "Apa saja yang dijual di Shop dan berapa harganya?",
-      "answer": "Buka toko dengan **📊 Dashboard › Shop** dan bayar memakai Coin yang kamu kumpulkan dari bermain.\n\n{{shop-table}}\n\nHarga di tabel ini mengikuti data shop yang berlaku di bot, jadi ikut berubah sendiri saat harga di dalam game diperbarui.",
-      "sortOrder": 80,
-      "updatedAt": "2026-10-30T02:52:58.81058+00:00",
-      "aliases": []
-    },
-    {
-      "category": "convert",
-      "slug": "deteksi-format",
-      "question": "Bagaimana format file dikenali?",
-      "answer": "Format dikenali dari **isi filenya**, bukan sekadar ekstensi nama file. Jadi file PNG yang namanya berakhiran `.jpg` tetap dikenali sebagai PNG, dan konversi yang ditawarkan sesuai format aslinya.\n\nIngin tahu format asli sebuah file? Pakai alat **Inspektor file**, yang juga menampilkan tipe MIME, ukuran, dan checksum SHA-256.",
+      "category": "science",
+      "slug": "kalkulator-grafik",
+      "question": "Apakah ada kalkulator grafik?",
+      "answer": "Ada. Halaman **Grafik** bisa menggambar fungsi biasa, kurva polar, dan kurva parametrik. Soal yang kamu kerjakan juga punya tab **Grafik** sendiri bila soalnya bisa digambarkan.\n\nGrafik 3D, kontur, dan medan vektor belum tersedia.",
       "sortOrder": 90,
-      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
+      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
       "aliases": []
     },
     {
@@ -545,12 +554,12 @@
       "aliases": []
     },
     {
-      "category": "science",
-      "slug": "kalkulator-grafik",
-      "question": "Apakah ada kalkulator grafik?",
-      "answer": "Ada. Halaman **Grafik** bisa menggambar fungsi biasa, kurva polar, dan kurva parametrik. Soal yang kamu kerjakan juga punya tab **Grafik** sendiri bila soalnya bisa digambarkan.\n\nGrafik 3D, kontur, dan medan vektor belum tersedia.",
+      "category": "convert",
+      "slug": "deteksi-format",
+      "question": "Bagaimana format file dikenali?",
+      "answer": "Format dikenali dari **isi filenya**, bukan sekadar ekstensi nama file. Jadi file PNG yang namanya berakhiran `.jpg` tetap dikenali sebagai PNG, dan konversi yang ditawarkan sesuai format aslinya.\n\nIngin tahu format asli sebuah file? Pakai alat **Inspektor file**, yang juga menampilkan tipe MIME, ukuran, dan checksum SHA-256.",
       "sortOrder": 90,
-      "updatedAt": "2026-10-11T10:54:43.291873+00:00",
+      "updatedAt": "2026-10-11T10:55:45.482321+00:00",
       "aliases": []
     },
     {
@@ -572,6 +581,15 @@
       "aliases": []
     },
     {
+      "category": "hand-sign-camera",
+      "slug": "gestur-tidak-terdeteksi",
+      "question": "Gestur saya tidak terdeteksi, apa yang harus dilakukan?",
+      "answer": "Coba langkah berikut:\n\n1. Pastikan **seluruh tangan** terlihat di kamera, termasuk pergelangan.\n2. Cari tempat yang cukup terang, dengan cahaya dari depan.\n3. Bandingkan bentuk tanganmu dengan **Panduan Gestur** di aplikasi.\n4. Perhatikan gestur yang mirip:\n   - **Rock** butuh jempol dilipat. Bila jempol terbuka, terbacanya **I Love You**.\n   - **Four** butuh jempol dilipat. Bila jempol terbuka, terbacanya **Open Palm**.\n5. Tahan gestur sebentar. Aplikasi menstabilkan hasil agar efek tidak berkedip, jadi gestur yang terlalu cepat bisa terlewat.",
+      "sortOrder": 100,
+      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
+      "aliases": []
+    },
+    {
       "category": "science",
       "slug": "riwayat-favorit-dan-berbagi",
       "question": "Apakah riwayat soal tersimpan, dan bisakah hasilnya dibagikan?",
@@ -590,30 +608,21 @@
       "aliases": []
     },
     {
-      "category": "vanillate-id",
-      "slug": "dungeon",
-      "question": "Apa itu Dungeon Mode dan bagaimana cara masuknya?",
-      "answer": "Dungeon adalah mode solo paling menantang: kamu melawan Dungeon Guardian sepanjang 5 wave. Masuk lewat `/game` › **🔤 Sambung Kata** → **Dungeon Mode**, dan butuh satu Golden Key yang habis dipakai setiap kali masuk.\n\n### Aturan Dungeon\n\n- Solo: kamu melawan Dungeon Guardian, total 5 wave.\n- Damage kata: dasar 2, kata ≥6 huruf +1, kata ≥8 huruf +1, akhiran langka +2.\n- Guardian membalas 4–8 kata per giliran, dan bertambah tiap wave.\n- Waktu berpikir menyusut tiap wave. Nyawa habis berarti Game Over.\n- Perk class aktif di sini: Guardian mendapat +1 nyawa, Hunter dan Berserker mendapat damage ekstra.\n\n### Reward\n\n- Semua reward match digandakan (×2).\n- Bonus tamat: +100 Coin, plus 30 Coin per wave (tamat 5 wave berarti +250 Coin).\n- Tamat memberi drop pasti: Extra Life, boost acak, dan Dungeon Trophy.",
-      "sortOrder": 100,
-      "updatedAt": "2026-10-30T02:52:58.81058+00:00",
-      "aliases": []
-    },
-    {
-      "category": "hand-sign-camera",
-      "slug": "gestur-tidak-terdeteksi",
-      "question": "Gestur saya tidak terdeteksi, apa yang harus dilakukan?",
-      "answer": "Coba langkah berikut:\n\n1. Pastikan **seluruh tangan** terlihat di kamera, termasuk pergelangan.\n2. Cari tempat yang cukup terang, dengan cahaya dari depan.\n3. Bandingkan bentuk tanganmu dengan **Panduan Gestur** di aplikasi.\n4. Perhatikan gestur yang mirip:\n   - **Rock** butuh jempol dilipat. Bila jempol terbuka, terbacanya **I Love You**.\n   - **Four** butuh jempol dilipat. Bila jempol terbuka, terbacanya **Open Palm**.\n5. Tahan gestur sebentar. Aplikasi menstabilkan hasil agar efek tidak berkedip, jadi gestur yang terlalu cepat bisa terlewat.",
-      "sortOrder": 100,
-      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
-      "aliases": []
-    },
-    {
       "category": "play",
       "slug": "bagikan-hasil-dan-mode-kreator",
       "question": "Bisakah hasil permainan dibagikan atau direkam?",
       "answer": "Bisa.\n\n- **Kartu hasil** dibuat di perangkat, termasuk format vertikal untuk story, dan bisa dibagikan, diunduh, atau disalin.\n- **Klip ulangan** (opsional) menyimpan detik-detik terakhir pertandingan.\n- **Mode kreator** menampilkan layar game vertikal 9:16 yang pas untuk merekam atau streaming dari laptop.",
       "sortOrder": 100,
       "updatedAt": "2026-10-11T10:56:36.832881+00:00",
+      "aliases": []
+    },
+    {
+      "category": "vanillate-id",
+      "slug": "dungeon",
+      "question": "Apa itu Dungeon Mode dan bagaimana cara masuknya?",
+      "answer": "Dungeon adalah mode solo paling menantang: kamu melawan Dungeon Guardian sepanjang 5 wave. Masuk lewat `/game` › **🔤 Sambung Kata** → **Dungeon Mode**, dan butuh satu Golden Key yang habis dipakai setiap kali masuk.\n\n### Aturan Dungeon\n\n- Solo: kamu melawan Dungeon Guardian, total 5 wave.\n- Damage kata: dasar 2, kata ≥6 huruf +1, kata ≥8 huruf +1, akhiran langka +2.\n- Guardian membalas 4–8 kata per giliran, dan bertambah tiap wave.\n- Waktu berpikir menyusut tiap wave. Nyawa habis berarti Game Over.\n- Perk class aktif di sini: Guardian mendapat +1 nyawa, Hunter dan Berserker mendapat damage ekstra.\n\n### Reward\n\n- Semua reward match digandakan (×2).\n- Bonus tamat: +100 Coin, plus 30 Coin per wave (tamat 5 wave berarti +250 Coin).\n- Tamat memberi drop pasti: Extra Life, boost acak, dan Dungeon Trophy.",
+      "sortOrder": 100,
+      "updatedAt": "2026-10-30T02:52:58.81058+00:00",
       "aliases": []
     },
     {
@@ -626,30 +635,12 @@
       "aliases": []
     },
     {
-      "category": "hand-sign-camera",
-      "slug": "kamera-tidak-muncul",
-      "question": "Kamera tidak muncul atau aksesnya ditolak, bagaimana?",
-      "answer": "1. Izinkan akses kamera untuk situs ini di pengaturan peramban, lalu muat ulang halaman.\n2. Tutup aplikasi lain yang sedang memakai kamera, seperti aplikasi rapat video.\n3. Pastikan kamu membuka alamat resmi yang diawali `https://`. Peramban tidak mengizinkan kamera di situs tanpa HTTPS.\n4. Di iPhone atau iPad, pastikan memakai iOS 16 ke atas.\n\nMasih bermasalah? Coba dulu lewat mode demo, lalu laporkan kendalanya lewat [Support Center](/support).",
-      "sortOrder": 110,
-      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
-      "aliases": []
-    },
-    {
       "category": "science",
       "slug": "batasan-saat-ini",
       "question": "Apa batasan Vanillate Science saat ini?",
       "answer": "Kami lebih memilih jujur soal batasan daripada memberi jawaban yang meragukan. Saat ini:\n\n- Persamaan diferensial, integral lipat, dan grafik 3D belum tersedia.\n- Sebagian integral belum bisa ditemukan antiturunannya. Bila begitu, sistem mengatakannya, dan untuk integral tentu nilai numeriknya tetap dihitung.\n- Polinom derajat 3–4 tanpa akar rasional diselesaikan secara numerik.\n- Sistem persamaan nonlinear terbatas pada 2 persamaan dengan 2 variabel, dengan satu persamaan linear.\n- Antarmuka baru tersedia dalam Bahasa Indonesia.\n- Aplikasi membutuhkan koneksi internet untuk dibuka. Mode offline belum tersedia.\n\nFitur-fitur ini ada di rencana pengembangan berikutnya.",
       "sortOrder": 110,
       "updatedAt": "2026-10-11T10:55:16.693072+00:00",
-      "aliases": []
-    },
-    {
-      "category": "play",
-      "slug": "bahasa-dan-pasang-aplikasi",
-      "question": "Bahasa apa yang tersedia, dan bisakah dipasang sebagai aplikasi?",
-      "answer": "Tersedia **Bahasa Indonesia** dan **Bahasa Inggris**, termasuk perintah di dalam game seperti \"LOMPAT!\" dan \"TUNGGU…\". Bahasa mengikuti peramban secara otomatis, dan bisa diganti di Pengaturan.\n\nVanillate Play juga bisa dipasang ke layar utama sebagai aplikasi. Setelah dibuka sekali, tampilan aplikasinya tetap bisa dimuat tanpa koneksi.",
-      "sortOrder": 110,
-      "updatedAt": "2026-10-11T10:56:36.832881+00:00",
       "aliases": []
     },
     {
@@ -662,11 +653,20 @@
       "aliases": []
     },
     {
+      "category": "hand-sign-camera",
+      "slug": "kamera-tidak-muncul",
+      "question": "Kamera tidak muncul atau aksesnya ditolak, bagaimana?",
+      "answer": "1. Izinkan akses kamera untuk situs ini di pengaturan peramban, lalu muat ulang halaman.\n2. Tutup aplikasi lain yang sedang memakai kamera, seperti aplikasi rapat video.\n3. Pastikan kamu membuka alamat resmi yang diawali `https://`. Peramban tidak mengizinkan kamera di situs tanpa HTTPS.\n4. Di iPhone atau iPad, pastikan memakai iOS 16 ke atas.\n\nMasih bermasalah? Coba dulu lewat mode demo, lalu laporkan kendalanya lewat [Support Center](/support).",
+      "sortOrder": 110,
+      "updatedAt": "2026-10-11T10:54:14.349164+00:00",
+      "aliases": []
+    },
+    {
       "category": "play",
-      "slug": "keamanan-bermain",
-      "question": "Bagaimana supaya aman saat bermain?",
-      "answer": "Game gerak melibatkan lompatan, pukulan, dan tendangan ke udara, jadi:\n\n- Singkirkan barang mudah pecah dan pastikan tidak ada orang atau hewan di area main.\n- Beri jarak yang cukup antar pemain saat bermain berdua.\n- Pakai alas kaki yang tidak licin, dan istirahat bila lelah.\n\nPermainan berhenti sejenak secara otomatis bila pemain keluar dari kamera. Pengaturan gerakan yang lebih ringan dan opsi kurangi animasi juga tersedia.",
-      "sortOrder": 120,
+      "slug": "bahasa-dan-pasang-aplikasi",
+      "question": "Bahasa apa yang tersedia, dan bisakah dipasang sebagai aplikasi?",
+      "answer": "Tersedia **Bahasa Indonesia** dan **Bahasa Inggris**, termasuk perintah di dalam game seperti \"LOMPAT!\" dan \"TUNGGU…\". Bahasa mengikuti peramban secara otomatis, dan bisa diganti di Pengaturan.\n\nVanillate Play juga bisa dipasang ke layar utama sebagai aplikasi. Setelah dibuka sekali, tampilan aplikasinya tetap bisa dimuat tanpa koneksi.",
+      "sortOrder": 110,
       "updatedAt": "2026-10-11T10:56:36.832881+00:00",
       "aliases": []
     },
@@ -680,12 +680,12 @@
       "aliases": []
     },
     {
-      "category": "vanillate-id",
-      "slug": "event-ai-challenger",
-      "question": "Bagaimana cara mengalahkan AI Challenger?",
-      "answer": "Boss AI muncul di tengah match untuk menantang semua pemain sekaligus. Tidak ada kompetisi antarpemain di sini — semua bekerja sama menghajar boss sebelum match berakhir.\n\n- Intro 15 detik: game dijeda dan embed dramatis mengumumkan kedatangan boss.\n- HP boss: `200 + (jumlah pemain × 20)`. Contoh, 3 pemain berarti boss punya 260 HP.\n- Setiap kata valid melukai boss. Kamu menang jika HP boss habis sebelum match berakhir.\n- Match berakhir tanpa boss tumbang berarti tidak ada reward, tapi juga tanpa penalti.\n- Embed penutup menampilkan leaderboard kontribusi damage tiap pemain.\n\n### Sistem damage\n\nSemakin panjang dan langka katamu, semakin sakit untuk boss. Contoh: `KOMPLEKS` (panjang, akhiran S) menghasilkan 2 damage.\n\n| Jenis kata | Damage |\n| --- | --- |\n| Kata biasa (3–7 huruf) | 1 |\n| Kata panjang (≥8 huruf) | 2 |\n| Berakhir huruf langka (X / Z / Q / V) | +1 tambahan |",
-      "sortOrder": 130,
-      "updatedAt": "2026-08-29T21:45:31.931064+00:00",
+      "category": "play",
+      "slug": "keamanan-bermain",
+      "question": "Bagaimana supaya aman saat bermain?",
+      "answer": "Game gerak melibatkan lompatan, pukulan, dan tendangan ke udara, jadi:\n\n- Singkirkan barang mudah pecah dan pastikan tidak ada orang atau hewan di area main.\n- Beri jarak yang cukup antar pemain saat bermain berdua.\n- Pakai alas kaki yang tidak licin, dan istirahat bila lelah.\n\nPermainan berhenti sejenak secara otomatis bila pemain keluar dari kamera. Pengaturan gerakan yang lebih ringan dan opsi kurangi animasi juga tersedia.",
+      "sortOrder": 120,
+      "updatedAt": "2026-10-11T10:56:36.832881+00:00",
       "aliases": []
     },
     {
@@ -695,6 +695,15 @@
       "answer": "1. Mundur sampai seluruh tubuh terlihat di kamera.\n2. Tambah cahaya dari depan, dan hindari jendela terang di belakang pemain.\n3. Pastikan hanya pemain yang berdiri di area kamera.\n4. Letakkan kamera kira-kira setinggi dada dan jangan digeser saat bermain.\n5. Turunkan pengaturan besar gerakan bila gerakan terasa kurang terbaca.\n\nKamera tidak bisa dipakai sama sekali? Mainkan dengan keyboard, lalu laporkan kendalanya lewat [Support Center](/support).",
       "sortOrder": 130,
       "updatedAt": "2026-10-11T10:56:36.832881+00:00",
+      "aliases": []
+    },
+    {
+      "category": "vanillate-id",
+      "slug": "event-ai-challenger",
+      "question": "Bagaimana cara mengalahkan AI Challenger?",
+      "answer": "Boss AI muncul di tengah match untuk menantang semua pemain sekaligus. Tidak ada kompetisi antarpemain di sini — semua bekerja sama menghajar boss sebelum match berakhir.\n\n- Intro 15 detik: game dijeda dan embed dramatis mengumumkan kedatangan boss.\n- HP boss: `200 + (jumlah pemain × 20)`. Contoh, 3 pemain berarti boss punya 260 HP.\n- Setiap kata valid melukai boss. Kamu menang jika HP boss habis sebelum match berakhir.\n- Match berakhir tanpa boss tumbang berarti tidak ada reward, tapi juga tanpa penalti.\n- Embed penutup menampilkan leaderboard kontribusi damage tiap pemain.\n\n### Sistem damage\n\nSemakin panjang dan langka katamu, semakin sakit untuk boss. Contoh: `KOMPLEKS` (panjang, akhiran S) menghasilkan 2 damage.\n\n| Jenis kata | Damage |\n| --- | --- |\n| Kata biasa (3–7 huruf) | 1 |\n| Kata panjang (≥8 huruf) | 2 |\n| Berakhir huruf langka (X / Z / Q / V) | +1 tambahan |",
+      "sortOrder": 130,
+      "updatedAt": "2026-08-29T21:45:31.931064+00:00",
       "aliases": []
     },
     {
@@ -755,9 +764,9 @@
       "category": "vanillate-id",
       "slug": "daftar-command",
       "question": "Apa saja command yang tersedia?",
-      "answer": "### Bermain\n\n- `/game` › **🔤 Sambung Kata** — buka menu semua mode: PvP, PvB (Battle Skill/Klasik), Player vs Server, dan Dungeon, plus tombol **📊 Dashboard** untuk fitur di bawah.\n- `/game` — juga berisi game sampingan: Werewolf, Pengacara, UNO, Tebak Lagu, dan Tahu Bulat.\n- `/sosial` — buka Social Hub server: Counting dan Streak Harian.\n\n### Progress & info\n\n- **📊 Dashboard › Stats** — statistik lengkap dan Player ID.\n- **📊 Dashboard › Leaderboard** — papan peringkat 10 pemain teratas.\n- **📊 Dashboard › Class** — pilih class dan beli talent.\n- **📊 Dashboard › Quest** — dashboard quest harian & mingguan.\n- **📊 Dashboard › Kamus** — lihat daftar kata di kamus berdasarkan 1–3 huruf awal.\n\n### Ekonomi\n\n- **📊 Dashboard › Claim** — klaim boost harian, server reward, dan promo.\n- **📊 Dashboard › Shop** — beli boost dan Golden Key.\n- **📊 Dashboard › Inventory** — lihat boost yang kamu miliki.\n\n### Bantuan\n\n- `/tutorial` — buka Tutorial Pemain Baru di thread pribadi.\n- `/help` — panduan lengkap di dalam Discord. Di bawahnya ada tombol **🛟 Pusat Bantuan** (FAQ, Tanya Asisten, dan hubungi tim support) serta **📬 Kirim Masukan** (saran atau laporan bug).\n\n### Khusus admin server\n\n- `/pengaturan` — tautan ke Vanillate Dashboard untuk mengatur channel khusus tiap game dan channel fitur sosial. Butuh izin Manage Server.",
+      "answer": "### Game\n\n- `/game`: pusat semua game. Pilih **🔤 Sambung Kata** untuk mode PvP, PvB, Player vs Server, dan Dungeon, plus tombol **📊 Dashboard** untuk Kamus, Stats, Leaderboard, Class, Quest, Shop, Inventory, dan Claim.\n- `/game` juga berisi Werewolf, Pengacara, UNO, Tebak Lagu, dan Tahu Bulat.\n- `/rank`: lihat level dan peringkat aktivitasmu di server.\n\n### Sosial\n\n- `/sosial`: pusat kegiatan komunitas server dan status pribadimu.\n\n### Server\n\n- `/pengaturan`: tautan ke Vanillate Dashboard untuk mengatur server. Butuh izin Manage Server.\n\n### Bantuan\n\n- `/tutorial`: Tutorial Pemain Baru.\n- `/help`: panduan lengkap di dalam Discord. Di bawahnya ada tombol **🛟 Pusat Bantuan** (FAQ, Tanya Asisten, dan hubungi tim support) serta **📬 Kirim Masukan** (saran atau laporan bug).",
       "sortOrder": 180,
-      "updatedAt": "2026-10-30T02:53:18.134812+00:00",
+      "updatedAt": "2026-11-04T10:17:29.767288+00:00",
       "aliases": []
     },
     {
