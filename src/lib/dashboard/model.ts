@@ -329,6 +329,8 @@ export interface Snapshot {
   bot_top_position?: number | null;
   /** Ringkasan Security Center (angka agregat dari bot; null/absen = belum diterbitkan). */
   security_summary?: unknown;
+  /** Ringkasan statistik (angka agregat dari bot; diparse stats-model.ts). */
+  stats_summary?: unknown;
 }
 
 /** Kategori alasan Security Center (urutan sama dengan tombol di Discord). */
