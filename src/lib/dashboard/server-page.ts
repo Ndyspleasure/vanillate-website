@@ -1044,6 +1044,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const d = data!;
     const feats = registry();
     const active = feats.filter((f) => base[f.key]?.enabled).length;
+    const mapped = feats.reduce((n, f) => n + Object.values(base[f.key]?.channels ?? {}).filter(Boolean).length, 0);
     const tile = (label: string, value: string, sub = '', tone = '') => `
       <div class="${CARD} min-w-0 p-3 sm:p-5">
         <p class="text-xs text-ink-500 dark:text-cream-300/70">${label}</p>
@@ -1074,7 +1075,7 @@ export function mountServerPage(cfg: PageConfig): void {
     return `
       <div class="grid grid-cols-3 gap-2 sm:gap-4">
         ${tile('Status bot', d.bot.installed ? (d.bot.online ? 'Online' : 'Offline') : 'Tidak ada', d.bot.version ? `Versi ${esc(d.bot.version)}` : '', d.bot.installed && d.bot.online ? 'text-emerald-700 dark:text-emerald-400' : '')}
-        ${tile('Fitur aktif', `${active}<span class="text-sm text-ink-400 sm:text-lg"> / ${feats.length}</span>`, 'Detail di tab Channel')}
+        ${tile('Fitur aktif', `${active}<span class="text-sm text-ink-400 sm:text-lg"> / ${feats.length}</span>`, `${mapped} channel diatur. Detail di tab Channel`)}
         ${tile('Perlu perhatian', String(attention.length), attention.length ? 'Daftar di bawah' : 'Semuanya beres', attention.length ? 'text-amber-700 dark:text-amber-300' : '')}
       </div>
       <div class="mt-3 flex flex-col gap-3 sm:mt-4 sm:gap-4">

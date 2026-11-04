@@ -8,9 +8,12 @@ import {
   formatCount,
   formatPercent,
   growthOf,
+  growthRateOf,
   isStatsStale,
   parseStatsSummary,
   percentOf,
+  stickinessOf,
+  verifyStatsOf,
 } from '../src/lib/dashboard/stats-model.ts';
 
 const FULL = {
@@ -111,4 +114,42 @@ test('dayLabel & format angka (id-ID)', () => {
   assert.equal(dayLabel('bukan'), '');
   assert.equal(formatCount(1284).replace(/\s/g, ''), '1.284');
   assert.equal(formatPercent(4.4), '4,4%');
+});
+
+test('stickinessOf: persen aktif 24 jam dari aktif 7 hari, dibatasi 100, tanpa data → null', () => {
+  assert.equal(stickinessOf({ active_1d: 212, active_7d: 486 }), 44);
+  assert.equal(stickinessOf({ active_1d: 10, active_7d: 5 }), 100);
+  assert.equal(stickinessOf({ active_1d: 0, active_7d: 0 }), null);
+  assert.equal(stickinessOf({ active_1d: 0, active_7d: 20 }), 0);
+});
+
+test('verifyStatsOf: rata-rata per hari satu desimal dan hari terbaik', () => {
+  const days = [9, 14, 11, 17, 22, 28, 19].map((n, i) => ({ day: `2026-11-0${i + 1}`, n }));
+  const r = verifyStatsOf({ days, total7: 120 });
+  assert.equal(r.avg, 17.1);
+  assert.deepEqual(r.best, { day: '2026-11-06', n: 28 });
+  const empty = verifyStatsOf({ days: days.map((d) => ({ ...d, n: 0 })), total7: 0 });
+  assert.equal(empty.avg, 0);
+  assert.equal(empty.best, null, 'tanpa kelulusan tidak ada hari terbaik');
+  const tie = verifyStatsOf({ days: [{ day: '2026-11-01', n: 5 }, { day: '2026-11-02', n: 5 }], total7: 10 });
+  assert.equal(tie.best!.day, '2026-11-01');
+  assert.equal(verifyStatsOf({ days: [], total7: 0 }).avg, 0);
+});
+
+test('growthRateOf: rata-rata per hari memakai jarak hari sebenarnya; hari terbaik hanya dari hari berurutan', () => {
+  const h = [['2026-11-01', 100], ['2026-11-02', 104], ['2026-11-03', 105], ['2026-11-04', 112]].map(([day, n]) => ({ day: day as string, n: n as number }));
+  const r = growthRateOf(h)!;
+  assert.equal(r.avg, 4);
+  assert.deepEqual(r.best, { day: '2026-11-04', delta: 7 });
+  // Hari bolong: 10 hari, +40 → 4 per hari, bukan 20 per titik.
+  const gap = growthRateOf([{ day: '2026-11-01', n: 100 }, { day: '2026-11-11', n: 140 }])!;
+  assert.equal(gap.avg, 4);
+  assert.equal(gap.best, null, 'dua titik tidak berurutan tidak dianggap kenaikan harian');
+  // Turun tetap dilaporkan sebagai rata-rata negatif, tanpa hari terbaik.
+  const down = growthRateOf([{ day: '2026-11-01', n: 100 }, { day: '2026-11-02', n: 90 }])!;
+  assert.equal(down.avg, -10);
+  assert.equal(down.best, null);
+  assert.equal(growthRateOf(null), null);
+  assert.equal(growthRateOf([{ day: '2026-11-01', n: 5 }]), null);
+  assert.equal(growthRateOf([{ day: '2026-11-01', n: 5 }, { day: '2026-11-01', n: 9 }]), null, 'jarak 0 hari');
 });

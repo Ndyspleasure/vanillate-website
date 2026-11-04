@@ -144,6 +144,45 @@ export function growthOf(history: StatsDay[] | null): Growth | null {
   };
 }
 
+/**
+ * Keterikatan harian: dari member yang aktif 7 hari, berapa persen yang juga aktif
+ * 24 jam terakhir. Murni dari angka yang sudah ada (aktif 24 jam adalah bagian dari
+ * aktif 7 hari). Tanpa data aktif 7 hari → null.
+ */
+export function stickinessOf(a: { active_1d: number; active_7d: number }): number | null {
+  if (a.active_7d <= 0) return null;
+  return Math.min(100, Math.round((a.active_1d / a.active_7d) * 100));
+}
+
+/** Rata-rata lulus verifikasi per hari (satu desimal) dan hari terbaik (n > 0, yang pertama bila sama). */
+export function verifyStatsOf(v: { days: StatsDay[]; total7: number }): { avg: number; best: StatsDay | null } {
+  const n = v.days.length || 1;
+  let best: StatsDay | null = null;
+  for (const d of v.days) if (d.n > 0 && (!best || d.n > best.n)) best = d;
+  return { avg: Math.round((v.total7 / n) * 10) / 10, best };
+}
+
+const DAY_MS = 86_400_000;
+const dayIndex = (day: string): number => Math.floor(Date.parse(`${day}T00:00:00Z`) / DAY_MS);
+
+/**
+ * Laju pertumbuhan dari riwayat jumlah member: rata-rata per hari (selisih ÷ jarak hari
+ * sebenarnya, jadi hari yang bolong tidak menyesatkan) dan hari dengan kenaikan terbesar
+ * (hanya dari dua titik berurutan satu hari). Kurang dari dua titik → null.
+ */
+export function growthRateOf(history: StatsDay[] | null): { avg: number; best: { day: string; delta: number } | null } | null {
+  if (!history || history.length < 2) return null;
+  const span = dayIndex(history[history.length - 1].day) - dayIndex(history[0].day);
+  if (!Number.isFinite(span) || span <= 0) return null;
+  let best: { day: string; delta: number } | null = null;
+  for (let i = 1; i < history.length; i += 1) {
+    if (dayIndex(history[i].day) - dayIndex(history[i - 1].day) !== 1) continue;
+    const delta = history[i].n - history[i - 1].n;
+    if (delta > 0 && (!best || delta > best.delta)) best = { day: history[i].day, delta };
+  }
+  return { avg: Math.round(((history[history.length - 1].n - history[0].n) / span) * 10) / 10, best };
+}
+
 const HARI = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 /** Singkatan hari dari kunci hari WIB (YYYY-MM-DD), mis. "Sen". */

@@ -300,6 +300,15 @@ Aturan:
   hanya satu kotak ditampilkan.
 - Grafik pertumbuhan member baru muncul setelah bot punya riwayat (hanya dicatat saat
   intent Server Members aktif). Member masuk dan keluar belum tersedia.
+- **Angka turunan dihitung di browser** dari data yang sudah dikirim bot (tanpa query, tanpa
+  penulisan, tanpa perubahan bot): keterikatan harian (aktif 24 jam ÷ aktif 7 hari,
+  `stickinessOf`), aktif 30 hari sebagai persen member, member yang pernah mendapat XP
+  (`activity.ever`, bisa memuat member yang sudah keluar), total XP chat dan voice, detail
+  moderasi dari `security_summary` (kick dan ban aktif, alasan tidak jelas, dicabut, kejadian
+  terakhir, diagram kategori alasan), persen dan rata-rata lulus verifikasi serta hari terbaik
+  (`verifyStatsOf`), dan laju pertumbuhan dari riwayat member (`growthRateOf`, memakai jarak
+  hari sebenarnya supaya hari yang bolong tidak menyesatkan). Menambah angka turunan baru:
+  tulis helper murni di `stats-model.ts` dengan tes, jangan menghitung di `overview.ts`.
 - **Semua teks dari bot lewat `esc()`.** Tidak ada nama atau ID member di halaman ini.
 - Statistik dihitung bot **hanya saat refresh diminta**. Saat Ringkasan dibuka dan
   ringkasannya belum ada atau lebih tua dari `STATS_STALE_MS` (15 menit),
