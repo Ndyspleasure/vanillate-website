@@ -275,6 +275,42 @@ Aturan:
 - Fitur baru yang punya gerbang serupa cukup menerbitkan `available`, `requires`, dan `locked_note` dari bot; tampilan di website otomatis mengikuti.
 - Tes: `tests/dashboard-model.test.ts` (`featureLock`).
 
+## 5d. 📊 Ringkasan Statistik (tab Ringkasan)
+
+Tab Ringkasan menampilkan statistik server dari **data fitur bot yang sudah ada**
+(Leveling, Verification, Streak Harian, Counting, Security Center, jumlah member).
+Tidak ada RPC baru dan tidak ada akses website ke tabel pemain: bot menulis angka
+agregat ke `guild_discord_snapshot.stats_summary` (proyek Database Bot, migration
+`0021` di repo bot), dan website membacanya lewat `guild_dashboard_get` yang sudah
+ada (`snapshot.stats_summary`). Daftar 7 RPC dashboard tidak berubah. Spesifikasi
+sisi bot: `docs/dashboard-sync.md` §5a di repo `sambung-kata-bot`.
+
+| Berkas | Isi |
+|---|---|
+| `src/lib/dashboard/stats-model.ts` | Tipe, `parseStatsSummary` (defensif: bentuk salah → `null`, angka dipaksa bilangan bulat >= 0), `isStatsStale`, `growthOf`, `percentOf`, format angka. Tes: `tests/stats-model.test.ts` |
+| `src/lib/dashboard/overview.ts` | HTML kartu statistik (Aktivitas member, Pertumbuhan member, Keamanan dan verifikasi, Komunitas) |
+| `src/lib/dashboard/server-page.ts` | `overviewHtml()` merakit kartu status, "Perlu perhatian" (dari `featureIssues`, tanpa data bot tambahan), dan kartu statistik |
+
+Aturan:
+
+- **Fitur belum aktif tampil sebagai kotak penjelasan** dengan tombol ke tabnya
+  (Leveling, Verification, Security Center, Social Hub), tidak disembunyikan.
+- **Alasan terkunci berasal dari bot** (`join_leave.locked_note`, `members.history_note`,
+  teks intent Server Members). Website tidak mengarang alasan. Bila kedua teks sama,
+  hanya satu kotak ditampilkan.
+- Grafik pertumbuhan member baru muncul setelah bot punya riwayat (hanya dicatat saat
+  intent Server Members aktif). Member masuk dan keluar belum tersedia.
+- **Semua teks dari bot lewat `esc()`.** Tidak ada nama atau ID member di halaman ini.
+- Statistik dihitung bot **hanya saat refresh diminta**. Saat Ringkasan dibuka dan
+  ringkasannya belum ada atau lebih tua dari `STATS_STALE_MS` (15 menit),
+  halaman meminta refresh otomatis (diam, tanpa toast), paling sering sekali per jam
+  per server per tab (`sessionStorage`), supaya bot lama yang belum menerbitkan
+  ringkasan tidak dibanjiri. Tombol Refresh Discord Data tetap ada.
+- Website harus aman terhadap bot yang lebih lama atau lebih baru: `stats_summary`
+  kosong atau berversi lain ditampilkan sebagai "belum diterbitkan bot".
+- Teks pengguna tanpa tanda pisah (`—`, `–`, ` - `); grafik memakai SVG inline,
+  tanpa pustaka grafik tambahan.
+
 ## 6. Pengembangan & tes
 
 ```bash

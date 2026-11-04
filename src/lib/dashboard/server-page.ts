@@ -67,6 +67,8 @@ import { rememberNextAndGoToLogin } from './servers-page';
 import type { IconName } from '@data/icons';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
 import { createShareController } from './share-server';
+import { overviewStatsHtml } from './overview';
+import { isStatsStale, parseStatsSummary } from './stats-model';
 import { previewHtml, previewKind, type PreviewContext } from './message-preview';
 
 /** Kartu terakhir yang ganjil melebar penuh, jadi tidak ada slot kosong di kanan (desktop). */
@@ -140,6 +142,7 @@ const IDLE_POLL_MS = 30000;
 const SYNC_TIMEOUT_MS = 60000;
 const REFRESH_TIMEOUT_MS = 30000;
 const STALE_SNAPSHOT_MS = 10 * 60 * 1000;
+const STATS_AUTO_REFRESH_MS = 60 * 60 * 1000;
 
 interface PageConfig {
   root: HTMLElement;
@@ -169,7 +172,7 @@ export function mountServerPage(cfg: PageConfig): void {
   let syncWatchUntil = 0;
   // Selesai saat refreshed_at snapshot berubah dari nilai sebelum permintaan
   // (dibandingkan dengan nilai dari server, bukan jam browser).
-  let refreshWatch: { prev: string | null; until: number } | null = null;
+  let refreshWatch: { prev: string | null; until: number; quiet?: boolean } | null = null;
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let remoteChanged = false;
   // Revisi tempat draft dibuat. Dikirim saat simpan, jadi perubahan dari tempat
@@ -288,11 +291,13 @@ export function mountServerPage(cfg: PageConfig): void {
 
       if (refreshWatch) {
         if ((data.snapshot?.refreshed_at ?? null) !== refreshWatch.prev) {
+          const quiet = refreshWatch.quiet;
           refreshWatch = null;
-          toast('Data channel dari Discord diperbarui.', 'success');
+          if (!quiet) toast('Data channel dari Discord diperbarui.', 'success');
         } else if (Date.now() > refreshWatch.until) {
+          const quiet = refreshWatch.quiet;
           refreshWatch = null;
-          toast(data.bot.online ? 'Bot belum mengirim data channel. Coba lagi sebentar lagi.' : 'Bot sedang offline. Data channel diperbarui saat bot online.', 'warning', 6000);
+          if (!quiet) toast(data.bot.online ? 'Bot belum mengirim data channel. Coba lagi sebentar lagi.' : 'Bot sedang offline. Data channel diperbarui saat bot online.', 'warning', 6000);
         }
       }
       const was = before?.config;
@@ -1039,53 +1044,48 @@ export function mountServerPage(cfg: PageConfig): void {
     const d = data!;
     const feats = registry();
     const active = feats.filter((f) => base[f.key]?.enabled).length;
-    const mapped = feats.reduce((n, f) => n + Object.keys(base[f.key]?.channels ?? {}).length, 0);
-    const tile = (label: string, value: string, sub = '') => `
+    const tile = (label: string, value: string, sub = '', tone = '') => `
       <div class="${CARD} min-w-0 p-3 sm:p-5">
         <p class="text-xs text-ink-500 dark:text-cream-300/70">${label}</p>
-        <p class="mt-1 font-display text-xl font-semibold sm:text-3xl">${value}</p>
+        <p class="mt-1 font-display text-xl font-semibold sm:text-3xl ${tone}">${value}</p>
         ${sub ? `<p class="mt-1 hidden text-xs text-ink-500 sm:block dark:text-cream-300/60">${sub}</p>` : ''}
       </div>`;
-    const sections = [
-      { id: 'game-hub', title: 'Game Hub', section: 'game', ic: 'gamepad-2' as const },
-      { id: 'social-hub', title: 'Social Hub', section: 'social', ic: 'users' as const },
-      { id: 'verification', title: 'Verification', section: 'verification', ic: 'shield-check' as const },
-      { id: 'leveling', title: 'Leveling', section: 'leveling', ic: 'trending-up' as const },
-      { id: 'autorole', title: 'Auto Role', section: 'autorole', ic: 'tag' as const },
-      { id: 'welcome', title: 'Welcome', section: 'welcome', ic: 'handshake' as const },
-      { id: 'security', title: 'Security Center', section: 'security', ic: 'shield' as const },
-    ];
+
+    // Masalah konfigurasi dari pemeriksaan yang sama dengan tab fitur (tanpa data bot tambahan).
+    const attention = feats.flatMap((f) => {
+      const r = featureIssues(f);
+      if (r.level !== 'warn' && r.level !== 'error') return [];
+      const tabId = (Object.keys(SECTION_OF_TAB) as Tab[]).find((t) => SECTION_OF_TAB[t] === f.section) ?? 'game-hub';
+      return r.messages.map((m) => ({ f, m, tabId }));
+    });
+    const attentionHtml = attention.length
+      ? `<section aria-labelledby="ov-perhatian" class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 sm:p-5">
+          <h2 id="ov-perhatian" class="font-display text-base font-semibold text-amber-800 dark:text-amber-300">Perlu perhatian</h2>
+          <ul class="mt-2 divide-y divide-amber-500/25">
+            ${attention.map(({ f, m, tabId }) => `<li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2.5 text-sm">
+              <span class="min-w-0"><strong>${esc(f.name)}</strong> <span aria-hidden="true">·</span> ${esc(m)}</span>
+              <button type="button" data-tab="${esc(tabId)}" data-focus="go-${esc(tabId)}" class="${BTN_SECONDARY} min-h-[44px] shrink-0">Atur</button></li>`).join('')}
+          </ul>
+        </section>`
+      : '';
+
+    const stats = parseStatsSummary(d.snapshot?.stats_summary);
+    const security = parseSecuritySummary(d.snapshot?.security_summary);
     return `
       <div class="grid grid-cols-3 gap-2 sm:gap-4">
-        ${tile('Fitur aktif', `${active}<span class="text-sm text-ink-400 sm:text-lg"> / ${feats.length}</span>`)}
-        ${tile('Channel diatur', String(mapped), 'Pemetaan fitur → channel')}
-        ${tile('Status bot', d.bot.installed ? (d.bot.online ? 'Online' : 'Offline') : 'Tidak ada', d.bot.version ? `Versi ${esc(d.bot.version)}` : '')}
+        ${tile('Status bot', d.bot.installed ? (d.bot.online ? 'Online' : 'Offline') : 'Tidak ada', d.bot.version ? `Versi ${esc(d.bot.version)}` : '', d.bot.installed && d.bot.online ? 'text-emerald-700 dark:text-emerald-400' : '')}
+        ${tile('Fitur aktif', `${active}<span class="text-sm text-ink-400 sm:text-lg"> / ${feats.length}</span>`, 'Detail di tab Channel')}
+        ${tile('Perlu perhatian', String(attention.length), attention.length ? 'Daftar di bawah' : 'Semuanya beres', attention.length ? 'text-amber-700 dark:text-amber-300' : '')}
       </div>
-      <div class="mt-3 grid gap-3 sm:mt-4 sm:gap-4 lg:grid-cols-2">
-        ${sections
-          .map((sec) => {
-            const list = feats.filter((f) => f.section === sec.section);
-            return `
-            <div class="${CARD} p-4 sm:p-5">
-              <div class="flex items-center justify-between gap-3">
-                <h2 class="flex items-center gap-2 font-display text-lg font-semibold">${icon(sec.ic, 'h-5 w-5 text-amber-600')} ${sec.title}</h2>
-                <button type="button" data-tab="${sec.id}" data-focus="go-${sec.id}" class="text-sm font-medium text-amber-700 hover:underline dark:text-amber-300">Atur →</button>
-              </div>
-              <ul class="mt-2 divide-y divide-ink-900/5 sm:mt-4 dark:divide-cream-100/5">
-                ${list
-                  .map((f) => {
-                    const s = base[f.key];
-                    const ch = f.purposes.map((p) => s.channels[p.key]).find(Boolean);
-                    const where = !s.enabled ? 'Nonaktif' : ch ? channelLabel(ctx(), ch) : f.purposes.some((p) => p.required) ? 'Belum ada channel' : 'Semua channel';
-                    return `<li class="flex items-center justify-between gap-3 py-2.5 text-sm">
-                      ${featureLabel(f)}
-                      <span class="shrink-0 text-xs ${s.enabled ? 'text-ink-600 dark:text-cream-300' : 'text-ink-400'}">${esc(where)}</span></li>`;
-                  })
-                  .join('')}
-              </ul>
-            </div>`;
-          })
-          .join('')}
+      <div class="mt-3 flex flex-col gap-3 sm:mt-4 sm:gap-4">
+        ${attentionHtml}
+        ${overviewStatsHtml({
+          stats,
+          security,
+          memberCount: d.guild.member_count ?? null,
+          updatedAgo: stats?.updated_at ? relativeTime(stats.updated_at, serverNow()) : null,
+          botInstalled: d.bot.installed,
+        })}
       </div>`;
   }
 
@@ -1280,12 +1280,29 @@ export function mountServerPage(cfg: PageConfig): void {
     }
   }
 
-  async function discordRefresh(): Promise<void> {
+  /**
+   * Ringkasan statistik hanya dihitung bot saat refresh diminta. Otomatis paling
+   * sering sekali per jam per server (per tab browser) supaya bot lama yang belum
+   * menerbitkan ringkasan tidak dibanjiri permintaan setiap halaman dibuka.
+   */
+  function statsRefreshAllowed(): boolean {
+    const key = `vn-stats-refresh-${guildId}`;
+    try {
+      const last = Number(sessionStorage.getItem(key) ?? 0);
+      if (Date.now() - last < STATS_AUTO_REFRESH_MS) return false;
+      sessionStorage.setItem(key, String(Date.now()));
+    } catch {
+      /* penyimpanan diblokir: tetap boleh, hanya sekali per pemuatan halaman */
+    }
+    return true;
+  }
+
+  async function discordRefresh(quiet = false): Promise<void> {
     try {
       const prev = data?.snapshot?.refreshed_at ?? null;
       const r = await requestDiscordRefresh(guildId);
-      refreshWatch = { prev, until: Date.now() + REFRESH_TIMEOUT_MS };
-      if (!r.bot_online) toast('Bot sedang offline. Data channel diperbarui saat bot online.', 'warning');
+      refreshWatch = { prev, until: Date.now() + REFRESH_TIMEOUT_MS, quiet };
+      if (!r.bot_online && !quiet) toast('Bot sedang offline. Data channel diperbarui saat bot online.', 'warning');
       renderAll();
       if (pollTimer) clearTimeout(pollTimer);
       pollTimer = setTimeout(poll, FAST_POLL_MS);
@@ -1581,7 +1598,8 @@ export function mountServerPage(cfg: PageConfig): void {
 
     // Data channel belum ada / basi → minta bot menerbitkan ulang otomatis.
     const at = Date.parse(loaded.snapshot?.refreshed_at ?? '');
-    if (loaded.bot.installed && (!Number.isFinite(at) || serverNow() - at > STALE_SNAPSHOT_MS)) await discordRefresh();
+    const statsStale = loaded.bot.installed && tab === 'overview' && isStatsStale(parseStatsSummary(loaded.snapshot?.stats_summary), serverNow()) && statsRefreshAllowed();
+    if (loaded.bot.installed && (!Number.isFinite(at) || serverNow() - at > STALE_SNAPSHOT_MS || statsStale)) await discordRefresh(statsStale);
     else schedulePoll();
   })();
 }
