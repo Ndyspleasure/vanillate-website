@@ -5,10 +5,9 @@
 //  WEBSITE_BOT_SLUG, jadi peralihan dilakukan bertahap supaya perintah CMS
 //  (Update & Restart, dst.) tidak putus:
 //
-//   1. Website menulis slug LAMA (bawaan) dan membaca KEDUA slug.
-//   2. Pemilik menerapkan supabase/rename-bot-slug.sql, mengganti
-//      WEBSITE_BOT_SLUG=vanillateID di host bot, lalu Update & Restart.
-//   3. Pemilik menaikkan PUBLIC_BOT_SLUG_WRITE=vanillateID di build website.
+//   1. Website menulis slug lama dan membaca KEDUA slug.
+//   2. Bot di-update, migration Database Bot dan SQL CMS diterapkan.
+//   3. Website menulis slug BARU (bawaan sekarang); membaca tetap kedua slug.
 //
 //  Urutan lengkap: docs/ADMIN-CMS.md bagian "Peralihan bot_slug".
 // ════════════════════════════════════════════════════════════════════════════
@@ -17,9 +16,13 @@ export const BOT_SLUG_LEGACY = 'sambung-kata';
 export const BOT_SLUG_NEW = 'vanillateID';
 export const BOT_SLUGS_READ: readonly string[] = [BOT_SLUG_LEGACY, BOT_SLUG_NEW];
 
-/** Slug yang dipakai website saat MENULIS (default: lama, sampai penanda dinaikkan). */
+/**
+ * Slug yang dipakai website saat MENULIS. Peralihan sudah selesai (bot, Database
+ * Bot, dan CMS memakai `vanillateID`), jadi bawaannya slug baru. Penanda
+ * PUBLIC_BOT_SLUG_WRITE=sambung-kata hanya tersisa untuk rollback darurat.
+ */
 export function resolveWriteSlug(raw: unknown): string {
-  return raw === BOT_SLUG_NEW ? BOT_SLUG_NEW : BOT_SLUG_LEGACY;
+  return raw === BOT_SLUG_LEGACY ? BOT_SLUG_LEGACY : BOT_SLUG_NEW;
 }
 
 export const BOT_SLUG_WRITE = resolveWriteSlug(import.meta.env?.PUBLIC_BOT_SLUG_WRITE);

@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveWriteSlug, newestPerKey, BOT_SLUGS_READ } from '../src/lib/bot-slug.ts';
 
-test('slug tulis bawaan adalah slug lama sampai penanda dinaikkan', () => {
-  assert.equal(resolveWriteSlug(undefined), 'sambung-kata');
-  assert.equal(resolveWriteSlug(''), 'sambung-kata');
-  assert.equal(resolveWriteSlug('apa-saja'), 'sambung-kata');
+test('slug tulis bawaan adalah slug baru, slug lama hanya untuk rollback eksplisit', () => {
+  assert.equal(resolveWriteSlug(undefined), 'vanillateID');
+  assert.equal(resolveWriteSlug(''), 'vanillateID');
+  assert.equal(resolveWriteSlug('apa-saja'), 'vanillateID');
   assert.equal(resolveWriteSlug('vanillateID'), 'vanillateID');
+  assert.equal(resolveWriteSlug('sambung-kata'), 'sambung-kata');
 });
 
 test('pembacaan menerima kedua slug', () => {
