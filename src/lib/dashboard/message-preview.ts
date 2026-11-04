@@ -30,7 +30,7 @@ function esc(value: unknown): string {
 const COLOR = /^#[0-9a-fA-F]{6}$/;
 const SAMPLE = (c: PreviewContext): Record<string, string> => ({
   server: c.guildName, user: c.viewerName, tag: `@${c.viewerName}`, level: '5', xp: '1.250', kategori: 'Chat',
-  role: '@Member', steps: '3', need: '3', detik: '30', cooldown: '30', benar: '3', total: '3',
+  role: '@Member', number: '1417', steps: '3', need: '3', detik: '30', cooldown: '30', benar: '3', total: '3',
 });
 
 /** Jenis pesan sebuah kelompok setelan, dari kunci `{jenis}_thumb`; null bila tidak ada. */
