@@ -85,6 +85,10 @@ const str = (v: unknown, max = 10_000): string => (typeof v === 'string' ? v.tri
 const strList = (v: unknown, max = 50): string[] =>
   Array.isArray(v) ? v.map((x) => str(x, 300)).filter(Boolean).slice(0, max) : [];
 const SLUG_OK = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// Slug produk boleh memuat huruf besar (mis. `vanillateID`). Slug lama
+// `sambung-kata` pada artikel yang sudah terbit dipetakan ke slug sekarang.
+const PRODUCT_SLUG_OK = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
+const LEGACY_PRODUCT_SLUGS: Record<string, string> = { 'sambung-kata': 'vanillateID' };
 
 function isoOrNull(v: unknown): string | null {
   if (typeof v !== 'string' || !v) return null;
@@ -188,8 +192,8 @@ export function buildBlogData(raw: any, now: Date = new Date()): BlogData {
         .map((f: any) => ({ q: str(f?.q, 300), a: str(f?.a, 3000) }))
         .filter((f: BlogFaq) => f.q && f.a)
         .slice(0, 20),
-      relatedProducts: strList(p?.relatedProducts, 6).filter((s) => SLUG_OK.test(s)),
-      relatedFaqs: strList(p?.relatedFaqs, 8).filter((s) => /^[a-z0-9-]+\/[a-z0-9-]+$/.test(s)),
+      relatedProducts: [...new Set(strList(p?.relatedProducts, 6).filter((s) => PRODUCT_SLUG_OK.test(s)).map((s) => LEGACY_PRODUCT_SLUGS[s] ?? s))],
+      relatedFaqs: strList(p?.relatedFaqs, 8).filter((s) => /^[a-z0-9-]+\/[a-z0-9-]+$/.test(s)).map((s) => s.replace(/^sambung-kata\//, 'vanillate-id/')),
       relatedPostIds: strList(p?.relatedPostIds, 6),
       previousSlugs: strList(p?.previousSlugs, 20).filter((s) => SLUG_OK.test(s) && s !== slug),
       wordCount: wordCount(body),

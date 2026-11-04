@@ -971,8 +971,8 @@ Satu FAQ = satu halaman publik dengan URL sendiri:
 
 ```
 /faq                                    pusat panduan + pencarian
-/faq/sambung-kata                       daftar FAQ satu kategori
-/faq/sambung-kata/cara-bermain          jawaban lengkap (target deep link)
+/faq/vanillate-id                       daftar FAQ satu kategori
+/faq/vanillate-id/cara-bermain          jawaban lengkap (target deep link)
 ```
 
 ### Alur data

@@ -62,9 +62,9 @@ test('renderBlogMarkdown: penanda miring tidak menyusup ke href', () => {
 });
 
 test('renderBlogMarkdown: tautan eksternal target _blank, internal tidak', () => {
-  const { html } = renderBlogMarkdown('[luar](https://google.com) [dalam](/products/sambung-kata) [vanillate](https://vanillate.id/faq)');
+  const { html } = renderBlogMarkdown('[luar](https://google.com) [dalam](/products/vanillateID) [vanillate](https://vanillate.id/faq)');
   assert.match(html, /href="https:\/\/google\.com"[^>]*target="_blank" rel="noopener"/);
-  assert.match(html, /href="\/products\/sambung-kata" class="[^"]*">dalam/);
+  assert.match(html, /href="\/products\/vanillateID" class="[^"]*">dalam/);
   assert.match(html, /href="https:\/\/vanillate\.id\/faq" class="[^"]*">vanillate/);
 });
 
@@ -157,9 +157,10 @@ test('relatedPosts: manual dulu, lalu kemiripan, lalu terbaru', () => {
 });
 
 test('postsForProduct & listPath', () => {
-  const data = buildBlogData({ posts: [raw({ relatedProducts: ['sambung-kata', 'BUKAN SLUG'] })] });
-  assert.equal(postsForProduct('sambung-kata', data.posts).length, 1);
-  assert.deepEqual(data.posts[0].relatedProducts, ['sambung-kata']);
+  // Slug lama `sambung-kata` dipetakan ke `vanillateID`; slug berhuruf besar valid.
+  const data = buildBlogData({ posts: [raw({ relatedProducts: ['sambung-kata', 'vanillateID', 'BUKAN SLUG'] })] });
+  assert.equal(postsForProduct('vanillateID', data.posts).length, 1);
+  assert.deepEqual(data.posts[0].relatedProducts, ['vanillateID']);
   assert.equal(listPath(1), '/blog');
   assert.equal(listPath(3), '/blog/halaman/3');
 });
@@ -190,7 +191,7 @@ const draft = (over: Record<string, unknown> = {}) => ({
   title: 'Cara Main Sambung Kata di Discord untuk Pemula',
   slug: '',
   excerpt: 'x'.repeat(130),
-  body: `## Satu\n\n${'kata '.repeat(320)}\n\n## Dua\n\nLihat [produk](/products/sambung-kata).`,
+  body: `## Satu\n\n${'kata '.repeat(320)}\n\n## Dua\n\nLihat [produk](/products/vanillateID).`,
   tldr: ['a'],
   faqs: [{ q: 'q', a: 'a' }],
   categoryIds: ['c'],

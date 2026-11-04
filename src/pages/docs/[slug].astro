@@ -11,7 +11,7 @@
 // alamat lama ke alamat baru. Boleh dihapus setelah tautan lama tidak lagi
 // dipakai, tanpa memengaruhi isi FAQ mana pun.
 import RedirectStub from '@components/RedirectStub.astro';
-import { bots } from '@data/bots';
+import { bots, LEGACY_PRODUCT_SLUGS } from '@data/bots';
 import { faqCategoryUrl, faqUrl, getFaq } from '@data/faq';
 
 export function getStaticPaths() {
@@ -19,7 +19,7 @@ export function getStaticPaths() {
   // terpisah: variabel frontmatter di luar sini tidak terlihat olehnya.
   /** Anchor section dokumentasi lama → slug FAQ penggantinya. */
   const ANCHOR: Record<string, Record<string, string>> = {
-    'sambung-kata': {
+    'vanillate-id': {
       'cara-bermain': 'cara-bermain',
       'mode-permainan': 'mode-permainan',
       'boost-system': 'boost',
@@ -42,7 +42,9 @@ export function getStaticPaths() {
 
   for (const bot of bots) {
     if (!bot.faqCategory) continue;
-    for (const slug of [bot.slug, bot.faqCategory]) {
+    // Slug lama produk utama (`sambung-kata`) ikut dibangun agar /docs/sambung-kata tetap hidup.
+    const lama = Object.entries(LEGACY_PRODUCT_SLUGS).filter(([, baru]) => baru === bot.slug).map(([l]) => l);
+    for (const slug of [bot.slug, bot.faqCategory, ...lama]) {
       if (!slug || dibuat.has(slug)) continue;
       dibuat.add(slug);
 

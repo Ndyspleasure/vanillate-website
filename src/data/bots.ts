@@ -110,14 +110,28 @@ type RawProduct = {
   ctaNote?: string;
 };
 
+// Slug produk utama (bot Vanillate.ID). Dulu `sambung-kata`; sejak diganti,
+// URL-nya /products/vanillateID/ (huruf besar-kecil persis, GitHub Pages
+// peka huruf). Kunci internal bot di database (bot_slug) TIDAK ikut berubah.
+export const VANILLATE_PRODUCT = 'vanillateID';
+
+/** Slug lama → slug sekarang. Dipakai redirect dan tautan lama (blog, docs). */
+export const LEGACY_PRODUCT_SLUGS: Record<string, string> = {
+  'sambung-kata': VANILLATE_PRODUCT,
+};
+
+export function currentProductSlug(slug: string): string {
+  return LEGACY_PRODUCT_SLUGS[slug] ?? slug;
+}
+
 const STATUSES = ['live', 'beta', 'preorder', 'coming-soon'] as const;
 const PLATFORMS = ['discord', 'web'] as const;
 const TONES = ['accent', 'info', 'success', 'warn', 'neutral'] as const;
 
 function toBot(p: RawProduct): Bot {
-  const isSambungKata = p.slug === 'sambung-kata';
-  // Untuk Sambung Kata, fitur & command tetap satu sumber kebenaran di repo bot
-  // (bot-info.json). Produk lain memakai nilai dari CMS.
+  const isSambungKata = p.slug === VANILLATE_PRODUCT;
+  // Untuk produk utama Vanillate.ID, fitur & command tetap satu sumber kebenaran
+  // di repo bot (bot-info.json). Produk lain memakai nilai dari CMS.
   const features = p.features && p.features.length ? p.features : (isSambungKata ? botInfo.features : []);
   const commands = p.commands && p.commands.length ? p.commands : (isSambungKata ? botInfo.commands : []);
 
@@ -262,7 +276,7 @@ export function productImage(src: string | undefined | null, small = false): str
 // fallback <picture> yang menghormati prefers-reduced-motion (statis saat
 // reduced motion, animasi saat tidak).
 const LOCAL_ANIMATED: Record<string, string> = {
-  'sambung-kata': '/bots/sambung-kata.webp',
+  [VANILLATE_PRODUCT]: '/bots/sambung-kata.webp',
 };
 
 /** URL avatar animasi (WebP) produk bila tersedia, atau null. */
@@ -286,10 +300,10 @@ export function getFeaturedBot(): Bot {
   return bots.find((b) => b.featured) ?? bots[0];
 }
 
-// Produk pemilik /changelog. Versi & changelog disinkron dari repo bot Sambung
-// Kata, jadi hanya produk utama ini yang menautkannya. Sengaja memakai slug,
-// bukan flag `featured`, karena flag itu bisa terpasang di banyak produk.
-export const CHANGELOG_PRODUCT = 'sambung-kata';
+// Produk pemilik /changelog. Versi & changelog disinkron dari repo bot
+// Vanillate.ID, jadi hanya produk utama ini yang menautkannya. Sengaja memakai
+// slug, bukan flag `featured`, karena flag itu bisa terpasang di banyak produk.
+export const CHANGELOG_PRODUCT = VANILLATE_PRODUCT;
 
 export function getChangelogBot(): Bot {
   return bots.find((b) => b.slug === CHANGELOG_PRODUCT) ?? getFeaturedBot();
@@ -298,7 +312,7 @@ export function getChangelogBot(): Bot {
 // Produk yang dikelola Vanillate Dashboard (/dashboard, bot_slug yang sama di
 // Supabase). Seperti Changelog, tautannya hanya di halaman produk ini & footer
 // — tidak di menu utama studio.
-export const DASHBOARD_PRODUCT = 'sambung-kata';
+export const DASHBOARD_PRODUCT = VANILLATE_PRODUCT;
 
 export function getDashboardBot(): Bot | undefined {
   return bots.find((b) => b.slug === DASHBOARD_PRODUCT);

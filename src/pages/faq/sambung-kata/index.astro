@@ -1,0 +1,9 @@
+---
+// Kategori FAQ lama `sambung-kata`, kini `vanillate-id`. URL lama jadi stub redirect.
+import RedirectStub from '@components/RedirectStub.astro';
+import { faqCategoryUrl } from '@data/faq';
+
+const to = faqCategoryUrl('vanillate-id');
+---
+
+<RedirectStub to={to} title="Pindah ke FAQ Vanillate.ID" text="Panduan ini telah dipindahkan ke" linkLabel="FAQ Vanillate.ID" />

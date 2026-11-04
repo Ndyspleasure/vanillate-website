@@ -32,6 +32,8 @@ export default defineConfig({
         !page.includes('/bots') &&
         !page.includes('/docs') &&
         !page.includes('/products/vanillatehandsigncamera') &&
+        !page.includes('/products/sambung-kata') &&
+        !page.includes('/faq/sambung-kata') &&
         // Tag blog noindex (tumpang tindih dengan kategori); redirect slug lama.
         !page.includes('/blog/tag/') &&
         !blogInfo.exclude.has(pathOf(page)),

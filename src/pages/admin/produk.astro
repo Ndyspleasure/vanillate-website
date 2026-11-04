@@ -315,7 +315,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const supabase = getSupabase()!;
     const patch = kumpulkanCore();
     if (!patch.name || !patch.slug) { toast('Nama dan slug wajib diisi.', false); return; }
-    if (!/^[a-z0-9-]+$/.test(patch.slug)) { toast('Slug hanya boleh huruf kecil, angka, dan tanda hubung.', false); return; }
+    if (!/^[A-Za-z0-9-]+$/.test(patch.slug)) { toast('Slug hanya boleh huruf, angka, dan tanda hubung.', false); return; }
 
     const meta = { ...patch, updated_at: new Date().toISOString(), updated_by: uid };
     if (current.id) {

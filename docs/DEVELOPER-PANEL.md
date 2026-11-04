@@ -9,8 +9,10 @@ lama → baru, cara menambah aksi).
 > (Sambung Kata tetap nama game/mode-nya). Di sidebar CMS, pengaturan bot
 > (Kontrol Bot, Promo, Tebak Lagu) dan Panel Developer digabung dalam satu grup
 > **Discord Bot** (`grup-bot` di `src/layouts/AdminLayout.astro`). Nama tabel
-> (`bot_*`), slug produk `sambung-kata`, dan URL `/faq/sambung-kata/…` tidak
-> berubah supaya data & tautan lama tetap utuh.
+> (`bot_*`) dan kunci `bot_slug = 'sambung-kata'` tidak berubah. Slug halaman
+> produk kini `vanillateID` (`/products/vanillateID/`) dan kategori FAQ
+> `vanillate-id`; URL lama `/products/sambung-kata/` dan `/faq/sambung-kata/…`
+> menjadi stub redirect.
 
 ## 1. Arsitektur singkat
 
