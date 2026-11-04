@@ -11,8 +11,11 @@
 //   • Hanya angka gabungan: tidak ada nama atau ID member di halaman ini.
 // ════════════════════════════════════════════════════════════════════════════
 
-import type { SecuritySummary } from './model';
-import { dayLabel, formatCount, formatPercent, growthOf, percentOf, type StatsDay, type StatsSummary } from './stats-model';
+import { relativeTime, type SecuritySummary } from './model';
+import {
+  dayLabel, formatCount, formatPercent, growthOf, growthRateOf, percentOf, stickinessOf, verifyStatsOf,
+  type StatsDay, type StatsSummary,
+} from './stats-model';
 import { CARD, esc, icon } from './ui';
 
 const MUTED = 'text-ink-500 dark:text-cream-300/70';
@@ -80,6 +83,8 @@ function activityCard(i: OverviewStatsInput): string {
   }
   const total = i.stats?.members.total ?? i.memberCount;
   const rate7 = percentOf(a.active_7d, total);
+  const rate30 = percentOf(a.active_30d, total);
+  const sticky = stickinessOf(a);
   const base = total ?? Math.max(a.active_30d, a.active_7d, a.active_1d, 1);
   const chat = a.chat_pct;
   const split = chat == null
@@ -87,7 +92,9 @@ function activityCard(i: OverviewStatsInput): string {
     : `<div role="img" aria-label="Porsi XP: chat ${chat} persen, voice ${100 - chat} persen" class="mt-2 flex h-3.5 overflow-hidden rounded-full">
          <span class="bg-amber-500" style="width:${chat}%"></span><span class="bg-teal-500" style="width:${100 - chat}%"></span>
        </div>
-       <p class="mt-2 text-sm"><span class="font-semibold text-amber-700 dark:text-amber-300">Chat ${chat}%</span> <span class="${MUTED}">·</span> <span class="font-semibold text-teal-700 dark:text-teal-300">Voice ${100 - chat}%</span> <span class="${MUTED}">dari total XP server</span></p>`;
+       <p class="mt-2 text-sm"><span class="font-semibold text-amber-700 dark:text-amber-300">Chat ${chat}%</span> <span class="${MUTED}">(${formatCount(a.chat_xp)} XP)</span> <span class="${MUTED}">·</span> <span class="font-semibold text-teal-700 dark:text-teal-300">Voice ${100 - chat}%</span> <span class="${MUTED}">(${formatCount(a.voice_xp)} XP)</span></p>`;
+  const chip = (label: string, value: string, hint: string) => `<div class="${TILE} min-w-0 flex-1 basis-40">
+      <p class="text-xs ${MUTED}">${esc(label)}</p><p class="mt-1 font-display text-2xl font-semibold tabular-nums">${value}</p><p class="mt-0.5 text-xs ${MUTED}">${esc(hint)}</p></div>`;
   const body = `
     <div class="mt-3 grid grid-cols-2 gap-4">
       ${stat('Total member', total == null ? 'Belum ada data' : formatCount(total))}
@@ -98,15 +105,21 @@ function activityCard(i: OverviewStatsInput): string {
       ${bar('7 hari', a.active_7d, Math.min(100, Math.round((a.active_7d / base) * 100)))}
       ${bar('30 hari', a.active_30d, Math.min(100, Math.round((a.active_30d / base) * 100)))}
     </ul>
+    <div class="mt-4 flex flex-wrap gap-2.5">
+      ${chip('Keterikatan harian', sticky == null ? 'Belum ada data' : `${sticky}%`, 'dari member aktif 7 hari, yang juga aktif 24 jam terakhir')}
+      ${chip('Aktif 30 hari', rate30 == null ? formatCount(a.active_30d) : `${rate30}%`, rate30 == null ? 'member aktif' : `${formatCount(a.active_30d)} dari seluruh member`)}
+      ${chip('Pernah mendapat XP', formatCount(a.ever), 'termasuk member yang sudah keluar')}
+    </div>
     <h3 class="mt-5 text-sm font-semibold">Chat dan voice</h3>
     ${split}
-    <p class="mt-3 text-xs ${MUTED}">Dihitung dari member yang mendapat XP Leveling. Member yang diam atau yang sudah keluar mungkin belum tercermin.</p>`;
+    <p class="mt-3 text-xs ${MUTED}">Dihitung dari member yang mendapat XP Leveling. Member yang diam tidak tercermin, dan member yang sudah keluar bisa masih terhitung.</p>`;
   return section('aktivitas', 'Aktivitas member', 'Sumber: Leveling', body, 'lg:col-span-2');
 }
 
 function growthChart(history: StatsDay[]): string {
   const g = growthOf(history);
   if (!g) return '';
+  const rate = growthRateOf(history);
   const sign = g.delta > 0 ? '+' : '';
   const first = history[0];
   const last = history[history.length - 1];
@@ -116,7 +129,8 @@ function growthChart(history: StatsDay[]): string {
       <path d="${g.area}" class="fill-amber-500/15"></path>
       <path d="${g.line}" fill="none" class="stroke-amber-600 dark:stroke-amber-400" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
     </svg>
-    <div class="mt-1 flex justify-between text-xs ${MUTED}"><span>${esc(first.day)} · ${formatCount(first.n)}</span><span>${esc(last.day)} · ${formatCount(last.n)}</span></div>`;
+    <div class="mt-1 flex justify-between text-xs ${MUTED}"><span>${esc(first.day)} · ${formatCount(first.n)}</span><span>${esc(last.day)} · ${formatCount(last.n)}</span></div>
+    ${rate ? `<p class="mt-3 text-sm">Rata-rata <span class="font-semibold tabular-nums">${rate.avg > 0 ? '+' : ''}${String(rate.avg).replace('.', ',')}</span> member per hari${rate.best ? `. Kenaikan terbesar <span class="font-semibold tabular-nums">+${formatCount(rate.best.delta)}</span> pada ${esc(rate.best.day)}` : ''}.</p>` : ''}`;
 }
 
 function growthCard(i: OverviewStatsInput): string {
@@ -164,18 +178,42 @@ function securityCard(i: OverviewStatsInput): string {
   if (sec?.enabled) {
     const t = (label: string, value: number, hint: string) => `<div class="${TILE} min-w-0 flex-1 basis-28">
       <p class="text-xs ${MUTED}">${esc(label)}</p><p class="mt-1 font-display text-2xl font-semibold tabular-nums">${formatCount(value)}</p><p class="mt-0.5 text-xs ${MUTED}">${esc(hint)}</p></div>`;
+    const maxReason = Math.max(1, ...sec.by_reason.map((c) => c.count));
+    const reasons = sec.by_reason.length
+      ? `<h3 class="mt-5 text-sm font-semibold">Kategori alasan (catatan aktif)</h3>
+         <ul class="mt-2 grid gap-2">${sec.by_reason.map((c) => `<li class="flex items-center gap-3 text-sm">
+           <span class="w-36 shrink-0 truncate sm:w-44">${esc(c.label)}</span>
+           <span class="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-ink-900/10 dark:bg-cream-100/10"><span class="block h-full rounded-full bg-amber-500" style="width:${Math.round((c.count / maxReason) * 100)}%"></span></span>
+           <span class="w-8 shrink-0 text-right font-semibold tabular-nums">${formatCount(c.count)}</span></li>`).join('')}</ul>`
+      : '';
     body += `<div class="mt-3 flex flex-wrap gap-2.5">
-      ${t('Kick 7 hari', sec.last7_kick, 'dari Security Center')}
-      ${t('Ban 7 hari', sec.last7_ban, 'dari Security Center')}
+      ${t('Kick aktif', sec.kick_active, 'catatan masih berlaku')}
+      ${t('Ban aktif', sec.ban_active, 'catatan masih berlaku')}
+      ${t('7 hari terakhir', sec.last7_kick + sec.last7_ban, `${formatCount(sec.last7_kick)} kick dan ${formatCount(sec.last7_ban)} ban`)}
+    </div>
+    <div class="mt-2.5 flex flex-wrap gap-2.5">
       ${t('Menunggu kategori', sec.pending, 'belum dipilih moderator')}
-    </div>`;
+      ${t('Alasan tidak jelas', sec.not_provided, 'lewat 24 jam tanpa pilihan')}
+      ${t('Dicabut', sec.revoked, 'laporan dibatalkan')}
+    </div>
+    ${reasons}
+    ${sec.last_at ? `<p class="mt-3 text-xs ${MUTED}">Kejadian terakhir ${esc(relativeTime(sec.last_at))}.</p>` : ''}`;
   } else {
     body += lockBox('Security Center belum aktif', 'Catatan kick, ban, dan kategori alasannya muncul setelah Security Center dinyalakan. Bot perlu izin Lihat Audit Log.', { label: 'Atur Security Center', tab: 'security' });
   }
 
   if (ver) {
+    const vs = verifyStatsOf(ver);
+    const total = i.stats?.members.total ?? i.memberCount;
+    const pct = percentOf(ver.total7, total);
+    const parts = [
+      `${formatCount(ver.total7)} member lulus`,
+      pct == null ? null : `${pct}% dari seluruh member`,
+      `rata-rata ${String(vs.avg).replace('.', ',')} per hari`,
+      vs.best ? `hari terbaik ${dayLabel(vs.best.day)} (${formatCount(vs.best.n)})` : null,
+    ].filter(Boolean).join(' · ');
     body += `<h3 class="mt-5 text-sm font-semibold">Lulus verifikasi 7 hari terakhir</h3>
-      <p class="text-sm ${MUTED}">${formatCount(ver.total7)} member lulus</p>${verifyBars(ver.days)}`;
+      <p class="text-sm ${MUTED}">${esc(parts)}</p>${verifyBars(ver.days)}`;
   } else {
     body += lockBox('Verification belum aktif', 'Jumlah member yang lulus verifikasi per hari muncul setelah Verification dinyalakan.', { label: 'Atur Verification', tab: 'verification' });
   }
