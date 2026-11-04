@@ -1,5 +1,44 @@
 [
   {
+    "version": "3.40.3",
+    "date": "2026-11-04",
+    "title": "Tombol Reply di dalam thread Anonymous Confession",
+    "highlights": [
+      "💬 Setiap balasan di thread Anonymous Confession kini punya tombol Reply, jadi bisa membalas langsung dari dalam thread",
+      "🛠️ Thread confession tidak lagi dikunci supaya tombolnya tetap aktif"
+    ]
+  },
+  {
+    "version": "3.40.2",
+    "date": "2026-11-04",
+    "title": "Confess Now langsung membuka form",
+    "highlights": [
+      "🤫 Tombol Confess Now kini langsung membuka form confession tanpa langkah konfirmasi tambahan"
+    ]
+  },
+  {
+    "version": "3.40.1",
+    "date": "2026-11-04",
+    "title": "Anonymous Confession: kirim cerita tanpa nama di Social Hub",
+    "highlights": [
+      "🤫 Fitur baru Anonymous Confession: tekan Confess Now, tulis ceritamu, dan bot yang menampilkannya tanpa nama pengirim",
+      "💬 Confession bisa dibalas anonim lewat tombol Reply ke thread khusus",
+      "🛡️ Demi keamanan, tim moderasi Vanillate menerima salinan setiap kiriman",
+      "⚙️ Admin server mengatur channel, Reply, dan Thread dari Vanillate Dashboard"
+    ]
+  },
+  {
+    "version": "3.40.0",
+    "date": "2026-11-04",
+    "title": "Anonymous Confession: kirim cerita tanpa nama di Social Hub",
+    "highlights": [
+      "🤫 Fitur baru Anonymous Confession: tekan Confess Now, tulis ceritamu, dan bot yang menampilkannya tanpa nama pengirim",
+      "💬 Confession bisa dibalas anonim lewat tombol Reply ke thread khusus",
+      "🛡️ Demi keamanan, tim moderasi Vanillate menerima salinan setiap kiriman",
+      "⚙️ Admin server mengatur channel, Reply, dan Thread dari Vanillate Dashboard"
+    ]
+  },
+  {
     "version": "3.39.0",
     "date": "2026-11-03",
     "title": "Vanillate Story: petunjuk minggu pertama dan dasbor lebih rapi",
