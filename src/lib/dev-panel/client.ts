@@ -12,6 +12,7 @@
 
 import { getSupabase } from '../supabase';
 import { isFinal, type Progress } from './model';
+import { BOT_SLUG_WRITE, BOT_SLUGS_READ, newestPerKey } from '../bot-slug';
 
 export interface CommandOutcome<T = any> {
   id: number | null;
@@ -61,7 +62,7 @@ export async function kirimPerintah<T = any>(
 
   const { data, error } = await supabase
     .from('bot_commands')
-    .insert({ type, payload, status: 'pending', created_by: uid })
+    .insert({ type, payload, status: 'pending', created_by: uid, bot_slug: BOT_SLUG_WRITE })
     .select('id')
     .single();
   if (error || !data) return gagal(pesanInsert(error ?? {}));
@@ -149,7 +150,8 @@ export async function bacaSnapshots<T = any>(keys: string[]): Promise<Record<str
   const { data, error } = await supabase
     .from('bot_panel_snapshots')
     .select('key, data, updated_at')
-    .in('key', keys);
+    .in('key', keys)
+    .in('bot_slug', [...BOT_SLUGS_READ]);
   if (error) {
     const pesan = /does not exist|42P01/.test(`${error.code} ${error.message}`)
       ? 'Tabel bot_panel_snapshots belum ada. Jalankan supabase/developer-panel-schema.sql.'
@@ -157,7 +159,8 @@ export async function bacaSnapshots<T = any>(keys: string[]): Promise<Record<str
     for (const k of keys) out[k].error = pesan;
     return out;
   }
-  for (const row of data ?? []) {
+  // Selama peralihan bot_slug bisa ada dua baris per key (slug lama dan baru): ambil yang terbaru.
+  for (const row of newestPerKey(data ?? [])) {
     // Bot menulis { error } bila pembangun snapshot itu gagal (src/cms/snapshots.js).
     const d = row.data as any;
     const gagal = d && typeof d === 'object' && Object.keys(d).length === 1 && typeof d.error === 'string';

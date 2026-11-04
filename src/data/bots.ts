@@ -112,7 +112,7 @@ type RawProduct = {
 
 // Slug produk utama (bot Vanillate.ID). Dulu `sambung-kata`; sejak diganti,
 // URL-nya /products/vanillateID/ (huruf besar-kecil persis, GitHub Pages
-// peka huruf). Kunci internal bot di database (bot_slug) TIDAK ikut berubah.
+// peka huruf). Kunci internal bot di database (bot_slug) beralih bertahap, lihat src/lib/bot-slug.ts.
 export const VANILLATE_PRODUCT = 'vanillateID';
 
 /** Slug lama → slug sekarang. Dipakai redirect dan tautan lama (blog, docs). */

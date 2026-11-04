@@ -32,6 +32,7 @@ import FaqTabs from '@components/FaqTabs.astro';
   import { fmtWaktu } from '@/lib/admin-auth';
   import { renderMarkdown } from '@utils/markdown';
   import { BOT_FAQ_LIMIT, validateBotFaq, reorder } from '@/lib/bot-faq';
+  import { BOT_SLUG_WRITE, BOT_SLUGS_READ } from '@/lib/bot-slug';
 
   const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
   const BTN = 'rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
@@ -80,7 +81,7 @@ import FaqTabs from '@components/FaqTabs.astro';
     const { data, error } = await supabase
       .from('bot_faqs')
       .select('id, question, answer, enabled, sort, updated_at')
-      .eq('bot_slug', 'sambung-kata')
+      .in('bot_slug', [...BOT_SLUGS_READ])
       .order('sort', { ascending: true })
       .order('created_at', { ascending: true });
     if (error) {
@@ -228,7 +229,7 @@ import FaqTabs from '@components/FaqTabs.astro';
     const supabase = getSupabase()!;
     const { error } = current.id
       ? await supabase.from('bot_faqs').update({ ...isi, updated_by: uid }).eq('id', current.id)
-      : await supabase.from('bot_faqs').insert({ ...isi, sort: current.sort, updated_by: uid });
+      : await supabase.from('bot_faqs').insert({ ...isi, bot_slug: BOT_SLUG_WRITE, sort: current.sort, updated_by: uid });
     sibuk = false;
     if (error) { toast(pesanError(error), false); return; }
     toast(current.id ? 'Tersimpan. Bot memperbarui menu FAQ dalam ±2 menit.' : 'FAQ dibuat. Bot memperbarui menu FAQ dalam ±2 menit.');

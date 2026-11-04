@@ -13,6 +13,7 @@
 
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import type { AuditRow, GuildData } from './model';
+import { BOT_SLUG_WRITE } from '../bot-slug';
 
 // Sejak PLAN-001 /dashboard memakai proyek Supabase "Database Bot" (login
 // Discord, RPC guild_* & share_*, Edge Function), BUKAN proyek CMS. Hanya URL +
@@ -20,10 +21,10 @@ import type { AuditRow, GuildData } from './model';
 const SUPABASE_URL = import.meta.env.PUBLIC_BOT_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_BOT_SUPABASE_ANON_KEY as string | undefined;
 
-// Kunci internal bot di Database Bot (guild_*, share_*). TIDAK sama dengan slug
-// halaman produk (`vanillateID`): mengubahnya harus serentak dengan migrasi di
-// repo bot, jadi sengaja tetap `sambung-kata`.
-export const BOT_SLUG = 'sambung-kata';
+// Kunci internal bot di Database Bot (guild_*, share_*). Mengikuti penanda
+// peralihan bot_slug (src/lib/bot-slug.ts): tetap `sambung-kata` sampai data
+// Database Bot dimigrasi repo bot, lalu PUBLIC_BOT_SLUG_WRITE=vanillateID.
+export const BOT_SLUG = BOT_SLUG_WRITE;
 export const isDashboardConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 let client: SupabaseClient | null = null;
