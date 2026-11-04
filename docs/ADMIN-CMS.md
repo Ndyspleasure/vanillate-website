@@ -1159,3 +1159,24 @@ dalam game After Dark (repo `18`). Alamat `/editor` lama dialihkan ke sini.
   `{partner}` (pasangannya). Batasan kolom di form sama dengan constraint tabel
   dan validasi game; baris yang tidak lolos validasi game dilewati.
 - Tantangan bawaan game (di kode, `src/content/packs`) tidak tampil di sini.
+
+## Peralihan `bot_slug` (`sambung-kata` menjadi `vanillateID`)
+
+Kunci internal `bot_slug` ikut diganti, tetapi bertahap supaya perintah CMS tidak
+putus. Kode ada di `src/lib/bot-slug.ts`: website **membaca kedua slug** dan
+**menulis slug lama** sampai penanda `PUBLIC_BOT_SLUG_WRITE=vanillateID` dinaikkan.
+PR yang memuat kode ini aman digabung kapan saja.
+
+Urutan untuk pemilik:
+
+1. Repo bot: migrasikan data Database Bot (`guild_*`, `share_*`) ke slug baru dan
+   siapkan bot agar membaca `WEBSITE_BOT_SLUG=vanillateID`.
+2. Terapkan `supabase/rename-bot-slug.sql` di proyek CMS (mengubah baris `bot_*`
+   dan default kolom). Segera setelah itu, di host bot ubah
+   `WEBSITE_BOT_SLUG=vanillateID` lalu Update & Restart. Jeda antara dua langkah
+   ini sebaiknya sependek mungkin: perintah yang masuk saat itu menunggu sampai bot hidup.
+3. Di build website set `PUBLIC_BOT_SLUG_WRITE=vanillateID` lalu deploy. Edge
+   Function `dashboard-discord` ikut: set secret `DASHBOARD_BOT_SLUG=vanillateID`.
+4. Periksa Panel Developer (snapshot `system` segar, perintah uji selesai) dan
+   dashboard server. Bila bermasalah, jalankan `supabase/rename-bot-slug-rollback.sql`,
+   kembalikan `WEBSITE_BOT_SLUG` dan hapus penanda tulis.
