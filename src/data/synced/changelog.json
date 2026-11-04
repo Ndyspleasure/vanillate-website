@@ -1,5 +1,43 @@
 [
   {
+    "version": "3.42.1",
+    "date": "2026-11-04",
+    "title": "Penyelarasan pesan Vanillate.ID dan perapian internal",
+    "highlights": [
+      "🛠️ Perapian internal setelah pembaruan pesan sambutan dan tutorial Vanillate.ID"
+    ]
+  },
+  {
+    "version": "3.42.0",
+    "date": "2026-11-04",
+    "title": "Vanillate.ID kini bot multifungsi: Game, Sosial, dan Server",
+    "highlights": [
+      "✨ Pesan sambutan, tutorial, dan panduan kini memperkenalkan tiga pilar Vanillate.ID: Game, Sosial, dan Server",
+      "🎓 Tutorial pemain baru jadi lebih singkat: kenalan dengan /game, /sosial, dan Vanillate Dashboard",
+      "📢 Pesan pengingat dan pengumuman dirapikan agar tidak lagi hanya membahas satu permainan",
+      "🌐 Halaman produk pindah ke vanillate.id/products/vanillateID"
+    ]
+  },
+  {
+    "version": "3.41.1",
+    "date": "2026-11-04",
+    "title": "Pemakaian memori bot lebih terkendali",
+    "highlights": [
+      "🛠️ Bot kini membatasi data member dan user yang disimpan di memori, supaya pemakaian RAM tidak terus naik seiring waktu",
+      "🛡️ Persiapan untuk izin Server Members: fitur yang butuh daftar member bisa dinyalakan nanti tanpa membebani bot"
+    ]
+  },
+  {
+    "version": "3.41.0",
+    "date": "2026-11-04",
+    "title": "Ringkasan statistik server di Vanillate Dashboard",
+    "highlights": [
+      "📊 Tab Ringkasan di vanillate.id/dashboard kini menampilkan statistik server: member aktif 24 jam, 7 hari, dan 30 hari, porsi chat dan voice, lulus verifikasi, serta rekor Streak dan Counting",
+      "🧭 Fitur yang belum aktif dijelaskan di Ringkasan lengkap dengan tombol cepat untuk menyalakannya",
+      "🔒 Grafik pertumbuhan member dan catatan member masuk dan keluar menyusul setelah izin Server Members dari Discord aktif"
+    ]
+  },
+  {
     "version": "3.40.3",
     "date": "2026-11-04",
     "title": "Tombol Reply di dalam thread Anonymous Confession",

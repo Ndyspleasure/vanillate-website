@@ -1,33 +1,32 @@
 {
   "schemaVersion": 1,
-  "note": "SOURCE OF TRUTH info Sambung Kata untuk website vanillate.id (auto-sync GitHub Actions). Edit di sini -> daftar fitur & command di website ikut berubah otomatis.",
+  "note": "SOURCE OF TRUTH info Vanillate.ID untuk website vanillate.id (auto-sync GitHub Actions). Edit di sini -> daftar fitur & command di website ikut berubah otomatis.",
   "slug": "vanillateID",
   "shortName": "Vanillate.ID",
-  "tagline": "Satu bot Discord untuk game, sosial, dan pengelolaan server.",
+  "tagline": "Bot Discord serbaguna untuk game seru, komunitas yang hidup, dan server yang tertata.",
   "features": [
-    "Kamus Bahasa Indonesia 25.000+ kata dengan validasi otomatis",
-    "Empat mode Sambung Kata: PvP hingga 10 pemain, PvB (Battle Skill & Klasik), Player vs Server lintas server, dan Dungeon",
-    "Semua game lewat /game: Sambung Kata (game utama), Werewolf (Klasik & Lanjutan 54 peran), Pengacara persidangan roleplay, UNO, Tebak Lagu, dan Tahu Bulat",
-    "📊 Dashboard Sambung Kata: Kamus, Stats, Leaderboard, Class, Quest, Shop, Inventory, dan Claim dalam satu tombol",
-    "9 Class dengan passive unik plus Talent Tree",
-    "Boost system 5 jenis dengan rarity Common hingga Legendary",
-    "Quest harian dan mingguan, promo code, serta event in-game acak",
-    "Leaderboard global, win streak, dan Dungeon Trophy",
-    "Hub sosial /sosial: Counting dan Streak Harian di channel pilihan server",
-    "Atur bot per server lewat Vanillate Dashboard di vanillate.id/dashboard (/pengaturan memberi tautannya)"
+    "Game: tempat member bermain bersama lewat /game, dari permainan kata sampai game sosial, dengan progres dan hadiah",
+    "Sosial: kebiasaan kecil yang membuat server terasa hidup lewat /sosial, supaya member saling berinteraksi setiap hari",
+    "Server: alat bantu untuk owner dan admin agar server tertata, aman, dan ramah pendatang baru",
+    "Semua pengaturan server dilakukan dari Vanillate Dashboard di vanillate.id/dashboard, tanpa mengetik command",
+    "Tutorial singkat untuk pemain baru lewat /tutorial dan panduan lengkap lewat /help"
   ],
   "commands": [
     {
       "name": "/game",
-      "description": "Game Hub: Sambung Kata (beserta 📊 Dashboard: Kamus, Stats, Leaderboard, Class, Quest, Shop, Inventory, Claim), Werewolf, Pengacara, UNO, Tebak Lagu, dan Tahu Bulat"
+      "description": "Pusat game: pilih permainan yang ingin dimainkan bersama teman"
     },
     {
       "name": "/sosial",
-      "description": "Hub sosial server: Counting dan Streak Harian"
+      "description": "Pusat sosial: kegiatan harian yang menghidupkan komunitas server"
     },
     {
       "name": "/pengaturan",
       "description": "Admin server: buka Vanillate Dashboard untuk mengatur bot"
+    },
+    {
+      "name": "/tutorial",
+      "description": "Pengenalan singkat untuk pemain baru"
     },
     {
       "name": "/help",
