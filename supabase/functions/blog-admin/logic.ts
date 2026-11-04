@@ -40,6 +40,8 @@ export const RESERVED_SLUGS = new Set(['kategori', 'tag', 'penulis', 'halaman', 
 export const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// Slug produk boleh memuat huruf besar (mis. `vanillateID`).
+const PRODUCT_SLUG = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
 const ASSET_ID = /^image-[a-f0-9]{20,64}-\d{1,5}x\d{1,5}-(jpg|jpeg|png|webp|gif|avif|svg)$/;
 // Id baru memakai '-' (post-<uuid>). Sanity menyembunyikan dokumen ber-id
 // dengan titik dari pembaca tanpa token walau dataset public, jadi build situs
@@ -171,7 +173,7 @@ export function cleanPostFields(input: any): PostFields {
       .map((f: any) => ({ q: line(f?.q, LIMITS.faqQ), a: multiline(f?.a, LIMITS.faqA) }))
       .filter((f) => f.q && f.a)
       .slice(0, LIMITS.faqs),
-    relatedProducts: uniq(list(input?.relatedProducts).filter((s) => typeof s === 'string' && SLUG.test(s)) as string[]).slice(0, LIMITS.relatedProducts),
+    relatedProducts: uniq(list(input?.relatedProducts).filter((s) => typeof s === 'string' && PRODUCT_SLUG.test(s)) as string[]).slice(0, LIMITS.relatedProducts),
     relatedFaqs: uniq(list(input?.relatedFaqs).filter((s) => typeof s === 'string' && FAQ_REF.test(s)) as string[]).slice(0, LIMITS.relatedFaqs),
     relatedPostIds: uniq(list(input?.relatedPostIds).filter((s) => isDocId(s, 'post')) as string[]).slice(0, LIMITS.relatedPosts),
   };

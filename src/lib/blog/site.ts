@@ -1,7 +1,7 @@
 // Penghubung blog ↔ data situs (produk & FAQ) — dipakai halaman blog saat build
 // dan pratinjau di /admin/blog/tulis. Modul murni ada di ./model.ts & ./markdown.ts.
 
-import { bots, type Bot } from '@data/bots';
+import { bots, currentProductSlug, type Bot } from '@data/bots';
 import { faqs, faqUrl, getFaqCategory } from '@data/faq';
 import { site } from '@data/site';
 import { url } from '@utils/url';
@@ -43,6 +43,10 @@ export function renderArticle(body: string): RenderResult {
   const bySlug = new Map(productList.map((p) => [p.slug, p]));
   return renderBlogMarkdown(body, {
     internalUrl: url,
-    blockToken: (name, arg) => (name === 'produk' ? productCardHtml(bySlug.get(arg), url(`/products/${arg}`)) : null),
+    blockToken: (name, arg) => {
+      if (name !== 'produk') return null;
+      const slug = currentProductSlug(arg); // artikel lama masih menulis {{produk:sambung-kata}}
+      return productCardHtml(bySlug.get(slug), url(`/products/${slug}`));
+    },
   });
 }

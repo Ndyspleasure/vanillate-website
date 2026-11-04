@@ -85,9 +85,9 @@ export const supportProducts: SupportOption[] = [
     icon: 'gamepad-2',
   },
   {
-    id: 'sambung-kata',
+    id: 'vanillateID',
     label: 'Vanillate.ID (Discord Bot)',
-    desc: 'Sambung Kata (PvP, Dungeon, Class, Quest), game sampingan, dan statistik.',
+    desc: 'Bot Discord untuk game, sosial, dan pengelolaan server.',
     icon: 'sparkles',
   },
   {

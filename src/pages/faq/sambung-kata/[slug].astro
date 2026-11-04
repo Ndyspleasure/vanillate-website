@@ -1,0 +1,20 @@
+---
+// Tiap FAQ di bawah kategori lama /faq/sambung-kata/<slug> diarahkan ke
+// /faq/vanillate-id/<slug> (termasuk slug lama FAQ yang masih beralias).
+import RedirectStub from '@components/RedirectStub.astro';
+import { faqCategoryUrl, faqUrl, faqsByCategory } from '@data/faq';
+
+export function getStaticPaths() {
+  const halaman: any[] = [];
+  for (const f of faqsByCategory('vanillate-id')) {
+    for (const slug of new Set([f.slug, ...f.aliases])) {
+      halaman.push({ params: { slug }, props: { to: faqUrl('vanillate-id', f.slug) } });
+    }
+  }
+  return halaman;
+}
+
+const { to } = Astro.props as { to: string };
+---
+
+<RedirectStub to={to || faqCategoryUrl('vanillate-id')} title="Pindah ke FAQ Vanillate.ID" text="Jawaban ini telah dipindahkan ke" linkLabel="alamat barunya" />

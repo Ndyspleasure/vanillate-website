@@ -1,14 +1,14 @@
 {
   "products": [
     {
-      "slug": "sambung-kata",
+      "slug": "vanillateID",
       "name": "Vanillate.ID",
       "shortName": "Vanillate.ID",
-      "tagline": "Game sambung kata yang kamu kenal sejak kecil, dengan kedalaman yang belum pernah kamu mainkan.",
-      "description": "Permainan kata klasik Indonesia yang dibangun ulang untuk Discord. Sambung kata bareng teman di mode PvP, tantang bot AI di empat tingkat kesulitan, atau turun sendirian ke Dungeon sambil menaikkan Class, menyelesaikan Quest, dan meracik strategi Boost. Kamus 25.000+ kata memastikan setiap jawaban dinilai adil. Karena semua pemain ikut mengetik jawaban, satu ronde saja sudah cukup untuk membangunkan obrolan server yang mulai sepi.",
+      "tagline": "Satu bot Discord untuk game, sosial, dan pengelolaan server.",
+      "description": "Vanillate.ID adalah bot Discord Bahasa Indonesia yang merangkum tiga hal dalam satu tempat. Game untuk seru-seruan bareng member, mulai dari Sambung Kata sampai permainan sosial lain di satu pusat permainan. Sosial untuk menjaga obrolan tetap hidup dan membuat komunitas saling kenal. Server untuk membantu admin menyambut member baru, menjaga keamanan, dan mengatur semuanya dari satu Dashboard di website. Gratis, tanpa langganan, dan cukup ditambahkan sekali ke servermu.",
       "platform": "discord",
       "status": "live",
-      "category": "Word Game",
+      "category": "Bot Serbaguna",
       "color": "#E8B84A",
       "icon": "sparkles",
       "thumbnail": "/bots/sambung-kata.png",
@@ -36,9 +36,9 @@
       "ctaNote": "",
       "ctaLabel": "",
       "ctaUrl": "",
-      "faqCategory": "sambung-kata",
-      "seoTitle": "Vanillate.ID, Bot Discord dengan Game Sambung Kata Berantai",
-      "seoDescription": "Main Sambung Kata bersama bot Vanillate.ID di Discord dengan mode PvP hingga 10 pemain, lawan bot AI 4 tingkat, dan Dungeon solo. Ada 9 Class, Quest harian, dan kamus 25.000+ kata. Gratis tanpa langganan, cocok untuk menghidupkan obrolan komunitas.",
+      "faqCategory": "vanillate-id",
+      "seoTitle": "Vanillate.ID, Bot Discord untuk Game, Sosial, dan Server",
+      "seoDescription": "Vanillate.ID adalah bot Discord serbaguna berbahasa Indonesia untuk game, sosial, dan pengelolaan server. Satu bot untuk menghidupkan komunitas, diatur dari Dashboard di website. Gratis tanpa langganan.",
       "ogImage": "",
       "media": []
     },

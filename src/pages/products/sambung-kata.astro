@@ -1,0 +1,10 @@
+---
+// Slug lama produk utama (bot Vanillate.ID sebelum diganti ke `vanillateID`).
+// GitHub Pages tidak bisa 301, jadi URL lama jadi stub redirect.
+import RedirectStub from '@components/RedirectStub.astro';
+import { site } from '@data/site';
+
+const to = `${site.url}/products/vanillateID/`;
+---
+
+<RedirectStub to={to} title="Pindah ke Vanillate.ID" text="Halaman produk ini telah dipindahkan ke" linkLabel="Vanillate.ID" />

@@ -20,6 +20,9 @@ import type { AuditRow, GuildData } from './model';
 const SUPABASE_URL = import.meta.env.PUBLIC_BOT_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_BOT_SUPABASE_ANON_KEY as string | undefined;
 
+// Kunci internal bot di Database Bot (guild_*, share_*). TIDAK sama dengan slug
+// halaman produk (`vanillateID`): mengubahnya harus serentak dengan migrasi di
+// repo bot, jadi sengaja tetap `sambung-kata`.
 export const BOT_SLUG = 'sambung-kata';
 export const isDashboardConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
