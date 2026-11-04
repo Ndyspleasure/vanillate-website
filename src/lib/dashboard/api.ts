@@ -21,9 +21,8 @@ import { BOT_SLUG_WRITE } from '../bot-slug';
 const SUPABASE_URL = import.meta.env.PUBLIC_BOT_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_BOT_SUPABASE_ANON_KEY as string | undefined;
 
-// Kunci internal bot di Database Bot (guild_*, share_*). Mengikuti penanda
-// peralihan bot_slug (src/lib/bot-slug.ts): tetap `sambung-kata` sampai data
-// Database Bot dimigrasi repo bot, lalu PUBLIC_BOT_SLUG_WRITE=vanillateID.
+// Kunci internal bot di Database Bot (guild_*, share_*). Data sudah dimigrasi
+// ke `vanillateID`; nilainya mengikuti src/lib/bot-slug.ts.
 export const BOT_SLUG = BOT_SLUG_WRITE;
 export const isDashboardConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
