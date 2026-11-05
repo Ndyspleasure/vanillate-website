@@ -56,7 +56,7 @@ export const founder = {
   // Kontribusi utama terhadap Vanillate.
   contributions: [
     'Mendirikan komunitas Vanillate Studio pada 2026 dan menetapkan prinsip "rilis adalah garis start, bukan garis finis".',
-    'Membangun dan merawat Vanillate.ID (sebelumnya Vanillate Sambung Kata), game pertama komunitas, dari permainan kata sederhana menjadi pengalaman bersama dengan progresi yang dalam.',
+    'Membangun dan merawat Vanillate.ID (sebelumnya Vanillate Sambung Kata), bot pertama komunitas, dari permainan kata sederhana menjadi pengalaman bersama dengan progresi yang dalam.',
     'Menyusun cara kerja komunitas: alur pengembangan, dokumentasi, dan bantuan untuk anggota.',
     'Mengarahkan komunitas ke ruang baru: fitur sosial, alat untuk pengurus server, otomasi, dan AI yang berguna.',
   ],

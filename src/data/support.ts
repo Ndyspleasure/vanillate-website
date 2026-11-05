@@ -79,12 +79,6 @@ export type SupportOption = {
 
 export const supportProducts: SupportOption[] = [
   {
-    id: 'vanillate-games',
-    label: 'Vanillate Games',
-    desc: 'Bot permainan Vanillate secara umum.',
-    icon: 'gamepad-2',
-  },
-  {
     id: 'vanillateID',
     label: 'Vanillate.ID (Discord Bot)',
     desc: 'Bot Discord untuk game, sosial, dan pengelolaan server.',
