@@ -105,3 +105,13 @@ test('payload Showcase cocok dengan kunci yang diterima bot', () => {
     .flatMap((a) => Object.keys(buildShowcasePayload(a, { enabled: true }, { showcaseInviteUrl: 'https://discord.gg/abc' }).payload));
   for (const k of all) assert.ok(botKeys.includes(k), k);
 });
+
+test('Showcase: keterangan asal link (admin, bot, vanity) dan penanda jeda atau opt-out tanpa tanda pisah', async () => {
+  const { INVITE_SOURCE_LABEL } = await import('../src/lib/dashboard/share-model.ts');
+  assert.deepEqual(Object.keys(INVITE_SOURCE_LABEL).sort(), ['auto', 'manual', 'vanity']);
+  for (const v of Object.values(INVITE_SOURCE_LABEL)) assert.ok(!/[—–]| - /.test(v));
+  const r = showcaseOf(asState({ enabled: true, status: 'LISTED', statusText: 'Tampil.', listed: true, invite: { url: 'https://discord.gg/kita', method: 'vanity', status: 'ACTIVE', paused: true, optedOut: false } }));
+  assert.equal(r.sc.invite.method, 'vanity');
+  assert.equal(r.sc.invite.paused, true);
+  assert.equal(showcaseDefaults().invite.optedOut, false);
+});

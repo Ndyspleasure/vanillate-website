@@ -76,10 +76,15 @@ export interface ShowcaseState {
   members: number | null;
   invite: {
     url: string | null;
-    method: 'manual' | 'auto' | null;
+    /** manual = dimasukkan admin, auto = dibuat bot, vanity = vanity URL server (publik oleh desain). */
+    method: 'manual' | 'auto' | 'vanity' | null;
     status: 'NONE' | 'ACTIVE' | 'NEEDS_UPDATE';
     note: string | null;
     checkedAt: number | null;
+    /** Undangan server dijeda di Discord: tidak ada yang bisa bergabung. */
+    paused?: boolean;
+    /** Admin menghapus link: bot tidak membuat link otomatis sampai link baru dipasang. */
+    optedOut?: boolean;
   };
   autoInvite: { possible: boolean; channelId: string | null; channelName: string | null; lockedNote: string | null };
   publishedAt: number | null;
@@ -110,7 +115,7 @@ export function showcaseDefaults(): ShowcaseState {
     listed: true,
     name: null,
     members: null,
-    invite: { url: null, method: null, status: 'NONE', note: null, checkedAt: null },
+    invite: { url: null, method: null, status: 'NONE', note: null, checkedAt: null, paused: false, optedOut: false },
     autoInvite: { possible: true, channelId: null, channelName: null, lockedNote: null },
     publishedAt: null,
   };
@@ -130,6 +135,13 @@ export function showcaseOf(state: ShareState | null | undefined): { sc: Showcase
     },
   };
 }
+
+/** Keterangan asal link untuk kartu dashboard. */
+export const INVITE_SOURCE_LABEL: Record<'manual' | 'auto' | 'vanity', string> = {
+  manual: 'dimasukkan admin',
+  auto: 'dibuat bot',
+  vanity: 'vanity URL server',
+};
 
 export type ShowcaseAction = 'toggle' | 'invite_save' | 'invite_auto' | 'invite_clear' | 'recheck';
 
