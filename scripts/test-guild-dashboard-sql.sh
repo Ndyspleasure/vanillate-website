@@ -100,3 +100,9 @@ for f in supabase/social-kata-retention.sql supabase/social-kata-retention.sql; 
 done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/social-kata-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL retensi Pemantau Kata-Kata lulus."
+
+# Suite ketujuh: sakelar kartu Partnership di /game dan /sosial. Tesnya membuat
+# salinan minimal partnership_lobby, menjalankan migrasi dua kali (idempoten),
+# lalu rollback.
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/partnership-lobby-hubs.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL sakelar kartu Partnership lulus."

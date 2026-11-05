@@ -1029,6 +1029,13 @@ create table if not exists public.partnership_lobby (
 comment on table public.partnership_lobby is
   'Konfigurasi Dashboard Partnership di lobby bot + item CTA Order Partnership. Semua teks dapat diubah dari CMS.';
 
+-- Kartu Partnership di atas /game dan /sosial (bawaan mati): lihat
+-- supabase/partnership-lobby-hubs.sql (+ rollback). Ditambahkan di sini agar
+-- instalasi baru langsung lengkap.
+alter table public.partnership_lobby
+  add column if not exists show_in_game_hub   boolean not null default false,
+  add column if not exists show_in_sosial_hub boolean not null default false;
+
 insert into public.partnership_lobby (id) values (1) on conflict (id) do nothing;
 
 -- 11d. RLS — admin baca, editor kelola. Bot memakai service_role (bypass).

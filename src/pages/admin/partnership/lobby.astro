@@ -115,11 +115,21 @@ import { url } from '@utils/url';
     const supabase = getSupabase();
     if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
 
-    const { data, error } = await supabase
+    const KOLOM_DASAR = 'enabled, dashboard_title, dashboard_note, cta_emoji, cta_title, cta_description, cta_button_label, cta_button_url, cta_position';
+    const KOLOM_HUB = 'show_in_game_hub, show_in_sosial_hub';
+    let { data, error } = await supabase
       .from('partnership_lobby')
-      .select('enabled, dashboard_title, dashboard_note, cta_emoji, cta_title, cta_description, cta_button_label, cta_button_url, cta_position')
+      .select(`${KOLOM_DASAR}, ${KOLOM_HUB}`)
       .eq('id', 1)
       .maybeSingle();
+
+    // Migrasi supabase/partnership-lobby-hubs.sql belum diterapkan: halaman tetap
+    // terbuka tanpa dua sakelar baru, bukan kosong.
+    let hubSiap = true;
+    if (error) {
+      hubSiap = false;
+      ({ data, error } = await supabase.from('partnership_lobby').select(KOLOM_DASAR).eq('id', 1).maybeSingle());
+    }
 
     if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
     if (!data) { body.innerHTML = stateBlock('empty', 'Baris konfigurasi belum ada. Jalankan supabase/schema.sql terbaru.'); return; }
@@ -140,6 +150,29 @@ import { url } from '@utils/url';
             class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
           Tampilkan Dashboard Partnership di lobby
         </label>
+
+        ${hubSiap ? `
+        <div class="rounded-xl bg-ink-900/5 dark:bg-cream-100/5 p-4 space-y-2">
+          <p class="text-sm font-medium">Kartu di atas perintah bot</p>
+          <p class="text-xs text-ink-500 dark:text-cream-300/60">
+            Kartu Partnership tampil lebih dulu (hanya terlihat pemain), lalu isi perintahnya menyusul di bawah.
+            Butuh kotak di atas tetap aktif. Bawaan mati.
+          </p>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" data-cta="show_in_game_hub" ${data.show_in_game_hub ? 'checked' : ''}
+              class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+            Tampilkan di <code>/game</code>
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" data-cta="show_in_sosial_hub" ${data.show_in_sosial_hub ? 'checked' : ''}
+              class="h-4 w-4 rounded border-ink-900/20 dark:border-cream-100/20 text-amber-500 focus:ring-amber-500" />
+            Tampilkan di <code>/sosial</code>
+          </label>
+        </div>` : `
+        <p class="text-xs text-amber-700 dark:text-amber-300">
+          Sakelar kartu di <code>/game</code> dan <code>/sosial</code> belum tersedia. Terapkan
+          <code>supabase/partnership-lobby-hubs.sql</code> lebih dulu.
+        </p>`}
 
         <div class="grid gap-4 sm:grid-cols-2">
           ${f('dashboard_title', 'Judul dashboard', teks('dashboard_title', data.dashboard_title, 'maxlength="80"'))}
@@ -191,7 +224,8 @@ import { url } from '@utils/url';
     const patch: Record<string, any> = {};
     document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[data-cta]').forEach((n) => {
       const field = n.dataset.cta!;
-      patch[field] = field === 'enabled' ? (n as HTMLInputElement).checked : n.value.trim();
+      const kotak = (n as HTMLInputElement).type === 'checkbox';
+      patch[field] = kotak ? (n as HTMLInputElement).checked : n.value.trim();
     });
 
     // Teks wajib tidak boleh kosong — bot memakai default-nya sendiri bila
