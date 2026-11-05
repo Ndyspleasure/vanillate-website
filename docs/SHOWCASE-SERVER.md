@@ -54,8 +54,8 @@ SQL: `supabase/showcase-servers.sql` (aditif, idempoten), rollback
   server kecil juga tampil. Pengacakan urutan tampilan, penggandaan baris gelung,
   dan animasi hanya di browser. Teks halaman tidak menyebut kata "acak" supaya
   terkesan komunitas, bukan undian.
-- Hanya sampel di HTML (36 di beranda, 90 di produk). Daftar lengkap (diurut: berlink, member terbesar) dimuat saat
-  diklik. Konsekuensinya tidak semua server selalu ada di HTML, dan itu disengaja.
+- Hanya sampel di HTML (36 di beranda, 90 di produk). Daftar lengkap dimuat saat
+  diklik dan diurutkan acak tiap dibuka (tidak terbesar dulu), jadi server kecil ikut terlihat. Konsekuensinya tidak semua server selalu ada di HTML, dan itu disengaja.
 - Link undangan `rel="nofollow ugc noopener noreferrer"` (konten buatan pengguna).
 - Tanpa layout shift: kartu berukuran tetap, gambar punya `width`/`height` dan
   `loading="lazy"`, animasi hanya `transform`. Ikon gagal dimuat diganti inisial.
