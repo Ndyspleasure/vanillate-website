@@ -184,3 +184,36 @@ test('aksi bulk memetakan sesi export yang benar (cermin ACTION_SESSION_KIND bot
   assert.equal(BULK_ACTIONS.accept.reason, false);
   assert.equal(BULK_ACTIONS.reject.reason, true);
 });
+
+import { broadcastCards } from '../src/lib/dev-panel/model.ts';
+
+test('broadcastCards: urutan kartu sama dengan bot (judul ###, tombol, catatan, footer)', () => {
+  const [c] = broadcastCards({ audience: 'all', title: 'Halo', message: 'Isi', mediaUrl: 'https://youtu.be/x' });
+  const texts = c.parts.filter((p) => p.kind === 'text').map((p: any) => p.md);
+  assert.deepEqual(texts, ['### Halo', 'Isi\n\n🔗 https://youtu.be/x', '-# Pesan resmi dari tim', '-# Made by Vanillate | https://vanillate.id/dashboard']);
+  const kinds = c.parts.map((p) => p.kind);
+  assert.deepEqual(kinds, ['text', 'text', 'buttons', 'separator', 'text', 'text']);
+});
+
+test('broadcastCards: polling jadi kartu kedua dan footer hanya di kartu terakhir', () => {
+  const cards = broadcastCards({ audience: 'all', message: 'x', poll: { question: 'Q', options: ['a', 'b'], durationHours: 2 } });
+  assert.equal(cards.length, 2);
+  const foot = (c: any) => c.parts.some((p: any) => p.footer);
+  assert.equal(foot(cards[0]), false);
+  assert.equal(foot(cards[1]), true);
+});
+
+test('broadcastCards: audiens server menambah alasan dan tombol berhenti; darurat memberi judul 🚨', () => {
+  const [s] = broadcastCards({ audience: 'owners', message: 'x' }, { server: true });
+  assert.ok(s.parts.some((p: any) => p.md?.includes('Kenapa saya menerima pesan ini?')));
+  assert.ok(s.parts.some((p: any) => p.labels?.includes('🔕 Berhenti Info Server')));
+  const [e] = broadcastCards({ audience: 'emergency', message: 'x' }, { emergency: true });
+  assert.ok((e.parts[0] as any).md.startsWith('### 🚨 '));
+});
+
+test('broadcastCards: total teks dipangkas ke 4000 seperti bot, footer utuh', () => {
+  const [c] = broadcastCards({ audience: 'all', title: 't'.repeat(256), message: 'm'.repeat(4000) });
+  const texts = c.parts.filter((p) => p.kind === 'text') as any[];
+  assert.ok(texts.reduce((a, p) => a + p.md.length, 0) <= 4000);
+  assert.equal(texts.at(-1).md, '-# Made by Vanillate | https://vanillate.id/dashboard');
+});
