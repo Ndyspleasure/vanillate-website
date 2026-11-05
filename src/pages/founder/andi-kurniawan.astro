@@ -40,7 +40,7 @@ const structuredData = {
 ---
 
 <BaseLayout
-  title={`${founder.name} — ${founder.role}`}
+  title={`${founder.name}, ${founder.role}`}
   description={`${founder.name}, ${founder.roleFull}. ${founder.summary}`}
 >
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(structuredData)} />

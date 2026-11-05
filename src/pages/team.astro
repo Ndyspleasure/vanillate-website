@@ -9,7 +9,7 @@ import { url } from '@utils/url';
 
 const canonical = new URL('/team', site.url).toString();
 
-// Structured data: BreadcrumbList (Studio → Tentang → Tim) + ItemList anggota.
+// Structured data: BreadcrumbList (Beranda → Tentang → Pengurus) + ItemList anggota.
 const structuredData = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -18,7 +18,7 @@ const structuredData = {
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Vanillate Studio', item: site.url },
         { '@type': 'ListItem', position: 2, name: 'Tentang', item: `${site.url}/about` },
-        { '@type': 'ListItem', position: 3, name: 'Tim', item: canonical },
+        { '@type': 'ListItem', position: 3, name: 'Pengurus', item: canonical },
       ],
     },
     {
@@ -41,8 +41,8 @@ const structuredData = {
 ---
 
 <BaseLayout
-  title="Tim"
-  description="Tim di balik Vanillate Studio — orang-orang yang merancang, membangun, dan merawat produk digital untuk komunitas online Indonesia."
+  title="Pengurus Komunitas"
+  description="Kenalan dengan pengurus Vanillate Studio, orang-orang yang menjaga obrolan, merawat game dan bot, dan siap membantu anggota komunitas Indonesia."
 >
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(structuredData)} />
 
@@ -53,23 +53,23 @@ const structuredData = {
       <span aria-hidden="true">/</span>
       <a href={url('/about')} class="hover:text-amber-600 dark:hover:text-amber-400">Tentang</a>
       <span aria-hidden="true">/</span>
-      <span class="text-ink-800 dark:text-cream-100">Tim</span>
+      <span class="text-ink-800 dark:text-cream-100">Pengurus</span>
     </nav>
 
-    <p class="eyebrow mb-6">Tim Kami</p>
+    <p class="eyebrow mb-6">Pengurus</p>
     <h1 class="font-display font-semibold tracking-tightest text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] max-w-3xl">
       Orang-orang di balik <span class="italic text-amber-600 dark:text-amber-500">Vanillate</span>
     </h1>
     <p class="mt-8 max-w-2xl text-lg md:text-xl text-ink-600 dark:text-cream-200/80 leading-relaxed">
-      Studio kecil dengan standar yang tidak kecil. Inilah tim yang merancang, membangun, dan merawat
-      setiap produk Vanillate — dari arah studio sampai baris kode yang menjalankannya setiap hari.
+      Komunitas kecil dengan hati yang besar. Inilah pengurus yang menjaga obrolan, merawat game dan
+      bot, dan siap membantu kamu setiap hari. Mereka juga anggota, sama seperti kamu.
     </p>
 
     {team.length > 0 && (
       <div class="mt-8">
         <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
           <span class="h-2 w-2 rounded-full bg-teal-500"></span>
-          {team.length} anggota aktif
+          {team.length} pengurus aktif
         </span>
       </div>
     )}
@@ -126,7 +126,7 @@ const structuredData = {
       <div class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-ink-900/15 dark:border-cream-100/15 px-6 py-16 text-center">
         <Vani expression="sleeping" size="md" animation="subtle" alt="" />
         <p class="max-w-md text-ink-500 dark:text-cream-300/60">
-          Belum ada anggota tim yang ditampilkan. Tambahkan lewat panel admin di Team Management.
+          Belum ada pengurus yang ditampilkan. Tambahkan lewat panel admin di Team Management.
         </p>
       </div>
     )}
@@ -136,15 +136,15 @@ const structuredData = {
   <section class="container-page pb-24 border-t border-ink-900/10 dark:border-cream-100/10 pt-16">
     <div class="max-w-2xl reveal">
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-4">
-        Ingin tahu lebih banyak tentang studionya?
+        Ingin tahu lebih banyak tentang komunitasnya?
       </h2>
       <p class="text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed mb-8">
-        Cerita, filosofi, dan arah Vanillate Studio ada di halaman Tentang. Atau mampir langsung ke
-        komunitas kami dan sapa timnya.
+        Cerita, nilai, dan arah Vanillate ada di halaman Tentang. Atau mampir langsung ke Discord
+        kami dan sapa pengurusnya.
       </p>
       <div class="flex flex-wrap gap-3">
-        <Button href="/about" variant="primary" size="lg">Tentang Studio</Button>
-        <Button href={site.links.discordSupport} variant="secondary" size="lg" external>Gabung Discord</Button>
+        <Button href={site.links.discordSupport} variant="primary" size="lg" external>Gabung Discord</Button>
+        <Button href="/about" variant="secondary" size="lg">Tentang Kita</Button>
       </div>
     </div>
   </section>

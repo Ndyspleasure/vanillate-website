@@ -15,9 +15,9 @@ const year = new Date().getFullYear();
 // Kanal komunikasi resmi. Ikon SVG (satu icon pack) + aria-label agar aksesibel.
 // `newTab: false` untuk mailto supaya tidak meninggalkan tab kosong.
 const channels = [
-  { label: 'Discord Support', href: site.links.discordSupport, icon: 'discord' as const, newTab: true },
-  { label: 'WhatsApp Support', href: buildDirectWhatsappUrl(), icon: 'whatsapp' as const, newTab: true },
-  { label: 'Email Support', href: buildDirectMailtoUrl(), icon: 'mail' as const, newTab: false },
+  { label: 'Discord Vanillate', href: site.links.discordSupport, icon: 'discord' as const, newTab: true },
+  { label: 'WhatsApp Bantuan', href: buildDirectWhatsappUrl(), icon: 'whatsapp' as const, newTab: true },
+  { label: 'Email Bantuan', href: buildDirectMailtoUrl(), icon: 'mail' as const, newTab: false },
 ];
 ---
 
@@ -45,7 +45,7 @@ const channels = [
     </div>
 
     <div>
-      <p class="eyebrow mb-4">Produk</p>
+      <p class="eyebrow mb-4">Game & Bot</p>
       <ul class="space-y-2">
         {bots.map((bot) => (
           <li>
@@ -56,23 +56,23 @@ const channels = [
         ))}
         <li>
           <a href={url('/products')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
-            Semua produk
+            Semua game & bot
           </a>
         </li>
       </ul>
     </div>
 
     <div>
-      <p class="eyebrow mb-4">Tautan</p>
+      <p class="eyebrow mb-4">Jelajahi</p>
       <ul class="space-y-2">
-        <li><a href={url('/about')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Tentang</a></li>
-        <li><a href={url('/team')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Tim</a></li>
-        <li><a href={url('/faq')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">FAQ & Panduan</a></li>
+        <li><a href={url('/about')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Tentang Kita</a></li>
+        <li><a href={url('/team')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Pengurus</a></li>
+        <li><a href={url('/faq')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Panduan & FAQ</a></li>
         <li><a href={url('/blog')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Blog</a></li>
-        <li><a href={url('/changelog')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Changelog</a></li>
+        <li><a href={url('/changelog')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Catatan Pembaruan</a></li>
         <li><a href={url('/dashboard')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Dashboard Server</a></li>
-        <li><a href={url('/partnership')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Partnership</a></li>
-        <li><a href={url('/support')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Support</a></li>
+        <li><a href={url('/partnership')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Kerja Sama</a></li>
+        <li><a href={url('/support')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Bantuan</a></li>
         <li><a href={url('/terms')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{t.nav.terms}</a></li>
         <li><a href={url('/privacy')} class="text-sm text-ink-700 dark:text-cream-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{t.nav.privacy}</a></li>
       </ul>

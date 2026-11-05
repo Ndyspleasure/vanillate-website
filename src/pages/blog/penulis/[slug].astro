@@ -36,8 +36,8 @@ const ld = {
 ---
 
 <BaseLayout
-  title={`${author.name} — Penulis Blog`}
-  description={author.bio ? author.bio.slice(0, 155) : `Artikel karya ${author.name} di blog Vanillate Studio.`}
+  title={`${author.name}, Penulis Blog`}
+  description={author.bio ? author.bio.slice(0, 155) : `Artikel karya ${author.name} di blog komunitas Vanillate Studio.`}
   noindex={posts.length === 0}
 >
   <script type="application/ld+json" slot="head" set:html={jsonLdString(ld)} />

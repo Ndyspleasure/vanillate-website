@@ -26,8 +26,8 @@ const ld = {
 ---
 
 <BaseLayout
-  title={`${category.title} — Blog`}
-  description={category.description || `Kumpulan artikel ${category.title} dari blog Vanillate Studio.`}
+  title={`${category.title}, Blog`}
+  description={category.description || `Kumpulan artikel ${category.title} dari blog komunitas Vanillate Studio.`}
   noindex={posts.length === 0}
 >
   <script type="application/ld+json" slot="head" set:html={jsonLdString(ld)} />
