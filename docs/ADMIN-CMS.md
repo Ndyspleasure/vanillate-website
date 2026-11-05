@@ -555,7 +555,7 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 | `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
 | `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
 | `partnership_slots` | Partner yang tampil di **Dashboard Partnership** pada lobby bot → `/admin/partnership/lobby` (bagian 11). |
-| `partnership_lobby` | Judul dashboard + seluruh teks & posisi item **Order Partnership** (bagian 11). |
+| `partnership_lobby` | Judul dashboard + seluruh teks & posisi item **Order Partnership** (bagian 11), plus sakelar kartu di atas `/game` dan `/sosial` (`show_in_game_hub`, `show_in_sosial_hub`, bawaan mati; `supabase/partnership-lobby-hubs.sql`). |
 | `partnership_categories` | Struktur kategori partner & paket — dipakai CMS, halaman publik, dan bot (bagian 12). |
 
 Tambahan lain:
