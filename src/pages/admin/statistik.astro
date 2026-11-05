@@ -164,19 +164,38 @@ const rentang = [
     const hari = Number((document.getElementById('pilih-rentang') as HTMLSelectElement).value);
     const sejak = new Date(Date.now() - hari * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data, error } = await supabase
-      .from('bot_stats')
-      .select('captured_at, guild_count, active_players, games_played, commands_run, member_reach, latency_ms, meta')
-      .gte('captured_at', sejak)
-      .order('captured_at', { ascending: true })
-      .limit(500);
+    // Snapshot masuk tiap 5 menit (~288/hari), jadi satu kueri dengan limit
+    // kecil memotong data terbaru. Ambil per halaman sampai seluruh rentang
+    // terbaca, lalu ringkas di sisi browser supaya grafik tetap ringan.
+    const UKURAN_HALAMAN = 1000;
+    const MAKS_HALAMAN = 12;
+    const MAKS_TITIK = 400;
+    const semua: any[] = [];
 
-    if (error) {
-      wadah.innerHTML = stateBlock('error', pesanError(error));
-      return;
+    for (let h = 0; h < MAKS_HALAMAN; h++) {
+      const { data, error } = await supabase
+        .from('bot_stats')
+        .select('captured_at, guild_count, active_players, games_played, commands_run, member_reach, latency_ms, meta')
+        .gte('captured_at', sejak)
+        .order('captured_at', { ascending: true })
+        .range(h * UKURAN_HALAMAN, (h + 1) * UKURAN_HALAMAN - 1);
+
+      if (error) {
+        wadah.innerHTML = stateBlock('error', pesanError(error));
+        return;
+      }
+      semua.push(...(data ?? []));
+      if ((data?.length ?? 0) < UKURAN_HALAMAN) break;
     }
 
-    riwayat = data ?? [];
+    if (semua.length > MAKS_TITIK) {
+      const langkah = semua.length / MAKS_TITIK;
+      const ringkas = Array.from({ length: MAKS_TITIK }, (_, i) => semua[Math.floor(i * langkah)]);
+      ringkas[ringkas.length - 1] = semua[semua.length - 1]; // titik terbaru selalu ikut
+      riwayat = ringkas;
+    } else {
+      riwayat = semua;
+    }
     gambarUlang();
   }
 
