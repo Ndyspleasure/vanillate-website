@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 
-const lastUpdated = '3 October 2026';
+const lastUpdated = '5 November 2026';
 
 // Daftar isi ringkas — sekaligus penanda nomor & judul tiap section.
 const toc = [
@@ -95,6 +95,8 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Experience points, levels, achievements, and progression data</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Inventory, virtual currency, business progression, and other game-related data</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Leaderboard and ranking information</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Leveling data, such as chat and voice experience points, for servers that enable Leveling</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>A record that you completed verification, for servers that enable Verification</span></li>
         </ul>
 
         <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 text-ink-900 dark:text-cream-50">Discord Server Data</h3>
@@ -103,6 +105,9 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Channel IDs used for bot functionality</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Guild-specific configuration settings</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Gameplay-related server data</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Server promotion settings and invite links, for servers that use Share Server</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Discord User IDs of server administrators, used to send server-related notices</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Short-lived records of kick, ban, and unban events (the Discord User IDs involved, the type of action, and a reason category), for servers that enable security notifications</span></li>
         </ul>
 
         <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 text-ink-900 dark:text-cream-50">Vanillate Dashboard (Website Login with Discord)</h3>
@@ -121,6 +126,7 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Error logs</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Command usage statistics</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Performance and diagnostic information necessary to maintain service reliability</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Support conversations you start, including with the automated support assistant, and the details you submit in them</span></li>
         </ul>
 
         <p>
@@ -139,6 +145,7 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Saving player progress and achievements</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Maintaining leaderboards and rankings</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Managing game systems such as economy, quests, and progression</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Providing the server management features that a server enables, such as verification, leveling, and security notifications</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Preventing abuse, cheating, fraud, or malicious activity</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Troubleshooting errors and improving performance</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Developing and testing new features</span></li>
@@ -191,8 +198,14 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>The data is no longer required for operational purposes</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>We determine that retention is no longer necessary</span></li>
         </ul>
-        <p>
+        <p class="mb-4">
           Certain records may be retained temporarily for security, abuse prevention, or legal compliance purposes.
+        </p>
+        <p class="mb-4">
+          Records of kick, ban, and unban events are kept for a short period only. Records that are revoked after an unban are removed within 7 days, other records are removed after at most 90 days, and all of a server's records are removed when the server removes the bot. Text you submit to community features such as daily streak messages or anonymous confessions is used only to deliver the feature and is removed from our database once it has been delivered.
+        </p>
+        <p>
+          Support conversations are kept only as long as needed to resolve your request.
         </p>
       </section>
 
@@ -216,6 +229,9 @@ const toc = [
         </div>
         <p class="mb-4">
           The Services operate through Discord and may utilize third-party hosting, database, analytics, or infrastructure providers to maintain service availability.
+        </p>
+        <p class="mb-4">
+          If you vote for one of our bots on a listing site such as Top.gg, that site may notify us of your vote. We receive your Discord User ID and the time of the vote, and use them only to grant vote rewards and to rank server promotions fairly.
         </p>
         <p class="mb-4">
           Blog article pages on vanillate.id may display advertising served by Google AdSense. Google and its partners may use cookies or similar technologies to serve ads based on your prior visits to this and other websites. You can opt out of personalized advertising at <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" class="underline">Google Ads Settings</a>, and learn more at <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer" class="underline">How Google uses information from sites that use its services</a>.
