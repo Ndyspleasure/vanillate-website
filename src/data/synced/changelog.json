@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.44.2",
+    "date": "2026-11-05",
+    "title": "Perbaikan stabilitas bot",
+    "highlights": [
+      "🛠️ Tombol dashboard yang sudah terlalu lama dibuka tidak lagi menimbulkan kesalahan",
+      "⚡ Bot lebih responsif karena data panel berat tidak dihitung terus-menerus"
+    ]
+  },
+  {
     "version": "3.44.1",
     "date": "2026-11-05",
     "title": "Tombol Gabung di daftar server website",
