@@ -19,7 +19,7 @@ const pages = pageCount(blog.posts.length, POSTS_PER_PAGE);
 const posts = blog.posts.slice((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE);
 ---
 
-<BaseLayout title={`Blog — Halaman ${page}`} description={`Arsip artikel blog Vanillate Studio, halaman ${page} dari ${pages}.`}>
+<BaseLayout title={`Blog, Halaman ${page}`} description={`Arsip artikel blog komunitas Vanillate Studio, halaman ${page} dari ${pages}.`}>
   <BlogListing
     eyebrow={`Blog · Halaman ${page}`}
     title="Semua artikel"

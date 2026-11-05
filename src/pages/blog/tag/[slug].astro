@@ -19,7 +19,7 @@ const blog = await getBlog();
 const posts = blog.posts.filter((p) => p.tags.some((t) => t.slug === tag.slug));
 ---
 
-<BaseLayout title={`#${tag.name} — Blog`} description={`Artikel blog Vanillate Studio dengan tag ${tag.name}.`} noindex>
+<BaseLayout title={`#${tag.name}, Blog`} description={`Artikel blog komunitas Vanillate Studio dengan tag ${tag.name}.`} noindex>
   <BlogListing
     eyebrow="Tag"
     title={`#${tag.name}`}

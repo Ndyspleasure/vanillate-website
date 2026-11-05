@@ -23,105 +23,101 @@ function formatNum(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-// Perjalanan singkat studio, ditampilkan sebagai timeline.
+// Perjalanan singkat komunitas, ditampilkan sebagai timeline.
 const timeline = [
-  { year: '2026', title: 'Vanillate lahir', desc: 'Berawal dari satu pengamatan sederhana: komunitas online Indonesia butuh produk yang benar-benar dirawat, bukan ditinggal setelah rilis.' },
-  { year: '2026', title: 'Vanillate Sambung Kata rilis', desc: 'Game kata klasik dibawa ke Discord dengan sistem progresi mendalam, dari class, quest, dungeon, sampai ekonomi yang seimbang.' },
-  { year: '2026', title: 'Progresi makin dalam', desc: 'Class System, Talent Tree, Boost, Quest harian dan mingguan, sampai Dungeon Mode terus ditambah dan diseimbangkan berdasarkan masukan pemain.' },
-  { year: '2026', title: 'Cross-Server Matchmaking', desc: 'Pemain dari server berbeda bisa saling bertanding lewat antrean matchmaking global, memperluas lawan main tanpa terbatas satu komunitas.' },
-  { year: '2026', title: 'Menjadi Vanillate.ID', desc: 'Vanillate Sambung Kata berganti nama menjadi Vanillate.ID, karena botnya kini punya beragam fitur, bukan hanya game sambung kata. Fitur yang sudah ada tetap berjalan seperti biasa.' },
-  { year: 'Kini', title: 'Studio multi-produk', desc: 'Produk yang berjalan terus dipoles dengan update rutin, sementara studio memperluas cakupan ke aplikasi sosial, community tools, otomasi, dan AI.' },
+  { year: '2026', title: 'Vanillate lahir', desc: 'Berawal dari satu pengamatan sederhana: komunitas online Indonesia butuh tempat berkumpul yang benar-benar dirawat, bukan ditinggal setelah ramai sebentar.' },
+  { year: '2026', title: 'Sambung Kata hadir di Discord', desc: 'Game kata yang kita kenal sejak kecil dibawa ke Discord, lengkap dengan class, quest, dungeon, dan ekonomi yang seimbang. Dari sinilah anggota pertama berkumpul.' },
+  { year: '2026', title: 'Makin dalam, makin seru', desc: 'Class System, Talent Tree, Boost, quest harian dan mingguan, sampai Dungeon Mode terus ditambah dan diseimbangkan berdasarkan masukan para pemain.' },
+  { year: '2026', title: 'Main lintas server', desc: 'Pemain dari server berbeda bisa saling bertanding lewat antrean matchmaking global. Lawan main jadi lebih luas, tidak terbatas satu komunitas.' },
+  { year: '2026', title: 'Sambung Kata menjadi Vanillate.ID', desc: 'Botnya kini punya beragam fitur, bukan hanya game sambung kata, jadi namanya ikut berganti menjadi Vanillate.ID. Semua fitur yang sudah ada tetap berjalan seperti biasa.' },
+  { year: 'Kini', title: 'Rumah yang terus bertambah', desc: 'Game dan bot terus dipoles lewat pembaruan rutin, sementara komunitas membuka ruang baru untuk fitur sosial, alat pengelola server, dan hal-hal seru lain yang kita usulkan bersama.' },
 ];
 
 const values = [
   {
-    title: 'Innovation',
-    desc: 'Kami tidak takut membongkar cara lama. Kalau ada pendekatan yang lebih baik, entah arsitektur baru, algoritma baru, atau cara interaksi baru, kami coba, ukur, dan pakai kalau terbukti.',
+    title: 'Ramah',
+    desc: 'Siapa pun boleh gabung, dari yang baru kenal Discord sampai pemain lama. Kami menjaga obrolan tetap hangat dan saling menghargai.',
   },
   {
-    title: 'Simplicity',
-    desc: 'Fitur yang hebat adalah fitur yang tidak perlu dijelaskan panjang lebar. Kami memangkas kerumitan di sisi pengguna, dan menanggung kerumitannya di sisi kode.',
+    title: 'Terbuka',
+    desc: 'Aturan jelas, catatan pembaruan jujur, dan kabar apa adanya saat ada masalah. Kepercayaan tumbuh dari keterbukaan, bukan kesempurnaan.',
   },
   {
-    title: 'Quality',
-    desc: 'Setiap rilis melewati pengujian dan review. Kami lebih memilih menunda satu fitur daripada mengirim sesuatu yang setengah jadi ke ratusan ribu pengguna.',
+    title: 'Saling bantu',
+    desc: 'Bingung cara main atau menemukan bug? Tanya saja. Anggota dan pengurus biasanya sudah siap menjawab.',
   },
   {
-    title: 'Reliability',
-    desc: 'Produk yang baik adalah produk yang ada saat dibutuhkan. Kami menjaga uptime, memantau performa, dan memastikan data pengguna aman. Setiap hari, bukan hanya saat launching.',
+    title: 'Dirawat bersama',
+    desc: 'Komunitas ini tidak berhenti setelah satu rilis. Kami terus memperbaiki dan menambah hal baru, karena kamu kembali setiap hari.',
   },
   {
-    title: 'Community',
-    desc: 'Produk kami hidup di tengah komunitas, jadi komunitas ikut menentukan arahnya. Laporan bug, kritik, dan ide dari pemain adalah bahan bakar roadmap kami.',
+    title: 'Suara anggota',
+    desc: 'Laporan bug, kritik, dan ide dari anggota adalah bahan bakar arah kita berikutnya. Kami benar-benar membaca semuanya.',
   },
   {
-    title: 'Continuous Improvement',
-    desc: 'Tidak ada versi final. Selalu ada yang bisa dibuat lebih cepat, lebih adil, lebih menyenangkan. Setiap catatan pembaruan jadi bukti bahwa kami terus mengerjakannya.',
+    title: 'Terus belajar',
+    desc: 'Tidak ada versi final. Selalu ada yang bisa dibuat lebih cepat, lebih adil, dan lebih menyenangkan untuk semua orang.',
   },
 ];
 
 const reasons = [
   {
-    title: 'Fokus pada kualitas',
-    desc: 'Kami studio kecil dengan standar besar. Jumlah produk kami sedikit, justru karena masing-masing dirawat dengan serius.',
+    title: 'Ada orangnya',
+    desc: 'Pertanyaanmu dijawab langsung oleh pengurus dan anggota yang paham, bukan balasan otomatis.',
   },
   {
-    title: 'Performa tinggi',
-    desc: 'Respons cepat itu bukan bonus, tapi syarat. Kami mengoptimalkan query, caching, dan algoritma sampai interaksi terasa instan.',
+    title: 'Gratis dan terbuka',
+    desc: 'Inti permainan bisa dinikmati tanpa bayar. Tidak ada fitur penting yang dikunci di balik langganan wajib.',
   },
   {
-    title: 'Desain modern',
-    desc: 'Dari tampilan di dalam produk sampai halaman web ini: visual yang rapi dan konsisten adalah bagian dari pengalaman, bukan hiasan.',
+    title: 'Cepat dan lancar',
+    desc: 'Respons terasa instan karena kami terus mengoptimalkan di belakang layar, supaya main tidak terganggu.',
   },
   {
-    title: 'Pengalaman pengguna',
-    desc: 'Alur dirancang dari sudut pandang pemain: onboarding jelas, feedback instan, dan tidak ada langkah yang membingungkan.',
+    title: 'Bahasa kita sendiri',
+    desc: 'Dari kamus 25.000+ kata sampai candaan lokal, semuanya dibuat untuk pemain Indonesia.',
   },
   {
-    title: 'Update berkelanjutan',
-    desc: 'Produk kami berkembang tiap pekan: perbaikan bug, penyempurnaan pengalaman, dan fitur baru yang lahir dari masukan komunitas.',
+    title: 'Selalu ada yang baru',
+    desc: 'Perbaikan bug, penyempurnaan, dan fitur baru datang rutin, banyak di antaranya dari usulan anggota.',
   },
   {
-    title: 'Dukungan komunitas',
-    desc: 'Ada masalah? Kanal support kami aktif. Laporan direspons langsung oleh orang yang menulis kodenya, bukan balasan otomatis.',
+    title: 'Aman dan rapi',
+    desc: 'Data pemain dijaga, aturan komunitas jelas, dan tampilannya dibuat konsisten supaya nyaman dipakai.',
   },
 ];
 
 const roadmap = [
   {
-    title: 'Community Tools',
-    desc: 'Produk yang menghidupkan komunitas online, mulai dari pengalaman bermain bersama sampai utilitas sehari-hari bagi pengelolanya.',
+    title: 'Game dan event baru',
+    desc: 'Permainan dan acara seru yang bisa dimainkan bareng, mulai dari yang santai sampai yang kompetitif.',
   },
   {
-    title: 'Social Apps',
-    desc: 'Aplikasi sosial yang membuat orang lebih mudah terhubung, berinteraksi, dan betah kembali setiap hari.',
+    title: 'Alat untuk pengurus server',
+    desc: 'Bantuan untuk kamu yang mengelola server: pengaturan lebih mudah, tugas berulang lebih ringan.',
   },
   {
-    title: 'AI Tools',
-    desc: 'Menghadirkan kecerdasan buatan yang benar-benar berguna, dari interaksi yang lebih natural, moderasi yang lebih cerdas, sampai alat bantu kreator.',
+    title: 'Fitur sosial',
+    desc: 'Cara-cara baru untuk saling kenal, menyapa, dan betah ngobrol setiap hari.',
   },
   {
-    title: 'Automation Platform',
-    desc: 'Otomasi untuk pengelola komunitas, dari alur kerja rutin hingga tugas berulang yang seharusnya tidak dikerjakan manual.',
+    title: 'Dashboard web',
+    desc: 'Atur bot, lihat statistik, dan ubah konfigurasi langsung dari browser tanpa repot.',
   },
   {
-    title: 'Web Platform',
-    desc: 'Dashboard web untuk mengelola produk, melihat statistik, dan mengatur konfigurasi tanpa meninggalkan browser.',
+    title: 'Pendamping di genggaman',
+    desc: 'Pantau kabar komunitas dan tetap terhubung dari ponsel, di mana pun kamu berada.',
   },
   {
-    title: 'Mobile Application',
-    desc: 'Pendamping di genggaman untuk memantau aktivitas dan tetap terhubung dengan komunitas dari mana saja.',
-  },
-  {
-    title: 'Cloud Services',
-    desc: 'Fondasi infrastruktur yang menopang semua layanan Vanillate, yang skalabel, aman, dan siap tumbuh bersama pengguna.',
+    title: 'Bantuan yang lebih cerdas',
+    desc: 'Teknologi AI yang benar-benar berguna, misalnya menjawab pertanyaan lebih cepat dan menjaga obrolan tetap nyaman.',
   },
 ];
 ---
 
 <BaseLayout
-  title="Tentang"
-  description="Cerita, filosofi, dan arah Vanillate Studio — studio produk digital Indonesia yang membangun aplikasi sosial dan community tools untuk komunitas online."
+  title="Tentang Komunitas Kita"
+  description="Cerita, nilai, dan arah Vanillate Studio, komunitas Indonesia yang berkumpul di Discord untuk main game, ngobrol, dan membuat bot serta fitur seru bersama."
 >
   <!-- HERO -->
   <section class="container-page pt-20 pb-16 md:pt-28 grid gap-12 md:grid-cols-[1fr_auto] items-center">
@@ -158,28 +154,28 @@ const roadmap = [
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
-        <p class="eyebrow">01 / Cerita</p>
+        <p class="eyebrow">01 / Cerita Kita</p>
       </div>
       <div class="md:col-span-2 max-w-prose">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Berawal dari satu produk sederhana</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Berawal dari satu game sederhana</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
           <p>
-            Vanillate Studio lahir pada 2026 dari sebuah pengamatan yang sederhana. Komunitas online Indonesia penuh dengan orang-orang yang senang berkumpul dan bermain bersama, tapi produk berbahasa Indonesia yang benar-benar digarap serius bisa dihitung dengan jari. Banyak yang menjanjikan segalanya, lalu perlahan mati, tidak diupdate, penuh bug, dan akhirnya ditinggalkan pembuatnya.
+            Vanillate lahir pada 2026 dari pengamatan yang sederhana. Komunitas online Indonesia penuh orang yang senang berkumpul dan bermain bersama, tapi tempat berbahasa Indonesia yang benar-benar dirawat bisa dihitung dengan jari. Banyak yang ramai sebentar, lalu sepi: tidak diperbarui, penuh bug, dan akhirnya ditinggalkan.
           </p>
           <p>
-            Kami memulai dari satu produk, yaitu Vanillate Sambung Kata (kini Vanillate.ID). Permainan kata yang semua orang kenal sejak kecil, dibawa ke komunitas online dengan sistem progresi yang dalam. Responsnya membuat kami sadar bahwa pengguna Indonesia tidak butuh banyak pilihan, mereka butuh yang digarap dengan sungguh-sungguh.
+            Kami mulai dari satu game, Sambung Kata (kini Vanillate.ID). Permainan kata yang semua orang kenal sejak kecil, dibawa ke Discord dengan sistem progresi yang dalam. Sambutan para pemain membuat kami sadar bahwa yang dicari orang bukan banyak pilihan, melainkan tempat yang digarap dengan sungguh-sungguh.
           </p>
           <p>
-            Dari sana Vanillate tumbuh menjadi studio. Kami memilih fokus, merawat satu produk sampai matang sebelum melangkah ke berikutnya, lalu memperluasnya ke pengalaman sosial dan community tools lain. Satu prinsip tetap sama, yaitu rilis adalah garis start, bukan garis finis.
+            Dari sana Vanillate tumbuh jadi komunitas. Kami memilih fokus: merawat satu rumah sampai nyaman, lalu menambah ruang baru seperti fitur sosial dan alat bantu untuk pengurus server. Satu prinsip tetap sama, yaitu rilis adalah garis start, bukan garis finis.
           </p>
           <p>
-            Hari ini kami masih tim kecil, dan itu disengaja. Skala kecil memberi kami kendali penuh atas kode, infrastruktur, dan kualitas, serta kecepatan untuk merespons komunitas tanpa birokrasi.
+            Hari ini kami masih komunitas kecil, dan itu disengaja. Skala kecil membuat kami bisa saling kenal, cepat merespons, dan menjaga suasananya tetap hangat tanpa birokrasi.
           </p>
         </div>
 
         <!-- Timeline perjalanan -->
         <div class="mt-12">
-          <p class="eyebrow mb-6">Perjalanan Singkat</p>
+          <p class="eyebrow mb-6">Perjalanan Kita</p>
           <div>
             {timeline.map((item, i) => (
               <div class="relative flex gap-5">
@@ -210,7 +206,7 @@ const roadmap = [
         <a
           href={url(founderUrl)}
           class="group grid gap-6 sm:grid-cols-[minmax(0,15rem)_1fr] items-center rounded-3xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-5 sm:p-6 transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:shadow-[0_20px_60px_-30px_rgba(11,10,14,0.4)]"
-          aria-label={`Lihat profil founder: ${founder.name}`}
+          aria-label={`Lihat profil pendiri: ${founder.name}`}
         >
           <FounderImage variant="card" class="w-full" />
           <div>
@@ -219,7 +215,7 @@ const roadmap = [
             <p class="mt-1.5 font-mono text-xs text-ink-500 dark:text-cream-300/60">{founder.roleFull} · {founder.location}</p>
             <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed max-w-prose">{founder.short}</p>
             <span class="mt-6 inline-flex items-center gap-2 rounded-full bg-ink-900 text-cream-50 dark:bg-amber-500 dark:text-ink-950 px-5 py-2.5 text-sm font-medium transition-transform group-hover:gap-3">
-              Lihat Profil Founder
+              Kenalan dengan Pendiri
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
             </span>
           </div>
@@ -232,18 +228,18 @@ const roadmap = [
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
-        <p class="eyebrow">Tim</p>
+        <p class="eyebrow">Pengurus</p>
       </div>
       <div class="md:col-span-2">
         <a
           href={url(teamUrl)}
           class="group block rounded-3xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 sm:p-8 transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:shadow-[0_20px_60px_-30px_rgba(11,10,14,0.4)]"
-          aria-label="Lihat halaman Tim Vanillate Studio"
+          aria-label="Lihat pengurus komunitas Vanillate"
         >
-          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Tim di balik Vanillate</h2>
+          <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Orang-orang di balik komunitas</h2>
           <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed max-w-prose">
-            Vanillate digerakkan oleh tim kecil yang terlibat langsung di setiap lini, dari arah produk,
-            pengembangan, sampai menjaga hubungan dengan komunitas. Kenali orang-orang di baliknya.
+            Komunitas ini dijalankan oleh pengurus yang juga anggota. Mereka mengurus game dan bot,
+            menjawab pertanyaan, dan menjaga obrolan tetap nyaman. Kenali siapa saja mereka.
           </p>
 
           {teamPreview.length > 0 && (
@@ -262,7 +258,7 @@ const roadmap = [
           )}
 
           <span class="mt-6 inline-flex items-center gap-2 rounded-full bg-ink-900 text-cream-50 dark:bg-amber-500 dark:text-ink-950 px-5 py-2.5 text-sm font-medium transition-transform group-hover:gap-3">
-            Lihat Halaman Tim
+            Kenalan dengan Pengurus
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </span>
         </a>
@@ -277,13 +273,13 @@ const roadmap = [
         <p class="eyebrow">02 / Filosofi</p>
       </div>
       <div class="md:col-span-2">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Di balik nama dan logo</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Di balik nama dan logo kita</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed max-w-prose">
           <p>
-            Nama <strong class="text-ink-900 dark:text-cream-50">Vanillate</strong> berangkat dari kata <em>vanilla</em>. Di dunia perangkat lunak, "vanilla" berarti versi paling murni, tanpa tambahan yang tidak perlu. Akhiran "-ate" mengubahnya menjadi kata kerja, sebuah proses. Vanillate berarti mengolah sesuatu yang sederhana menjadi pengalaman yang matang. Itulah cara kami bekerja, mulai dari fondasi yang bersih, lalu menyempurnakannya lapis demi lapis.
+            Nama <strong class="text-ink-900 dark:text-cream-50">Vanillate</strong> berangkat dari kata <em>vanilla</em>. Di dunia perangkat lunak, "vanilla" berarti versi paling murni, tanpa tambahan yang tidak perlu. Akhiran "-ate" mengubahnya menjadi kata kerja, sebuah proses. Vanillate berarti mengolah sesuatu yang sederhana menjadi pengalaman yang matang. Begitulah cara kita bekerja: mulai dari fondasi yang bersih, lalu menyempurnakannya lapis demi lapis bersama-sama.
           </p>
           <p>
-            Logo kami adalah huruf <strong class="text-ink-900 dark:text-cream-50">V</strong> yang terbentuk dari tiga pita geometris yang saling mengunci. Tiga pita itu mewakili tiga pilar yang menopang setiap produk Vanillate, yaitu <em>komunitas</em> yang memainkannya, <em>teknologi</em> yang menjalankannya, dan <em>pengalaman bermain</em> yang menyatukan keduanya. Bentuknya melingkar tanpa putus, sebuah pengingat bahwa pekerjaan kami tidak pernah benar-benar selesai karena selalu ada iterasi berikutnya.
+            Logo kami adalah huruf <strong class="text-ink-900 dark:text-cream-50">V</strong> yang terbentuk dari tiga pita geometris yang saling mengunci. Tiga pita itu mewakili tiga hal yang menopang Vanillate, yaitu <em>komunitas</em> yang berkumpul, <em>teknologi</em> yang menjalankannya, dan <em>pengalaman bermain</em> yang menyatukan keduanya. Bentuknya melingkar tanpa putus, sebuah pengingat bahwa rumah ini tidak pernah benar-benar selesai karena selalu ada hal baru yang bisa kita buat bareng.
           </p>
         </div>
 
@@ -291,7 +287,7 @@ const roadmap = [
           <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
             <div class="h-8 w-8 rounded-lg mb-4" style="background: #17171E;"></div>
             <h3 class="font-display font-semibold mb-1.5">Hitam</h3>
-            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Fondasi dan fokus. Keseriusan engineering di balik setiap fitur yang terlihat sederhana.</p>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Fondasi dan fokus. Keseriusan di balik setiap fitur yang terlihat sederhana.</p>
           </div>
           <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
             <div class="h-8 w-8 rounded-lg mb-4" style="background: #F0DCAE;"></div>
@@ -301,12 +297,12 @@ const roadmap = [
           <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5">
             <div class="h-8 w-8 rounded-lg mb-4" style="background: #6C3BEB;"></div>
             <h3 class="font-display font-semibold mb-1.5">Ungu</h3>
-            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Imajinasi dan energi digital, warna dunia tempat produk kami hidup setiap hari.</p>
+            <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">Imajinasi dan energi digital, warna dunia tempat kita berkumpul setiap hari.</p>
           </div>
         </div>
 
         <p class="mt-8 max-w-prose text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
-          Identitas ini kami pilih karena jujur menggambarkan siapa kami: serius dalam pengerjaan, hangat dalam pengalaman, dan tumbuh di ekosistem digital. Tidak lebih, tidak kurang.
+          Identitas ini kami pilih karena jujur menggambarkan kita: serius dalam menjaga, hangat dalam menyambut, dan tumbuh di dunia digital. Tidak lebih, tidak kurang.
         </p>
       </div>
     </div>
@@ -322,10 +318,10 @@ const roadmap = [
         <div class="rounded-3xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 sm:p-8">
           <h2 class="font-display text-2xl md:text-3xl font-semibold tracking-tightest mb-4">Kenalan dengan Vani</h2>
           <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed max-w-prose">
-            Vani adalah maskot Vanillate Studio, wajah ramah dari studio kecil dengan standar yang tidak kecil. Hitam pekat sebagai fondasi, emas vanilla sebagai kehangatan, dan sentuhan ungu untuk energi digital: karakter ini membawa identitas yang sama seperti nama dan logo kami.
+            Vani adalah maskot Vanillate, wajah ramah yang menyambut siapa saja yang datang. Hitam pekat sebagai fondasi, emas vanilla sebagai kehangatan, dan sentuhan ungu untuk energi digital: karakter ini membawa identitas yang sama seperti nama dan logo kami.
           </p>
           <p class="mt-4 text-ink-600 dark:text-cream-200/80 leading-relaxed max-w-prose">
-            Kamu akan menjumpainya di berbagai sudut ekosistem Vanillate, dari halaman ini sampai kanal komunitas, sebagai penanda bahwa yang kamu pakai memang buatan orang yang sama.
+            Kamu akan menjumpainya di berbagai sudut Vanillate, dari halaman ini sampai channel Discord, sebagai penanda bahwa kamu sedang berada di rumah yang sama.
           </p>
           <div class="mt-8 flex justify-center">
             <Vani expression="lineup" size="xl" animation="fade" alt="Tiga pose Vani: menyapa, tampak menyamping, dan tampak dari belakang" />
@@ -339,19 +335,19 @@ const roadmap = [
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
-        <p class="eyebrow">03 / Visi</p>
+        <p class="eyebrow">03 / Harapan</p>
       </div>
       <div class="md:col-span-2 max-w-prose">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Ke mana Vanillate menuju</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-6">Ke mana kita menuju</h2>
         <div class="space-y-5 text-lg text-ink-700 dark:text-cream-200 leading-relaxed">
           <p>
-            Visi kami sederhana untuk diucapkan dan panjang untuk dikerjakan, yaitu menjadi studio produk digital Indonesia yang produknya dipakai, dipercaya, dan dinantikan. Dimulai dari satu platform komunitas, tapi tidak berhenti di sana.
+            Harapan kami sederhana untuk diucapkan dan panjang untuk dikerjakan: menjadi rumah komunitas Indonesia yang hangat, dipercaya, dan selalu dinantikan. Dimulai dari satu game di Discord, tapi tidak berhenti di sana.
           </p>
           <p>
-            Kami percaya pengalaman sosial digital baru menyentuh permukaannya. Interaksi real-time, komunitas yang sudah terbentuk, dan teknologi AI yang semakin matang membuka ruang untuk cara berkumpul yang belum pernah ada. Kami ingin berada di garis depan eksplorasi itu, bukan sekadar mengikuti tren, tapi ikut menentukan bentuknya.
+            Kami percaya cara orang berkumpul secara digital masih bisa dibuat jauh lebih menyenangkan. Interaksi real-time, komunitas yang sudah terbentuk, dan teknologi yang semakin matang membuka ruang untuk cara bermain dan ngobrol yang belum pernah ada. Kami ingin menjelajahinya bersama kamu, bukan sekadar mengikuti tren.
           </p>
           <p>
-            Dalam jangka panjang, produk-produk Vanillate akan saling terhubung menjadi satu ekosistem digital, mulai dari game yang bisa dipantau dari web, otomasi yang meringankan pengelola komunitas, layanan cloud yang menopang semuanya, sampai AI yang bekerja diam-diam membuat setiap interaksi terasa lebih hidup. Teknologi dan automation bagi kami adalah alat untuk satu tujuan, yaitu pengalaman pengguna yang lebih baik, bukan pajangan.
+            Ke depan, semua ruang di Vanillate akan saling terhubung: game yang bisa dipantau dari web, alat yang meringankan pengurus server, sampai bantuan cerdas yang bekerja diam-diam supaya setiap obrolan terasa lebih hidup. Teknologi bagi kami hanyalah alat untuk satu tujuan, yaitu pengalaman berkumpul yang lebih baik.
           </p>
         </div>
       </div>
@@ -362,44 +358,44 @@ const roadmap = [
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
-        <p class="eyebrow">04 / Misi</p>
+        <p class="eyebrow">04 / Komitmen</p>
       </div>
       <div class="md:col-span-2 max-w-prose">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-8">Apa yang kami kerjakan setiap hari</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-8">Yang kami jaga setiap hari</h2>
         <ol class="space-y-7">
           <li class="flex gap-4">
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">01</span>
             <div>
-              <h3 class="font-display text-lg font-semibold mb-1">Membangun produk yang dirawat jangka panjang</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap produk yang kami rilis mendapat komitmen perawatan berupa update rutin, perbaikan cepat, dan pengembangan fitur yang tidak berhenti setelah minggu pertama.</p>
+              <h3 class="font-display text-lg font-semibold mb-1">Merawat, bukan sekadar merilis</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap game dan bot yang hadir mendapat perawatan berupa pembaruan rutin, perbaikan cepat, dan fitur baru yang tidak berhenti setelah minggu pertama.</p>
             </div>
           </li>
           <li class="flex gap-4">
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">02</span>
             <div>
-              <h3 class="font-display text-lg font-semibold mb-1">Menomorsatukan pengalaman pengguna</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Keputusan teknis kami selalu berangkat dari pertanyaan yang sama: apakah ini membuat pengalaman pemain lebih baik? Kalau tidak, kami tidak mengerjakannya.</p>
+              <h3 class="font-display text-lg font-semibold mb-1">Mengutamakan rasa nyaman anggota</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Setiap keputusan berangkat dari pertanyaan yang sama: apakah ini membuat anggota lebih nyaman dan lebih seru bermain? Kalau tidak, kami tidak mengerjakannya.</p>
             </div>
           </li>
           <li class="flex gap-4">
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">03</span>
             <div>
-              <h3 class="font-display text-lg font-semibold mb-1">Menjaga teknologi tetap efisien</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kode yang cepat, infrastruktur yang hemat, dan arsitektur yang mudah dikembangkan. Efisiensi bukan soal pelit. Ini soal produk yang responsif dan tahan lama.</p>
+              <h3 class="font-display text-lg font-semibold mb-1">Menjaga semuanya tetap lancar</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kode yang cepat, infrastruktur yang hemat, dan fondasi yang mudah dikembangkan. Semua itu demi game yang responsif dan komunitas yang bisa bertahan lama.</p>
             </div>
           </li>
           <li class="flex gap-4">
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">04</span>
             <div>
-              <h3 class="font-display text-lg font-semibold mb-1">Tumbuh bersama komunitas</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kami mendengarkan sebelum membangun. Fitur terbaik kami lahir dari percakapan bersama komunitas, dan kami ingin terus begitu.</p>
+              <h3 class="font-display text-lg font-semibold mb-1">Tumbuh bersama anggota</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kami mendengarkan sebelum membuat. Fitur terbaik kita lahir dari obrolan bersama anggota, dan kami ingin terus begitu.</p>
             </div>
           </li>
           <li class="flex gap-4">
             <span class="font-mono text-sm text-amber-600 dark:text-amber-500 flex-none mt-1.5">05</span>
             <div>
-              <h3 class="font-display text-lg font-semibold mb-1">Bekerja secara transparan</h3>
-              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Kebijakan yang jelas, catatan pembaruan yang jujur, dan komunikasi terbuka saat ada masalah. Kepercayaan dibangun dari keterbukaan, bukan kesempurnaan.</p>
+              <h3 class="font-display text-lg font-semibold mb-1">Berjalan dengan terbuka</h3>
+              <p class="text-ink-600 dark:text-cream-200/80 leading-relaxed">Aturan yang jelas, catatan pembaruan yang jujur, dan kabar apa adanya saat ada masalah. Kepercayaan dibangun dari keterbukaan, bukan kesempurnaan.</p>
             </div>
           </li>
         </ol>
@@ -410,9 +406,9 @@ const roadmap = [
   <!-- 05 NILAI -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="max-w-3xl mb-12 reveal">
-      <p class="eyebrow mb-3">05 / Nilai Kami</p>
+      <p class="eyebrow mb-3">05 / Nilai Kita</p>
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
-        Enam hal yang menjadi pegangan
+        Enam hal yang kita pegang bersama
       </h2>
     </div>
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -429,10 +425,10 @@ const roadmap = [
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3 reveal">
       <div class="md:col-span-1">
-        <p class="eyebrow">06 / Mengapa Vanillate</p>
+        <p class="eyebrow">06 / Kenapa Betah</p>
       </div>
       <div class="md:col-span-2">
-        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-8">Alasan untuk memilih kami</h2>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest mb-8">Alasan orang betah di sini</h2>
         <div class="grid gap-x-8 gap-y-7 sm:grid-cols-2">
           {reasons.map((r) => (
             <div>
@@ -451,12 +447,12 @@ const roadmap = [
   <!-- 07 MASA DEPAN -->
   <section class="container-page py-16 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="max-w-3xl mb-4 reveal">
-      <p class="eyebrow mb-3">07 / Masa Depan</p>
+      <p class="eyebrow mb-3">07 / Ke Depan</p>
       <h2 class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
-        Arah yang sedang kami bangun
+        Yang sedang kita kerjakan
       </h2>
       <p class="mt-5 text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed">
-        Ini bukan daftar janji dengan tanggal, melainkan peta arah: area yang sedang dan akan kami garap seiring bertumbuhnya studio. Semuanya bermuara pada satu hal: ekosistem digital Vanillate yang saling terhubung.
+        Ini bukan daftar janji dengan tanggal, melainkan peta arah: ruang-ruang yang sedang dan akan kami garap seiring bertumbuhnya komunitas. Semuanya bermuara pada satu hal, yaitu rumah Vanillate yang saling terhubung dan nyaman untuk semua.
       </p>
     </div>
     <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -477,11 +473,11 @@ const roadmap = [
         Ikut jadi bagian ceritanya
       </h2>
       <p class="text-lg text-ink-600 dark:text-cream-200/80 leading-relaxed mb-8">
-        Cara terbaik mengenal Vanillate adalah mencoba produknya, lalu mampir ke kanal komunitas kami dan bilang apa yang menurutmu bisa lebih baik. Kami benar-benar membaca semuanya.
+        Cara terbaik mengenal Vanillate adalah ikut main, lalu mampir ke Discord kami dan bilang apa yang menurutmu bisa lebih baik. Kami benar-benar membaca semuanya.
       </p>
       <div class="flex flex-wrap gap-3">
-        <Button href="/products" variant="primary" size="lg">Lihat Produk</Button>
-        <Button href={site.links.discordSupport} variant="secondary" size="lg" external>Gabung Discord</Button>
+        <Button href={site.links.discordSupport} variant="primary" size="lg" external>Gabung Discord</Button>
+        <Button href="/products" variant="secondary" size="lg">Lihat Game & Bot</Button>
       </div>
     </div>
   </section>

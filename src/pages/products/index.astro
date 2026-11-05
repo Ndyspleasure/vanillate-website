@@ -25,7 +25,7 @@ const totalCount = bots.length;
 const categories = [...new Set(bots.map((b) => b.category))];
 ---
 
-<BaseLayout title="Produk" description="Katalog produk Vanillate Studio — aplikasi sosial dan community tools buatan Indonesia yang dipakai ratusan ribu orang. Gratis, dirawat tiap hari.">
+<BaseLayout title="Game dan Bot Komunitas" description="Game dan bot buatan komunitas Vanillate Studio untuk main bareng di Discord. Gratis, dirawat tiap hari, dan dipakai ratusan ribu orang Indonesia.">
   <!-- HERO -->
   <section class="relative overflow-hidden pt-20 pb-12 md:pt-28">
     <div class="aurora bg-amber-500/25 h-[420px] w-[420px] top-[-120px] left-[5%]" aria-hidden="true"></div>
@@ -44,22 +44,22 @@ const categories = [...new Set(bots.map((b) => b.category))];
       <div class="mt-10 flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.2s">
         <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
           <span class="h-2 w-2 rounded-full bg-teal-500 animate-pulse"></span>
-          {liveCount} produk siap dipakai
+          {liveCount} siap dimainkan
         </span>
         <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
-          {totalCount} produk total
+          {totalCount} game & bot
         </span>
         <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
-          {categories.length} kategori berbeda
+          {categories.length} jenis
         </span>
         <span class="inline-flex items-center gap-2 rounded-full border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/50 dark:bg-ink-900/50 px-4 py-2 text-sm">
-          100% gratis dimainkan
+          100% gratis
         </span>
       </div>
     </div>
   </section>
 
-  <!-- KATALOG PRODUK -->
+  <!-- GAME & BOT -->
   <section class="container-page pb-8">
     {bots.length > 0 ? (
       <div class="grid gap-6 reveal">
@@ -69,13 +69,13 @@ const categories = [...new Set(bots.map((b) => b.category))];
       <div class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-ink-900/15 dark:border-cream-100/15 px-6 py-14 text-center">
         <Vani expression="sleeping" size="md" animation="subtle" alt="" />
         <p class="text-ink-500 dark:text-cream-300/60">
-          Belum ada produk yang ditampilkan. Tambahkan lewat panel admin.
+          Belum ada game atau bot yang ditampilkan. Tambahkan lewat panel admin.
         </p>
       </div>
     )}
   </section>
 
-  <!-- CARA MENGUNDANG -->
+  <!-- CARA MULAI -->
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="max-w-3xl mb-12 reveal">
       <p class="eyebrow mb-3">{c.stepsEyebrow}</p>
@@ -103,7 +103,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
     </div>
   </section>
 
-  <!-- KENAPA BERBEDA -->
+  <!-- KENAPA BETAH -->
   <section class="container-page py-20 border-t border-ink-900/10 dark:border-cream-100/10">
     <div class="grid gap-12 md:grid-cols-3">
       <div class="md:col-span-1 reveal">
@@ -170,7 +170,7 @@ const categories = [...new Set(bots.map((b) => b.category))];
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </a>
           <a href={site.links.discordSupport} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full border border-cream-100/20 text-cream-100 px-6 py-3 font-medium hover:bg-cream-100/5 transition-colors">
-            Gabung Discord Support
+            Gabung Discord
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M17 7H8M17 7v9" /></svg>
           </a>
         </div>
