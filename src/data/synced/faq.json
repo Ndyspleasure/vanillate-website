@@ -77,21 +77,21 @@
       "aliases": []
     },
     {
+      "category": "akun-data",
+      "slug": "izin-yang-dibutuhkan",
+      "question": "Izin atau akses apa yang dibutuhkan?",
+      "answer": "Kami hanya meminta akses yang benar-benar diperlukan agar fitur berfungsi, dan tidak pernah meminta hak Administrator.\n\n**Vanillate.ID (Discord)**\n\nIzin dasar untuk bermain dan fitur sosial: melihat channel, mengirim pesan, menyematkan embed, membaca riwayat pesan, menambah reaksi, membuat thread publik, dan mengirim pesan di thread. Bot juga membaca isi pesan di channel tempat ia aktif untuk mengecek jawaban permainan (Message Content Intent).\n\nIzin tambahan hanya terpakai bila fitur terkait kamu nyalakan:\n\n- **Manage Roles:** Verification, Auto Role, dan hadiah role Leveling. Posisi role bot harus berada di atas role yang diberikan.\n- **View Audit Log:** Security Center. Kick Members hanya untuk tombol Kick Kembali dan bersifat opsional.\n- **Connect dan Speak:** Tebak Lagu mode voice. **Attach Files:** Tebak Lagu mode file.\n- **Create Invite dan Pin Messages:** Share Server.\n- **Manage Channels:** membuat channel panduan konfigurasi.\n- **Mention Everyone:** pengumuman yang me-mention semua anggota, bersifat opsional.\n\nTautan undangan resmi di halaman Vanillate.ID sudah memuat semua izin ini. Bila bot dipasang dengan izin lebih sedikit, hanya fitur yang membutuhkannya yang tidak berjalan, dan dashboard menampilkan izin yang kurang. Auto Role dan Welcome/Goodbye juga membutuhkan Server Members Intent yang diaktifkan oleh pemilik bot.\n\n**Aplikasi web dan lainnya**\n\n- **Hand Sign Camera dan Play:** akses kamera di peramban, karena kamera adalah cara memakainya. Kamu bisa menolak akses dan tetap mencoba lewat mode demo (Hand Sign Camera) atau keyboard (Play).\n- **Science dan Convert:** tidak meminta izin khusus apa pun.",
+      "sortOrder": 10,
+      "updatedAt": "2026-11-05T02:42:50.827114+00:00",
+      "aliases": []
+    },
+    {
       "category": "umum",
       "slug": "menghidupkan-komunitas",
       "question": "Apakah produk Vanillate bisa membantu menghidupkan komunitas yang sepi?",
       "answer": "Bisa, dan itu memang salah satu kekuatannya. Produk kami dirancang mengajak banyak anggota ikut berinteraksi sekaligus, sehingga obrolan yang tadinya sepi cepat kembali ramai.\n\nContohnya, satu sesi Vanillate.ID di Discord bisa mendongkrak jumlah pesan sampai ratusan, sekaligus membantu anggota naik level di komunitas yang memakai sistem keaktifan.",
       "sortOrder": 10,
       "updatedAt": "2026-10-28T13:29:11.095608+00:00",
-      "aliases": []
-    },
-    {
-      "category": "akun-data",
-      "slug": "izin-yang-dibutuhkan",
-      "question": "Izin atau akses apa yang dibutuhkan?",
-      "answer": "Kami hanya meminta akses yang benar-benar diperlukan agar produk berfungsi, dan tidak pernah meminta hak administratif yang tidak perlu.\n\n- **Vanillate.ID (Discord):** izin sebatas mengirim pesan, menyematkan embed, membaca jawaban di channel permainan, dan mengelola komponen interaktif.\n- **Hand Sign Camera dan Play:** akses kamera di peramban, karena kamera adalah cara memakainya. Kamu bisa menolak akses dan tetap mencoba lewat mode demo (Hand Sign Camera) atau keyboard (Play).\n- **Science dan Convert:** tidak meminta izin khusus apa pun.",
-      "sortOrder": 10,
-      "updatedAt": "2026-11-05T02:26:39.533539+00:00",
       "aliases": []
     },
     {
@@ -257,19 +257,19 @@
       "aliases": []
     },
     {
-      "category": "umum",
-      "slug": "cara-mulai-memakai",
-      "question": "Bagaimana cara mulai memakai produknya?",
-      "answer": "Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk:\n\n- **Vanillate.ID** diundang ke server Discord lewat tombol **Undang ke Server**.\n- **Hand Sign Camera, Science, Convert, dan Play** adalah aplikasi web. Cukup tekan **Buka Aplikasi**. Sebagian bisa dipasang ke layar utama ponsel atau komputer seperti aplikasi biasa.\n\nSetiap halaman produk menjelaskan langkahnya.",
+      "category": "akun-data",
+      "slug": "progres-antar-komunitas",
+      "question": "Apakah progres saya terbawa antar komunitas atau perangkat?",
+      "answer": "Untuk **Vanillate.ID**, ya. Progres, statistik, dan peringkat bersifat global per akun Discord, jadi capaianmu terbawa ke server mana pun kamu bermain, tanpa biaya tambahan.\n\nAplikasi web (**Science** dan **Play**) menyimpan riwayat, favorit, pengaturan, dan rekor di peramban perangkat yang kamu pakai. Karena tidak memakai akun, data itu tidak berpindah ke perangkat atau peramban lain.",
       "sortOrder": 30,
       "updatedAt": "2026-11-05T02:26:39.533539+00:00",
       "aliases": []
     },
     {
-      "category": "akun-data",
-      "slug": "progres-antar-komunitas",
-      "question": "Apakah progres saya terbawa antar komunitas atau perangkat?",
-      "answer": "Untuk **Vanillate.ID**, ya. Progres, statistik, dan peringkat bersifat global per akun Discord, jadi capaianmu terbawa ke server mana pun kamu bermain, tanpa biaya tambahan.\n\nAplikasi web (**Science** dan **Play**) menyimpan riwayat, favorit, pengaturan, dan rekor di peramban perangkat yang kamu pakai. Karena tidak memakai akun, data itu tidak berpindah ke perangkat atau peramban lain.",
+      "category": "umum",
+      "slug": "cara-mulai-memakai",
+      "question": "Bagaimana cara mulai memakai produknya?",
+      "answer": "Buka halaman produk yang kamu inginkan, lalu ikuti tombol utamanya. Caranya menyesuaikan jenis produk:\n\n- **Vanillate.ID** diundang ke server Discord lewat tombol **Undang ke Server**.\n- **Hand Sign Camera, Science, Convert, dan Play** adalah aplikasi web. Cukup tekan **Buka Aplikasi**. Sebagian bisa dipasang ke layar utama ponsel atau komputer seperti aplikasi biasa.\n\nSetiap halaman produk menjelaskan langkahnya.",
       "sortOrder": 30,
       "updatedAt": "2026-11-05T02:26:39.533539+00:00",
       "aliases": []

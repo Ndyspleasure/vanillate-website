@@ -20,7 +20,7 @@
       "commands": [],
       "discord": {
         "clientId": "1513806760622817320",
-        "permissions": "2252747126074579",
+        "permissions": "2252747126074611",
         "scopes": [
           "bot",
           "applications.commands"
