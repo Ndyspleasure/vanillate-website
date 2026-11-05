@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Bangun ulang harian supaya daftar server pemakai bot (Showcase Server,
+  # docs/SHOWCASE-SERVER.md) dan sampel acak hariannya ikut segar. 20:17 UTC =
+  # 03:17 WIB, sepi pengunjung.
+  schedule:
+    - cron: '17 20 * * *'
   # Dikirim Edge Function `blog-admin` setiap artikel blog terbit/ditarik/dihapus
   # (butuh secret GITHUB_DISPATCH_TOKEN di Supabase). Lihat docs/BLOG.md.
   repository_dispatch:

@@ -55,6 +55,109 @@ export interface ShareState {
   received: { id: number; sentAt: number | null; status: string; guard: string | null; lastError: string | null }[];
   history: { id: number; type: string; status: string; firstAt: number; resolvedAt: number | null }[];
   audit: { action: string; detail: string | null; actor: string | null; at: number }[];
+  /** 🌐 Tampil di website (Showcase Server). Bot lama belum menerbitkannya: opsional. */
+  showcase?: ShowcaseState;
+}
+
+// ─── 🌐 Showcase Server: tampil di website ──────────────────────────────────
+// Bot (src/showcase/) menerbitkan status ini di share_guild_state.data.showcase.
+// Aturan tampil, status, dan teks penjelasan milik bot; website hanya
+// menampilkannya dan mengirim permintaan `save` dengan kunci `showcase*`.
+
+export type ShowcaseStatus = 'LISTED' | 'OFF' | 'NSFW' | 'REVIEW';
+
+export interface ShowcaseState {
+  enabled: boolean;
+  status: ShowcaseStatus;
+  /** Penjelasan dari bot (tanpa tanda pisah). */
+  statusText: string;
+  listed: boolean;
+  name: string | null;
+  members: number | null;
+  invite: {
+    url: string | null;
+    method: 'manual' | 'auto' | null;
+    status: 'NONE' | 'ACTIVE' | 'NEEDS_UPDATE';
+    note: string | null;
+    checkedAt: number | null;
+  };
+  autoInvite: { possible: boolean; channelId: string | null; channelName: string | null; lockedNote: string | null };
+  publishedAt: number | null;
+}
+
+export const SHOWCASE_STATUS_META: Record<ShowcaseStatus, { label: string; tone: Tone }> = {
+  LISTED: { label: 'Tampil', tone: 'success' },
+  OFF: { label: 'Dimatikan', tone: 'neutral' },
+  NSFW: { label: 'Tidak memenuhi syarat', tone: 'warning' },
+  REVIEW: { label: 'Ditinjau tim Vanillate', tone: 'warning' },
+};
+
+/** Status yang tidak bisa diubah admin (setelan terkunci wajib dijelaskan, toggle mati). */
+export function showcaseLocked(sc: Pick<ShowcaseState, 'status'>): boolean {
+  return sc.status === 'NSFW' || sc.status === 'REVIEW';
+}
+
+/**
+ * Bot belum menerbitkan status (server belum pernah dibuka di dashboard).
+ * Bawaannya tampil, jadi ini mencerminkan bawaan itu dan menyebut bahwa
+ * status rincinya menyusul. Tidak mengarang alasan apa pun.
+ */
+export function showcaseDefaults(): ShowcaseState {
+  return {
+    enabled: true,
+    status: 'LISTED',
+    statusText: 'Bawaannya server ini tampil di website. Status rinci muncul setelah bot menerbitkannya.',
+    listed: true,
+    name: null,
+    members: null,
+    invite: { url: null, method: null, status: 'NONE', note: null, checkedAt: null },
+    autoInvite: { possible: true, channelId: null, channelName: null, lockedNote: null },
+    publishedAt: null,
+  };
+}
+
+/** Ambil status Showcase dari state bot, atau bawaan bila belum ada. Bentuk dibersihkan. */
+export function showcaseOf(state: ShareState | null | undefined): { sc: ShowcaseState; known: boolean } {
+  const raw = state?.showcase;
+  if (!raw || typeof raw !== 'object' || !raw.status || !(raw.status in SHOWCASE_STATUS_META)) return { sc: showcaseDefaults(), known: false };
+  const d = showcaseDefaults();
+  return {
+    known: true,
+    sc: {
+      ...d, ...raw,
+      invite: { ...d.invite, ...(raw.invite ?? {}) },
+      autoInvite: { ...d.autoInvite, ...(raw.autoInvite ?? {}) },
+    },
+  };
+}
+
+export type ShowcaseAction = 'toggle' | 'invite_save' | 'invite_auto' | 'invite_clear' | 'recheck';
+
+/**
+ * Payload permintaan `save` untuk satu aksi Showcase. Validasi di sini hanya
+ * umpan balik cepat, bot memverifikasi ulang (izin, link ke Discord).
+ */
+export function buildShowcasePayload(
+  action: ShowcaseAction,
+  sc: Pick<ShowcaseState, 'enabled'>,
+  draft: { showcaseInviteUrl?: string },
+): { payload: Record<string, string | boolean>; error: string | null } {
+  switch (action) {
+    case 'toggle':
+      return { payload: { showcaseEnabled: !sc.enabled }, error: null };
+    case 'invite_save': {
+      const url = String(draft.showcaseInviteUrl ?? '').trim();
+      if (!url) return { payload: {}, error: 'Isi link undangan lebih dulu.' };
+      const e = validateInviteUrl(url);
+      return e ? { payload: {}, error: e } : { payload: { showcaseInviteUrl: url }, error: null };
+    }
+    case 'invite_auto':
+      return { payload: { showcaseInviteAuto: true }, error: null };
+    case 'invite_clear':
+      return { payload: { showcaseInviteClear: true }, error: null };
+    case 'recheck':
+      return { payload: { showcaseRecheck: true }, error: null };
+  }
 }
 
 export interface ShareRequest {
@@ -175,6 +278,8 @@ export interface ShareDraft {
   inviteMode?: 'manual' | 'auto';
   inviteUrl?: string;
   inviteAutoChannelId?: string;
+  /** Link undangan untuk tampil di website (Showcase), terpisah dari Share Server. */
+  showcaseInviteUrl?: string;
 }
 
 /**

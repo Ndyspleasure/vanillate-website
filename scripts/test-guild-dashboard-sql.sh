@@ -106,3 +106,8 @@ echo "✓ Tes SQL retensi Pemantau Kata-Kata lulus."
 # lalu rollback.
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/partnership-lobby-hubs.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL sakelar kartu Partnership lulus."
+
+# Suite kedelapan: 🌐 Showcase Server (daftar server di website). Tesnya
+# menjalankan supabase/showcase-servers.sql dua kali → idempoten.
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/showcase-servers.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL Showcase Server lulus."

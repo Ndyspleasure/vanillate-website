@@ -5,7 +5,10 @@ import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
 import BotTag from '@components/BotTag.astro';
 import BotAvatar from '@components/BotAvatar.astro';
-import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, webAppUrl, webCtaLabel, productImage, badgeClass, CHANGELOG_PRODUCT, DASHBOARD_PRODUCT } from '@data/bots';
+import ServerShowcase from '@components/ServerShowcase.astro';
+import { getShowcase, sampleSeed } from '@/lib/showcase';
+import { pickSample } from '@/lib/showcase-model';
+import { bots, buildInviteUrl, inviteCtaLabel, getOtherBots, CTA, webAppUrl, webCtaLabel, productImage, badgeClass, CHANGELOG_PRODUCT, DASHBOARD_PRODUCT, VANILLATE_PRODUCT } from '@data/bots';
 import FAQLink from '@components/FAQLink.astro';
 import { faqCategoryPath, faqCategoryUrl, faqCategoryFor, faqItems, faqsByCategory } from '@data/faq';
 import { site } from '@data/site';
@@ -39,6 +42,9 @@ const artikelProduk = postsForProduct(bot.slug, (await getBlog()).posts, 3);
 const hasChangelog = bot.slug === CHANGELOG_PRODUCT;
 // Vanillate Dashboard: admin server mengatur bot ini dari website.
 const hasDashboard = bot.slug === DASHBOARD_PRODUCT;
+// Daftar server pemakai: hanya di halaman Vanillate.ID. Kosong = seksi tersembunyi.
+const showcase = bot.slug === VANILLATE_PRODUCT ? await getShowcase() : null;
+const showcaseSample = showcase ? pickSample(showcase.servers, 90, sampleSeed()) : [];
 
 // Produk web: tautan aplikasi (mis. domain Netlify/Vercel) + label tombol.
 const isWeb = bot.platform === 'web';
@@ -317,6 +323,18 @@ const statusLabel = { live: 'Live', beta: 'Beta', preorder: 'Preorder', 'coming-
         </div>
       </div>
     </section>
+  )}
+
+  {showcase && (
+    <ServerShowcase
+      variant="wall"
+      servers={showcaseSample}
+      total={showcase.servers.length}
+      eyebrow="Server pengguna"
+      heading="Ribuan server menggunakan dan merasakan manfaat komunitas Vanillate"
+      intro="Komunitas yang menampilkan dirinya di sini. Klik Gabung untuk melihat dan ikut bergabung."
+      note="Admin server bisa mematikan tampilan ini kapan saja di Vanillate Dashboard, menu Share Server."
+    />
   )}
 
   <!-- FAQ -->

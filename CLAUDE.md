@@ -92,5 +92,6 @@ isi tulisan) tidak dikutip ke issue/PR/commit.
 | `docs/DEVELOPER-PANEL.md` | Panel Developer: arsitektur antrean & snapshot, peran, halaman, kode, database, cara menambah aksi |
 | `docs/ADMIN-CMS.md` | Model keamanan CMS, setup Supabase, kontrak data bot, Control Panel (`/admin/kontrol`) |
 | `docs/DASHBOARD-SERVER.md` | Vanillate Dashboard (`/dashboard`, admin server login Discord; **data & login di proyek Database Bot sejak PLAN-001**) · §5a 📣 Share Server (tab, `share_*`, Edge Function `topgg-webhook` — `verify_jwt = false`, secret `TOPGG_WEBHOOK_SECRET`, di proyek Database Bot) |
+| `docs/SHOWCASE-SERVER.md` | Daftar server pemakai bot di beranda dan `/products/vanillateID/` (bawaan tampil, admin mematikan di dashboard › Share Server, tinjauan tim di `/admin/showcase`), RPC publik `showcase_public_list()` di proyek CMS, SEO dan performa |
 | `docs/PIPELINE-TERBIT.md`, `docs/AUTO-SYNC-DATA.md` | Alur terbit konten & sinkron data dari repo bot |
 | `docs/BLOG.md` | Blog `/blog`: ditulis & diterbitkan di `/admin/blog`, disimpan di **Sanity** (project `62jp784l`, dataset `production` public) lewat Edge Function `blog-admin` (secret `SANITY_WRITE_TOKEN`, `GITHUB_DISPATCH_TOKEN`); halaman dibangun statis saat build |
