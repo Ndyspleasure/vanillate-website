@@ -29,6 +29,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { fmtWaktu, fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot, bacaPerintah, kirimPerintah, riwayatPerintah } from '@/lib/dev-panel/client';
   import { describeMedia, estimateMinutes, isFinal, mediaHint, mediaKind, parsePollOptions, previewHeader, validateBroadcast, type BroadcastDraft } from '@/lib/dev-panel/model';
+  import { discordMarkdownHtml } from '@/lib/dev-panel/discord-md';
   import { fieldHtml, notice, pill, progressBar, section, statusTone, table, KELAS } from '@/lib/dev-panel/ui';
 
   let role = 'viewer';
@@ -165,7 +166,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${media === 'link' ? `<p class="mb-2 text-sky-300 break-all">${esc(d.mediaUrl)}</p>` : ''}
         <div class="rounded border-l-4 bg-[#2b2d31] p-3" style="border-color:${esc(h.color)}">
           ${h.title ? `<p class="font-semibold">${esc(h.title)}</p>` : ''}
-          <p class="mt-1 whitespace-pre-line">${esc(d.message || 'Isi pesan…')}</p>
+          <div class="mt-1 break-words">${d.message ? discordMarkdownHtml(d.message) : '<p>Isi pesan…</p>'}</div>
           ${server ? `<p class="mt-2 text-xs font-semibold">📌 Kenapa saya menerima pesan ini?</p><p class="text-xs text-cream-300/70">Kamu owner/admin di <em>(nama server tiap penerima)</em>.</p>` : ''}
           ${media === 'image' ? `<img src="${esc(d.mediaUrl)}" alt="" class="mt-2 max-h-48 rounded" data-bc-img />` : ''}
           <p class="mt-2 text-[0.7rem] text-cream-300/60">${esc(h.footer)}</p>
