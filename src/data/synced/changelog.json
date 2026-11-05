@@ -1,5 +1,35 @@
 [
   {
+    "version": "3.44.1",
+    "date": "2026-11-05",
+    "title": "Tombol Gabung di daftar server website",
+    "highlights": [
+      "🔗 Server yang punya vanity URL atau terdaftar di Discord Discovery kini otomatis mendapat tombol Gabung di vanillate.id",
+      "🛡️ Link Gabung yang dipasang admin dan masih berlaku tidak pernah diganti bot",
+      "⚙️ Admin bisa menghapus link kapan saja di Dashboard, menu Share Server, dan bot tidak membuatnya lagi"
+    ]
+  },
+  {
+    "version": "3.44.0",
+    "date": "2026-11-05",
+    "title": "Server komunitas tampil di website Vanillate",
+    "highlights": [
+      "🌐 Server yang memakai Vanillate.ID kini tampil di beranda dan halaman produk vanillate.id",
+      "⚙️ Admin server bisa mematikan tampilan atau memasang link Gabung sendiri di Dashboard, menu Share Server",
+      "🔗 Link Gabung yang kedaluwarsa diganti otomatis oleh bot selama tampilan menyala"
+    ]
+  },
+  {
+    "version": "3.43.0",
+    "date": "2026-11-05",
+    "title": "Kartu Partnership di /game dan /sosial, dashboard lebih awet",
+    "highlights": [
+      "🤝 Kartu Partnership kini bisa tampil di paling atas saat kamu membuka /game atau /sosial",
+      "⏳ Menu Sambung Kata dan Dashboard Sosial kini aktif 10 menit setelah klik terakhir, bukan 2 menit",
+      "🧹 Setelah waktunya habis, pesan dashboard hilang sendiri sehingga tidak ada tombol mati yang tertinggal"
+    ]
+  },
+  {
     "version": "3.42.1",
     "date": "2026-11-04",
     "title": "Penyelarasan pesan Vanillate.ID dan perapian internal",
