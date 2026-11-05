@@ -1,0 +1,384 @@
+---
+// 🌐 Daftar server Discord yang memakai Vanillate.ID (marquee menyamping).
+// Data: src/lib/showcase.ts (RPC publik saat build). Acuan: docs/SHOWCASE-SERVER.md.
+//
+// SEO: HTML hasil build STABIL (sampel tetap per hari, urutan tetap). Pengacakan
+// tampilan, penggandaan baris untuk gelung, dan animasi dilakukan di browser.
+// Tanpa JS atau dengan reduced motion, baris tetap bisa digeser manual.
+// Link undangan memakai rel="nofollow ugc" karena tujuannya situs pihak lain.
+import {
+  countLabel, formatMembers, hueOf, iconUrl, initials, inviteUrl, layoutFor, splitRows, type ShowcaseServer,
+} from '@/lib/showcase-model';
+import { url } from '@utils/url';
+
+interface Props {
+  variant?: 'compact' | 'wall';
+  /** Sampel yang masuk HTML. */
+  servers: ShowcaseServer[];
+  /** Jumlah seluruh server tampil (untuk judul). */
+  total: number;
+  eyebrow: string;
+  heading: string;
+  intro: string;
+  /** Catatan kecil di bawah daftar (mis. cara mematikan tampilan). */
+  note?: string;
+  id?: string;
+}
+
+const { variant = 'compact', servers, total, eyebrow, heading, intro, note, id = `showcase-${variant}` } = Astro.props;
+const layout = layoutFor(servers.length);
+const rows = splitRows(servers, variant === 'wall' ? 2 : 1);
+const size = variant === 'wall' ? 48 : 36;
+const withJoin = variant === 'wall';
+const count = countLabel(total);
+---
+
+{layout !== 'hidden' && (
+  <section
+    id={id}
+    class="showcase container-page py-16 md:py-20 border-t border-ink-900/10 dark:border-cream-100/10"
+    data-showcase
+    data-variant={variant}
+    data-layout={layout}
+    data-list-url={url('/data/showcase.json')}
+    aria-labelledby={`${id}-title`}
+  >
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="max-w-2xl">
+        <p class="eyebrow mb-3">{eyebrow}</p>
+        <h2 id={`${id}-title`} class="font-display text-3xl md:text-4xl font-semibold tracking-tightest">
+          {heading.replace('{count}', count)}
+        </h2>
+        <p class="mt-3 text-ink-600 dark:text-cream-200/80 leading-relaxed">{intro}</p>
+      </div>
+      <button
+        type="button"
+        data-showcase-pause
+        hidden
+        aria-pressed="false"
+        class="inline-flex items-center gap-2 rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
+      >
+        <span data-showcase-pause-label>Jeda gerakan</span>
+      </button>
+    </div>
+
+    <div
+      class="showcase-viewport mt-8"
+      role="region"
+      aria-label="Daftar server Discord pengguna Vanillate.ID. Bisa digeser dengan keyboard."
+      tabindex="0"
+    >
+      {rows.map((row, r) => (
+        <div class="showcase-lane" data-lane={r}>
+          <ul class="showcase-track">
+            {row.map((s) => {
+              const icon = iconUrl(s, size > 40 ? 128 : 64);
+              const invite = withJoin ? inviteUrl(s) : null;
+              const members = formatMembers(s.m);
+              return (
+                <li class="showcase-card" data-id={s.i}>
+                  {icon ? (
+                    <img
+                      class="showcase-avatar"
+                      src={icon}
+                      width={size}
+                      height={size}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                    />
+                  ) : (
+                    <span class="showcase-avatar showcase-avatar-fallback" style={`--h:${hueOf(s.i)}`} aria-hidden="true">
+                      {initials(s.n)}
+                    </span>
+                  )}
+                  <span class="showcase-text">
+                    <span class="showcase-name">{s.n}</span>
+                    {members && <span class="showcase-meta">{members} member</span>}
+                  </span>
+                  {invite && (
+                    <a
+                      class="showcase-join"
+                      href={invite}
+                      target="_blank"
+                      rel="nofollow ugc noopener noreferrer"
+                    >
+                      Gabung<span class="sr-only"> ke server {s.n}</span>
+                    </a>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+      {note ? <p class="text-sm text-ink-500 dark:text-cream-300/60 max-w-xl">{note}</p> : <span></span>}
+      <button
+        type="button"
+        data-showcase-all
+        class="inline-flex items-center gap-2 rounded-full bg-ink-900 text-cream-50 dark:bg-cream-100 dark:text-ink-950 px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
+      >
+        Lihat semua server
+      </button>
+    </div>
+  </section>
+)}
+
+<style is:global>
+  .showcase-viewport {
+    position: relative;
+    overflow-x: auto;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+    scrollbar-width: thin;
+  }
+  .showcase-lane { display: flex; width: max-content; }
+  .showcase-lane + .showcase-lane { margin-top: 0.75rem; }
+  .showcase-track {
+    display: flex; gap: 0.75rem; margin: 0; padding: 0 0.75rem 0 0; list-style: none; flex-shrink: 0;
+  }
+  .showcase-card {
+    display: flex; align-items: center; gap: 0.75rem; flex: 0 0 auto;
+    width: 15rem; padding: 0.625rem 0.875rem; border-radius: 1rem;
+    border: 1px solid rgb(21 20 18 / 0.1); background: rgb(255 255 255 / 0.7);
+  }
+  html.dark .showcase-card { border-color: rgb(250 246 238 / 0.1); background: rgb(21 20 18 / 0.6); }
+  .showcase[data-variant='wall'] .showcase-card { width: 20rem; padding: 0.75rem 1rem; }
+  .showcase-avatar {
+    flex: 0 0 auto; width: 2.25rem; height: 2.25rem; border-radius: 9999px; object-fit: cover;
+    background: rgb(21 20 18 / 0.08);
+  }
+  .showcase[data-variant='wall'] .showcase-avatar { width: 3rem; height: 3rem; }
+  .showcase-avatar-fallback {
+    display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.8rem;
+    color: #fff; background: hsl(var(--h) 45% 42%);
+  }
+  .showcase-text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+  .showcase-name { font-weight: 600; font-size: 0.9rem; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .showcase-meta { font-size: 0.75rem; opacity: 0.6; }
+  .showcase-join {
+    flex: 0 0 auto; border-radius: 9999px; padding: 0.3rem 0.75rem; font-size: 0.75rem; font-weight: 600;
+    background: rgb(245 158 11); color: #1b1305; text-decoration: none;
+  }
+  .showcase-join:hover { background: rgb(251 191 36); }
+
+  /* Gerak: hanya bila JS menandai is-animated dan pengguna tidak meminta reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    .showcase.is-animated .showcase-viewport { overflow: hidden; }
+    .showcase.is-animated .showcase-lane {
+      animation: showcase-slide var(--dur, 60s) linear infinite;
+      will-change: transform;
+    }
+    .showcase.is-animated .showcase-lane[data-lane='1'] { animation-direction: reverse; }
+    .showcase.is-paused .showcase-lane,
+    .showcase.is-offscreen .showcase-lane,
+    .showcase.is-animated .showcase-viewport:hover .showcase-lane,
+    .showcase.is-animated .showcase-viewport:focus-within .showcase-lane { animation-play-state: paused; }
+    @keyframes showcase-slide { to { transform: translateX(-50%); } }
+  }
+
+  /* Daftar lengkap */
+  .showcase-dialog {
+    width: min(42rem, calc(100vw - 2rem)); max-height: min(40rem, calc(100vh - 2rem)); padding: 0; border: 0;
+    border-radius: 1.25rem; background: #faf6ee; color: #151412; box-shadow: 0 30px 80px rgb(0 0 0 / 0.35);
+  }
+  html.dark .showcase-dialog { background: #151412; color: #faf6ee; }
+  .showcase-dialog::backdrop { background: rgb(0 0 0 / 0.55); }
+  .showcase-dialog-body { display: flex; flex-direction: column; max-height: inherit; }
+  .showcase-dialog-head { display: flex; gap: 0.75rem; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgb(128 128 128 / 0.2); }
+  .showcase-dialog-head input {
+    flex: 1 1 auto; min-width: 0; border-radius: 0.75rem; border: 1px solid rgb(128 128 128 / 0.35);
+    padding: 0.55rem 0.8rem; background: transparent; color: inherit; font-size: 0.95rem;
+  }
+  .showcase-dialog-list { overflow-y: auto; padding: 0.75rem 1.25rem 1.25rem; display: grid; gap: 0.5rem; list-style: none; margin: 0; }
+  .showcase-dialog-list .showcase-card { width: auto; }
+  .showcase-dialog-foot { padding: 0.75rem 1.25rem; font-size: 0.8rem; opacity: 0.7; border-top: 1px solid rgb(128 128 128 / 0.2); display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+</style>
+
+<script>
+  import { iconUrl, inviteUrl, initials, hueOf, formatMembers, matchesQuery, normalizeServer, type ShowcaseServer } from '@/lib/showcase-model';
+
+  const PAGE = 60;           // kartu per halaman di daftar lengkap
+  const SPEED_PX_S = 60;     // kecepatan marquee
+  const REL = 'nofollow ugc noopener noreferrer';
+
+  function shuffle(list: HTMLElement) {
+    const items = Array.from(list.children);
+    for (let i = items.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    items.forEach((el) => list.appendChild(el));
+  }
+
+  function card(s: ShowcaseServer, withJoin: boolean): HTMLLIElement {
+    const li = document.createElement('li');
+    li.className = 'showcase-card';
+    li.dataset.id = s.i;
+    const icon = iconUrl(s, 64);
+    if (icon) {
+      const img = document.createElement('img');
+      img.className = 'showcase-avatar';
+      img.src = icon; img.width = 36; img.height = 36; img.alt = '';
+      img.loading = 'lazy'; img.decoding = 'async'; img.referrerPolicy = 'no-referrer';
+      li.appendChild(img);
+    } else {
+      const f = document.createElement('span');
+      f.className = 'showcase-avatar showcase-avatar-fallback';
+      f.style.setProperty('--h', String(hueOf(s.i)));
+      f.setAttribute('aria-hidden', 'true');
+      f.textContent = initials(s.n);
+      li.appendChild(f);
+    }
+    const text = document.createElement('span');
+    text.className = 'showcase-text';
+    const name = document.createElement('span');
+    name.className = 'showcase-name';
+    name.textContent = s.n;
+    text.appendChild(name);
+    const members = formatMembers(s.m);
+    if (members) {
+      const meta = document.createElement('span');
+      meta.className = 'showcase-meta';
+      meta.textContent = `${members} member`;
+      text.appendChild(meta);
+    }
+    li.appendChild(text);
+    const invite = withJoin ? inviteUrl(s) : null;
+    if (invite) {
+      const a = document.createElement('a');
+      a.className = 'showcase-join';
+      a.href = invite; a.target = '_blank'; a.rel = REL;
+      a.textContent = 'Gabung';
+      a.setAttribute('aria-label', `Gabung ke server ${s.n}`);
+      li.appendChild(a);
+    }
+    return li;
+  }
+
+  // Ikon gagal dimuat (dihapus, CDN bermasalah): ganti inisial supaya tidak ada gambar rusak.
+  function toFallback(img: HTMLImageElement) {
+    const li = img.closest<HTMLElement>('.showcase-card');
+    const name = li?.querySelector('.showcase-name')?.textContent ?? '';
+    const f = document.createElement('span');
+    f.className = 'showcase-avatar showcase-avatar-fallback';
+    f.style.setProperty('--h', String(hueOf(li?.dataset.id ?? '0')));
+    f.setAttribute('aria-hidden', 'true');
+    f.textContent = initials(name);
+    img.replaceWith(f);
+  }
+  document.addEventListener('error', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLImageElement && t.classList.contains('showcase-avatar')) toFallback(t);
+  }, true);
+
+  let cached: Promise<ShowcaseServer[]> | null = null;
+  function loadAll(url: string): Promise<ShowcaseServer[]> {
+    cached ??= fetch(url)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((raw: unknown) => (Array.isArray(raw) ? raw.map(normalizeServer).filter((s): s is ShowcaseServer => Boolean(s)) : []))
+      .catch(() => []);
+    return cached;
+  }
+
+  async function openAll(root: HTMLElement, trigger: HTMLElement) {
+    const dlg = document.createElement('dialog');
+    dlg.className = 'showcase-dialog';
+    dlg.setAttribute('aria-label', 'Semua server pengguna Vanillate.ID');
+    dlg.innerHTML = `
+      <div class="showcase-dialog-body">
+        <div class="showcase-dialog-head">
+          <input type="search" placeholder="Cari nama server" aria-label="Cari nama server" autocomplete="off" />
+          <button type="button" data-close class="showcase-join" style="background:transparent;border:1px solid currentColor;color:inherit">Tutup</button>
+        </div>
+        <ul class="showcase-dialog-list" aria-live="polite"></ul>
+        <div class="showcase-dialog-foot"><span data-status>Memuat daftar…</span><button type="button" data-more hidden class="showcase-join">Tampilkan lebih banyak</button></div>
+      </div>`;
+    document.body.appendChild(dlg);
+    const list = dlg.querySelector('ul')!;
+    const input = dlg.querySelector('input')!;
+    const status = dlg.querySelector<HTMLElement>('[data-status]')!;
+    const more = dlg.querySelector<HTMLButtonElement>('[data-more]')!;
+    let all: ShowcaseServer[] = [];
+    let matches: ShowcaseServer[] = [];
+    let shown = 0;
+
+    const renderMore = () => {
+      const next = matches.slice(shown, shown + PAGE);
+      next.forEach((s) => list.appendChild(card(s, true)));
+      shown += next.length;
+      more.hidden = shown >= matches.length;
+      status.textContent = matches.length
+        ? `Menampilkan ${shown} dari ${matches.length} server`
+        : 'Tidak ada server dengan nama itu.';
+    };
+    const refilter = () => {
+      list.replaceChildren();
+      matches = all.filter((s) => matchesQuery(s.n, input.value));
+      shown = 0;
+      renderMore();
+    };
+
+    dlg.addEventListener('close', () => { dlg.remove(); trigger.focus(); });
+    dlg.querySelector('[data-close]')!.addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    more.addEventListener('click', renderMore);
+    let t: number | undefined;
+    input.addEventListener('input', () => { window.clearTimeout(t); t = window.setTimeout(refilter, 150); });
+
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+    all = await loadAll(root.dataset.listUrl || '');
+    all = [...all].sort((a, b) => (a.v ? 0 : 1) - (b.v ? 0 : 1) || b.m - a.m || a.n.localeCompare(b.n, 'id'));
+    if (!all.length) { status.textContent = 'Daftar server belum bisa dimuat. Coba lagi nanti.'; return; }
+    refilter();
+    input.focus();
+  }
+
+  function init(root: HTMLElement) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const lanes = Array.from(root.querySelectorAll<HTMLElement>('.showcase-lane'));
+    lanes.forEach((lane) => { const track = lane.querySelector<HTMLElement>('.showcase-track'); if (track) shuffle(track); });
+
+    const pauseBtn = root.querySelector<HTMLButtonElement>('[data-showcase-pause]');
+    const pauseLabel = root.querySelector<HTMLElement>('[data-showcase-pause-label]');
+
+    if (root.dataset.layout === 'marquee' && !reduce.matches) {
+      let widest = 0;
+      lanes.forEach((lane) => {
+        const track = lane.querySelector<HTMLElement>('.showcase-track');
+        if (!track) return;
+        widest = Math.max(widest, track.scrollWidth);
+        const clone = track.cloneNode(true) as HTMLElement;
+        clone.setAttribute('aria-hidden', 'true');
+        clone.setAttribute('inert', '');
+        clone.querySelectorAll('a').forEach((a) => a.setAttribute('tabindex', '-1'));
+        lane.appendChild(clone);
+      });
+      root.style.setProperty('--dur', `${Math.max(30, Math.round(widest / SPEED_PX_S))}s`);
+      root.classList.add('is-animated');
+      if (pauseBtn) {
+        pauseBtn.hidden = false;
+        pauseBtn.addEventListener('click', () => {
+          const paused = root.classList.toggle('is-paused');
+          pauseBtn.setAttribute('aria-pressed', String(paused));
+          if (pauseLabel) pauseLabel.textContent = paused ? 'Lanjutkan gerakan' : 'Jeda gerakan';
+        });
+      }
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver((entries) => {
+          root.classList.toggle('is-offscreen', !entries.some((e) => e.isIntersecting));
+        }).observe(root);
+      }
+    }
+
+    root.querySelector<HTMLButtonElement>('[data-showcase-all]')?.addEventListener('click', (e) => {
+      void openAll(root, e.currentTarget as HTMLElement);
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-showcase]').forEach(init);
+</script>

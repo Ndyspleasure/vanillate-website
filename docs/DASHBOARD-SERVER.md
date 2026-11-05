@@ -218,6 +218,16 @@ penyaring akun dilakukan bot. Tes: `tests/topgg-webhook.test.ts`.
 
 URL untuk dashboard Top.gg: `https://<project>.supabase.co/functions/v1/topgg-webhook`.
 
+### 5a-2. 🌐 Tampil di website (Showcase Server)
+
+Kartu di atas tab Share Server. Bawaannya server tampil di daftar server pengguna
+di vanillate.id; admin bisa mematikan, memasukkan link undangan manual, meminta bot
+membuat link otomatis, menghapus, atau cek ulang. Lewat permintaan `save` dengan kunci
+`showcase*` (tanpa RPC baru), tetap jalan walau Share Server belum dibuka. Status
+dan teks penjelasan dari bot (`share_guild_state.data.showcase`): `NSFW` dan
+`REVIEW` mengunci toggle dengan penjelasan, "buat link otomatis" terkunci dengan
+`lockedNote` bila bot tak punya izin Create Invite. Acuan: `docs/SHOWCASE-SERVER.md`.
+
 ## 5b. Setelan bertipe, role, & fitur manajemen server (✅ Verification)
 
 Selain game dan sosial, registry bot kini memuat bagian **manajemen server**

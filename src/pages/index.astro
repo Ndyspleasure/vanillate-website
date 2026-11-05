@@ -4,6 +4,9 @@ import Button from '@components/Button.astro';
 import BotCard from '@components/BotCard.astro';
 import Vani from '@components/mascot/Vani.astro';
 import LiveGameCounter from '@components/LiveGameCounter.astro';
+import ServerShowcase from '@components/ServerShowcase.astro';
+import { getShowcase, sampleSeed } from '@/lib/showcase';
+import { pickSample } from '@/lib/showcase-model';
 import { bots, VANILLATE_PRODUCT } from '@data/bots';
 import { homeStats, site } from '@data/site';
 import { pageContent, type Pair } from '@data/pages';
@@ -18,6 +21,10 @@ const c = pageContent('home');
 // terpasang di banyak produk.
 const featured = bots.find((b) => b.slug === VANILLATE_PRODUCT);
 const hasProducts = Boolean(featured);
+
+// Daftar server pemakai Vanillate.ID (marquee). Kosong = seksi tersembunyi.
+const showcase = await getShowcase();
+const showcaseSample = pickSample(showcase.servers, 36, sampleSeed());
 
 function formatNum(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -157,6 +164,15 @@ const principles = (c.principles as Pair[]).map((p, i) => ({
       </div>
     </div>
   </section>
+
+  <ServerShowcase
+    variant="compact"
+    servers={showcaseSample}
+    total={showcase.servers.length}
+    eyebrow="Komunitas"
+    heading="Ribuan server menggunakan dan merasakan manfaat komunitas Vanillate"
+    intro="Mereka memakai Vanillate.ID untuk game dan fitur sosial di komunitasnya."
+  />
 
   <!-- CTA -->
   <section class="container-page pb-24">

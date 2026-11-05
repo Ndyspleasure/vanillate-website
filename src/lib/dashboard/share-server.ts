@@ -12,15 +12,20 @@ import { channelOptions, describeError, CHANNEL_TYPE, type Snapshot } from './mo
 import {
   AUDIT_LABEL,
   buildSavePayload,
+  buildShowcasePayload,
   formatDuration,
   INCIDENT_LABEL,
   isStale,
   pendingRequest,
   REQUEST_LABEL,
+  SHOWCASE_STATUS_META,
+  showcaseLocked,
+  showcaseOf,
   STATUS_META,
   type ShareDashboard,
   type ShareDraft,
   type ShareState,
+  type ShowcaseAction,
 } from './share-model';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, icon, pill, spinner, toast } from './ui';
 
@@ -136,6 +141,57 @@ export function createShareController(guildId: string, rerender: () => void, roo
       <option value="">${esc(placeholder)}</option>
       ${opts.map((o) => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>#${esc(o.name)}${o.category ? ` (${esc(o.category)})` : ''}</option>`).join('')}
     </select>`;
+  }
+
+  // ─── 🌐 Tampil di website (Showcase Server) ───────────────────────────────
+  // Berdiri sendiri dari Share Server: tampil di sini walau Share Server belum
+  // pernah diatur atau belum dibuka. Status & teks penjelasan dari bot.
+
+  const INVITE_LINK = /^https:\/\/discord\.gg\/[A-Za-z0-9-]{2,32}$/;
+
+  function showcaseCard(s: ShareState | null): string {
+    const { sc, known } = showcaseOf(s);
+    const meta = SHOWCASE_STATUS_META[sc.status];
+    const locked = showcaseLocked(sc);
+    const dis = busy || Boolean(pendingRequest(dash?.requests)) || !dash?.bot_online;
+    const inv = sc.invite;
+    const linkOk = inv.url && INVITE_LINK.test(inv.url);
+    const autoDis = dis || !sc.autoInvite.possible;
+    return `
+      <div class="${CARD} p-5" data-showcase-card>
+        <div class="flex flex-wrap items-center gap-3">
+          <h2 class="flex items-center gap-2 font-display text-lg font-semibold">${icon('globe', 'h-5 w-5 text-amber-600')} Tampil di website</h2>
+          ${pill(meta.label, meta.tone)}
+        </div>
+        <p class="mt-2 text-sm text-ink-600 dark:text-cream-300">Bawaannya, server ini tampil di daftar server pengguna Vanillate.ID di vanillate.id (beranda dan halaman produk), dan halaman itu dapat ditemukan lewat mesin pencarian. Yang tampil hanya nama server, ikon, dan perkiraan jumlah member. Matikan kapan saja bila tidak ingin tampil.</p>
+        <p class="mt-3 text-sm text-ink-700 dark:text-cream-200">${esc(sc.statusText)}${sc.status === 'REVIEW' ? ' <a class="underline" href="/support">Buka Pusat Bantuan</a>.' : ''}</p>
+        ${known ? '' : '<p class="mt-2 text-xs text-ink-500">Status rinci belum diterbitkan bot. Segarkan halaman ini beberapa saat lagi.</p>'}
+        ${locked ? `<div class="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">${icon('lock', 'mr-1 inline h-4 w-4')} Pengaturan ini terkunci selama status di atas berlaku, karena ditentukan di luar pilihan admin server.</div>` : ''}
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button type="button" data-share-action="showcase_toggle" class="${sc.enabled ? BTN_SECONDARY : BTN_PRIMARY}" ${dis || locked ? 'disabled' : ''}>${sc.enabled ? 'Matikan tampilan' : 'Nyalakan tampilan'}</button>
+          <span class="text-xs text-ink-500">Perubahan masuk ke daftar dalam beberapa menit. Halaman website dibangun ulang tiap hari, jadi server bisa masih terlihat sampai satu hari setelah dimatikan.</span>
+        </div>
+
+        <form data-share-form data-showcase-form class="mt-6 space-y-3 border-t border-ink-900/10 pt-5 dark:border-cream-100/10" novalidate>
+          <h3 class="text-sm font-semibold">Tombol Gabung (opsional)</h3>
+          <p class="text-xs text-ink-500">Tanpa link, server tetap tampil tanpa tombol Gabung. Link yang kedaluwarsa atau dihapus diganti bot dengan link permanen baru selama tampilan menyala. Bot memeriksa link sekali sehari.</p>
+          ${inv.url ? `<p class="text-sm">Link saat ini: ${linkOk ? `<a class="underline break-all" href="${esc(inv.url)}" target="_blank" rel="nofollow noopener noreferrer">${esc(inv.url)}</a>` : esc(inv.url)}
+            ${pill(inv.status === 'ACTIVE' ? 'Terverifikasi' : 'Perlu diperbarui', inv.status === 'ACTIVE' ? 'success' : 'warning')}
+            <span class="text-xs text-ink-500">${inv.method === 'auto' ? 'dibuat bot' : 'dimasukkan admin'}${inv.checkedAt ? ` · dicek ${esc(fmtTime(inv.checkedAt))}` : ''}</span></p>` : '<p class="text-sm text-ink-500">Belum ada link undangan.</p>'}
+          ${inv.status === 'NEEDS_UPDATE' && inv.note ? `<div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">${esc(inv.note)}</div>` : ''}
+          <div class="flex flex-wrap items-start gap-2">
+            <input type="url" data-share-field="showcaseInviteUrl" data-focus="showcase-inviteUrl" placeholder="https://discord.gg/kodekamu" value="${esc(draft.showcaseInviteUrl ?? '')}" class="${SELECT} min-w-[16rem] flex-1" />
+            <button type="submit" class="${BTN_PRIMARY}" ${dis ? 'disabled' : ''}>Simpan link</button>
+          </div>
+          <span class="block text-xs text-ink-500">Hanya https://discord.gg/… atau https://discord.com/invite/…, permanen, mengarah ke server ini.</span>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-share-action="showcase_invite_auto" class="${BTN_SECONDARY}" ${autoDis ? 'disabled' : ''}>Buat link otomatis${sc.autoInvite.possible && sc.autoInvite.channelName ? ` di #${esc(sc.autoInvite.channelName)}` : ''}</button>
+            ${inv.url ? `<button type="button" data-share-action="showcase_recheck" class="${BTN_SECONDARY}" ${dis ? 'disabled' : ''}>${icon('refresh-cw')} Cek ulang link</button>
+            <button type="button" data-share-action="showcase_invite_clear" class="${BTN_SECONDARY}" ${dis ? 'disabled' : ''}>Hapus link</button>` : ''}
+          </div>
+          ${!sc.autoInvite.possible && sc.autoInvite.lockedNote ? `<div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">${icon('lock', 'mr-1 inline h-4 w-4')} ${esc(sc.autoInvite.lockedNote)}</div>` : ''}
+        </form>
+      </div>`;
   }
 
   function statusCard(s: ShareState): string {
@@ -258,10 +314,10 @@ export function createShareController(guildId: string, rerender: () => void, roo
       s && !s.feature ? 'Share Server belum dibuka oleh Tim Vanillate. Pengaturan bisa disiapkan lebih dulu.' : null,
     ].filter(Boolean).map((w) => `<p class="mt-3 rounded-xl bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-300">${esc(w!)}</p>`).join('');
     if (!s) {
-      return `${intro}${warn}<div class="${CARD} mt-6 p-6 text-sm">Server ini belum pernah mengatur Share Server. ${dash?.bot_online ? 'Isi pengaturan di bawah untuk memulai.' : ''}</div>
+      return `<div class="mb-6">${showcaseCard(null)}</div>${intro}${warn}<div class="${CARD} mt-6 p-6 text-sm">Server ini belum pernah mengatur Share Server. ${dash?.bot_online ? 'Isi pengaturan di bawah untuk memulai.' : ''}</div>
         ${emptyForm(snapshot)}`;
     }
-    return `${intro}${warn}<div class="mt-6">${statusCard(s)}</div>${formHtml(s, snapshot)}${historyHtml(s)}`;
+    return `<div class="mb-6">${showcaseCard(s)}</div>${intro}${warn}<div class="mt-6">${statusCard(s)}</div>${formHtml(s, snapshot)}${historyHtml(s)}`;
   }
 
   function emptyForm(snapshot: Snapshot | null): string {
@@ -288,6 +344,16 @@ export function createShareController(guildId: string, rerender: () => void, roo
     onClick(btn) {
       const a = btn.dataset.shareAction;
       if (!a) return false;
+      if (a.startsWith('showcase_')) {
+        const action = a.slice('showcase_'.length) as ShowcaseAction;
+        const { sc } = showcaseOf(st());
+        if (action === 'toggle' && sc.enabled && !confirm('Matikan tampilan di website? Server ini hilang dari daftar server pengguna Vanillate.ID pada pembaruan berikutnya.')) return true;
+        if (action === 'invite_clear' && !confirm('Hapus link undangan? Server tetap tampil, tetapi tanpa tombol Gabung.')) return true;
+        const { payload, error: err } = buildShowcasePayload(action, sc, draft);
+        if (err) { toast(err, 'danger'); return true; }
+        void send('save', payload);
+        return true;
+      }
       if (a === 'deactivate' && !confirm('Nonaktifkan Share Server? Server ini berhenti menerima iklan & keluar dari antrean. Profil & link tetap tersimpan.')) return true;
       void send(a);
       return true;
@@ -306,6 +372,11 @@ export function createShareController(guildId: string, rerender: () => void, roo
     },
     onSubmit(form) {
       if (!form.matches('[data-share-form]')) return false;
+      if (form.matches('[data-showcase-form]')) {
+        const { payload, error: err } = buildShowcasePayload('invite_save', showcaseOf(st()).sc, draft);
+        if (err) toast(err, 'danger'); else void send('save', payload);
+        return true;
+      }
       const { payload, errors } = buildSavePayload(draft, st()?.config ?? null, st()?.rules.DESCRIPTION_MAX ?? 200);
       if (errors.length) { toast(errors[0], 'danger'); return true; }
       if (!Object.keys(payload).length) { toast('Tidak ada yang berubah.', 'info'); return true; }
