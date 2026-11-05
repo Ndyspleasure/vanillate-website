@@ -16,6 +16,7 @@ Sisi bot: repo `sambung-kata-bot`, `docs/showcase-server.md`.
   manfaat komunitas Vanillate") supaya tidak perlu diubah saat jumlah bertambah.
 - Server yang ditinjau tim disembunyikan di `/admin/showcase`. Dashboard admin
   server hanya menampilkan teks netral, alasan dan catatan tidak pernah keluar CMS.
+- Tombol Gabung (jalan tengah): link admin, lalu vanity URL, lalu link otomatis hanya untuk server Discovery. Link admin yang valid tidak pernah diganti, menghapus link berarti tanpa tombol Gabung. Rinciannya di repo bot `docs/showcase-server.md` §7.
 - Bot keluar dari server: data tampil dihapus bot, server hilang dari daftar pada
   penerbitan berikutnya (daftar diganti utuh, bukan ditambah).
 - Teks pengguna tanpa tanda pisah. Semua teks dari Discord di-escape (Astro

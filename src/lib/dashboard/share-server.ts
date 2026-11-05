@@ -22,6 +22,7 @@ import {
   showcaseLocked,
   showcaseOf,
   STATUS_META,
+  INVITE_SOURCE_LABEL,
   type ShareDashboard,
   type ShareDraft,
   type ShareState,
@@ -174,10 +175,12 @@ export function createShareController(guildId: string, rerender: () => void, roo
 
         <form data-share-form data-showcase-form class="mt-6 space-y-3 border-t border-ink-900/10 pt-5 dark:border-cream-100/10" novalidate>
           <h3 class="text-sm font-semibold">Tombol Gabung (opsional)</h3>
-          <p class="text-xs text-ink-500">Tanpa link, server tetap tampil tanpa tombol Gabung. Link yang kedaluwarsa atau dihapus diganti bot dengan link permanen baru selama tampilan menyala. Bot memeriksa link sekali sehari.</p>
+          <p class="text-xs text-ink-500">Tanpa link, server tetap tampil tanpa tombol Gabung. Server yang punya vanity URL atau terdaftar di Discord Discovery mendapat tombol Gabung otomatis. Link yang kedaluwarsa atau terhapus di Discord diganti bot dengan link permanen baru, tetapi link yang masih berlaku tidak pernah diganti. Bot memantau link dan memeriksanya berkala.</p>
+          ${inv.paused ? `<div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">${icon('lock', 'mr-1 inline h-4 w-4')} Undangan server sedang dijeda di pengaturan Discord, jadi tombol Gabung tidak tampil.</div>` : ''}
+          ${!inv.url && inv.optedOut ? '<p class="text-xs text-ink-500">Kamu menghapus link sebelumnya, jadi bot tidak membuat link otomatis. Pasang link baru atau buat otomatis untuk menampilkan tombol Gabung lagi.</p>' : ''}
           ${inv.url ? `<p class="text-sm">Link saat ini: ${linkOk ? `<a class="underline break-all" href="${esc(inv.url)}" target="_blank" rel="nofollow noopener noreferrer">${esc(inv.url)}</a>` : esc(inv.url)}
             ${pill(inv.status === 'ACTIVE' ? 'Terverifikasi' : 'Perlu diperbarui', inv.status === 'ACTIVE' ? 'success' : 'warning')}
-            <span class="text-xs text-ink-500">${inv.method === 'auto' ? 'dibuat bot' : 'dimasukkan admin'}${inv.checkedAt ? ` · dicek ${esc(fmtTime(inv.checkedAt))}` : ''}</span></p>` : '<p class="text-sm text-ink-500">Belum ada link undangan.</p>'}
+            <span class="text-xs text-ink-500">${esc(inv.method ? INVITE_SOURCE_LABEL[inv.method] ?? '' : '')}${inv.checkedAt ? ` · dicek ${esc(fmtTime(inv.checkedAt))}` : ''}</span></p>` : '<p class="text-sm text-ink-500">Belum ada link undangan.</p>'}
           ${inv.status === 'NEEDS_UPDATE' && inv.note ? `<div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">${esc(inv.note)}</div>` : ''}
           <div class="flex flex-wrap items-start gap-2">
             <input type="url" data-share-field="showcaseInviteUrl" data-focus="showcase-inviteUrl" placeholder="https://discord.gg/kodekamu" value="${esc(draft.showcaseInviteUrl ?? '')}" class="${SELECT} min-w-[16rem] flex-1" />
