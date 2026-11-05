@@ -248,6 +248,109 @@ export function previewHeader(
   return { title, footer, color: /^[0-9a-f]{6}$/i.test(hex) ? `#${hex}` : '#57F287' };
 }
 
+// ─── Kartu DM broadcast (cermin bot) ────────────────────────────────────────
+// Menyusun ulang kartu Components V2 persis seperti `buildBroadcastPayload`
+// (src/services/broadcastService.js), `card()` (src/utils/uiKitV2.js), dan
+// `buildServerPayload` (serverBroadcast.js) di repo bot: judul `### `, deskripsi
+// ≤ 3800, `🔗 url` untuk media link, catatan `-# `, footer baku hanya di kartu
+// terakhir, tombol di dalam kartu terakhir, dan pemangkasan total teks 4000.
+// Bila bot berubah, ubah di sini juga.
+
+export type CardPart =
+  | { kind: 'text'; md: string; footer?: boolean }
+  | { kind: 'separator' }
+  | { kind: 'image'; url: string }
+  | { kind: 'buttons'; labels: string[] };
+
+export interface BroadcastCard { accent: string; parts: CardPart[] }
+
+const TOTAL_TEXT = 4000;
+const NUM_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
+const FOOTER_MD = '-# Made by Vanillate | https://vanillate.id/dashboard';
+
+function clampText(s: string, max: number): string {
+  return s.length <= max ? s : max <= 1 ? s.slice(0, max) : `${s.slice(0, max - 1)}…`;
+}
+
+const small = (s: string): string => s.split('\n').filter((l) => l.trim() !== '').map((l) => `-# ${l}`).join('\n');
+
+export function broadcastCards(
+  d: BroadcastDraft,
+  { emergency = false, server = false }: { emergency?: boolean; server?: boolean } = {},
+): BroadcastCard[] {
+  const h = previewHeader(d, { emergency, server });
+  const media = mediaKind(d.mediaUrl);
+  const hasPoll = Boolean(d.poll);
+  const message = (d.message || 'Isi pesan…').slice(0, 3800);
+  const description = media === 'link' ? `${message}\n\n🔗 ${String(d.mediaUrl).trim()}` : message;
+
+  const buttons = ['🔗 Discord Server', '🌐 Website', '💬 Chat dengan Agent'];
+  if (d.customLabel && d.customUrl) buttons.push(`📝 ${d.customLabel.slice(0, 80)}`);
+  if (!emergency && !server) buttons.push('🔕 Berhenti terima DM');
+
+  const parts: CardPart[] = [];
+  const head: string[] = [];
+  if (h.title) head.push(`### ${h.title.slice(0, 256)}`);
+  head.push(description);
+  for (const md of head) parts.push({ kind: 'text', md: md.trim() || '​' });
+  if (server) {
+    parts.push({ kind: 'separator' });
+    parts.push({
+      kind: 'text',
+      md: '**Kenapa saya menerima pesan ini?**\nKamu menerima pesan ini sebagai **owner/admin** server yang memakai Vanillate.ID: (nama server tiap penerima).\n'
+        + 'Tidak ingin menerima info server lagi? Tekan **🔕 Berhenti Info Server** di bawah.',
+    });
+  }
+  if (media === 'image') parts.push({ kind: 'image', url: String(d.mediaUrl).trim() });
+  const rowButtons = [...buttons];
+  if (server) rowButtons.push('🔕 Berhenti Info Server');
+  parts.push({ kind: 'buttons', labels: rowButtons });
+  const note = server ? 'Info khusus owner/admin server'
+    : emergency ? 'Info darurat — dikirim ke semua pemain, termasuk yang menonaktifkan DM'
+      : 'Pesan resmi dari tim';
+  parts.push({ kind: 'separator' });
+  parts.push({ kind: 'text', md: small(note) });
+  if (!hasPoll) parts.push({ kind: 'text', md: FOOTER_MD, footer: true });
+  const cards: BroadcastCard[] = [{ accent: h.color, parts }];
+
+  if (d.poll) {
+    const opts = d.poll.options.slice(0, 5);
+    const jam = Number(d.poll.durationHours);
+    const deadline = jam > 0 ? `Voting ditutup dalam ${jam} jam setelah dikirim` : 'Voting terbatas waktu';
+    cards.push({
+      accent: '#FEE75C',
+      parts: [
+        { kind: 'text', md: '### 📊 Polling' },
+        {
+          kind: 'text',
+          md: `**${d.poll.question || 'Pertanyaan polling'}**\n\n${opts.map((o, i) => `${NUM_EMOJI[i]} ${o}`).join('\n')}\n\n${deadline}\n`
+            + '_Tekan tombol di bawah untuk memilih. Kamu bisa mengubah pilihan selama polling masih aktif._',
+        },
+        { kind: 'buttons', labels: opts.map((o, i) => `${NUM_EMOJI[i]} ${o}`) },
+        { kind: 'separator' },
+        { kind: 'text', md: small('Polling') },
+        { kind: 'text', md: FOOTER_MD, footer: true },
+      ],
+    });
+  }
+
+  // Sama dengan fitTextBudget bot: pangkas teks terpanjang (bukan footer) sampai ≤ 4000.
+  const texts = cards.flatMap((c) => c.parts).filter((p): p is Extract<CardPart, { kind: 'text' }> => p.kind === 'text');
+  const clampable = texts.filter((t) => !t.footer);
+  let over = texts.reduce((a, t) => a + t.md.length, 0) - TOTAL_TEXT;
+  while (over > 0 && clampable.length) {
+    clampable.sort((a, b) => b.md.length - a.md.length);
+    const t = clampable[0];
+    const len = t.md.length;
+    if (len <= 1) break;
+    t.md = clampText(t.md, Math.max(1, len - over));
+    const cut = len - t.md.length;
+    if (cut <= 0) break;
+    over -= cut;
+  }
+  return cards;
+}
+
 /** Perkiraan durasi broadcast (jeda antar-DM × penerima). */
 export function estimateMinutes(recipients: number, delayMs: number): number {
   return Math.round(((recipients * delayMs) / 60000) * 10) / 10;

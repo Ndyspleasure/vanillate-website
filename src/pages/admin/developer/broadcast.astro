@@ -28,7 +28,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { esc } from '@/lib/admin-ui';
   import { fmtWaktu, fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot, bacaPerintah, kirimPerintah, riwayatPerintah } from '@/lib/dev-panel/client';
-  import { describeMedia, estimateMinutes, isFinal, mediaHint, mediaKind, parsePollOptions, previewHeader, validateBroadcast, type BroadcastDraft } from '@/lib/dev-panel/model';
+  import { describeMedia, estimateMinutes, isFinal, mediaHint, mediaKind, parsePollOptions, broadcastCards, validateBroadcast, type BroadcastDraft } from '@/lib/dev-panel/model';
+  import { discordMarkdownHtml } from '@/lib/dev-panel/discord-md';
   import { fieldHtml, notice, pill, progressBar, section, statusTone, table, KELAS } from '@/lib/dev-panel/ui';
 
   let role = 'viewer';
@@ -149,30 +150,18 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   }
 
   function renderPreview(d: BroadcastDraft, emergency: boolean, server: boolean) {
-    const h = previewHeader(d, { emergency, server });
-    const media = mediaKind(d.mediaUrl);
-    const tombol = ['🔗 Discord Server', '🌐 Website', '💬 Chat dengan Agent'];
-    if (d.customLabel && d.customUrl) tombol.push(`📝 ${d.customLabel}`);
-    if (!emergency && !server) tombol.push('🔕 Berhenti terima DM');
-    if (server) tombol.push('🔕 Berhenti Info Server');
-    const poll = d.poll ? `<div class="mt-3 rounded-lg border-l-4 border-sky-500 bg-ink-900/40 p-3">
-        <p class="text-sm font-semibold">📊 ${esc(d.poll.question || 'Pertanyaan polling')}</p>
-        <div class="mt-2 flex flex-wrap gap-2">${d.poll.options.map((o) => `<span class="rounded bg-ink-700 px-2 py-1 text-xs">${esc(o)}</span>`).join('')}</div>
-        <p class="mt-2 text-[0.7rem] text-cream-300/60">Berakhir ${esc(d.poll.durationHours || '?')} jam setelah dikirim</p>
-      </div>` : '';
+    const kartu = broadcastCards(d, { emergency, server });
+    const cardsHtml = kartu.map((c) => `
+      <div class="rounded-lg bg-[#2b2d31] p-3" style="border-left:4px solid ${esc(c.accent)}">
+        ${c.parts.map((p) => {
+          if (p.kind === 'separator') return '<hr class="my-2 border-white/10">';
+          if (p.kind === 'image') return `<img src="${esc(p.url)}" alt="" class="mt-2 max-h-48 rounded" data-bc-img />`;
+          if (p.kind === 'buttons') return `<div class="mt-2 flex flex-wrap gap-2">${p.labels.map((t) => `<span class="rounded bg-[#4e5058] px-3 py-1 text-xs">${esc(t)}</span>`).join('')}</div>`;
+          return `<div class="break-words">${discordMarkdownHtml(p.md)}</div>`;
+        }).join('')}
+      </div>`).join('<div class="h-2"></div>');
     document.getElementById('bc-preview')!.innerHTML = `
-      <div class="rounded-xl bg-[#313338] p-4 text-cream-50 text-sm">
-        ${media === 'link' ? `<p class="mb-2 text-sky-300 break-all">${esc(d.mediaUrl)}</p>` : ''}
-        <div class="rounded border-l-4 bg-[#2b2d31] p-3" style="border-color:${esc(h.color)}">
-          ${h.title ? `<p class="font-semibold">${esc(h.title)}</p>` : ''}
-          <p class="mt-1 whitespace-pre-line">${esc(d.message || 'Isi pesan…')}</p>
-          ${server ? `<p class="mt-2 text-xs font-semibold">📌 Kenapa saya menerima pesan ini?</p><p class="text-xs text-cream-300/70">Kamu owner/admin di <em>(nama server tiap penerima)</em>.</p>` : ''}
-          ${media === 'image' ? `<img src="${esc(d.mediaUrl)}" alt="" class="mt-2 max-h-48 rounded" data-bc-img />` : ''}
-          <p class="mt-2 text-[0.7rem] text-cream-300/60">${esc(h.footer)}</p>
-        </div>
-        ${poll}
-        <div class="mt-3 flex flex-wrap gap-2">${tombol.map((t) => `<span class="rounded bg-[#4e5058] px-3 py-1 text-xs">${esc(t)}</span>`).join('')}</div>
-      </div>`;
+      <div class="rounded-xl bg-[#313338] p-4 text-cream-50 text-sm">${cardsHtml}</div>`;
     // Gambar rusak tidak boleh hilang diam-diam: beri tahu admin sebelum kirim.
     const img = document.querySelector<HTMLImageElement>('#bc-preview [data-bc-img]');
     img?.addEventListener('error', () => {
