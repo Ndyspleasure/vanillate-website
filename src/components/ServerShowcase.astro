@@ -332,7 +332,12 @@ const count = countLabel(total);
 
     if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
     all = await loadAll(root.dataset.listUrl || '');
-    all = [...all].sort((a, b) => (a.v ? 0 : 1) - (b.v ? 0 : 1) || b.m - a.m || a.n.localeCompare(b.n, 'id'));
+    // Urutan acak tiap dibuka (bukan terbesar dulu), supaya server kecil juga terlihat.
+    all = [...all];
+    for (let i = all.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [all[i], all[j]] = [all[j], all[i]];
+    }
     if (!all.length) { status.textContent = 'Daftar server belum bisa dimuat. Coba lagi nanti.'; return; }
     refilter();
     input.focus();
