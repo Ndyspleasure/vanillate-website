@@ -1,5 +1,24 @@
 [
   {
+    "version": "3.45.0",
+    "date": "2026-11-06",
+    "title": "Developer bisa mematikan game dari CMS",
+    "highlights": [
+      "🎮 Tiap game kini bisa dinyalakan atau dimatikan sementara oleh developer, game yang dimatikan hilang dari Game Hub",
+      "🛠️ Peningkatan stabilitas: bot jauh lebih hemat pemakaian data ke database",
+      "🔒 Admin server melihat penjelasan di dashboard bila sebuah game sedang dinonaktifkan"
+    ]
+  },
+  {
+    "version": "3.44.4",
+    "date": "2026-11-06",
+    "title": "Bot lebih hemat data dan lebih stabil",
+    "highlights": [
+      "🛠️ Peningkatan stabilitas: bot kini jauh lebih hemat pemakaian data ke database",
+      "📢 Status bot di panel admin lebih akurat saat mode hemat menyala"
+    ]
+  },
+  {
     "version": "3.44.3",
     "date": "2026-11-05",
     "title": "Bot lebih hemat sumber daya",
