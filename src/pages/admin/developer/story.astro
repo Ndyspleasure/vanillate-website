@@ -142,6 +142,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const body = document.getElementById('st-body')!;
     if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data. Pastikan bot sudah memakai versi dengan Vanillate Story.'); return; }
     const t = s.data;
+    if (t.disabled) { body.innerHTML = stateBlock('empty', 'Game Vanillate Story sedang dinonaktifkan di Kontrol Bot. Bot tidak membaca data selama game mati.'); return; }
     const editor = role === 'owner' || role === 'admin';
 
     body.innerHTML = [

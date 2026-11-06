@@ -66,6 +66,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const body = document.getElementById('tb-body')!;
     if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data. Pastikan bot sudah memakai versi dengan Tahu Bulat.'); return; }
     const t = s.data;
+    if (t.disabled) { body.innerHTML = stateBlock('empty', 'Game Tahu Bulat sedang dinonaktifkan di Kontrol Bot. Bot tidak membaca data selama game mati.'); return; }
     const editor = role === 'owner' || role === 'admin';
 
     body.innerHTML = [

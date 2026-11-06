@@ -81,6 +81,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const body = document.getElementById('stat-body')!;
     if (!s.data) { body.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
     const w = s.data;
+    if (w.disabled) { body.innerHTML = stateBlock('empty', 'Game Sambung Kata sedang dinonaktifkan di Kontrol Bot. Statistik kata tidak dibaca selama game mati.'); return; }
     body.innerHTML = `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         ${stat('Kata di kamus', fmtAngka(w.totalWords))}
         ${stat('Pending', fmtAngka(w.totalPending))}
