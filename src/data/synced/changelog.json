@@ -1,5 +1,13 @@
 [
   {
+    "version": "3.44.3",
+    "date": "2026-11-05",
+    "title": "Bot lebih hemat sumber daya",
+    "highlights": [
+      "🛠️ Peningkatan stabilitas: bot kini lebih hemat sumber daya sehingga layanan lebih terjaga"
+    ]
+  },
+  {
     "version": "3.44.2",
     "date": "2026-11-05",
     "title": "Perbaikan stabilitas bot",
