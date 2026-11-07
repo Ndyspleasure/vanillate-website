@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.46.0",
+    "date": "2026-11-07",
+    "title": "Api streak berevolusi: 6 tier dengan emoji animasi baru",
+    "highlights": [
+      "🔥 Api streak harianmu kini berubah seiring lamanya streak: Amber, Crimson, Emerald, Azure, Phantom, sampai Eternal",
+      "✨ Tiap tier punya animasi sendiri, makin banyak partikel dan cahaya, dan Eternal (365 hari) paling spektakuler",
+      "🏆 Tier tampil di kartu Streak Tercatat, Streak Saya, papan peringkat, dan pengingat streak",
+      "🎉 Naik tier dirayakan di kartu Streak Tercatat pada hari pertama tier baru"
+    ]
+  },
+  {
     "version": "3.45.0",
     "date": "2026-11-06",
     "title": "Developer bisa mematikan game dari CMS",
