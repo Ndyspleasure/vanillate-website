@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.47.0",
+    "date": "2026-11-07",
+    "title": "Tombol Info Streak dan Api di kartu Streak Tercatat",
+    "highlights": [
+      "❓ Kartu Streak Tercatat kini punya tombol Info Streak dan Api untuk semua orang",
+      "🔥 Penjelasan singkat apa itu streak dan cara kerjanya",
+      "🛡️ Penjelasan pelindung streak: jatah mingguan dan kapan terpakai",
+      "✨ Daftar tahapan api dari Amber sampai Eternal beserta emojinya, dan api milikmu saat ini"
+    ]
+  },
+  {
     "version": "3.46.0",
     "date": "2026-11-07",
     "title": "Api streak berevolusi: 6 tier dengan emoji animasi baru",
