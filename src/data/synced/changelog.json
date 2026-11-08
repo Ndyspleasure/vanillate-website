@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.48.0",
+    "date": "2026-11-08",
+    "title": "Pulihkan streak dan hitungan dengan vote",
+    "highlights": [
+      "🩹 Streak Harian yang putus kini bisa dipulihkan dengan vote Top.gg. Pesanmu ditahan sampai vote masuk (maksimal 12 jam), lalu streak lanjut",
+      "🔢 Counting: hitungan besar yang baru direset bisa dikembalikan, cukup 1 vote dari siapa saja di server",
+      "⚙️ Admin server bisa mematikan pemulihan vote lewat Vanillate Dashboard",
+      "📢 Pengumuman update kini memanggil role Bot Update, bukan semua orang"
+    ]
+  },
+  {
     "version": "3.47.0",
     "date": "2026-11-07",
     "title": "Tombol Info Streak dan Api di kartu Streak Tercatat",
