@@ -48,7 +48,7 @@ test('semua halaman lama tetap ada dengan href yang sama', () => {
 
 test('jejak memberi jalur bertingkat sampai halaman aktif', () => {
   assert.deepEqual(jejak(adminMenu, 'kata').map((n) => n.label),
-    ['Discord Bot', 'Game Hub', 'Word Collection']);
+    ['Discord Bot', 'Game Hub', 'Konfigurasi', 'Word Collection']);
   assert.deepEqual(jejak(adminMenu, 'dev-server').map((n) => n.label),
     ['Discord Bot', 'Server Hub', 'Konfigurasi', 'Kontrol Server']);
   assert.deepEqual(jejak(adminMenu, 'dev-tutorial').map((n) => n.label),
@@ -58,8 +58,8 @@ test('jejak memberi jalur bertingkat sampai halaman aktif', () => {
   // Semua game setara di Game Hub, tanpa kategori utama atau sampingan.
   const hub = adminMenu.find((n) => n.key === 'grup-bot')!.items!.find((n) => n.key === 'bot-game-hub')!;
   assert.deepEqual(hub.items!.filter((n) => n.href).map((n) => n.key),
-    ['games', 'kata', 'lagu', 'dev-tahu', 'dev-story']);
-  assert.deepEqual(hub.items!.find((n) => n.items)!.items!.map((n) => n.key), ['dev-event']);
+    ['games', 'lagu', 'dev-tahu', 'dev-story']);
+  assert.deepEqual(hub.items!.find((n) => n.items)!.items!.map((n) => n.key), ['kata', 'dev-event']);
   assert.deepEqual(jejak(adminMenu, 'dev-event').map((n) => n.label),
     ['Discord Bot', 'Game Hub', 'Konfigurasi', 'Event System']);
   assert.deepEqual(jejak(adminMenu, 'ringkasan').map((n) => n.label), ['Ringkasan']);
