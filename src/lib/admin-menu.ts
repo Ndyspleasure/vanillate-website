@@ -78,28 +78,54 @@ export const adminMenu: MenuNode[] = [
       },
       {
         // Semua game setara di hub /game: tidak ada game utama atau sampingan.
+        // Fitur (data & aksi per game) dipisah dari konfigurasi (aturan global).
         key: 'bot-game-hub', label: 'Game Hub',
         items: [
-          { key: 'games', label: 'Monitor Game', href: '/admin/games' },
-          { key: 'kata', label: 'Word Collection', href: '/admin/kata' },
-          { key: 'lagu', label: 'Tebak Lagu', href: '/admin/lagu' },
-          { key: 'dev-tahu', label: 'Tahu Bulat', href: '/admin/developer/tahu-bulat' },
-          { key: 'dev-story', label: 'Vanillate Story', href: '/admin/developer/story' },
-          { key: 'dev-event', label: 'Event System', href: '/admin/developer/event' },
+          {
+            key: 'bot-game-fitur', label: 'Fitur',
+            items: [
+              { key: 'games', label: 'Monitor Game', href: '/admin/games' },
+              { key: 'kata', label: 'Word Collection', href: '/admin/kata' },
+              { key: 'lagu', label: 'Tebak Lagu', href: '/admin/lagu' },
+              { key: 'dev-tahu', label: 'Tahu Bulat', href: '/admin/developer/tahu-bulat' },
+              { key: 'dev-story', label: 'Vanillate Story', href: '/admin/developer/story' },
+            ],
+          },
+          {
+            key: 'bot-game-konfigurasi', label: 'Konfigurasi',
+            items: [
+              { key: 'dev-event', label: 'Event System', href: '/admin/developer/event' },
+            ],
+          },
         ],
       },
       {
         key: 'bot-sosial-hub', label: 'Sosial Hub',
         items: [
-          { key: 'dev-sosial', label: 'Social Monitor', href: '/admin/developer/sosial' },
-          { key: 'dev-share', label: 'Share Server', href: '/admin/developer/share-server' },
+          {
+            key: 'bot-sosial-fitur', label: 'Fitur',
+            items: [
+              { key: 'dev-sosial', label: 'Social Monitor', href: '/admin/developer/sosial' },
+              { key: 'dev-share', label: 'Share Server', href: '/admin/developer/share-server' },
+            ],
+          },
         ],
       },
       {
         key: 'bot-server-hub', label: 'Server Hub',
         items: [
-          { key: 'showcase', label: 'Showcase Server', href: '/admin/showcase' },
-          { key: 'dev-server', label: 'Kontrol Server', href: '/admin/developer/kontrol-server' },
+          {
+            key: 'bot-server-fitur', label: 'Fitur',
+            items: [
+              { key: 'showcase', label: 'Showcase Server', href: '/admin/showcase' },
+            ],
+          },
+          {
+            key: 'bot-server-konfigurasi', label: 'Konfigurasi',
+            items: [
+              { key: 'dev-server', label: 'Kontrol Server', href: '/admin/developer/kontrol-server' },
+            ],
+          },
         ],
       },
       {
