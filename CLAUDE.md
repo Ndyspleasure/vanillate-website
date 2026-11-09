@@ -9,6 +9,16 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
 
 ## Aturan utama
 
+- **Tujuan utama: hemat sumber daya database** (keputusan pemilik 2026-11-09).
+  Kuota Supabase (egress, log ingestion, jumlah query) adalah batas keras.
+  Setiap fitur baru dinilai dari biayanya: utamakan **baca sesuai permintaan**
+  (saat admin membuka halaman) daripada **dorong terus-menerus** (bot menerbitkan
+  snapshot tiap 10 sampai 30 detik walau tidak ada yang melihat); kembalikan
+  agregat (`COUNT`, `SUM`, `GROUP BY`), bukan baris mentah; cache hasilnya; beri
+  interval lambat dan batas ukuran; jangan menambah polling. Fitur baru dan
+  perluasan fitur diizinkan, selama biaya sumber dayanya dipikirkan dan
+  dicatat di deskripsi PR. Acuan masalah kuota: `claudereport.md` bot (HO-031,
+  BUG-018).
 - **Browser hanya memakai anon key + JWT admin.** Token bot, `service_role`
   key, dan kredensial database **tidak pernah** masuk ke kode website.
 - **Setelan terkunci wajib dijelaskan.** Opsi atau fitur dashboard dengan
@@ -57,6 +67,18 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
   `0013_share_server.sql`); `supabase/guild-dashboard-schema.sql` &
   `share-server.sql` di sini adalah salinan lama proyek CMS (rollback) dan
   dihapus bersama tabelnya setelah ≥ 7 hari stabil.
+- **Pengecualian kedua (keputusan pemilik 2026-11-09): halaman CMS admin boleh
+  membaca Database Bot** untuk data Game Hub, Sosial Hub, dan Server Hub bila
+  itu lebih hemat daripada snapshot dorong dari bot. Ini melonggarkan larangan
+  "website tidak boleh membaca tabel pemain/gameplay" di atas. Syarat yang tetap
+  berlaku: (1) **hanya baca**; aksi ke bot tetap lewat `bot_commands`;
+  (2) lewat jalur terjaga, yaitu RPC `SECURITY DEFINER` atau Edge Function yang
+  memeriksa peran admin CMS, jangan membuka tabel dengan policy RLS publik;
+  (3) **agregat**, bukan baris pemain; nama, Discord ID, dan isi tulisan tidak
+  ditampilkan kecuali halaman Pemain untuk dukungan; (4) **`service_role` dan
+  `DATABASE_URL` tetap TIDAK PERNAH di browser atau kode website**, hanya boleh
+  menjadi secret Edge Function di sisi server. Tulis rancangan dan perkiraan
+  biayanya di `docs/` sebelum membangun.
 - Versi & changelog bot **read-only** di sini (SSoT `version.json` /
   `CHANGELOG.json` di repo bot).
 
