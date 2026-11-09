@@ -101,6 +101,14 @@ done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/social-kata-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL retensi Pemantau Kata-Kata lulus."
 
+# Suite retensi statistik: ringkasan bot_stats per jam (prasyarat tabel →
+# migrasi dua kali → tes). Tanpa pg_cron jadwal dilewati.
+for f in supabase/tests/bot-stats-rollup-prereq.sql supabase/bot-stats-rollup.sql supabase/bot-stats-rollup.sql; do
+  PGOPTIONS="-c client_min_messages=warning" run "${PSQL[@]}" -f "$ROOT/$f" >/dev/null
+done
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-stats-rollup.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL ringkasan statistik bot lulus."
+
 # Suite ketujuh: sakelar kartu Partnership di /game dan /sosial. Tesnya membuat
 # salinan minimal partnership_lobby, menjalankan migrasi dua kali (idempoten),
 # lalu rollback.
