@@ -48,9 +48,18 @@ test('semua halaman lama tetap ada dengan href yang sama', () => {
 
 test('jejak memberi jalur bertingkat sampai halaman aktif', () => {
   assert.deepEqual(jejak(adminMenu, 'kata').map((n) => n.label),
-    ['Discord Bot', 'Game', 'Sambung Kata', 'Word Collection']);
+    ['Discord Bot', 'Game Hub', 'Word Collection']);
+  assert.deepEqual(jejak(adminMenu, 'dev-server').map((n) => n.label),
+    ['Discord Bot', 'Server Hub', 'Kontrol Server']);
+  assert.deepEqual(jejak(adminMenu, 'dev-tutorial').map((n) => n.label),
+    ['Discord Bot', 'Pemain & Promosi', 'Tutorial']);
   assert.deepEqual(jejak(adminMenu, 'kontrol').map((n) => n.label),
     ['Discord Bot', 'Ringkasan & Kontrol', 'Kontrol Bot']);
+  // Semua game setara di Game Hub, tanpa kategori utama atau sampingan.
+  const hub = adminMenu.find((n) => n.key === 'grup-bot')!.items!.find((n) => n.key === 'bot-game-hub')!;
+  assert.deepEqual(hub.items!.map((n) => n.key).sort(),
+    ['dev-event', 'dev-story', 'dev-tahu', 'games', 'kata', 'lagu']);
+  assert.ok(hub.items!.every((n) => !n.items));
   assert.deepEqual(jejak(adminMenu, 'ringkasan').map((n) => n.label), ['Ringkasan']);
   assert.deepEqual(jejak(adminMenu, 'partnership').map((n) => n.key), ['grup-partnership']);
   assert.deepEqual(jejak(adminMenu, 'tidak-ada'), []);
@@ -60,6 +69,6 @@ test('jejak memberi jalur bertingkat sampai halaman aktif', () => {
 test('simpulAktif menandai seluruh leluhur', () => {
   const bot = adminMenu.find((n) => n.key === 'grup-bot')!;
   assert.ok(simpulAktif(bot, 'lagu'));
-  assert.ok(simpulAktif(bot.items![1], 'lagu'));
+  assert.ok(simpulAktif(bot.items!.find((n) => n.key === 'bot-game-hub')!, 'lagu'));
   assert.ok(!simpulAktif(bot.items![0], 'lagu'));
 });

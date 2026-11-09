@@ -73,28 +73,33 @@ export const adminMenu: MenuNode[] = [
         items: [
           { key: 'dev-home', label: 'Ringkasan & Sistem', href: '/admin/developer' },
           { key: 'kontrol', label: 'Kontrol Bot', href: '/admin/kontrol' },
-          { key: 'dev-server', label: 'Kontrol Server', href: '/admin/developer/kontrol-server' },
           { key: 'operasi', label: 'Operasi & Riwayat', href: '/admin/operasi' },
         ],
       },
       {
-        key: 'bot-game', label: 'Game',
+        // Semua game setara di hub /game: tidak ada game utama atau sampingan.
+        key: 'bot-game-hub', label: 'Game Hub',
         items: [
           { key: 'games', label: 'Monitor Game', href: '/admin/games' },
-          {
-            key: 'bot-game-sk', label: 'Sambung Kata',
-            items: [
-              { key: 'kata', label: 'Word Collection', href: '/admin/kata' },
-            ],
-          },
-          {
-            key: 'bot-game-sampingan', label: 'Game Sampingan',
-            items: [
-              { key: 'lagu', label: 'Tebak Lagu', href: '/admin/lagu' },
-              { key: 'dev-tahu', label: 'Tahu Bulat', href: '/admin/developer/tahu-bulat' },
-              { key: 'dev-story', label: 'Vanillate Story', href: '/admin/developer/story' },
-            ],
-          },
+          { key: 'kata', label: 'Word Collection', href: '/admin/kata' },
+          { key: 'lagu', label: 'Tebak Lagu', href: '/admin/lagu' },
+          { key: 'dev-tahu', label: 'Tahu Bulat', href: '/admin/developer/tahu-bulat' },
+          { key: 'dev-story', label: 'Vanillate Story', href: '/admin/developer/story' },
+          { key: 'dev-event', label: 'Event System', href: '/admin/developer/event' },
+        ],
+      },
+      {
+        key: 'bot-sosial-hub', label: 'Sosial Hub',
+        items: [
+          { key: 'dev-sosial', label: 'Social Monitor', href: '/admin/developer/sosial' },
+          { key: 'dev-share', label: 'Share Server', href: '/admin/developer/share-server' },
+        ],
+      },
+      {
+        key: 'bot-server-hub', label: 'Server Hub',
+        items: [
+          { key: 'showcase', label: 'Showcase Server', href: '/admin/showcase' },
+          { key: 'dev-server', label: 'Kontrol Server', href: '/admin/developer/kontrol-server' },
         ],
       },
       {
@@ -102,8 +107,6 @@ export const adminMenu: MenuNode[] = [
         items: [
           { key: 'pemain', label: 'Pemain', href: '/admin/pemain' },
           { key: 'promo', label: 'Promo', href: '/admin/promo' },
-          { key: 'dev-event', label: 'Event System', href: '/admin/developer/event' },
-          { key: 'dev-polling', label: 'Polling', href: '/admin/developer/polling' },
           { key: 'dev-tutorial', label: 'Tutorial', href: '/admin/developer/tutorial' },
         ],
       },
@@ -111,15 +114,8 @@ export const adminMenu: MenuNode[] = [
         key: 'bot-komunikasi', label: 'Komunikasi',
         items: [
           { key: 'dev-broadcast', label: 'Broadcast DM', href: '/admin/developer/broadcast' },
+          { key: 'dev-polling', label: 'Polling', href: '/admin/developer/polling' },
           { key: 'dev-campaign', label: 'DM Campaign', href: '/admin/developer/campaign' },
-        ],
-      },
-      {
-        key: 'bot-sosial', label: 'Sosial & Server',
-        items: [
-          { key: 'dev-sosial', label: 'Social Monitor', href: '/admin/developer/sosial' },
-          { key: 'dev-share', label: 'Share Server', href: '/admin/developer/share-server' },
-          { key: 'showcase', label: 'Showcase Server', href: '/admin/showcase' },
         ],
       },
       {
