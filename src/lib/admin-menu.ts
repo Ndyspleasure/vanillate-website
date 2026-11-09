@@ -114,6 +114,7 @@ export const adminMenu: MenuNode[] = [
           {
             key: 'bot-server-fitur', label: 'Fitur',
             items: [
+              { key: 'hub-server', label: 'Ringkasan Server Hub', href: '/admin/server-hub' },
               { key: 'showcase', label: 'Showcase Server', href: '/admin/showcase' },
             ],
           },

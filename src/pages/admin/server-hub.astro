@@ -1,0 +1,130 @@
+---
+// Server Hub (CMS): ringkasan pemakaian Verification, Leveling, Auto Role,
+// Welcome, dan Security Center di seluruh server. Dibaca SESUAI PERMINTAAN dari
+// Database Bot lewat Edge Function `cms-read` (tanpa snapshot dorong dari bot),
+// hanya angka agregat. Acuan: docs/CMS-BACA-DATABASE-BOT.md.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Server Hub" active="hub-server">
+  <AdminPageHeader
+    eyebrow="Discord Bot"
+    title="Server Hub"
+    description="Berapa server yang memakai Verification, Leveling, Auto Role, Welcome, dan Security Center, dan apa yang perlu diperhatikan. Data dihitung saat halaman dibuka, bukan dikirim terus-menerus oleh bot."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-10">
+    <div class="flex flex-wrap items-center gap-3">
+      <button id="sh-reload" type="button" class="rounded-xl border border-ink-900/10 dark:border-cream-100/10 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+        Muat ulang
+      </button>
+      <p id="sh-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
+    </div>
+    <div id="sh-body" class="space-y-10"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { bacaCms } from '@/lib/cms-read/client';
+  import { parseServerHub, perhatian, persen, type ServerHub } from '@/lib/cms-read/serverhub-model';
+  import { KELAS, fmtJam, notice, pill, section, stat } from '@/lib/dev-panel/ui';
+
+  const COOLDOWN_MUAT_MS = 15_000;
+  let terakhirMuat = 0;
+
+  document.addEventListener('admin:ready', () => {
+    void muat();
+    document.getElementById('sh-reload')?.addEventListener('click', () => {
+      if (Date.now() - terakhirMuat < COOLDOWN_MUAT_MS) {
+        document.getElementById('sh-info')!.textContent = 'Data baru saja dimuat. Tunggu beberapa detik sebelum memuat ulang.';
+        return;
+      }
+      void muat();
+    });
+  });
+
+  const n = (v: number) => fmtAngka(v);
+  const kartu = (judul: string, status: string, isi: string) =>
+    `<div class="${KELAS.kartu}"><div class="flex items-start justify-between gap-3"><h3 class="font-medium">${esc(judul)}</h3>${status}</div>${isi}</div>`;
+  const status = (on: number, konfigurasi: number) =>
+    on > 0 ? pill(`${n(on)} server aktif`, 'ok') : konfigurasi > 0 ? pill('dikonfigurasi, belum aktif', 'warn') : pill('belum dipakai', 'muted');
+
+  function render(h: ServerHub): string {
+    const p = perhatian(h);
+    const perlu = p.length
+      ? section('Perlu diperhatikan', `<div class="space-y-3">${p.map((x) => notice(x.tone, x.text)).join('')}</div>`)
+      : '';
+
+    const verif = kartu('Verification', status(h.verification.servers_on, h.verification.servers_configured), `
+      <div class="grid gap-4 sm:grid-cols-3 mt-4">
+        ${stat('Server dikonfigurasi', n(h.verification.servers_configured))}
+        ${stat('Member terverifikasi', n(h.verification.members_verified))}
+        ${stat('Setelan belum lengkap', n(h.verification.servers_incomplete), 'channel atau role belum dipilih')}
+      </div>`);
+
+    const lv = h.leveling;
+    const level = kartu('Leveling', status(lv.servers_on, lv.servers_configured), `
+      <div class="grid gap-4 sm:grid-cols-3 mt-4">
+        ${stat('Chat aktif', n(lv.chat_on), `${persen(lv.chat_on, lv.servers_on)}% dari server aktif`)}
+        ${stat('Voice aktif', n(lv.voice_on), `${persen(lv.voice_on, lv.servers_on)}% dari server aktif`)}
+        ${stat('Combined aktif', n(lv.combined_on))}
+        ${stat('Member punya XP', n(lv.users_tracked))}
+        ${stat('Role reward diatur', n(lv.rewards_total))}
+        ${stat('Tanpa channel naik level', n(lv.without_levelup_channel))}
+      </div>`);
+
+    const auto = kartu('Auto Role', status(h.autorole.servers_on, h.autorole.servers_configured), `
+      <div class="grid gap-4 sm:grid-cols-2 mt-4">
+        ${stat('Server dikonfigurasi', n(h.autorole.servers_configured))}
+        ${stat('Server aktif', n(h.autorole.servers_on))}
+      </div>`);
+
+    const wl = h.welcome;
+    const welcome = kartu('Welcome dan Goodbye', status(wl.servers_on, wl.servers_configured), `
+      <div class="grid gap-4 sm:grid-cols-3 mt-4">
+        ${stat('Server aktif', n(wl.servers_on))}
+        ${stat('Channel welcome diatur', n(wl.with_welcome_channel))}
+        ${stat('Channel goodbye diatur', n(wl.with_goodbye_channel))}
+      </div>`);
+
+    const sc = h.security;
+    const rinci = (m: Record<string, number>) =>
+      Object.keys(m).length
+        ? Object.entries(m).map(([k, v]) => `${k} ${n(v)}`).join(', ')
+        : 'belum ada';
+    const security = kartu('Security Center', status(sc.servers_on, sc.servers_configured), `
+      <div class="grid gap-4 sm:grid-cols-3 mt-4">
+        ${stat('Aksi tercatat', n(sc.actions_total), rinci(sc.by_action))}
+        ${stat('Status aksi', n(Object.values(sc.by_status).reduce((a, b) => a + b, 0)), rinci(sc.by_status))}
+        ${stat('Peringatan member kembali', n(sc.rejoin_alert_on), 'server dengan fitur ini aktif')}
+      </div>`);
+
+    return [
+      perlu,
+      section('Fitur server', `<div class="space-y-4">${verif}${level}${auto}${welcome}${security}</div>`,
+        'Angka agregat dari seluruh server. Tidak ada nama server, ID, atau isi pesan.'),
+    ].join('');
+  }
+
+  async function muat() {
+    const body = document.getElementById('sh-body')!;
+    const info = document.getElementById('sh-info')!;
+    body.innerHTML = stateBlock('loading', '');
+    info.textContent = '';
+    const r = await bacaCms('serverhub');
+    terakhirMuat = Date.now();
+    if (!r.ok) {
+      body.innerHTML = stateBlock('error', r.error);
+      return;
+    }
+    const h = parseServerHub(r.data);
+    if (!h) {
+      body.innerHTML = stateBlock('error', 'Data dari Database Bot tidak dikenali.');
+      return;
+    }
+    body.innerHTML = render(h);
+    info.textContent = `Dihitung ${fmtJam(h.generatedAt)}${r.cached ? ' (dari cache 1 menit)' : ''}.`;
+  }
+</script>
