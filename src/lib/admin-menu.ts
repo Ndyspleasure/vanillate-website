@@ -78,19 +78,15 @@ export const adminMenu: MenuNode[] = [
       },
       {
         // Semua game setara di hub /game: tidak ada game utama atau sampingan.
-        // Fitur (data & aksi per game) dipisah dari konfigurasi (aturan global).
+        // Halaman tiap game memuat fitur sekaligus konfigurasinya, jadi langsung
+        // di bawah Game Hub. Konfigurasi terpisah hanya untuk yang murni aturan.
         key: 'bot-game-hub', label: 'Game Hub',
         items: [
-          {
-            key: 'bot-game-fitur', label: 'Fitur',
-            items: [
-              { key: 'games', label: 'Monitor Game', href: '/admin/games' },
-              { key: 'kata', label: 'Word Collection', href: '/admin/kata' },
-              { key: 'lagu', label: 'Tebak Lagu', href: '/admin/lagu' },
-              { key: 'dev-tahu', label: 'Tahu Bulat', href: '/admin/developer/tahu-bulat' },
-              { key: 'dev-story', label: 'Vanillate Story', href: '/admin/developer/story' },
-            ],
-          },
+          { key: 'games', label: 'Monitor Game', href: '/admin/games' },
+          { key: 'kata', label: 'Word Collection', href: '/admin/kata' },
+          { key: 'lagu', label: 'Tebak Lagu', href: '/admin/lagu' },
+          { key: 'dev-tahu', label: 'Tahu Bulat', href: '/admin/developer/tahu-bulat' },
+          { key: 'dev-story', label: 'Vanillate Story', href: '/admin/developer/story' },
           {
             key: 'bot-game-konfigurasi', label: 'Konfigurasi',
             items: [
