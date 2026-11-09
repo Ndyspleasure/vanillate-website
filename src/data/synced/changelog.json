@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.48.1",
+    "date": "2026-11-09",
+    "title": "Bot lebih hemat sumber daya di balik layar",
+    "highlights": [
+      "🛠️ Pengiriman data ke panel admin kini hanya terjadi saat ada perubahan, sehingga bot lebih ringan dan stabil",
+      "⚡ Persiapan agar halaman admin membaca data sesuai permintaan, tanpa beban tambahan saat tidak dibuka"
+    ]
+  },
+  {
     "version": "3.48.0",
     "date": "2026-11-08",
     "title": "Pulihkan streak dan hitungan dengan vote",
