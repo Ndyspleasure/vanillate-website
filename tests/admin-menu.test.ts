@@ -74,3 +74,23 @@ test('simpulAktif menandai seluruh leluhur', () => {
   assert.ok(simpulAktif(bot.items!.find((n) => n.key === 'bot-game-hub')!, 'lagu'));
   assert.ok(!simpulAktif(bot.items![0], 'lagu'));
 });
+
+test('pencarian: indeks memuat semua halaman dengan jalur lengkap', async () => {
+  const { indeksPencarian } = await import('../src/lib/admin-menu.ts');
+  const indeks = indeksPencarian(adminMenu);
+  assert.equal(indeks.length, semuaHalaman(adminMenu).length);
+  const lagu = indeks.find((e) => e.node.key === 'lagu')!;
+  assert.deepEqual(lagu.jalur, ['Discord Bot', 'Game Hub', 'Tebak Lagu']);
+});
+
+test('pencarian: semua kata harus cocok, urutan bebas, tanpa beda huruf besar', async () => {
+  const { indeksPencarian, cocokPencarian } = await import('../src/lib/admin-menu.ts');
+  const cari = (q: string) => indeksPencarian(adminMenu).filter((e) => cocokPencarian(e.teks, q)).map((e) => e.node.key);
+  assert.ok(cari('TEBAK').includes('lagu'));
+  assert.ok(cari('game tebak').includes('lagu'));
+  assert.ok(cari('tebak game').includes('lagu'));
+  assert.ok(cari('workspace tugas').includes('ws-tasks'));
+  assert.ok(cari('/admin/pemain').includes('pemain'));
+  assert.deepEqual(cari('zzzxxx'), []);
+  assert.deepEqual(cari('   '), []);
+});

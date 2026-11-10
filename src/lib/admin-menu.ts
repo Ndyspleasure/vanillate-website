@@ -241,3 +241,37 @@ export function jejak(menu: MenuNode[], aktif?: string): MenuNode[] {
 export function semuaHalaman(menu: MenuNode[]): MenuNode[] {
   return menu.flatMap((n) => [...(n.href ? [n] : []), ...semuaHalaman(n.items ?? [])]);
 }
+
+export interface EntriPencarian {
+  node: MenuNode;
+  /** Label dari kategori teratas sampai halaman, mis. ["Discord Bot", "Game Hub", "Tebak Lagu"]. */
+  jalur: string[];
+  /** Teks yang dicocokkan: jalur lengkap + href, sudah dinormalkan. */
+  teks: string;
+}
+
+/** Huruf kecil, tanpa aksen, spasi tunggal. */
+export function normalisasi(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/** Daftar datar semua halaman beserta jalurnya, untuk kotak cari sidebar. */
+export function indeksPencarian(menu: MenuNode[], induk: string[] = []): EntriPencarian[] {
+  return menu.flatMap((n) => {
+    const jalur = [...induk, n.label];
+    const sendiri: EntriPencarian[] = n.href
+      ? [{ node: n, jalur, teks: normalisasi(`${jalur.join(' ')} ${n.href}`) }]
+      : [];
+    return [...sendiri, ...indeksPencarian(n.items ?? [], jalur)];
+  });
+}
+
+/**
+ * Cocok bila SEMUA kata di `kueri` ada di `teks` (urutan bebas), jadi
+ * "game tebak" menemukan Discord Bot › Game Hub › Tebak Lagu.
+ * Kueri kosong tidak cocok dengan apa pun.
+ */
+export function cocokPencarian(teks: string, kueri: string): boolean {
+  const kata = normalisasi(kueri).split(' ').filter(Boolean);
+  return kata.length > 0 && kata.every((k) => teks.includes(k));
+}

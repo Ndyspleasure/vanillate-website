@@ -9,7 +9,7 @@
 import '../styles/global.css';
 import { url } from '@utils/url';
 import AdminMenuNode from '../components/AdminMenuNode.astro';
-import { adminMenu, jejak } from '../lib/admin-menu';
+import { adminMenu, jejak, indeksPencarian } from '../lib/admin-menu';
 
 export interface Props {
   title: string;
@@ -25,6 +25,7 @@ const { title, requireAuth = true, active } = Astro.props;
 // Grup yang berisi halaman aktif otomatis terbuka; breadcrumb dihitung dari
 // jalur yang sama.
 const jalur = jejak(adminMenu, active);
+const indeksCari = indeksPencarian(adminMenu);
 ---
 
 <!doctype html>
@@ -81,7 +82,46 @@ const jalur = jejak(adminMenu, active);
               <p class="font-display text-lg font-semibold tracking-tightest mt-1">Panel Admin</p>
             </div>
 
-            <nav class="flex-1 p-4 overflow-x-auto" aria-label="Navigasi admin">
+            <!--
+              Cari halaman admin. Murni di browser: menyaring daftar menu yang
+              sudah ada di halaman, tanpa query database. Tekan "/" atau Ctrl+K
+              untuk fokus, Enter membuka hasil pertama, Esc menghapus.
+            -->
+            <div class="px-4 pt-4">
+              <label for="admin-cari" class="sr-only">Cari halaman admin</label>
+              <div class="relative">
+                <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500 dark:text-cream-300/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                <input
+                  id="admin-cari"
+                  type="search"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Cari halaman… ( / )"
+                  class="w-full rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-transparent py-2 pl-9 pr-3 text-sm placeholder:text-ink-500 dark:placeholder:text-cream-300/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                />
+              </div>
+            </div>
+
+            <nav id="admin-cari-hasil" class="hidden flex-1 p-4 overflow-y-auto" aria-label="Hasil pencarian halaman" aria-live="polite">
+              <ul class="space-y-0.5">
+                {indeksCari.map((e) => (
+                  <li data-cari-item data-cari-teks={e.teks} hidden>
+                    <a
+                      href={url(e.node.href!)}
+                      class="block rounded-lg px-3 py-2 text-sm hover:bg-ink-900/5 dark:hover:bg-cream-100/5 focus:bg-ink-900/5 dark:focus:bg-cream-100/5 focus:outline-none"
+                    >
+                      <span class="block font-medium">{e.node.label}</span>
+                      {e.jalur.length > 1 && (
+                        <span class="block text-xs text-ink-500 dark:text-cream-300/60">{e.jalur.slice(0, -1).join(' › ')}</span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p id="admin-cari-kosong" class="hidden px-3 py-2 text-sm text-ink-500 dark:text-cream-300/60">Tidak ada halaman yang cocok.</p>
+            </nav>
+
+            <nav id="admin-nav" class="flex-1 p-4 overflow-x-auto" aria-label="Navigasi admin">
               <ul class="flex lg:flex-col gap-1">
                 {adminMenu.map((m) => (
                   <li>
@@ -172,6 +212,67 @@ const jalur = jejak(adminMenu, active);
           window.location.replace(url('/admin'));
         });
       }
+    </script>
+
+    <script>
+      // Kotak cari halaman sidebar (data dari server, disaring di browser).
+      import { cocokPencarian } from '@/lib/admin-menu';
+
+      (() => {
+        const input = document.getElementById('admin-cari') as HTMLInputElement | null;
+        const hasil = document.getElementById('admin-cari-hasil');
+        const nav = document.getElementById('admin-nav');
+        const kosong = document.getElementById('admin-cari-kosong');
+        if (!input || !hasil || !nav || !kosong) return;
+        const item = [...hasil.querySelectorAll<HTMLElement>('[data-cari-item]')];
+
+        const saring = () => {
+          const q = input.value;
+          const mencari = q.trim().length > 0;
+          nav.classList.toggle('hidden', mencari);
+          hasil.classList.toggle('hidden', !mencari);
+          let ada = 0;
+          for (const li of item) {
+            const cocok = mencari && cocokPencarian(li.dataset.cariTeks || '', q);
+            li.hidden = !cocok;
+            if (cocok) ada++;
+          }
+          kosong.classList.toggle('hidden', !mencari || ada > 0);
+        };
+
+        const tautan = () => item.filter((li) => !li.hidden).map((li) => li.querySelector<HTMLAnchorElement>('a')!);
+
+        input.addEventListener('input', saring);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            tautan()[0]?.click();
+          } else if (e.key === 'Escape') {
+            input.value = '';
+            saring();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            tautan()[0]?.focus();
+          }
+        });
+        hasil.addEventListener('keydown', (e) => {
+          const daftar = tautan();
+          const i = daftar.indexOf(document.activeElement as HTMLAnchorElement);
+          if (i < 0) return;
+          if (e.key === 'ArrowDown') { e.preventDefault(); daftar[i + 1]?.focus(); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); (daftar[i - 1] ?? input).focus(); }
+          else if (e.key === 'Escape') { input.focus(); }
+        });
+
+        document.addEventListener('keydown', (e) => {
+          const el = e.target as HTMLElement | null;
+          const mengetik = !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+          if ((e.key === '/' && !mengetik && !e.ctrlKey && !e.metaKey) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+            e.preventDefault();
+            input.focus();
+            input.select();
+          }
+        });
+      })();
     </script>
 
     <script>
