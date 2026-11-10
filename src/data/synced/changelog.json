@@ -1,5 +1,23 @@
 [
   {
+    "version": "3.49.0",
+    "date": "2026-11-10",
+    "title": "Anonymous Chat kini tersedia lewat Social Hub",
+    "highlights": [
+      "🕶️ Menu /sosial punya bagian baru Anonymous Chat dengan tombol Instal untuk ngobrol 1 lawan 1 secara anonim lewat DM",
+      "🤝 Dijalankan bot terpisah bernama Anonymous Bot, panduan pemakaiannya dikirim langsung setelah bot terpasang"
+    ]
+  },
+  {
+    "version": "3.48.2",
+    "date": "2026-11-10",
+    "title": "Filter Kata-Kata Hari Ini lebih ketat",
+    "highlights": [
+      "🛡️ Kata-kata hari ini yang menyerang atau menyuruh orang menyakiti diri kini ditolak",
+      "🚫 Mention massal dan tulisan yang terlalu panjang kini ditolak supaya 💌 Tukar Kata-Kata tetap nyaman"
+    ]
+  },
+  {
     "version": "3.48.1",
     "date": "2026-11-09",
     "title": "Bot lebih hemat sumber daya di balik layar",
