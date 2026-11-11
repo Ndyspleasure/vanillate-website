@@ -560,7 +560,7 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 
 Tambahan lain:
 - **Penjadwalan**: setting `maintenance_start_at`/`maintenance_end_at` (maintenance efektif =
-  manual OR jendela terjadwal) dan `discord_announcement_expires_at` (pengumuman auto-mati).
+  manual OR jendela terjadwal) dan `discord_announcement_expires_at` (pengumuman auto-mati). Sejak PR bot Vanillate.ID#246 pengumuman Discord tampil di bawah konten setiap slash command (bukan di lobby); `discord_announcement_ephemeral` (`supabase/announcement-ephemeral.sql`, bawaan nyala) memilih ephemeral atau publik.
 - **Keselamatan aksi**: aksi berbahaya meminta konfirmasi; broadcast massal wajib ketik
   `BROADCAST` (Darurat: `DARURAT`, owner) dan punya mode **🧪 Test** ke satu ID lebih dulu
   (`/admin/developer/broadcast`, perintah `broadcast.send`).
