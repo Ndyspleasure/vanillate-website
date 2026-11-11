@@ -29,6 +29,11 @@ const labelCls = 'block text-sm font-medium mb-1.5';
       <p class="text-sm text-ink-600 dark:text-cream-200/80"></p>
     </div>
 
+    <div id="banner-draft" class="hidden rounded-2xl border border-sky-500/30 bg-sky-500/10 px-5 py-4">
+      <p class="text-sm font-semibold">Draft dari pesanan partner <span id="draft-id" class="font-mono"></span></p>
+      <p class="mt-1 text-xs text-ink-600 dark:text-cream-200/80">Isi sudah disusun dari form partner. Cek dan ubah pesan serta tombolnya, tempel target User ID, lalu Preview dan Confirm. Draft belum dikirim sampai kamu konfirmasi.</p>
+    </div>
+
     <form id="form-bc" class="space-y-6">
       <!-- 1. Kategori -->
       <div>
@@ -97,6 +102,10 @@ const labelCls = 'block text-sm font-medium mb-1.5';
           <p id="url-partnership" class="mt-0.5 break-all font-mono text-xs text-ink-500 dark:text-cream-300/60">memuat…</p>
         </div>
         <div id="custom-links" class="space-y-2"></div>
+        <div id="wadah-tombol-partner" class="hidden space-y-2">
+          <p class="text-xs uppercase tracking-[0.15em] text-ink-500 dark:text-cream-300/60">Tombol dari partner</p>
+          <div id="tombol-partner" class="space-y-2"></div>
+        </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-3 pt-2">
@@ -147,6 +156,9 @@ const labelCls = 'block text-sm font-medium mb-1.5';
   let linksTersedia: Array<{ id: number; label: string; url: string }> = [];
   /** Hasil parse terakhir yang sudah lolos Preview. */
   let siap: { ids: string[]; nama: string; pesan: string; buttons: Array<{ label: string; url: string }>; orderId: number | null; partnerLabel: string } | null = null;
+  let draftId: number | null = null;
+  let draftBid = '';
+  let tombolPartner: Array<{ label: string; url: string; on: boolean }> = [];
   let pesananAktif: Array<{ id: number; partner_id: string | null; brand_name: string; quantity: number; unit: string | null; status: string; product_key: string | null }> = [];
 
   document.addEventListener('admin:ready', (e) => {
@@ -158,8 +170,10 @@ const labelCls = 'block text-sm font-medium mb-1.5';
       gate.classList.remove('hidden');
       el<HTMLButtonElement>('btn-preview').disabled = true;
     }
-    void muatKonfigurasi();
-    void muatPartner();
+    void (async () => {
+      await Promise.all([muatKonfigurasi(), muatPartner()]);
+      await muatDraft();
+    })();
 
     el('f-target').addEventListener('input', ringkasTarget);
     el('f-pesan').addEventListener('input', () => {
@@ -216,6 +230,53 @@ const labelCls = 'block text-sm font-medium mb-1.5';
         ? `Jumlah dipesan ${o.quantity.toLocaleString('id-ID')}${o.unit ? ' ' + o.unit.toLowerCase() : ''}. Samakan jumlah target dengan pesanan ini.`
         : '';
     });
+  }
+
+  /** ?draft=PTN-... : muat campaign draft hasil pesanan partner ke form. */
+  async function muatDraft() {
+    const bid = new URLSearchParams(window.location.search).get('draft');
+    const supabase = getSupabase();
+    if (!bid || !supabase) return;
+    const { data: c } = await supabase
+      .from('partnership_campaigns')
+      .select('id, broadcast_id, name, message, buttons, order_id, partner_id, status')
+      .eq('broadcast_id', bid)
+      .eq('status', 'draft')
+      .maybeSingle();
+    if (!c) {
+      const m = el('pesan-form');
+      m.textContent = 'Draft tidak ditemukan atau sudah dikirim.';
+      m.className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+    draftId = Number(c.id);
+    draftBid = String(c.broadcast_id);
+    el('draft-id').textContent = draftBid;
+    el('banner-draft').classList.remove('hidden');
+    el<HTMLInputElement>('f-nama').value = String(c.name ?? '');
+    const pesan = el<HTMLTextAreaElement>('f-pesan');
+    pesan.value = String(c.message ?? '');
+    pesan.dispatchEvent(new Event('input'));
+    if (c.partner_id) {
+      const selP = el<HTMLSelectElement>('f-partner');
+      selP.value = String(c.partner_id);
+      selP.dispatchEvent(new Event('change'));
+      if (c.order_id) el<HTMLSelectElement>('f-pesanan').value = String(c.order_id);
+    }
+    const semua = Array.isArray(c.buttons) ? (c.buttons as Array<{ label: string; url: string }>) : [];
+    tombolPartner = semua
+      .filter((b) => !(b.label === 'Partnership' && b.url === partnershipUrl))
+      .map((b) => ({ label: String(b.label), url: String(b.url), on: true }));
+    const wadah = el('tombol-partner');
+    wadah.innerHTML = tombolPartner.map((b, i) => `
+      <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-ink-900/10 dark:border-cream-100/10 px-4 py-2.5 text-sm">
+        <input type="checkbox" data-tp="${i}" checked class="h-4 w-4 accent-amber-500" />
+        <span class="font-medium">${esc(b.label)}</span>
+        <span class="break-all font-mono text-xs text-ink-500 dark:text-cream-300/60">${esc(b.url)}</span>
+      </label>`).join('');
+    wadah.querySelectorAll<HTMLInputElement>('[data-tp]').forEach((cb) =>
+      cb.addEventListener('change', () => { tombolPartner[Number(cb.dataset.tp)].on = cb.checked; }));
+    el('wadah-tombol-partner').classList.toggle('hidden', tombolPartner.length === 0);
   }
 
   /** Ambil URL Partnership (wajib) + daftar custom link dari Settings. */
@@ -314,6 +375,8 @@ const labelCls = 'block text-sm font-medium mb-1.5';
       if (cb?.checked) buttons.push({ label: l.label, url: l.url });
     }
 
+    for (const tp of tombolPartner) if (tp.on) buttons.push({ label: tp.label, url: tp.url });
+    if (buttons.length > 5) return gagal('Maksimal 5 tombol per pesan. Matikan beberapa tombol.');
     const idPesanan = Number(el<HTMLSelectElement>('f-pesanan').value) || null;
     const namaPartner = el<HTMLSelectElement>('f-partner').selectedOptions[0]?.textContent ?? '';
     siap = { ids: hasil.valid, nama, pesan: isi, buttons, orderId: idPesanan, partnerLabel: el<HTMLSelectElement>('f-partner').value ? namaPartner : '' };
@@ -358,30 +421,34 @@ const labelCls = 'block text-sm font-medium mb-1.5';
     };
 
     // Broadcast ID dibuat database (bukan browser) supaya urutannya konsisten
-    // walau ada dua admin membuat campaign hampir bersamaan.
-    const { data: bid, error: eId } = await supabase.rpc('next_partnership_broadcast_id');
-    if (eId || !bid) return gagal(pesanError(eId) || 'Gagal membuat Broadcast ID.');
+    // walau ada dua admin membuat campaign hampir bersamaan. Draft sudah punya ID.
+    let bid: string = draftBid;
+    if (!draftId) {
+      const { data: baru, error: eId } = await supabase.rpc('next_partnership_broadcast_id');
+      if (eId || !baru) return gagal(pesanError(eId) || 'Gagal membuat Broadcast ID.');
+      bid = baru as string;
+    }
 
     const { data: sesi } = await supabase.auth.getSession();
     const uid = sesi.session?.user.id ?? null;
 
-    const { data: camp, error: eCamp } = await supabase
-      .from('partnership_campaigns')
-      .insert({
-        broadcast_id: bid,
-        name: siap.nama,
-        category: el<HTMLSelectElement>('f-kategori').value,
-        channel: 'dm',
-        status: 'queued',
-        message: siap.pesan,
-        partnership_url: partnershipUrl,
-        buttons: siap.buttons,
-        created_by: uid,
-        target_total: siap.ids.length,
-        valid_count: siap.ids.length,
-        invalid_count: 0,
-        ...(siap.orderId ? { order_id: siap.orderId } : {}),
-      })
+    const isiCampaign = {
+      name: siap.nama,
+      category: el<HTMLSelectElement>('f-kategori').value,
+      channel: 'dm',
+      status: 'queued',
+      message: siap.pesan,
+      partnership_url: partnershipUrl,
+      buttons: siap.buttons,
+      target_total: siap.ids.length,
+      valid_count: siap.ids.length,
+      invalid_count: 0,
+      order_id: siap.orderId,
+    };
+    const { data: camp, error: eCamp } = await (draftId
+      ? supabase.from('partnership_campaigns').update(isiCampaign).eq('id', draftId).eq('status', 'draft')
+      : supabase.from('partnership_campaigns').insert({ broadcast_id: bid, created_by: uid, ...isiCampaign })
+    )
       .select('id, broadcast_id')
       .single();
 

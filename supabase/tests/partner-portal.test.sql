@@ -17,14 +17,16 @@ create table if not exists public.partnership_products (
   name        text not null,
   price       numeric,
   price_unit  text,
+  channel     text not null default 'dm',
   unit        text,
   min_quantity integer,
   enabled     boolean not null default true
 );
-insert into public.partnership_products (key, name, price, price_unit, unit, min_quantity, enabled) values
-  ('broadcast_dm',  'Broadcast via DM', 150,  'per dm', 'Pemain', 100, true),
-  ('tanpa_harga',   'Paket Khusus',     null, null,     null,     null, true),
-  ('nonaktif',      'Paket Mati',       1000, null,     null,     null, false)
+insert into public.partnership_products (key, name, price, price_unit, unit, min_quantity, enabled, channel) values
+  ('broadcast_dm',  'Broadcast via DM', 150,  'per dm', 'Pemain', 100, true, 'dm'),
+  ('broadcast_lobby', 'Broadcast via Lobby', 200, 'per hari', 'Hari', 20, true, 'lobby'),
+  ('tanpa_harga',   'Paket Khusus',     null, null,     null,     null, true, 'dm'),
+  ('nonaktif',      'Paket Mati',       1000, null,     null,     null, false, 'dm')
 on conflict (key) do nothing;
 
 \ir ../partner-portal.sql
@@ -179,9 +181,15 @@ create table if not exists public.partnership_campaigns (
   id            bigint generated always as identity primary key,
   broadcast_id  text not null unique,
   name          text not null,
+  category      text not null default 'marketing',
   channel       text not null default 'dm',
   status        text not null default 'draft',
   message       text not null default 'x',
+  partnership_url text,
+  buttons       jsonb not null default '[]'::jsonb,
+  created_by    uuid,
+  valid_count   integer not null default 0,
+  invalid_count integer not null default 0,
   target_total  integer not null default 0,
   success_count integer not null default 0,
   failed_count  integer not null default 0,
@@ -192,6 +200,7 @@ create table if not exists public.partnership_campaigns (
   created_at    timestamptz not null default now()
 );
 alter table public.partnership_campaigns enable row level security;
+create policy "admin baca campaigns" on public.partnership_campaigns for select to authenticated using (public.is_admin());
 -- pesanan baru milik partner 2 (status awal dicatat) untuk uji tautan
 insert into public.partner_orders (partner_id, partner_name, product_name, price_text, brand_name)
   values ('b0000000-0000-0000-0000-000000000002', 'Mitra Dua', 'Broadcast via DM', 'Rp 150 per dm', 'Tautan Uji');
@@ -241,6 +250,79 @@ select set_config('request.jwt.claims', '{}', false);
 select tests_dev.ok(
   (select count(*) = 0 from public.partner_order_campaigns(array[1,2,3])), 'tanpa login hasil kosong');
 reset role;
+
+-- ─── Draft campaign otomatis ────────────────────────────────────────────────
+reset role;
+create table if not exists public.partnership_settings (id smallint primary key default 1, partnership_url text);
+insert into public.partnership_settings (id, partnership_url) values (1, 'https://vanillate.id/partnership') on conflict (id) do nothing;
+create or replace function public.next_partnership_broadcast_id() returns text
+language plpgsql security definer set search_path = '' as $f$
+declare hari text := to_char(now() at time zone 'Asia/Jakarta', 'YYYYMMDD'); urut integer;
+begin
+  select coalesce(max(substring(broadcast_id from 14 for 4)::integer), 0) + 1 into urut
+    from public.partnership_campaigns where broadcast_id like 'PTN-' || hari || '-%';
+  return 'PTN-' || hari || '-' || lpad(urut::text, 4, '0');
+end $f$;
+
+\ir ../partner-order-draft.sql
+\ir ../partner-order-draft.sql
+
+insert into auth.users (id, email) values ('b0000000-0000-0000-0000-000000000004', 'p4@partner.vanillate.id');
+insert into public.partner_accounts (id, username, display_name, must_change_credentials)
+  values ('b0000000-0000-0000-0000-000000000004', 'mitra.empat', 'Mitra Empat', false);
+
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+select public.partner_order_submit('broadcast_dm', 100, 'Brand Draft', null, null, 'Isi iklan', null, 'Judul', 'Footer', null,
+  '[{"label":"Gabung","url":"https://discord.gg/d"}]'::jsonb);
+select public.partner_order_submit('broadcast_dm', 100, 'Brand Kosong');
+select public.partner_order_submit('broadcast_lobby', 20, 'Brand Lobby');
+reset role;
+
+select tests_dev.ok(
+  (select count(*) = 1 from public.partnership_campaigns c join public.partner_orders o on o.id = c.order_id where o.brand_name = 'Brand Draft'),
+  'pesanan DM membuat tepat satu draft');
+select tests_dev.ok(
+  (select c.status = 'draft' and c.channel = 'dm' and c.category = 'marketing' and c.target_total = 0 and c.created_by is null
+          and c.partner_id = 'b0000000-0000-0000-0000-000000000004'
+          and c.name = 'Partner Brand Draft #' || o.id
+          and c.message = E'# Judul\n\nIsi iklan\n\n-# Footer'
+     from public.partnership_campaigns c join public.partner_orders o on o.id = c.order_id where o.brand_name = 'Brand Draft'),
+  'draft: status, nama, partner, dan pesan tersusun dari judul, isi, footer');
+select tests_dev.ok(
+  (select jsonb_array_length(c.buttons) = 2 and c.buttons->0->>'label' = 'Partnership'
+          and c.buttons->0->>'url' = 'https://vanillate.id/partnership' and c.buttons->1->>'label' = 'Gabung'
+     from public.partnership_campaigns c join public.partner_orders o on o.id = c.order_id where o.brand_name = 'Brand Draft'),
+  'tombol draft: Partnership wajib lalu tombol partner');
+select tests_dev.ok(
+  (select o.status = 'dicatat' from public.partner_orders o where o.brand_name = 'Brand Draft'),
+  'draft tidak menggerakkan status pesanan');
+select tests_dev.ok(
+  (select c.message like '(Isi pesan belum diisi partner%' from public.partnership_campaigns c join public.partner_orders o on o.id = c.order_id where o.brand_name = 'Brand Kosong'),
+  'pesanan tanpa iklan tetap membuat draft dengan petunjuk');
+select tests_dev.ok(
+  (select count(*) = 0 from public.partnership_campaigns c join public.partner_orders o on o.id = c.order_id where o.brand_name = 'Brand Lobby'),
+  'pesanan Lobby tidak membuat draft (riwayat saja)');
+select tests_dev.ok(
+  (select count(distinct broadcast_id) = count(*) from public.partnership_campaigns),
+  'Broadcast ID draft unik');
+
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+select tests_dev.ok(
+  (select count(*) = 0 from public.partner_order_campaigns(array(select id from public.partner_orders))),
+  'draft tidak tampil di laporan partner');
+select set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-000000000101","role":"authenticated"}', false);
+select tests_dev.ok(
+  (select count(*) = 2 from public.partnership_campaigns where status = 'draft'), 'editor CMS melihat draft');
+reset role;
+
+\ir ../partner-order-draft-rollback.sql
+select tests_dev.ok(
+  (select count(*) = 0 from pg_trigger where tgname = 'partner_orders_draft'), 'rollback draft menghapus trigger');
+drop function public.next_partnership_broadcast_id();
+drop table public.partnership_settings;
+delete from public.partnership_campaigns;
 
 \ir ../partner-campaign-link-rollback.sql
 select tests_dev.ok(

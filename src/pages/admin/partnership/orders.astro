@@ -47,6 +47,10 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
   import { adPreviewHtml } from '@/lib/partner/render';
   import { formatDateId, ORDER_STATUSES, statusMeta } from '@/lib/partner/model';
   import { pill } from '@/lib/dashboard/ui';
+  import { url } from '@/utils/url';
+
+  /** order_id -> campaign tertaut (draft atau sudah jalan). */
+  let kampanye = new Map<number, { broadcast_id: string; status: string }>();
 
   const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const PAGE = 30;
@@ -83,6 +87,11 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
     const { data, error } = await q;
     if (error) { box.innerHTML = stateBlock('error', pesanError(error)); return; }
     if (ulang) box.innerHTML = '';
+    const ids = (data ?? []).map((o: any) => o.id);
+    if (ids.length) {
+      const { data: kp } = await sb.from('partnership_campaigns').select('order_id, broadcast_id, status').in('order_id', ids);
+      for (const k of (kp ?? []) as Array<{ order_id: number; broadcast_id: string; status: string }>) kampanye.set(k.order_id, k);
+    }
     if (ulang && !data?.length) { box.innerHTML = stateBlock('empty', 'Belum ada pesanan.'); el('lagi').classList.add('hidden'); return; }
     box.insertAdjacentHTML('beforeend', (data ?? []).map(kartu).join(''));
     terakhir = data?.length ? (data[data.length - 1] as any).id : terakhir;
@@ -91,6 +100,16 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
       b.dataset.w = '1';
       b.addEventListener('click', () => void simpan(b));
     });
+  }
+
+  function tautanCampaign(orderId: number): string {
+    const k = kampanye.get(orderId);
+    if (!k) return '';
+    const draft = k.status === 'draft';
+    const href = draft
+      ? `${url('/admin/partnership/broadcast')}?draft=${encodeURIComponent(k.broadcast_id)}`
+      : `${url('/admin/partnership/history')}?id=${encodeURIComponent(k.broadcast_id)}`;
+    return `<p class="mt-2 text-sm">Campaign: <span class="font-mono text-xs">${esc(k.broadcast_id)}</span> (${esc(draft ? 'draft' : k.status)}) · <a class="font-semibold underline" href="${esc(href)}">${draft ? 'Cek dan konfigurasi' : 'Lihat'}</a></p>`;
   }
 
   function kartu(o: any): string {
@@ -105,6 +124,7 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
       </div>
       <p class="mt-2 text-sm">${esc(o.product_name)} · ${Number(o.quantity).toLocaleString('id-ID')}${o.unit ? ' ' + esc(String(o.unit).toLowerCase()) : ''} · ${esc(o.price_text)} · <strong>${esc(o.total_text)}</strong></p>
       <p class="text-sm text-ink-600 dark:text-cream-300/80">Jadwal: ${esc(o.scheduled_for ? formatDateId(o.scheduled_for) : 'belum diatur')}${o.invite_url ? ` · <a class="underline" href="${esc(o.invite_url)}" target="_blank" rel="noopener noreferrer">link</a>` : ''}</p>
+      ${tautanCampaign(o.id)}
       ${o.note ? `<p class="mt-2 text-sm"><span class="text-ink-500">Catatan partner:</span> ${esc(o.note)}</p>` : ''}
       ${o.ad_text || o.ad_title || o.ad_footer || o.ad_image_url || (o.ad_buttons ?? []).length ? `<details class="mt-2"><summary class="cursor-pointer text-sm underline">Iklan (judul, isi, footer, tombol)</summary>
         <div class="mt-2 rounded-lg bg-[#313338] p-3 text-sm text-[#dbdee1] break-words">${adPreviewHtml({ title: o.ad_title, text: o.ad_text, footer: o.ad_footer, imageUrl: o.ad_image_url, buttons: o.ad_buttons })}</div>

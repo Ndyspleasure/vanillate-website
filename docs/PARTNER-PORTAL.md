@@ -74,3 +74,11 @@ Tanpa polling dan tanpa snapshot dorong. Database hanya disentuh saat login, saa
 
 ## Form pesanan lengkap
 `supabase/partner-order-fields.sql` (jalankan setelah `partner-portal.sql`): kolom `ad_title` (maks. 100), `ad_footer` (maks. 100), `ad_image_url` (https), `ad_buttons` (maks. 3 tombol, nama maks. 80 dan link https). RPC `partner_order_submit` kini 11 argumen (yang lama dihapus). Payload laporan bot menambah `adTitle`, `adFooter`, `imageUrl`, `buttons` (semuanya opsional di bot). Dashboard menampilkan pratinjau iklan bergaya Discord (judul, isi berformat, gambar, footer, tombol) dan pratinjau kartu laporan. CMS Pesanan Partner menampilkan iklan yang sama beserta daftar link tombol.
+
+## Draft campaign otomatis
+`supabase/partner-order-draft.sql`: trigger `partner_orders_draft` membuat campaign **draft** di `partnership_campaigns` setiap ada pesanan paket DM (produk berkanal `dm`). Paket Lobby tidak membuat draft (riwayat pemesanan saja).
+- Isi draft: nama `Partner <brand> #<id pesanan>`, kategori marketing, pesan tersusun dari form partner (`# judul`, isi, `-# footer`), tombol `Partnership` (wajib, dari Settings) lalu tombol partner, `order_id` tertaut (maka `partner_id` mengikuti), target 0.
+- Draft tidak dikirim bot (bot hanya memproses status `queued`) dan tidak menggerakkan status pesanan. Draft tidak tampil di laporan partner.
+- Admin membuka draft dari **Pesanan Partner › Cek dan konfigurasi** atau **Campaign History › Lanjutkan di Broadcast DM** (`/admin/partnership/broadcast?draft=PTN-...`). Form terisi otomatis: ubah pesan, hidup/matikan tombol partner, tempel target User ID, Preview, Confirm. Confirm mengubah draft menjadi `queued` (bukan membuat campaign baru).
+- Gambar iklan tidak ikut ke pesan DM (Broadcast DM berisi teks dan tombol). Linknya tampil di halaman Pesanan Partner.
+- Bila pembuatan draft gagal (mis. bentrok Broadcast ID tiga kali), pesanan partner tetap tersimpan.
