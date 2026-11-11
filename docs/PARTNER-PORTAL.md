@@ -63,3 +63,14 @@ Tanpa polling dan tanpa snapshot dorong. Database hanya disentuh saat login, saa
 3. Halaman `/partnership/masuk`, dashboard, dan pratinjau.
 4. Halaman CMS `/admin/partnership/partners` dan status pesanan.
 5. Handler bot di repo Vanillate.ID + tes.
+
+## Campaign partner (Broadcast DM)
+- `supabase/partner-campaign-link.sql`: kolom `partner_id` dan `order_id` (opsional) di `partnership_campaigns`.
+- Di CMS › Broadcast DM ada pilihan **Untuk partner** lalu **Pesanan partner** (pesanan DM yang belum selesai). `partner_id` selalu mengikuti pesanan (trigger), jadi admin tidak bisa mencampur partner.
+- Status campaign menggerakkan status pesanan, tidak pernah mundur dan tidak menimpa `dibatalkan` atau `selesai` manual: `queued` menjadi diproses, `running` menjadi berjalan, `completed` menjadi selesai. `cancelled` dan `failed` tidak mengubah pesanan (diputuskan tim).
+- Dashboard partner menampilkan **Laporan campaign** per pesanan lewat RPC `partner_order_campaigns()` (SECURITY DEFINER): hanya angka agregat (target, terkirim, gagal, dilewati, status, waktu), tanpa User ID penerima, isi pesan, atau log. Satu panggilan RPC per halaman riwayat.
+- **Lobby:** belum ada eksekusi otomatis. Pesanan paket Lobby cukup menjadi riwayat pemesanan, statusnya diubah manual di `/admin/partnership/orders`, dan dashboard menampilkan catatan itu.
+- Biaya: tanpa polling. Tambahan satu kolom, dua query ringan saat form Broadcast dibuka, satu RPC saat riwayat partner dibuka, satu update status per perubahan campaign.
+
+## Form pesanan lengkap
+`supabase/partner-order-fields.sql` (jalankan setelah `partner-portal.sql`): kolom `ad_title` (maks. 100), `ad_footer` (maks. 100), `ad_image_url` (https), `ad_buttons` (maks. 3 tombol, nama maks. 80 dan link https). RPC `partner_order_submit` kini 11 argumen (yang lama dihapus). Payload laporan bot menambah `adTitle`, `adFooter`, `imageUrl`, `buttons` (semuanya opsional di bot). Dashboard menampilkan pratinjau iklan bergaya Discord (judul, isi berformat, gambar, footer, tombol) dan pratinjau kartu laporan. CMS Pesanan Partner menampilkan iklan yang sama beserta daftar link tombol.
