@@ -1,0 +1,175 @@
+---
+// Partnership: Akun Partner (khusus owner untuk membuat/reset/hapus).
+// Akun login /partnership/masuk. Aksi lewat Edge Function `partner-admin`
+// (service_role hanya di server). Lihat docs/PARTNER-PORTAL.md.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+
+const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+---
+
+<AdminLayout title="Akun Partner" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Akun Partner"
+    description="Daftarkan akun login untuk partner. Partner mengganti username dan password saat masuk pertama kali."
+  />
+  <PartnershipTabs active="partners" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-8 max-w-4xl">
+    <section id="box-buat" class="hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Buat akun partner</h2>
+      <form id="f-buat" class="grid gap-4 sm:grid-cols-2" novalidate>
+        <div>
+          <label for="b-nama" class="block text-sm font-medium mb-1.5">Nama partner</label>
+          <input id="b-nama" maxlength="80" class={INPUT} />
+        </div>
+        <div>
+          <label for="b-user" class="block text-sm font-medium mb-1.5">Username awal</label>
+          <input id="b-user" autocapitalize="none" spellcheck="false" class={INPUT} />
+        </div>
+        <div class="sm:col-span-2">
+          <label for="b-pass" class="block text-sm font-medium mb-1.5">Password awal</label>
+          <div class="flex gap-2">
+            <input id="b-pass" class={`${INPUT} font-mono`} autocomplete="off" />
+            <button type="button" id="b-gen" class="shrink-0 rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Acak</button>
+          </div>
+          <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Kirim username dan password ini ke partner lewat WhatsApp. Partner wajib menggantinya saat masuk pertama.</p>
+        </div>
+        <p id="b-err" class="sm:col-span-2 hidden text-sm text-red-600 dark:text-red-400" role="alert"></p>
+        <div class="sm:col-span-2"><button id="b-submit" type="submit" class="rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-50">Buat akun</button></div>
+      </form>
+      <div id="b-hasil" class="hidden rounded-xl bg-emerald-500/10 p-4 text-sm ring-1 ring-inset ring-emerald-500/25"></div>
+    </section>
+
+    <p id="gate" class="hidden text-sm text-amber-700 dark:text-amber-400"></p>
+
+    <section class="space-y-3">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Daftar akun</h2>
+      <div id="daftar" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+  import { passwordProblem, usernameProblem } from '@/lib/partner/model';
+
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  let owner = false;
+
+  function acak(): string {
+    const abc = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const b = new Uint32Array(14);
+    crypto.getRandomValues(b);
+    return Array.from(b, (n) => abc[n % abc.length]).join('');
+  }
+
+  async function panggil(body: Record<string, unknown>): Promise<{ ok: boolean; message?: string }> {
+    const sb = getSupabase();
+    if (!sb) return { ok: false, message: 'Supabase belum dikonfigurasi.' };
+    const { data, error } = await sb.functions.invoke('partner-admin', { body });
+    if (error) {
+      try {
+        const j = await (error as any).context?.json?.();
+        if (j?.message) return { ok: false, message: String(j.message) };
+      } catch { /* abaikan */ }
+      return { ok: false, message: 'Permintaan gagal. Coba lagi.' };
+    }
+    return (data as any)?.ok ? { ok: true } : { ok: false, message: String((data as any)?.message ?? 'Gagal.') };
+  }
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    owner = profile?.role === 'owner';
+    if (owner) el('box-buat').classList.remove('hidden');
+    else {
+      const g = el('gate');
+      g.textContent = 'Hanya owner yang bisa membuat, mereset, dan menghapus akun partner. Kamu bisa melihat daftarnya.';
+      g.classList.remove('hidden');
+    }
+    el('b-gen').addEventListener('click', () => { el<HTMLInputElement>('b-pass').value = acak(); });
+    el<HTMLFormElement>('f-buat').addEventListener('submit', buat);
+    void muat();
+  });
+
+  async function buat(ev: Event) {
+    ev.preventDefault();
+    const err = el('b-err');
+    const hasil = el('b-hasil');
+    err.classList.add('hidden');
+    hasil.classList.add('hidden');
+    const nama = el<HTMLInputElement>('b-nama').value.trim();
+    const user = el<HTMLInputElement>('b-user').value.trim().toLowerCase();
+    const pass = el<HTMLInputElement>('b-pass').value;
+    const salah = !nama ? 'Nama partner wajib diisi.' : usernameProblem(user) ?? passwordProblem(pass, user);
+    if (salah) { err.textContent = salah; err.classList.remove('hidden'); return; }
+    const btn = el<HTMLButtonElement>('b-submit');
+    btn.disabled = true;
+    const r = await panggil({ action: 'create', username: user, displayName: nama, password: pass });
+    btn.disabled = false;
+    if (!r.ok) { err.textContent = r.message ?? 'Gagal.'; err.classList.remove('hidden'); return; }
+    hasil.innerHTML = `Akun dibuat. Kirim ke partner lewat WhatsApp:<br>
+      Login: <strong>/partnership/masuk</strong><br>Username: <code>${esc(user)}</code><br>Password: <code>${esc(pass)}</code>`;
+    hasil.classList.remove('hidden');
+    el<HTMLFormElement>('f-buat').reset();
+    void muat();
+  }
+
+  async function muat() {
+    const box = el('daftar');
+    const sb = getSupabase();
+    if (!sb) return;
+    box.innerHTML = stateBlock('loading', '');
+    const { data, error } = await sb
+      .from('partner_accounts')
+      .select('id,username,display_name,must_change_credentials,created_at')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) { box.innerHTML = stateBlock('error', pesanError(error)); return; }
+    if (!data?.length) { box.innerHTML = stateBlock('empty', 'Belum ada akun partner.'); return; }
+    box.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-sm">
+      <thead class="bg-ink-900/5 dark:bg-cream-100/5"><tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+        <th class="px-5 py-3 font-medium">Partner</th><th class="px-5 py-3 font-medium">Username</th>
+        <th class="px-5 py-3 font-medium">Status</th><th class="px-5 py-3 font-medium">Dibuat</th>
+        <th class="px-5 py-3 font-medium text-right">Aksi</th></tr></thead>
+      <tbody class="divide-y divide-ink-900/10 dark:divide-cream-100/10">
+      ${data.map((a: any) => `<tr>
+        <td class="px-5 py-3 font-medium">${esc(a.display_name)}</td>
+        <td class="px-5 py-3 font-mono text-xs">${esc(a.username)}</td>
+        <td class="px-5 py-3">${a.must_change_credentials
+          ? '<span class="text-amber-700 dark:text-amber-400">Belum ganti kredensial</span>'
+          : 'Aktif'}</td>
+        <td class="px-5 py-3 text-xs">${esc(fmtWaktu(a.created_at))}</td>
+        <td class="px-5 py-3 text-right whitespace-nowrap">${owner
+          ? `<button data-reset="${esc(a.id)}" data-nama="${esc(a.display_name)}" class="text-xs underline">Reset password</button>
+             <button data-hapus="${esc(a.id)}" data-nama="${esc(a.display_name)}" class="ml-3 text-xs text-red-600 underline dark:text-red-400">Hapus</button>`
+          : ''}</td></tr>`).join('')}
+      </tbody></table></div>`;
+    box.querySelectorAll<HTMLElement>('[data-reset]').forEach((b) => b.addEventListener('click', () => reset(b.dataset.reset!, b.dataset.nama!)));
+    box.querySelectorAll<HTMLElement>('[data-hapus]').forEach((b) => b.addEventListener('click', () => hapus(b.dataset.hapus!, b.dataset.nama!)));
+  }
+
+  async function reset(id: string, nama: string) {
+    const pass = acak();
+    if (!confirm(`Reset password ${nama}? Password baru dibuat acak dan partner wajib menggantinya.`)) return;
+    const r = await panggil({ action: 'reset', id, password: pass });
+    const hasil = el('b-hasil');
+    hasil.classList.remove('hidden');
+    hasil.innerHTML = r.ok
+      ? `Password <strong>${esc(nama)}</strong> direset. Kirim lewat WhatsApp: <code>${esc(pass)}</code>`
+      : esc(r.message ?? 'Gagal.');
+    hasil.scrollIntoView({ block: 'nearest' });
+    if (r.ok) void muat();
+  }
+
+  async function hapus(id: string, nama: string) {
+    if (!confirm(`Hapus akun ${nama}? Riwayat pesanannya tetap tersimpan, tetapi partner tidak bisa masuk lagi.`)) return;
+    const r = await panggil({ action: 'delete', id });
+    if (!r.ok) { alert(r.message ?? 'Gagal menghapus.'); return; }
+    void muat();
+  }
+</script>

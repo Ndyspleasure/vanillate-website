@@ -29,6 +29,7 @@ export default defineConfig({
       filter: (page) =>
         !page.includes('/admin') &&
         !page.includes('/dashboard') &&
+        !page.includes('/partnership/masuk') &&
         !page.includes('/bots') &&
         !page.includes('/docs') &&
         !page.includes('/products/vanillatehandsigncamera') &&

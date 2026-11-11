@@ -1,0 +1,52 @@
+---
+// /partnership/dashboard — Dashboard Partner: catat pesanan + riwayat sendiri.
+// Data dijaga RLS (partner hanya melihat miliknya). Lihat docs/PARTNER-PORTAL.md.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import partnership from '@data/synced/partnership.json';
+import { buildDirectWhatsappUrl } from '@data/support';
+import { url } from '@utils/url';
+
+const produk = ((partnership as any).products ?? [])
+  .filter((p: any) => p.enabled !== false)
+  .map((p: any) => ({
+    key: String(p.key),
+    name: String(p.name),
+    price: typeof p.price === 'number' ? p.price : null,
+    priceUnit: String(p.priceUnit ?? ''),
+    unit: String(p.unit ?? 'Unit'),
+    minQuantity: Number.isInteger(p.minQuantity) && p.minQuantity > 0 ? p.minQuantity : 1,
+  }));
+---
+
+<BaseLayout title="Dashboard Partner" description="Dashboard partner Vanillate." noindex={true}>
+  <section class="container-page py-10 sm:py-14">
+    <div
+      data-partner="dashboard"
+      data-wa={buildDirectWhatsappUrl()}
+      data-login={url('/partnership/masuk/')}
+      data-dashboard={url('/partnership/dashboard/')}
+      data-partnership={url('/partnership/')}
+      data-products={JSON.stringify(produk)}
+    >
+      <div class="flex items-center justify-center gap-3 py-20 text-sm text-ink-500" role="status">Memuat…</div>
+      <noscript><p class="py-10 text-center text-sm">Halaman ini membutuhkan JavaScript.</p></noscript>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountDashboard } from '../../lib/partner/pages';
+  const root = document.querySelector<HTMLElement>('[data-partner="dashboard"]');
+  if (root) {
+    let products = [];
+    try { products = JSON.parse(root.dataset.products ?? '[]'); } catch { /* katalog kosong */ }
+    void mountDashboard({
+      root,
+      products,
+      whatsappUrl: root.dataset.wa ?? '#',
+      loginUrl: root.dataset.login ?? '/partnership/masuk/',
+      dashboardUrl: root.dataset.dashboard ?? '/partnership/dashboard/',
+      partnershipUrl: root.dataset.partnership ?? '/partnership/',
+    });
+  }
+</script>

@@ -15,6 +15,7 @@ import FAQAccordion from '@components/FAQAccordion.astro';
 import Icon from '@components/Icon.astro';
 import partnership from '@data/synced/partnership.json';
 import { site, homeStats } from '@data/site';
+import { url } from '@utils/url';
 import { buildPartnershipWhatsappUrl, formatPrice, safeUrl } from '@data/partnership';
 
 const { settings, products, content } = partnership as any;
@@ -520,6 +521,9 @@ const jsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
       </div>
       <p class="mt-4 text-xs text-ink-500 dark:text-cream-300/60">
         Tombol ini membuka WhatsApp official Vanillate dengan pesan yang sudah terisi.
+      </p>
+      <p class="mt-3 text-sm text-ink-600 dark:text-cream-200/80">
+        Sudah pernah jadi partner? <a class="font-semibold underline" href={url('/partnership/masuk/')}>Masuk ke dashboard partner</a>.
       </p>
     </div>
   </section>

@@ -1,0 +1,41 @@
+---
+// /partnership/masuk — login Portal Partner (partner yang sudah terdaftar).
+// Situs statis: halaman ini hanya kerangka. Akun dibuat owner di CMS
+// (/admin/partnership/partners). Lihat docs/PARTNER-PORTAL.md.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { buildDirectWhatsappUrl } from '@data/support';
+import { url } from '@utils/url';
+---
+
+<BaseLayout
+  title="Masuk Partner"
+  description="Masuk ke dashboard partner Vanillate untuk mencatat dan memantau pesanan Partnership."
+  noindex={true}
+>
+  <section class="container-page py-10 sm:py-16">
+    <div
+      data-partner="login"
+      data-wa={buildDirectWhatsappUrl()}
+      data-login={url('/partnership/masuk/')}
+      data-dashboard={url('/partnership/dashboard/')}
+      data-partnership={url('/partnership/')}
+    >
+      <div class="flex items-center justify-center gap-3 py-20 text-sm text-ink-500" role="status">Memuat…</div>
+      <noscript><p class="py-10 text-center text-sm">Halaman ini membutuhkan JavaScript.</p></noscript>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountLogin } from '../../lib/partner/pages';
+  const root = document.querySelector<HTMLElement>('[data-partner="login"]');
+  if (root) {
+    void mountLogin({
+      root,
+      whatsappUrl: root.dataset.wa ?? '#',
+      loginUrl: root.dataset.login ?? '/partnership/masuk/',
+      dashboardUrl: root.dataset.dashboard ?? '/partnership/dashboard/',
+      partnershipUrl: root.dataset.partnership ?? '/partnership/',
+    });
+  }
+</script>
