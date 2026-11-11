@@ -356,9 +356,9 @@ insert into public.bot_settings (key, label, value, kind, category, help, min_va
   ('maintenance_message', 'Pesan maintenance',      '🔧 Bot sedang dalam maintenance. Mohon tunggu sebentar.', 'text', 'maintenance',
    'Ditampilkan ke pemain saat maintenance aktif.', null, null, 20),
 
-  -- Pengumuman di dalam Discord (Lobby) — BUKAN banner website (itu di site_content).
+  -- Pengumuman di dalam Discord (tampil setelah slash command) — BUKAN banner website (itu di site_content).
   ('discord_announcement_enabled', 'Tampilkan pengumuman di Discord', 'false', 'boolean', 'pengumuman',
-   'Menampilkan pengumuman di Lobby/embed bot.', null, null, 10),
+   'Menampilkan pengumuman di bawah konten slash command.', null, null, 10),
   ('discord_announcement_text',    'Isi pengumuman Discord',          '',      'text',    'pengumuman',
    'Satu-dua kalimat singkat untuk pemain.', null, null, 20),
 

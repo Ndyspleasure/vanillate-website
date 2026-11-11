@@ -26,7 +26,7 @@ on conflict (key) do nothing;
 
 insert into public.bot_settings (key, label, value, kind, category, help, min_value, max_value, sort) values
   ('discord_announcement_title', 'Judul pengumuman Discord', null, 'text', 'pengumuman',
-   'Judul embed pengumuman di lobby. Kosong = “📢 Pengumuman”.', null, null, 15),
+   'Judul kartu pengumuman. Kosong = “📢 Pengumuman”.', null, null, 15),
   ('changelog_lobby_enabled', 'Tampilkan changelog di lobby', null, 'boolean', 'pengumuman',
    'Hanya tampil/sembunyi. Isi changelog tetap otomatis dari CHANGELOG.json bot.', null, null, 40),
   ('tutorial_enabled', 'Gerbang wajib tutorial', null, 'boolean', 'tutorial',
