@@ -104,6 +104,7 @@ as $$
     join public.partner_orders o on o.id = c.order_id
    where o.partner_id = auth.uid()
      and auth.uid() is not null
+     and c.status <> 'draft'
      and c.order_id = any (p_order_ids)
    order by c.created_at desc
    limit 200;
