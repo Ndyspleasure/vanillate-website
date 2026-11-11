@@ -17,12 +17,14 @@ create table if not exists public.partnership_products (
   name        text not null,
   price       numeric,
   price_unit  text,
+  unit        text,
+  min_quantity integer,
   enabled     boolean not null default true
 );
-insert into public.partnership_products (key, name, price, price_unit, enabled) values
-  ('broadcast_dm',  'Broadcast via DM', 1500000, 'per campaign', true),
-  ('tanpa_harga',   'Paket Khusus',     null,    null,           true),
-  ('nonaktif',      'Paket Mati',       1000,    null,           false)
+insert into public.partnership_products (key, name, price, price_unit, unit, min_quantity, enabled) values
+  ('broadcast_dm',  'Broadcast via DM', 150,  'per dm', 'Pemain', 100, true),
+  ('tanpa_harga',   'Paket Khusus',     null, null,     null,     null, true),
+  ('nonaktif',      'Paket Mati',       1000, null,     null,     null, false)
 on conflict (key) do nothing;
 
 \ir ../partner-portal.sql
@@ -52,26 +54,28 @@ set role authenticated;
 select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000001","role":"authenticated"}', false);
 
 select tests_dev.ok(
-  public.partner_order_submit('broadcast_dm', '  Server Uji  ', 'https://discord.gg/abc', null,
+  public.partner_order_submit('broadcast_dm', 100, '  Server Uji  ', 'https://discord.gg/abc', null,
     'Halo **dunia**', 'catatan') > 0,
   'partner mencatat pesanan lewat RPC');
 select tests_dev.ok(
-  (select price_text = 'Rp 1.500.000 per campaign' and product_name = 'Broadcast via DM'
+  (select price_text = 'Rp 150 per dm' and total_text = 'Rp 15.000' and quantity = 100 and unit = 'Pemain' and product_name = 'Broadcast via DM'
           and brand_name = 'Server Uji' and status = 'dicatat' and partner_name = 'Mitra Satu'
      from public.partner_orders limit 1),
   'nama, harga, status diambil server (bukan input partner)');
-select public.partner_order_submit('tanpa_harga', 'Brand B');
+select public.partner_order_submit('tanpa_harga', 1, 'Brand B');
 select tests_dev.ok(
   (select price_text = 'Harga belum ditentukan' from public.partner_orders where product_key = 'tanpa_harga'),
   'paket tanpa harga ditulis jelas');
 
-select tests_dev.throws($$select public.partner_order_submit('nonaktif', 'X')$$, '22023', 'paket nonaktif ditolak');
-select tests_dev.throws($$select public.partner_order_submit('ngawur', 'X')$$, '22023', 'paket tak dikenal ditolak');
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', '')$$, '22023', 'brand kosong ditolak');
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 'X', 'http://x.id')$$, '22023', 'link non-https ditolak');
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 'X', 'https://a b')$$, '22023', 'link berspasi ditolak');
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 'X', null, current_date - 5)$$, '22023', 'tanggal lewat ditolak');
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 'X', null, null, repeat('a', 2001))$$, '22023', 'iklan > 2000 ditolak');
+select tests_dev.throws($$select public.partner_order_submit('nonaktif', 100, 'X')$$, '22023', 'paket nonaktif ditolak');
+select tests_dev.throws($$select public.partner_order_submit('ngawur', 100, 'X')$$, '22023', 'paket tak dikenal ditolak');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 99, 'X')$$, '22023', 'jumlah di bawah minimum katalog ditolak');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', null, 'X')$$, '22023', 'jumlah kosong ditolak');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, '')$$, '22023', 'brand kosong ditolak');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, 'X', 'http://x.id')$$, '22023', 'link non-https ditolak');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, 'X', 'https://a b')$$, '22023', 'link berspasi ditolak');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, 'X', null, current_date - 5)$$, '22023', 'tanggal lewat ditolak');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, 'X', null, null, repeat('a', 2001))$$, '22023', 'iklan > 2000 ditolak');
 
 select tests_dev.throws($$insert into public.partner_orders (partner_name, product_name, price_text, brand_name)
   values ('x','x','x','x')$$, '42501', 'partner tidak bisa INSERT langsung');
@@ -85,17 +89,17 @@ select tests_dev.ok((select count(*) = 1 from public.partner_accounts), 'partner
 -- ─── Partner 2: isolasi ─────────────────────────────────────────────────────
 select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000002","role":"authenticated"}', false);
 select tests_dev.ok((select count(*) = 0 from public.partner_orders), 'partner 2 tidak melihat pesanan partner 1');
-select public.partner_order_submit('broadcast_dm', 'Brand Dua');
+select public.partner_order_submit('broadcast_dm', 100, 'Brand Dua');
 select tests_dev.ok((select count(*) = 1 and bool_and(partner_name = 'Mitra Dua') from public.partner_orders),
   'partner 2 hanya melihat pesanannya');
 
 -- ─── Wajib ganti kredensial; bukan partner ──────────────────────────────────
 select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000003","role":"authenticated"}', false);
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 'X')$$, '42501', 'wajib ganti kredensial dulu');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, 'X')$$, '42501', 'wajib ganti kredensial dulu');
 select set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-000000000101","role":"authenticated"}', false);
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 'X')$$, '42501', 'admin CMS bukan partner');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, 'X')$$, '42501', 'admin CMS bukan partner');
 select set_config('request.jwt.claims', '{}', false);
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 'X')$$, '42501', 'tanpa login ditolak');
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, 'X')$$, '42501', 'tanpa login ditolak');
 reset role;
 set role anon;
 select tests_dev.throws($$select count(*) from public.partner_orders$$, '42501', 'anon tidak bisa baca pesanan');
@@ -104,8 +108,8 @@ reset role;
 -- ─── Batas harian ───────────────────────────────────────────────────────────
 set role authenticated;
 select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000002","role":"authenticated"}', false);
-select public.partner_order_submit('broadcast_dm', 'Loop ' || g) from generate_series(1, 9) g;
-select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 'Kelebihan')$$, '54000', 'batas 10 per hari');
+select public.partner_order_submit('broadcast_dm', 100, 'Loop ' || g) from generate_series(1, 9) g;
+select tests_dev.throws($$select public.partner_order_submit('broadcast_dm', 100, 'Kelebihan')$$, '54000', 'batas 10 per hari');
 reset role;
 
 -- ─── Trigger → bot_commands ─────────────────────────────────────────────────
@@ -114,7 +118,8 @@ select tests_dev.ok(
   'tiap pesanan mengantre satu laporan tanpa pembuat');
 select tests_dev.ok(
   (select payload->>'brandName' = 'Server Uji' and payload->>'partnerName' = 'Mitra Satu'
-          and payload->>'priceText' = 'Rp 1.500.000 per campaign' and payload->>'adText' = 'Halo **dunia**'
+          and payload->>'priceText' = 'Rp 150 per dm' and payload->>'totalText' = 'Rp 15.000'
+          and (payload->>'quantity')::int = 100 and payload->>'unit' = 'Pemain' and payload->>'adText' = 'Halo **dunia**'
           and payload->>'inviteUrl' = 'https://discord.gg/abc' and bot_slug = 'vanillateID'
      from public.bot_commands where payload->>'brandName' = 'Server Uji'),
   'payload laporan sesuai kontrak bot');

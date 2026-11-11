@@ -35,7 +35,10 @@ create table if not exists public.partner_orders (
   partner_name  text not null,                     -- snapshot, riwayat tetap ada bila akun dihapus
   product_key   text,
   product_name  text not null,                     -- snapshot dari katalog
-  price_text    text not null,                     -- snapshot, bukan input partner
+  price_text    text not null,                     -- snapshot harga satuan, bukan input partner
+  quantity      integer not null default 1 check (quantity between 1 and 1000000),
+  unit          text,                              -- snapshot satuan katalog (Pemain, Hari)
+  total_text    text not null default '',          -- snapshot total (harga x jumlah), dihitung server
   brand_name    text not null check (char_length(brand_name) between 1 and 80),
   invite_url    text check (invite_url is null or (invite_url ~ '^https://[^[:space:]]+$' and char_length(invite_url) <= 300)),
   scheduled_for date,
@@ -106,6 +109,7 @@ create trigger partner_orders_touch
 -- RPC: partner mencatat pesanan ----------------------------------------------
 create or replace function public.partner_order_submit(
   p_product_key   text,
+  p_quantity      integer,
   p_brand_name    text,
   p_invite_url    text default null,
   p_scheduled_for date default null,
@@ -126,6 +130,9 @@ declare
   v_ad      text := nullif(btrim(coalesce(p_ad_text, '')), '');
   v_note    text := nullif(btrim(coalesce(p_note, '')), '');
   v_price   text;
+  v_total   text;
+  v_qty     integer := coalesce(p_quantity, 0);
+  v_min     integer;
   v_today   date := (now() at time zone 'Asia/Jakarta')::date;
   v_id      bigint;
 begin
@@ -144,6 +151,11 @@ begin
    where key = p_product_key and enabled;
   if not found then
     raise exception 'Paket tidak ditemukan atau sedang tidak tersedia.' using errcode = '22023';
+  end if;
+
+  v_min := greatest(coalesce(v_prod.min_quantity, 1), 1);
+  if v_qty < v_min or v_qty > 1000000 then
+    raise exception 'Jumlah minimal % %.', v_min, coalesce(nullif(btrim(v_prod.unit), ''), 'unit') using errcode = '22023';
   end if;
 
   if char_length(v_brand) not between 1 and 80 then
@@ -176,11 +188,16 @@ begin
          || coalesce(' ' || nullif(btrim(v_prod.price_unit), ''), '')
   end;
 
+  v_total := case
+    when v_prod.price is null then 'Harga belum ditentukan'
+    else 'Rp ' || replace(to_char(round(v_prod.price * v_qty), 'FM999,999,999,999,999,999'), ',', '.')
+  end;
+
   insert into public.partner_orders
-    (partner_id, partner_name, product_key, product_name, price_text,
+    (partner_id, partner_name, product_key, product_name, price_text, quantity, unit, total_text,
      brand_name, invite_url, scheduled_for, ad_text, note)
   values
-    (v_uid, v_acc.display_name, v_prod.key, v_prod.name, v_price,
+    (v_uid, v_acc.display_name, v_prod.key, v_prod.name, v_price, v_qty, nullif(btrim(v_prod.unit), ''), v_total,
      v_brand, v_url, p_scheduled_for, v_ad, v_note)
   returning id into v_id;
 
@@ -188,8 +205,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.partner_order_submit(text, text, text, date, text, text) from public, anon;
-grant  execute on function public.partner_order_submit(text, text, text, date, text, text) to authenticated;
+revoke execute on function public.partner_order_submit(text, integer, text, text, date, text, text) from public, anon;
+grant  execute on function public.partner_order_submit(text, integer, text, text, date, text, text) to authenticated;
 
 -- Trigger: laporan ke bot -----------------------------------------------------
 create or replace function public.partner_orders_report()
@@ -208,6 +225,9 @@ begin
       'partnerName',  new.partner_name,
       'productName',  new.product_name,
       'priceText',    new.price_text,
+      'quantity',     new.quantity,
+      'unit',         coalesce(new.unit, ''),
+      'totalText',    new.total_text,
       'brandName',    new.brand_name,
       'inviteUrl',    coalesce(new.invite_url, ''),
       'scheduledFor', coalesce(new.scheduled_for::text, ''),

@@ -1,6 +1,6 @@
 # Portal Partner (`/partnership/masuk`)
 
-Status: **rancangan** (disetujui pemilik 2026-11-11). Dibangun bertahap, satu PR per bagian.
+Status: **dibangun** (disetujui pemilik 2026-11-11). Sisi bot: handler `partner.order.report` di repo Vanillate.ID (`src/cms/handlers/partner.js`).
 
 ## Tujuan
 Partner yang sudah memesan lewat WhatsApp masuk ke `/partnership/masuk`, mencatat
@@ -26,7 +26,7 @@ Setiap pesanan baru dilaporkan bot Vanillate.ID ke channel Discord
 
 ## Data (proyek CMS `lvfwopnvvqncopvathop`, SQL aditif)
 - `partner_accounts`: `id` (= auth.users.id), `username` unik, `display_name`, `must_change_credentials`, `created_at`, `last_login_at`.
-- `partner_orders`: `id`, `partner_id`, `product_id`/`product_name` (snapshot), `price_snapshot`, `brand_name`, `invite_url`, `scheduled_for`, `ad_text` (markdown Discord, maks. 2000), `note`, `status`, `status_note`, `created_at`, `updated_at`.
+- `partner_orders`: `id`, `partner_id`, `product_id`/`product_name` (snapshot), `price_text`, `brand_name`, `invite_url`, `scheduled_for`, `ad_text` (markdown Discord, maks. 2000), `note`, `status`, `status_note`, `created_at`, `updated_at`.
 - RLS: partner `select` hanya `partner_id = auth.uid()`. Tidak ada policy insert/update/delete untuk partner. Pesanan masuk lewat RPC `partner_order_submit()` (SECURITY DEFINER) yang memvalidasi panjang, URL, tanggal, dan mengambil nama/harga dari `partnership_products`, bukan dari input partner. Admin: baca semua, editor boleh ubah status.
 - Trigger `after insert` pada `partner_orders` mengisi `bot_commands` tipe `partner.order.report` (tanpa `created_by`). Ringkasan saja, tidak membawa data akun.
 - Rate limit di RPC: maks. 10 pesanan per partner per hari.
@@ -40,6 +40,15 @@ Setiap pesanan baru dilaporkan bot Vanillate.ID ke channel Discord
 ## Bot (repo Vanillate.ID)
 - Handler baru `partner.order.report` di `src/cms/handlers/`. Hanya tipe ini yang diterima tanpa pembuat admin, dan hanya bila dikirim dari trigger (payload divalidasi ketat).
 - Kirim kartu Components V2 ke channel `1570076513230131210`. Teks iklan/catatan tidak memicu mention (mention mati). Footer baku `v2Footer`.
+
+## Katalog dan jumlah
+Harga katalog per satuan (mis. Rp 150 per DM, minimum 100). Form meminta **jumlah** (minimal `min_quantity` produk). Nama, harga satuan, dan total dihitung server dari `partnership_products`, bukan dari input partner.
+
+## Penerapan
+1. `supabase/partner-portal.sql` lewat `apply_migration` (rollback: `partner-portal-rollback.sql`).
+2. Deploy Edge Function `partner-admin` (verify_jwt aktif). Env otomatis dari Supabase.
+3. Dashboard Supabase Auth: matikan pendaftaran publik (Sign ups disabled) supaya akun hanya dibuat owner.
+4. Bot Vanillate.ID: merge PR handler lalu Update dan Restart dari Kontrol Server.
 
 ## Pratinjau
 - Teks iklan: render markdown Discord (`src/lib/dev-panel/discord-md.ts`) lewat `esc()`.
