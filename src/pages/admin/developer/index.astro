@@ -91,7 +91,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         <p class="text-xs ${KELAS.muted}">Diatur di ${link('/admin/kontrol', 'Kontrol Bot')} (termasuk jadwal).</p>
       </div>
       <div class="${KELAS.kartu} space-y-2">
-        <div class="flex items-center justify-between"><h3 class="text-sm font-semibold">Pengumuman lobby</h3>${a.active && a.message ? pill('tampil', 'ok') : pill('nonaktif', 'muted')}</div>
+        <div class="flex items-center justify-between"><h3 class="text-sm font-semibold">Pengumuman Discord</h3>${a.active && a.message ? pill('tampil', 'ok') : pill('nonaktif', 'muted')}</div>
         ${a.message ? `<p class="text-sm font-medium">${esc(a.title ?? '')}</p><p class="text-sm whitespace-pre-line">${esc(a.message)}</p>` : `<p class="text-sm ${KELAS.muted}">Belum diatur.</p>`}
         <p class="text-xs ${KELAS.muted}">Diatur di ${link('/admin/kontrol', 'Kontrol Bot')} › Pengumuman Discord.</p>
       </div>
