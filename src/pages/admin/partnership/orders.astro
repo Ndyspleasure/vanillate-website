@@ -44,7 +44,7 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtWaktu } from '@/lib/admin-auth';
-  import { discordMarkdownHtml } from '@/lib/dev-panel/discord-md';
+  import { adPreviewHtml } from '@/lib/partner/render';
   import { formatDateId, ORDER_STATUSES, statusMeta } from '@/lib/partner/model';
   import { pill } from '@/lib/dashboard/ui';
 
@@ -69,7 +69,7 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
     if (!sb) return;
     if (ulang) { box.innerHTML = stateBlock('loading', ''); terakhir = null; }
     let q = sb.from('partner_orders')
-      .select('id,partner_name,product_name,price_text,quantity,unit,total_text,brand_name,invite_url,scheduled_for,ad_text,note,status,status_note,created_at')
+      .select('id,partner_name,product_name,price_text,quantity,unit,total_text,brand_name,invite_url,scheduled_for,ad_text,ad_title,ad_footer,ad_image_url,ad_buttons,note,status,status_note,created_at')
       .order('id', { ascending: false })
       .limit(PAGE);
     if (terakhir) q = q.lt('id', terakhir);
@@ -106,8 +106,10 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
       <p class="mt-2 text-sm">${esc(o.product_name)} · ${Number(o.quantity).toLocaleString('id-ID')}${o.unit ? ' ' + esc(String(o.unit).toLowerCase()) : ''} · ${esc(o.price_text)} · <strong>${esc(o.total_text)}</strong></p>
       <p class="text-sm text-ink-600 dark:text-cream-300/80">Jadwal: ${esc(o.scheduled_for ? formatDateId(o.scheduled_for) : 'belum diatur')}${o.invite_url ? ` · <a class="underline" href="${esc(o.invite_url)}" target="_blank" rel="noopener noreferrer">link</a>` : ''}</p>
       ${o.note ? `<p class="mt-2 text-sm"><span class="text-ink-500">Catatan partner:</span> ${esc(o.note)}</p>` : ''}
-      ${o.ad_text ? `<details class="mt-2"><summary class="cursor-pointer text-sm underline">Teks iklan</summary>
-        <div class="mt-2 rounded-lg bg-[#313338] p-3 text-sm text-[#dbdee1]">${discordMarkdownHtml(o.ad_text)}</div></details>` : ''}
+      ${o.ad_text || o.ad_title || o.ad_footer || o.ad_image_url || (o.ad_buttons ?? []).length ? `<details class="mt-2"><summary class="cursor-pointer text-sm underline">Iklan (judul, isi, footer, tombol)</summary>
+        <div class="mt-2 rounded-lg bg-[#313338] p-3 text-sm text-[#dbdee1] break-words">${adPreviewHtml({ title: o.ad_title, text: o.ad_text, footer: o.ad_footer, imageUrl: o.ad_image_url, buttons: o.ad_buttons })}</div>
+        ${(o.ad_buttons ?? []).length ? `<ul class="mt-2 space-y-1 text-xs">${(o.ad_buttons as any[]).map((b) => `<li>${esc(b.label)}: <a class="underline" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(b.url)}</a></li>`).join('')}</ul>` : ''}
+        ${o.ad_image_url ? `<p class="mt-1 text-xs">Gambar: <a class="underline" href="${esc(o.ad_image_url)}" target="_blank" rel="noopener noreferrer">${esc(o.ad_image_url)}</a></p>` : ''}</details>` : ''}
       ${bolehEdit ? `<div class="mt-3 flex flex-wrap items-center gap-2">
         <select data-s class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-transparent px-2 py-1.5 text-sm">
           ${ORDER_STATUSES.map((s) => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${statusMeta(s).label}</option>`).join('')}

@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  addDays, buildReportPreview, clip, formatDateId, hasErrors, loginError, passwordProblem, priceText,
-  rpcError, rupiah, statusMeta, todayWib, totalText, usernameProblem, validateOrder,
+  addDays, buildReportPreview, cleanButtons, clip, formatDateId, hasErrors, loginError, passwordProblem, priceText,
+  campaignStatusMeta, campaignSummary, isRiwayatSaja, rpcError, rupiah, statusMeta, todayWib, totalText, usernameProblem, validateOrder,
   type CatalogProduct, type OrderInput,
 } from '../src/lib/partner/model.ts';
 
 const DM: CatalogProduct = { key: 'broadcast_dm', name: 'Broadcast via DM', price: 150, priceUnit: 'per dm', unit: 'Pemain', minQuantity: 100 };
-const base: OrderInput = { productKey: 'broadcast_dm', quantity: '100', brandName: 'Server Uji', inviteUrl: '', scheduledFor: '', adText: '', note: '' };
+const base: OrderInput = { productKey: 'broadcast_dm', quantity: '100', brandName: 'Server Uji', inviteUrl: '', scheduledFor: '', adTitle: '', adText: '', adFooter: '', imageUrl: '', buttons: [], note: '' };
 
 test('rupiah memakai titik ribuan', () => {
   assert.equal(rupiah(150), 'Rp 150');
@@ -81,4 +81,36 @@ test('pesan galat tidak membocorkan detail teknis', () => {
   assert.match(loginError('weird'), /Gagal masuk/);
   assert.equal(rpcError('Jumlah minimal 100 Pemain.'), 'Jumlah minimal 100 Pemain.');
   assert.equal(rpcError('permission denied for table x'), 'Gagal menyimpan pesanan. Coba lagi.');
+});
+
+test('laporan campaign: ringkasan dan status', () => {
+  assert.equal(campaignSummary({ target_total: 100, success_count: 95, failed_count: 5, skipped_count: 0 }),
+    '95 terkirim, 5 gagal dari 100 target (95%)');
+  assert.match(campaignSummary({ target_total: 0, success_count: 0, failed_count: 0, skipped_count: 3 }), /3 dilewati.*\(0%\)/);
+  assert.equal(campaignStatusMeta('running').label, 'Berjalan');
+  assert.equal(campaignStatusMeta('completed').tone, 'success');
+  assert.equal(campaignStatusMeta('aneh').label, 'aneh');
+});
+
+test('paket Lobby hanya riwayat pemesanan', () => {
+  assert.equal(isRiwayatSaja('broadcast_lobby'), true);
+  assert.equal(isRiwayatSaja('broadcast_dm'), false);
+  assert.equal(isRiwayatSaja(null), false);
+});
+
+test('form lengkap: judul, footer, gambar, tombol', () => {
+  const hari = '2026-11-11';
+  const ok = validateOrder({ ...base, adTitle: 'Judul', adFooter: 'Footer', imageUrl: 'https://cdn.id/a.png',
+    buttons: [{ label: 'Gabung', url: 'https://discord.gg/x' }, { label: '', url: '' }, { label: '', url: '' }] }, DM, hari);
+  assert.equal(hasErrors(ok), false);
+  assert.ok(validateOrder({ ...base, adTitle: 'a'.repeat(101) }, DM, hari).adTitle);
+  assert.ok(validateOrder({ ...base, adFooter: 'a'.repeat(101) }, DM, hari).adFooter);
+  assert.ok(validateOrder({ ...base, imageUrl: 'http://x.id/a.png' }, DM, hari).imageUrl);
+  assert.ok(validateOrder({ ...base, buttons: [{ label: 'a', url: 'http://x' }] }, DM, hari).buttons);
+  assert.ok(validateOrder({ ...base, buttons: [{ label: '', url: 'https://x.id' }] }, DM, hari).buttons);
+  assert.ok(validateOrder({ ...base, buttons: [1, 2, 3, 4].map((n) => ({ label: 'b' + n, url: 'https://x.id/' + n })) }, DM, hari).buttons);
+  assert.deepEqual(cleanButtons([{ label: ' a ', url: ' https://x.id ' }, { label: '', url: '' }]), [{ label: 'a', url: 'https://x.id' }]);
+  const pv = buildReportPreview({ partnerName: 'M', product: DM, input: { ...base, adTitle: 'J', adFooter: 'F', imageUrl: 'https://cdn.id/a.png', buttons: [{ label: 'G', url: 'https://x.id' }] } });
+  assert.equal(pv.adTitle, 'J');
+  assert.equal(pv.buttons.length, 1);
 });

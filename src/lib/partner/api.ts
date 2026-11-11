@@ -5,7 +5,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { rpcError, type OrderStatus } from './model';
+import { rpcError, type AdButton, type CampaignReport, type OrderStatus } from './model';
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string | undefined;
@@ -39,6 +39,7 @@ export interface PartnerProfile {
 
 export interface PartnerOrderRow {
   id: number;
+  product_key: string | null;
   product_name: string;
   price_text: string;
   quantity: number;
@@ -48,6 +49,10 @@ export interface PartnerOrderRow {
   invite_url: string | null;
   scheduled_for: string | null;
   ad_text: string | null;
+  ad_title: string | null;
+  ad_footer: string | null;
+  ad_image_url: string | null;
+  ad_buttons: AdButton[] | null;
   note: string | null;
   status: OrderStatus;
   status_note: string | null;
@@ -85,7 +90,7 @@ export async function loadProfile(): Promise<PartnerProfile | null> {
 }
 
 const ORDER_COLS =
-  'id,product_name,price_text,quantity,unit,total_text,brand_name,invite_url,scheduled_for,ad_text,note,status,status_note,created_at';
+  'id,product_key,product_name,price_text,quantity,unit,total_text,brand_name,invite_url,scheduled_for,ad_text,ad_title,ad_footer,ad_image_url,ad_buttons,note,status,status_note,created_at';
 
 /** Riwayat pesanan milik sendiri (RLS), satu query terpaginasi. */
 export async function listOrders(before?: number, limit = 20): Promise<PartnerOrderRow[]> {
@@ -98,6 +103,15 @@ export async function listOrders(before?: number, limit = 20): Promise<PartnerOr
   return (data ?? []) as PartnerOrderRow[];
 }
 
+/** Laporan campaign (agregat) untuk pesanan yang sedang tampil. Satu panggilan RPC. */
+export async function listOrderCampaigns(orderIds: number[]): Promise<CampaignReport[]> {
+  const sb = getPartnerSupabase();
+  if (!sb || orderIds.length === 0) return [];
+  const { data, error } = await sb.rpc('partner_order_campaigns', { p_order_ids: orderIds });
+  if (error) return [];
+  return (data ?? []) as CampaignReport[];
+}
+
 export async function submitOrder(a: {
   productKey: string;
   quantity: number;
@@ -105,6 +119,10 @@ export async function submitOrder(a: {
   inviteUrl: string;
   scheduledFor: string;
   adText: string;
+  adTitle: string;
+  adFooter: string;
+  imageUrl: string;
+  buttons: AdButton[];
   note: string;
 }): Promise<{ ok: boolean; id?: number; error?: string }> {
   const sb = getPartnerSupabase();
@@ -116,6 +134,10 @@ export async function submitOrder(a: {
     p_invite_url: a.inviteUrl || null,
     p_scheduled_for: a.scheduledFor || null,
     p_ad_text: a.adText || null,
+    p_ad_title: a.adTitle || null,
+    p_ad_footer: a.adFooter || null,
+    p_ad_image_url: a.imageUrl || null,
+    p_ad_buttons: a.buttons,
     p_note: a.note || null,
   });
   if (error) return { ok: false, error: rpcError(error.message) };

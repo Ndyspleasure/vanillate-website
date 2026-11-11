@@ -5,15 +5,16 @@
 
 import { esc } from '../admin-ui';
 import { discordMarkdownHtml } from '../dev-panel/discord-md';
+import { adPreviewHtml } from './render';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, loadingBlock, pill, toast } from '../dashboard/ui';
 import {
-  changeCredentials, getPartnerSupabase, isPartnerConfigured, listOrders, loadProfile,
+  changeCredentials, getPartnerSupabase, isPartnerConfigured, listOrderCampaigns, listOrders, loadProfile,
   signIn, signOut, submitOrder, type PartnerOrderRow, type PartnerProfile,
 } from './api';
 import {
-  buildReportPreview, formatDateId, hasErrors, loginError, MAX_AD, MAX_NOTE, passwordProblem,
+  buildReportPreview, campaignStatusMeta, cleanButtons, MAX_BTN_LABEL, MAX_FOOTER, MAX_TITLE, campaignSummary, formatDateId, hasErrors, isRiwayatSaja, loginError, MAX_AD, MAX_NOTE, passwordProblem,
   statusMeta, todayWib, totalText, usernameProblem, validateOrder,
-  type CatalogProduct, type OrderInput,
+  type CampaignReport, type CatalogProduct, type OrderInput,
 } from './model';
 
 const INPUT =
@@ -180,7 +181,27 @@ function wireCredentials(root: HTMLElement, onDone: () => void): void {
   });
 }
 
-function orderCard(o: PartnerOrderRow): string {
+function campaignBlock(o: PartnerOrderRow, list: CampaignReport[]): string {
+  if (isRiwayatSaja(o.product_key)) {
+    return `<p class="mt-3 text-xs text-ink-500 dark:text-cream-300/60">Paket Lobby dicatat sebagai riwayat pemesanan. Statusnya diperbarui oleh tim kami.</p>`;
+  }
+  if (list.length === 0) return '';
+  return `<div class="mt-3 rounded-xl bg-ink-900/5 p-3 dark:bg-cream-100/5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-cream-300/60">Laporan campaign</p>
+    <ul class="mt-2 space-y-2 text-sm">
+      ${list.map((c) => {
+        const m = campaignStatusMeta(c.status);
+        const waktu = c.completed_at ?? c.started_at ?? c.created_at;
+        return `<li class="flex flex-wrap items-center justify-between gap-2">
+          <span><span class="font-mono text-xs">${esc(c.broadcast_id)}</span> · ${esc(campaignSummary(c))}</span>
+          <span class="flex items-center gap-2">${pill(m.label, m.tone)}<span class="text-xs text-ink-500 dark:text-cream-300/60">${esc(new Date(waktu).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }))}</span></span>
+        </li>`;
+      }).join('')}
+    </ul>
+  </div>`;
+}
+
+function orderCard(o: PartnerOrderRow, kampanye: CampaignReport[] = []): string {
   const m = statusMeta(o.status);
   const jadwal = o.scheduled_for ? `Tayang ${formatDateId(o.scheduled_for)}` : 'Tanggal tayang belum diatur';
   const dibuat = new Date(o.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
@@ -200,8 +221,10 @@ function orderCard(o: PartnerOrderRow): string {
       <div class="sm:col-span-2"><dt class="inline text-ink-500 dark:text-cream-300/60">Jadwal: </dt><dd class="inline">${esc(jadwal)}</dd></div>
     </dl>
     <p class="mt-3 text-sm text-ink-600 dark:text-cream-300/80">${esc(m.hint)}${o.status_note ? ' Catatan tim: ' + esc(o.status_note) : ''}</p>
-    ${o.ad_text ? `<details class="mt-3"><summary class="cursor-pointer text-sm underline">Lihat teks iklan</summary>
-      <div class="mt-2 rounded-lg bg-[#313338] p-3 text-sm text-[#dbdee1]">${discordMarkdownHtml(o.ad_text)}</div></details>` : ''}
+    ${campaignBlock(o, kampanye)}
+    ${o.ad_text || o.ad_title || o.ad_footer || o.ad_image_url || (o.ad_buttons ?? []).length
+      ? `<details class="mt-3"><summary class="cursor-pointer text-sm underline">Lihat iklan</summary>
+      <div class="mt-2 rounded-lg bg-[#313338] p-3 text-sm text-[#dbdee1] break-words">${adPreviewHtml({ title: o.ad_title, text: o.ad_text, footer: o.ad_footer, imageUrl: o.ad_image_url, buttons: o.ad_buttons })}</div></details>` : ''}
   </article>`;
 }
 
@@ -288,12 +311,39 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
           <input id="po-url" type="url" inputmode="url" placeholder="https://discord.gg/..." class="${INPUT}" />
           <p data-err="inviteUrl" class="${ERR} hidden"></p>
         </div>
-        <div>
-          <label class="${LABEL}" for="po-ad">Teks iklan (opsional)</label>
-          <textarea id="po-ad" rows="7" class="${INPUT} font-mono" placeholder="# Judul&#10;Tulis dengan format Discord: **tebal**, *miring*, ~~coret~~, > kutipan, [teks](https://...)"></textarea>
-          <p class="${HINT}"><span id="po-ad-n">0</span>/${MAX_AD} karakter. Mendukung format Discord.</p>
-          <p data-err="adText" class="${ERR} hidden"></p>
-        </div>
+        <fieldset class="space-y-4 rounded-2xl border border-ink-900/10 p-4 dark:border-cream-100/10">
+          <legend class="px-2 text-sm font-semibold">Isi iklan (opsional)</legend>
+          <div>
+            <label class="${LABEL}" for="po-title">Judul iklan</label>
+            <input id="po-title" maxlength="${MAX_TITLE}" class="${INPUT}" placeholder="mis. Open Recruitment Staff" />
+            <p data-err="adTitle" class="${ERR} hidden"></p>
+          </div>
+          <div>
+            <label class="${LABEL}" for="po-ad">Isi pesan</label>
+            <textarea id="po-ad" rows="7" class="${INPUT} font-mono" placeholder="Tulis dengan format Discord: **tebal**, *miring*, ~~coret~~, > kutipan, [teks](https://...)"></textarea>
+            <p class="${HINT}"><span id="po-ad-n">0</span>/${MAX_AD} karakter. Mendukung format Discord.</p>
+            <p data-err="adText" class="${ERR} hidden"></p>
+          </div>
+          <div>
+            <label class="${LABEL}" for="po-image">Gambar (link, opsional)</label>
+            <input id="po-image" type="url" inputmode="url" placeholder="https://..." class="${INPUT}" />
+            <p data-err="imageUrl" class="${ERR} hidden"></p>
+          </div>
+          <div>
+            <label class="${LABEL}" for="po-footer">Footer</label>
+            <input id="po-footer" maxlength="${MAX_FOOTER}" class="${INPUT}" placeholder="mis. Pendaftaran ditutup 30 November" />
+            <p data-err="adFooter" class="${ERR} hidden"></p>
+          </div>
+          <div>
+            <p class="${LABEL}">Tombol (maksimal 3)</p>
+            ${[1, 2, 3].map((n) => `<div class="mb-2 grid gap-2 sm:grid-cols-2">
+              <input data-btn-label="${n}" maxlength="${MAX_BTN_LABEL}" class="${INPUT}" placeholder="Nama tombol ${n}" aria-label="Nama tombol ${n}" />
+              <input data-btn-url="${n}" type="url" inputmode="url" class="${INPUT}" placeholder="https://link-tombol-${n}" aria-label="Link tombol ${n}" />
+            </div>`).join('')}
+            <p class="${HINT}">Kosongkan baris yang tidak dipakai. Link harus https.</p>
+            <p data-err="buttons" class="${ERR} hidden"></p>
+          </div>
+        </fieldset>
         <div>
           <label class="${LABEL}" for="po-note">Catatan untuk tim (opsional)</label>
           <textarea id="po-note" rows="3" class="${INPUT}"></textarea>
@@ -353,11 +403,19 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
   const inDate = $<HTMLInputElement>('#po-date');
   const inUrl = $<HTMLInputElement>('#po-url');
   const inAd = $<HTMLTextAreaElement>('#po-ad');
+  const inTitle = $<HTMLInputElement>('#po-title');
+  const inFooter = $<HTMLInputElement>('#po-footer');
+  const inImage = $<HTMLInputElement>('#po-image');
   const inNote = $<HTMLTextAreaElement>('#po-note');
   const produkAktif = (): CatalogProduct | null => products.find((p) => p.key === selProduk.value) ?? null;
   const baca = (): OrderInput => ({
     productKey: selProduk.value, quantity: inQty.value, brandName: inBrand.value,
     inviteUrl: inUrl.value, scheduledFor: inDate.value, adText: inAd.value, note: inNote.value,
+    adTitle: inTitle.value, adFooter: inFooter.value, imageUrl: inImage.value,
+    buttons: [1, 2, 3].map((n) => ({
+      label: root.querySelector<HTMLInputElement>(`[data-btn-label="${n}"]`)!.value,
+      url: root.querySelector<HTMLInputElement>(`[data-btn-url="${n}"]`)!.value,
+    })),
   });
 
   const render = () => {
@@ -370,15 +428,20 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
       ? `Harga satuan ${p.price === null ? 'belum ditentukan' : totalText(p.price, 1)}${p.priceUnit ? ' ' + p.priceUnit : ''}. Minimal ${p.minQuantity.toLocaleString('id-ID')} ${p.unit.toLowerCase()}.`
       : '';
     $('#po-total').textContent = p && Number.isInteger(qty) && qty > 0 ? `Perkiraan total ${totalText(p.price, qty)}` : '';
-    const adHtml = inAd.value.trim() ? discordMarkdownHtml(inAd.value) : '<span class="opacity-60">Teks iklan akan tampil di sini.</span>';
-    $('#pv-ad').innerHTML = adHtml;
+    $('#pv-ad').innerHTML = adPreviewHtml({
+      title: input.adTitle, text: input.adText, footer: input.adFooter, imageUrl: input.imageUrl, buttons: input.buttons,
+    });
     const pv = buildReportPreview({ partnerName: profile.display_name, product: p, input });
     $('#pv-card').innerHTML = `
       <p class="font-semibold text-white">${esc(pv.title)}</p>
       <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
         ${pv.fields.map((f) => `<div><dt class="text-xs text-[#949ba4]">${esc(f.name)}</dt><dd>${esc(f.value)}</dd></div>`).join('')}
       </dl>
+      ${pv.adTitle ? `<p class="mt-3 font-semibold text-white">${esc(pv.adTitle)}</p>` : ''}
       ${pv.ad ? `<blockquote class="mt-3 border-l-4 border-[#4e5058] pl-3 text-sm">${discordMarkdownHtml(pv.ad)}</blockquote>` : ''}
+      ${pv.adFooter ? `<p class="mt-2 text-xs text-[#949ba4]">Footer iklan: ${esc(pv.adFooter)}</p>` : ''}
+      ${pv.imageUrl ? `<p class="mt-2 text-xs text-[#949ba4]">Gambar: ${esc(pv.imageUrl)}</p>` : ''}
+      ${pv.buttons.length ? `<p class="mt-2 text-xs text-[#949ba4]">Tombol</p><ul>${pv.buttons.map((b) => `<li>${esc(b.label)} <span class="text-xs text-[#949ba4]">${esc(b.url)}</span></li>`).join('')}</ul>` : ''}
       ${pv.note ? `<p class="mt-3 text-xs text-[#949ba4]">Catatan</p><p>${esc(pv.note)}</p>` : ''}
       ${pv.inviteUrl ? `<p class="mt-3"><span class="inline-block rounded bg-[#4e5058] px-3 py-1 text-xs text-white">Buka link</span> <span class="text-xs text-[#949ba4]">${esc(pv.inviteUrl)}</span></p>` : ''}
       <p class="mt-3 text-xs text-[#949ba4]">${esc(pv.footer)}</p>`;
@@ -393,7 +456,8 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
     render();
   };
   selProduk.addEventListener('change', setMin);
-  [inQty, inBrand, inDate, inUrl, inAd, inNote].forEach((el) => el.addEventListener('input', render));
+  [inQty, inBrand, inDate, inUrl, inAd, inNote, inTitle, inFooter, inImage].forEach((el) => el.addEventListener('input', render));
+  root.querySelectorAll<HTMLInputElement>('[data-btn-label],[data-btn-url]').forEach((el) => el.addEventListener('input', render));
   setMin();
 
   const tampilGalat = (errors: Record<string, string>) => {
@@ -424,6 +488,8 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
       productKey: input.productKey, quantity: Number(input.quantity), brandName: input.brandName.trim(),
       inviteUrl: input.inviteUrl.trim(), scheduledFor: input.scheduledFor.trim(),
       adText: input.adText.trim(), note: input.note.trim(),
+      adTitle: input.adTitle.trim(), adFooter: input.adFooter.trim(), imageUrl: input.imageUrl.trim(),
+      buttons: cleanButtons(input.buttons),
     });
     poBtn.disabled = false;
     poBtn.textContent = 'Catat pesanan';
@@ -450,7 +516,8 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
       if (ulang && rows.length === 0) {
         rwList.innerHTML = `<p class="${CARD} p-6 text-sm">Belum ada pesanan tercatat.</p>`;
       }
-      rwList.insertAdjacentHTML('beforeend', rows.map(orderCard).join(''));
+      const laporan = await listOrderCampaigns(rows.filter((r) => !isRiwayatSaja(r.product_key)).map((r) => r.id));
+      rwList.insertAdjacentHTML('beforeend', rows.map((r) => orderCard(r, laporan.filter((c) => c.order_id === r.id))).join(''));
       terakhirId = rows.length ? rows[rows.length - 1].id : terakhirId;
       rwMore.classList.toggle('hidden', rows.length < 20);
     } catch (e) {

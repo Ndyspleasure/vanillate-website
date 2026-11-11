@@ -48,6 +48,26 @@ const labelCls = 'block text-sm font-medium mb-1.5';
         <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">Dipakai untuk pencarian & riwayat.</p>
       </div>
 
+      <!-- 2b. Partner (opsional) -->
+      <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4 space-y-3">
+        <div>
+          <label for="f-partner" class={labelCls}>Untuk partner (opsional)</label>
+          <select id="f-partner" class={input}>
+            <option value="">Broadcast internal (tanpa partner)</option>
+          </select>
+        </div>
+        <div id="wadah-pesanan" class="hidden">
+          <label for="f-pesanan" class={labelCls}>Pesanan partner</label>
+          <select id="f-pesanan" class={input}>
+            <option value="">Tanpa tautan pesanan</option>
+          </select>
+          <p id="info-pesanan" class="mt-1 text-xs text-ink-500 dark:text-cream-300/60"></p>
+        </div>
+        <p class="text-xs text-ink-500 dark:text-cream-300/60">
+          Memilih pesanan menautkan campaign ke partner. Status pesanan ikut berjalan otomatis (Diproses, Berjalan, Selesai) dan partner melihat laporan angkanya di dashboard mereka.
+        </p>
+      </div>
+
       <!-- 3. Target -->
       <div>
         <label for="f-target" class={labelCls}>Target User ID</label>
@@ -126,7 +146,8 @@ const labelCls = 'block text-sm font-medium mb-1.5';
   let partnershipUrl = '';
   let linksTersedia: Array<{ id: number; label: string; url: string }> = [];
   /** Hasil parse terakhir yang sudah lolos Preview. */
-  let siap: { ids: string[]; nama: string; pesan: string; buttons: Array<{ label: string; url: string }> } | null = null;
+  let siap: { ids: string[]; nama: string; pesan: string; buttons: Array<{ label: string; url: string }>; orderId: number | null; partnerLabel: string } | null = null;
+  let pesananAktif: Array<{ id: number; partner_id: string | null; brand_name: string; quantity: number; unit: string | null; status: string; product_key: string | null }> = [];
 
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
@@ -138,6 +159,7 @@ const labelCls = 'block text-sm font-medium mb-1.5';
       el<HTMLButtonElement>('btn-preview').disabled = true;
     }
     void muatKonfigurasi();
+    void muatPartner();
 
     el('f-target').addEventListener('input', ringkasTarget);
     el('f-pesan').addEventListener('input', () => {
@@ -150,6 +172,51 @@ const labelCls = 'block text-sm font-medium mb-1.5';
       siap = null;
     });
   });
+
+  /** Daftar akun partner + pesanan DM yang belum selesai (dua query ringan, sekali saat halaman dibuka). */
+  async function muatPartner() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const [ak, od] = await Promise.all([
+      supabase.from('partner_accounts').select('id, display_name').order('display_name').limit(200),
+      supabase.from('partner_orders')
+        .select('id, partner_id, brand_name, quantity, unit, status, product_key')
+        .in('status', ['dicatat', 'diproses', 'berjalan'])
+        .order('id', { ascending: false })
+        .limit(200),
+    ]);
+    pesananAktif = ((od.data ?? []) as typeof pesananAktif).filter((o) => o.product_key !== 'broadcast_lobby');
+    const selP = el<HTMLSelectElement>('f-partner');
+    for (const a of (ak.data ?? []) as Array<{ id: string; display_name: string }>) {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.display_name;
+      selP.appendChild(opt);
+    }
+    selP.addEventListener('change', () => {
+      const selO = el<HTMLSelectElement>('f-pesanan');
+      selO.innerHTML = '<option value="">Tanpa tautan pesanan</option>';
+      const daftar = pesananAktif.filter((o) => o.partner_id === selP.value);
+      for (const o of daftar) {
+        const opt = document.createElement('option');
+        opt.value = String(o.id);
+        opt.textContent = `#${o.id} ${o.brand_name} (${o.quantity.toLocaleString('id-ID')}${o.unit ? ' ' + o.unit.toLowerCase() : ''}, ${o.status})`;
+        selO.appendChild(opt);
+      }
+      el('wadah-pesanan').classList.toggle('hidden', !selP.value);
+      el('info-pesanan').textContent = selP.value && daftar.length === 0
+        ? 'Partner ini belum punya pesanan DM yang aktif. Campaign tetap bisa dibuat tanpa tautan pesanan.'
+        : '';
+    });
+    el<HTMLSelectElement>('f-pesanan').addEventListener('change', () => {
+      const o = pesananAktif.find((x) => String(x.id) === el<HTMLSelectElement>('f-pesanan').value);
+      const nama = el<HTMLInputElement>('f-nama');
+      if (o && !nama.value.trim()) nama.value = `Partner ${o.brand_name} #${o.id}`;
+      el('info-pesanan').textContent = o
+        ? `Jumlah dipesan ${o.quantity.toLocaleString('id-ID')}${o.unit ? ' ' + o.unit.toLowerCase() : ''}. Samakan jumlah target dengan pesanan ini.`
+        : '';
+    });
+  }
 
   /** Ambil URL Partnership (wajib) + daftar custom link dari Settings. */
   async function muatKonfigurasi() {
@@ -247,7 +314,9 @@ const labelCls = 'block text-sm font-medium mb-1.5';
       if (cb?.checked) buttons.push({ label: l.label, url: l.url });
     }
 
-    siap = { ids: hasil.valid, nama, pesan: isi, buttons };
+    const idPesanan = Number(el<HTMLSelectElement>('f-pesanan').value) || null;
+    const namaPartner = el<HTMLSelectElement>('f-partner').selectedOptions[0]?.textContent ?? '';
+    siap = { ids: hasil.valid, nama, pesan: isi, buttons, orderId: idPesanan, partnerLabel: el<HTMLSelectElement>('f-partner').value ? namaPartner : '' };
 
     const baris = (label: string, isiHtml: string) => `
       <div class="px-5 py-3">
@@ -258,6 +327,7 @@ const labelCls = 'block text-sm font-medium mb-1.5';
     el('preview-body').innerHTML = [
       baris('Broadcast Name', esc(nama)),
       baris('Kategori', esc(el<HTMLSelectElement>('f-kategori').value)),
+      baris('Partner', siap.partnerLabel ? esc(siap.partnerLabel) + (siap.orderId ? ` · pesanan #${siap.orderId}` : ' · tanpa tautan pesanan') : 'Broadcast internal'),
       baris('Target', `${fmtAngka(hasil.valid.length)} user valid${hasil.invalid.length ? ` · <span class="text-red-600 dark:text-red-400">${fmtAngka(hasil.invalid.length)} invalid dilewati</span>` : ''}${hasil.duplicates ? ` · ${fmtAngka(hasil.duplicates)} duplikat dibuang` : ''}`),
       baris('Message', `<div class="whitespace-pre-wrap rounded-xl bg-ink-900/5 dark:bg-cream-100/5 px-4 py-3">${esc(isi)}</div>`),
       baris('Buttons', buttons.map((b) => `<span class="mr-2 inline-block rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-2.5 py-1 text-xs">${esc(b.label)}</span>`).join('')),
@@ -310,6 +380,7 @@ const labelCls = 'block text-sm font-medium mb-1.5';
         target_total: siap.ids.length,
         valid_count: siap.ids.length,
         invalid_count: 0,
+        ...(siap.orderId ? { order_id: siap.orderId } : {}),
       })
       .select('id, broadcast_id')
       .single();
