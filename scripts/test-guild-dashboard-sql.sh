@@ -119,3 +119,8 @@ echo "✓ Tes SQL sakelar kartu Partnership lulus."
 # menjalankan supabase/showcase-servers.sql dua kali → idempoten.
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/showcase-servers.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL Showcase Server lulus."
+
+# Suite kesembilan: Portal Partner (/partnership/masuk). Tesnya menjalankan
+# supabase/partner-portal.sql dua kali (idempoten) lalu rollback.
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/partner-portal.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL Portal Partner lulus."
