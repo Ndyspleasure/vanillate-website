@@ -31,10 +31,19 @@ export function getWriterSupabase(): SupabaseClient | null {
   return client;
 }
 
+/**
+ * Supabase hanya menerima alamat kembali berupa URL penuh yang terdaftar di
+ * Redirect URLs. Alamat relatif (mis. "/blog/dashboard/") diabaikan dan
+ * pengguna dikembalikan ke Site URL, yaitu beranda.
+ */
+export function absoluteUrl(path: string): string {
+  return new URL(path, location.origin).href;
+}
+
 export async function signInGoogle(redirectTo: string): Promise<string | null> {
   const sb = getWriterSupabase();
   if (!sb) return 'Koneksi ke Supabase belum dikonfigurasi.';
-  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: absoluteUrl(redirectTo) } });
   return error ? error.message : null;
 }
 
@@ -42,7 +51,7 @@ export async function signInGoogle(redirectTo: string): Promise<string | null> {
 export async function linkDiscord(redirectTo: string): Promise<string | null> {
   const sb = getWriterSupabase();
   if (!sb) return 'Koneksi ke Supabase belum dikonfigurasi.';
-  const { error } = await sb.auth.linkIdentity({ provider: 'discord', options: { redirectTo } });
+  const { error } = await sb.auth.linkIdentity({ provider: 'discord', options: { redirectTo: absoluteUrl(redirectTo) } });
   return error ? error.message : null;
 }
 
