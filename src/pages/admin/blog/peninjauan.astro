@@ -1,0 +1,192 @@
+---
+// Admin — Peninjauan tulisan penulis (Portal Penulis Blog).
+//
+// Antrean persetujuan, tulisan ditolak (dengan alasan), riwayat tinjauan, dan
+// daftar penulis. Semua lewat Edge Function `blog-admin` (aksi reviewList,
+// reviewGet, approve, reject, deleteSubmission, setWriterStatus, linkAuthor).
+// Lihat docs/BLOG-PENULIS.md.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Peninjauan Tulisan" active="blog-review">
+  <AdminPageHeader
+    eyebrow="Blog"
+    title="Peninjauan tulisan"
+    description="Tulisan dari penulis di vanillate.id/blog/masuk menunggu persetujuan di sini. Disetujui: terbit ke blog dan penulis diberi email. Ditolak: penulis menerima alasan lewat email dan bisa merevisi."
+  />
+
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-6">
+    <div id="rv-root"></div>
+    <p id="rv-pesan" class="text-sm" role="status" aria-live="polite"></p>
+  </div>
+</AdminLayout>
+
+<script>
+  import { blogCall } from '@/lib/blog/admin-client';
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtWaktu } from '@/lib/admin-auth';
+  import { pasangTab } from '@/lib/admin-tabs';
+  import { renderBlogMarkdown } from '@/lib/blog/markdown';
+  import { previewBody, statusMeta } from '@/lib/blog/writer-model';
+
+  const BTN = 'rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors disabled:opacity-50';
+  const BTN_OK = 'rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-amber-400 transition-colors disabled:opacity-50';
+  const BTN_BAD = 'rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 transition-colors disabled:opacity-50';
+  const KARTU = 'rounded-2xl border border-ink-900/10 dark:border-cream-100/10';
+  const MUTED = 'text-ink-500 dark:text-cream-300/60';
+
+  let bolehEdit = false;
+  let authors: { id: string; name: string }[] = [];
+  const root = () => document.getElementById('rv-root')!;
+  const pesan = (t: string, bad = false) => {
+    const el = document.getElementById('rv-pesan')!;
+    el.textContent = t;
+    el.className = `text-sm ${bad ? 'text-red-600 dark:text-red-400' : 'text-teal-700 dark:text-teal-300'}`;
+  };
+
+  document.addEventListener('admin:ready', (e) => {
+    const role = (e as CustomEvent).detail?.role;
+    bolehEdit = role === 'owner' || role === 'admin';
+    void muat();
+  });
+
+  const penulisNama = (r: any) => esc(r.blog_writers?.display_name ?? 'Penulis');
+
+  async function muat(tab?: string) {
+    root().innerHTML = stateBlock('loading', '');
+    const [r, l] = await Promise.all([blogCall<any>('reviewList'), blogCall<any>('list')]);
+    if (!r.ok) { root().innerHTML = stateBlock('error', r.error.message); return; }
+    if (l.ok) authors = (l.data.authors ?? []).map((a: any) => ({ id: a.id, name: a.name }));
+    const { queue, rejected, log, writers } = r.data;
+
+    const baris = (rows: any[], kosong: string, aksi: (x: any) => string) => rows.length
+      ? `<ul class="${KARTU} divide-y divide-ink-900/5 dark:divide-cream-100/5">${rows.map((x) => `
+          <li class="px-5 py-4 space-y-2">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <strong class="font-display">${esc(x.title || 'Tanpa judul')}</strong>
+              ${x.revision_of ? '<span class="rounded-full bg-sky-500/15 px-2 py-0.5 text-xs text-sky-700 dark:text-sky-300">revisi</span>' : ''}
+              <span class="text-sm ${MUTED}">${penulisNama(x)}${x.blog_writers?.discord_username ? ` · Discord ${esc(x.blog_writers.discord_username)}` : ''}</span>
+              <span class="ml-auto text-xs ${MUTED}">${esc(fmtWaktu(x.submitted_at ?? x.updated_at))}</span>
+            </div>
+            ${x.reject_reason ? `<p class="rounded-lg bg-red-500/10 px-3 py-2 text-sm"><strong>Alasan:</strong> ${esc(x.reject_reason)}</p>` : ''}
+            <div class="flex flex-wrap gap-2">${aksi(x)}</div>
+            <div data-detail="${esc(x.id)}"></div>
+          </li>`).join('')}</ul>`
+      : `<p class="${KARTU} px-5 py-8 text-center text-sm ${MUTED}">${kosong}</p>`;
+
+    const tabAntrean = baris(queue, 'Tidak ada tulisan yang menunggu.', (x) =>
+      `<button data-periksa="${esc(x.id)}" class="${BTN}">Periksa</button>`);
+    const tabDitolak = baris(rejected, 'Belum ada tulisan yang ditolak.', (x) =>
+      `<button data-hapus="${esc(x.id)}" class="${BTN_BAD}" ${bolehEdit ? '' : 'disabled'}>Hapus permanen</button>`);
+
+    const tabRiwayat = log.length
+      ? `<ul class="${KARTU} divide-y divide-ink-900/5 dark:divide-cream-100/5">${log.map((x: any) => `
+          <li class="px-5 py-3 text-sm">
+            <span class="font-medium">${esc(x.title)}</span>
+            <span class="${MUTED}"> · ${esc(x.blog_writers?.display_name ?? '')} · </span>
+            <span>${x.action === 'tolak' ? 'ditolak' : x.action === 'setujui' ? 'disetujui' : 'diajukan'}</span>
+            <span class="${MUTED}"> · ${esc(fmtWaktu(x.at))}</span>
+            ${x.reason ? `<div class="mt-1 ${MUTED}">Alasan: ${esc(x.reason)}</div>` : ''}
+          </li>`).join('')}</ul>`
+      : `<p class="${KARTU} px-5 py-8 text-center text-sm ${MUTED}">Belum ada riwayat.</p>`;
+
+    const opsiPenulis = (cur: string | null) => `<option value="">Penulis baru (otomatis)</option>${authors.map((a) =>
+      `<option value="${esc(a.id)}" ${a.id === cur ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}`;
+    const tabPenulis = writers.length
+      ? `<ul class="${KARTU} divide-y divide-ink-900/5 dark:divide-cream-100/5">${writers.map((w: any) => `
+          <li class="px-5 py-3 flex flex-wrap items-center gap-3 text-sm">
+            <strong>${esc(w.display_name)}</strong>
+            <span class="${MUTED}">/${esc(w.slug)}${w.discord_username ? ` · Discord ${esc(w.discord_username)}` : ' · Discord belum tertaut'}</span>
+            <span class="rounded-full px-2 py-0.5 text-xs ${w.status === 'aktif' ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300' : 'bg-red-500/15 text-red-600 dark:text-red-400'}">${esc(w.status)}</span>
+            <label class="ml-auto flex items-center gap-2 text-xs ${MUTED}">Tautkan ke penulis lama
+              <select data-link="${esc(w.user_id)}" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-transparent px-2 py-1 text-xs" ${bolehEdit ? '' : 'disabled'}>${opsiPenulis(w.sanity_author_id)}</select></label>
+            <button data-status="${esc(w.user_id)}" data-to="${w.status === 'aktif' ? 'diblokir' : 'aktif'}" class="${w.status === 'aktif' ? BTN_BAD : BTN}" ${bolehEdit ? '' : 'disabled'}>${w.status === 'aktif' ? 'Blokir' : 'Aktifkan'}</button>
+          </li>`).join('')}</ul>`
+      : `<p class="${KARTU} px-5 py-8 text-center text-sm ${MUTED}">Belum ada penulis terdaftar.</p>`;
+
+    const bagian = (id: string, label: string, badge: number, html: string) =>
+      `<section data-tab="${id}" data-tab-label="${label}" ${badge ? `data-tab-badge="${badge}"` : ''} role="tabpanel" class="pt-6">${html}</section>`;
+    root().innerHTML = [
+      bagian('antrean', 'Antrean', queue.length, tabAntrean),
+      bagian('ditolak', 'Ditolak', rejected.length, tabDitolak),
+      bagian('riwayat', 'Riwayat', 0, tabRiwayat),
+      bagian('penulis', 'Penulis', writers.length, tabPenulis),
+    ].join('');
+    pasangTab(root());
+    if (tab) document.querySelector<HTMLElement>(`[data-tab-btn="${tab}"]`)?.click();
+    pasang();
+  }
+
+  function pasang() {
+    root().querySelectorAll<HTMLElement>('[data-periksa]').forEach((b) => b.addEventListener('click', () => void periksa(b.dataset.periksa!)));
+    root().querySelectorAll<HTMLElement>('[data-hapus]').forEach((b) => b.addEventListener('click', () => void hapus(b.dataset.hapus!)));
+    root().querySelectorAll<HTMLSelectElement>('[data-link]').forEach((s) => s.addEventListener('change', async () => {
+      const r = await blogCall('linkAuthor', { userId: s.dataset.link, authorId: s.value || null });
+      if (r.ok) pesan('Penulis ditautkan.'); else pesan(r.error.message, true);
+    }));
+    root().querySelectorAll<HTMLElement>('[data-status]').forEach((b) => b.addEventListener('click', async () => {
+      const blok = b.dataset.to === 'diblokir';
+      if (blok && !confirm('Blokir penulis ini? Ia tidak bisa menulis atau mengajukan sampai diaktifkan lagi.')) return;
+      const r = await blogCall('setWriterStatus', { userId: b.dataset.status, status: b.dataset.to });
+      if (!r.ok) return pesan(r.error.message, true);
+      pesan(blok ? 'Penulis diblokir.' : 'Penulis diaktifkan.');
+      void muat('penulis');
+    }));
+  }
+
+  async function hapus(id: string) {
+    if (!confirm('Hapus permanen tulisan ini beserta riwayat dan gambarnya? Tindakan ini tidak bisa dibatalkan.')) return;
+    const r = await blogCall('deleteSubmission', { id });
+    if (!r.ok) return pesan(r.error.message, true);
+    pesan('Tulisan dihapus permanen.');
+    void muat();
+  }
+
+  async function periksa(id: string) {
+    const slot = root().querySelector<HTMLElement>(`[data-detail="${id}"]`)!;
+    if (slot.innerHTML) { slot.innerHTML = ''; return; }
+    slot.innerHTML = stateBlock('loading', '');
+    const r = await blogCall<any>('reviewGet', { id });
+    if (!r.ok) { slot.innerHTML = stateBlock('error', r.error.message); return; }
+    const { submission: s, writer: w, imageUrls } = r.data;
+    const html = renderBlogMarkdown(previewBody(s.body, imageUrls)).html;
+    const m = statusMeta(s.status);
+    slot.innerHTML = `
+      <div class="${KARTU} p-5 space-y-4">
+        <div class="grid gap-1 text-sm">
+          <div><span class="${MUTED}">Penulis:</span> ${esc(w.displayName)} (/${esc(w.slug)}) · ${esc(m.label)}</div>
+          <div><span class="${MUTED}">Slug:</span> <code>${esc(s.slug ?? '')}</code></div>
+          <div><span class="${MUTED}">Ringkasan:</span> ${esc(s.excerpt)}</div>
+          <div><span class="${MUTED}">Kategori/tag:</span> ${esc((s.categories ?? []).length)} kategori · ${esc((s.tags ?? []).join(', '))}</div>
+          ${w.bio ? `<div><span class="${MUTED}">Bio:</span> ${esc(w.bio)}</div>` : ''}
+          ${s.ai_image ? '<div class="text-amber-700 dark:text-amber-400">Gambar utama dibuat dengan AI.</div>' : ''}
+        </div>
+        ${s.main_image_path && imageUrls[s.main_image_path] ? `<figure><img src="${esc(imageUrls[s.main_image_path])}" alt="${esc(s.main_image_alt)}" class="max-h-56 rounded-xl" /><figcaption class="text-xs ${MUTED}">Alt: ${esc(s.main_image_alt)}</figcaption></figure>` : ''}
+        <div class="space-y-4 rounded-xl border border-ink-900/10 dark:border-cream-100/10 p-4">${html}</div>
+        <div class="space-y-3">
+          <textarea data-alasan rows="2" maxlength="500" placeholder="Alasan penolakan (wajib bila menolak, dikirim ke penulis lewat email)"
+            class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-transparent px-3 py-2 text-sm"></textarea>
+          <div class="flex flex-wrap gap-2">
+            <button data-setujui class="${BTN_OK}" ${bolehEdit ? '' : 'disabled'}>Setujui dan terbitkan</button>
+            <button data-tolak class="${BTN_BAD}" ${bolehEdit ? '' : 'disabled'}>Tolak</button>
+            <button data-hapus-detail class="${BTN}" ${bolehEdit ? '' : 'disabled'}>Hapus permanen</button>
+          </div>
+        </div>
+      </div>`;
+    const aksi = async (nama: 'approve' | 'reject') => {
+      const alasan = slot.querySelector<HTMLTextAreaElement>('[data-alasan]')!.value.trim();
+      if (nama === 'reject' && alasan.length < 3) return pesan('Isi alasan penolakan dulu.', true);
+      slot.querySelectorAll('button').forEach((b) => ((b as HTMLButtonElement).disabled = true));
+      pesan(nama === 'approve' ? 'Menerbitkan…' : 'Menolak…');
+      const x = await blogCall<any>(nama, nama === 'approve' ? { id } : { id, reason: alasan });
+      if (!x.ok) { pesan(x.error.message, true); slot.querySelectorAll('button').forEach((b) => ((b as HTMLButtonElement).disabled = !bolehEdit)); return; }
+      const email = x.data.emailed ? 'Email terkirim ke penulis.' : 'Email belum terkirim (cek RESEND_API_KEY di Edge Function blog-admin).';
+      pesan(nama === 'approve' ? `Terbit. Situs sedang dibangun ulang (${x.data.rebuild}). ${email}` : `Ditolak. ${email}`);
+      void muat();
+    };
+    slot.querySelector('[data-setujui]')!.addEventListener('click', () => void aksi('approve'));
+    slot.querySelector('[data-tolak]')!.addEventListener('click', () => void aksi('reject'));
+    slot.querySelector('[data-hapus-detail]')!.addEventListener('click', () => void hapus(id));
+  }
+</script>

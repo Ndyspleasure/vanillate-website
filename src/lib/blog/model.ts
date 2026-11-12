@@ -64,6 +64,8 @@ export interface BlogPost {
   relatedFaqs: string[];
   relatedPostIds: string[];
   previousSlugs: string[];
+  /** Tulisan penulis tamu dari portal: tautan luar rel="ugc nofollow". */
+  ugc: boolean;
   wordCount: number;
   readingMinutes: number;
 }
@@ -196,6 +198,7 @@ export function buildBlogData(raw: any, now: Date = new Date()): BlogData {
       relatedFaqs: strList(p?.relatedFaqs, 8).filter((s) => /^[a-z0-9-]+\/[a-z0-9-]+$/.test(s)).map((s) => s.replace(/^sambung-kata\//, 'vanillate-id/')),
       relatedPostIds: strList(p?.relatedPostIds, 6),
       previousSlugs: strList(p?.previousSlugs, 20).filter((s) => SLUG_OK.test(s) && s !== slug),
+      ugc: p?.ugc === true,
       wordCount: wordCount(body),
       readingMinutes: readingMinutes(body),
     });

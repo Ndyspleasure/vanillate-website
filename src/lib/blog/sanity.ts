@@ -21,7 +21,7 @@ const IMG = `{alt, caption, "url": asset->url, "width": asset->metadata.dimensio
 export const BLOG_QUERY = `{
   "posts": *[_type == "${DOC_TYPES.post}" && ${NOT_DRAFT} && defined(slug.current)] | order(publishedAt desc) {
     "id": _id, title, "slug": slug.current, excerpt, tldr, body, publishedAt, updatedAt, tags,
-    faqs[]{q, a}, relatedProducts, relatedFaqs, "relatedPostIds": relatedPosts[]._ref, previousSlugs,
+    faqs[]{q, a}, relatedProducts, relatedFaqs, "relatedPostIds": relatedPosts[]._ref, previousSlugs, ugc,
     seo{title, description, noindex},
     "mainImage": mainImage${IMG},
     "authorId": author._ref,

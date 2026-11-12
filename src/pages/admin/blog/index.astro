@@ -2,8 +2,9 @@
 // Admin — Semua Artikel Blog.
 //
 // Semua artikel (draft, terbit, ada perubahan, terjadwal) dibaca dari Sanity
-// lewat Edge Function `blog-admin`. Menulis & mengedit ada di /admin/blog/tulis.
-// Lihat docs/BLOG.md.
+// lewat Edge Function `blog-admin`. Tulisan baru ditulis lewat Portal Penulis
+// (/blog/dashboard). Editor lama /admin/blog/tulis hanya dipertahankan untuk
+// mengedit artikel yang sudah ada. Lihat docs/BLOG.md & docs/BLOG-PENULIS.md.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
@@ -15,9 +16,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     description="Tulis, edit, dan terbitkan artikel blog vanillate.id/blog. Artikel disimpan di Sanity; situs dibangun ulang otomatis setelah artikel terbit."
   >
     <div class="mt-5 flex flex-wrap gap-3">
-      <a href="/admin/blog/tulis" id="btn-tulis"
+      <a href="/blog/dashboard/" id="btn-tulis" target="_blank" rel="noopener"
         class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">
-        + Tulis artikel
+        Tulis lewat portal penulis ↗
+      </a>
+      <a href="/admin/blog/peninjauan"
+        class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">
+        Peninjauan tulisan
       </a>
       <button type="button" id="btn-rebuild"
         class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">

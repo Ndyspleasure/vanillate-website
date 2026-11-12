@@ -34,7 +34,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
   import { toEpoch } from '@/lib/dev-panel/model';
-  import { fmtJam, freshness, notice, pill, section, stat, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
+  import { fmtJam, freshness, notice, pill, section, tabSection, stat, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   let bolehEdit = false;
   const SEV: Record<string, Tone> = { CRITICAL: 'bad', HIGH: 'bad', MEDIUM: 'warn', LOW: 'muted' };
@@ -68,7 +69,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const tombolErr = (id: string) => `<button type="button" data-err="${esc(id)}" class="font-mono text-xs underline decoration-dotted hover:text-amber-600">${esc(id)}</button>`;
 
     body.innerHTML = [
-      section('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      tabSection('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         ${stat('Total error', fmtAngka(stats.total), `${fmtAngka(stats.last24h)} dalam 24 jam`)}
         ${stat('Masih open', fmtAngka(stats.open))}
         ${stat('Fingerprint', fmtAngka(fp.total), `${fmtAngka(fp.open)} open · ${fmtAngka(fp.fixed)} fixed`)}
@@ -83,7 +84,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ]), '—')}
       </div>
       <p id="ekb-kode" class="text-xs"></p>`),
-      section('Error terbaru', table(['Error ID', 'Kode', 'Pesan', 'Konteks', 'Status', 'Waktu'], (recent ?? []).map((r: any) => [
+      tabSection('Error terbaru', table(['Error ID', 'Kode', 'Pesan', 'Konteks', 'Status', 'Waktu'], (recent ?? []).map((r: any) => [
         tombolErr(r.error_id),
         `<span class="text-xs">${esc(r.catalog_code ?? '—')}</span>${r.severity ? `<br>${pill(r.severity, SEV[r.severity] ?? 'muted')}` : ''}`,
         `<span class="text-xs break-words">${esc(String(r.message ?? '').slice(0, 140))}</span>`,
@@ -91,7 +92,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         pill(r.status ?? '—', STATUS[r.status] ?? 'muted'),
         `<span class="text-xs whitespace-nowrap">${esc(fmtJam(toEpoch(r.created_at)))}</span>`,
       ]), 'Belum ada error tercatat.')),
-      section('Fingerprint teratas', table(['Fingerprint', 'Kode', 'Kemunculan', 'Dampak', 'Recovery', 'Status'], (fingerprints ?? []).map((f: any) => [
+      tabSection('Fingerprint teratas', table(['Fingerprint', 'Kode', 'Kemunculan', 'Dampak', 'Recovery', 'Status'], (fingerprints ?? []).map((f: any) => [
         `<code class="text-xs break-all">${esc(String(f.fingerprint).slice(0, 80))}</code>`,
         `<span class="text-xs">${esc(f.catalog_code ?? '—')} ${esc(f.name ?? '')}</span>`,
         esc(fmtAngka(f.occurrences)),
@@ -99,8 +100,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         `<span class="text-xs">${esc(`${f.recovered_count ?? 0}/${f.recovery_attempts ?? 0}`)}</span>`,
         pill(f.status ?? '—', STATUS[f.status] ?? 'muted'),
       ]), 'Belum ada fingerprint.')),
-      section('Auto-recovery per metode', table(['Metode', 'Berhasil / total'], (rc.byMethod ?? []).map((m: any) => [esc(m.method), esc(`${m.ok ?? 0}/${m.total}`)]), 'Belum ada percobaan recovery.')),
+      tabSection('Auto-recovery per metode', table(['Metode', 'Berhasil / total'], (rc.byMethod ?? []).map((m: any) => [esc(m.method), esc(`${m.ok ?? 0}/${m.total}`)]), 'Belum ada percobaan recovery.')),
     ].join('');
+    pasangTab(body);
   }
 
   /** Aksi massal: semua kejadian & fingerprint satu kode katalog → fixed. */

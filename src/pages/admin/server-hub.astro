@@ -20,7 +20,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       </button>
       <p id="sh-info" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
     </div>
-    <div id="sh-body" class="space-y-10"></div>
+    <div id="sh-body"></div>
   </div>
 </AdminLayout>
 
@@ -29,7 +29,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { fmtAngka } from '@/lib/admin-auth';
   import { bacaCms } from '@/lib/cms-read/client';
   import { parseServerHub, perhatian, persen, type ServerHub } from '@/lib/cms-read/serverhub-model';
-  import { KELAS, fmtJam, notice, pill, section, stat } from '@/lib/dev-panel/ui';
+  import { KELAS, fmtJam, notice, pill, section, tabSection, stat } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   const COOLDOWN_MUAT_MS = 15_000;
   let terakhirMuat = 0;
@@ -51,10 +52,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   const status = (on: number, konfigurasi: number) =>
     on > 0 ? pill(`${n(on)} server aktif`, 'ok') : konfigurasi > 0 ? pill('dikonfigurasi, belum aktif', 'warn') : pill('belum dipakai', 'muted');
 
+  const DESC = 'Angka agregat dari seluruh server. Tidak ada nama server, ID, atau isi pesan.';
   function render(h: ServerHub): string {
     const p = perhatian(h);
     const perlu = p.length
-      ? section('Perlu diperhatikan', `<div class="space-y-3">${p.map((x) => notice(x.tone, x.text)).join('')}</div>`)
+      ? tabSection('Perlu diperhatikan', `<div class="space-y-3">${p.map((x) => notice(x.tone, x.text)).join('')}</div>`)
       : '';
 
     const verif = kartu('Verification', status(h.verification.servers_on, h.verification.servers_configured), `
@@ -103,8 +105,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     return [
       perlu,
-      section('Fitur server', `<div class="space-y-4">${verif}${level}${auto}${welcome}${security}</div>`,
-        'Angka agregat dari seluruh server. Tidak ada nama server, ID, atau isi pesan.'),
+      tabSection('Verification', verif, DESC),
+      tabSection('Leveling', level, DESC),
+      tabSection('Auto Role', auto, DESC),
+      tabSection('Welcome dan Goodbye', welcome, DESC),
+      tabSection('Security Center', security, DESC),
     ].join('');
   }
 
@@ -125,6 +130,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       return;
     }
     body.innerHTML = render(h);
+    pasangTab(body);
     info.textContent = `Dihitung ${fmtJam(h.generatedAt)}${r.cached ? ' (dari cache 1 menit)' : ''}.`;
   }
 </script>

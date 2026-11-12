@@ -15,8 +15,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     description="Kategori mengelompokkan artikel di /blog. Penulis tampil di setiap artikel beserta profilnya — Google menilai konten lebih tepercaya bila penulisnya jelas."
   />
 
-  <div class="px-6 lg:px-10 py-8 space-y-12 max-w-3xl">
-    <section class="space-y-4">
+  <div class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
+    <div id="tabs-root">
+    <section data-tab="kategori" data-tab-label="Kategori" role="tabpanel" class="pt-6 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="font-display text-lg font-semibold tracking-tightest">Kategori</h2>
         <button type="button" data-tambah="category" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">+ Tambah kategori</button>
@@ -25,7 +26,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <div id="kategori" class="space-y-4"></div>
     </section>
 
-    <section class="space-y-4">
+    <section data-tab="penulis" data-tab-label="Penulis" role="tabpanel" class="pt-6 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="font-display text-lg font-semibold tracking-tightest">Penulis</h2>
         <button type="button" data-tambah="author" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 transition-colors">+ Tambah penulis</button>
@@ -33,10 +34,17 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <p class="text-sm text-ink-500 dark:text-cream-300/60">Tautan profil (satu per baris, https://) dipakai Google untuk mengenali penulis, mis. LinkedIn atau X.</p>
       <div id="penulis" class="space-y-4"></div>
     </section>
+    </div>
 
     <p id="pesan" class="text-sm" role="status" aria-live="polite"></p>
   </div>
 </AdminLayout>
+
+<script>
+  import { pasangTab } from '@/lib/admin-tabs';
+  const w = document.getElementById('tabs-root');
+  if (w) pasangTab(w);
+</script>
 
 <script>
   import { blogCall, uploadImage } from '@/lib/blog/admin-client';

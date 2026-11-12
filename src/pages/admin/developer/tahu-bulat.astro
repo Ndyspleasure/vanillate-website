@@ -25,7 +25,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot } from '@/lib/dev-panel/client';
   import { FPLAYER } from '@/lib/dev-panel/actions';
-  import { KELAS, fmtJam, formCard, freshness, pasangAksi, pill, section, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
+  import { KELAS, fmtJam, formCard, freshness, pasangAksi, pill, section, tabSection, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   let role = 'viewer';
 
@@ -70,7 +71,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const editor = role === 'owner' || role === 'admin';
 
     body.innerHTML = [
-      section('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      tabSection('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${stat('Total pemain', fmtAngka(t.summary?.total))}
         ${stat('Aktif 30 hari', fmtAngka(t.summary?.active))}
         ${stat('Sedang berjualan', fmtAngka(t.summary?.selling))}
@@ -78,20 +79,20 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${stat('Total coin beredar', fmtAngka(t.summary?.coinTotal), 'coin Tahu, terpisah dari Sambung Kata')}
         ${stat('Rebirth tertinggi', fmtAngka(t.summary?.rebirthMax))}
       </div>`),
-      section('Kolam donasi', `<div class="grid gap-4 sm:grid-cols-3">
+      tabSection('Kolam donasi', `<div class="grid gap-4 sm:grid-cols-3">
         ${stat('Saldo kolam', fmtAngka(t.pool?.balance))}
         ${stat('Total disumbangkan', fmtAngka(t.pool?.totalDonated))}
         ${stat('Total diambil', fmtAngka(t.pool?.totalClaimed))}
       </div>`, 'Pemain kaya menyumbang; hanya pemain yang belum pernah Rebirth yang boleh mengambil.'),
-      section('10 besar — total coin dihasilkan', table(['#', 'Pemain', 'Total coin', 'Coin', 'Rebirth'], (t.top ?? []).map((r: any, i: number) => [
+      tabSection('10 besar — total coin dihasilkan', table(['#', 'Pemain', 'Total coin', 'Coin', 'Rebirth'], (t.top ?? []).map((r: any, i: number) => [
         String(i + 1), pemain(r.userId, r.username), fmtAngka(r.totalIncome), fmtAngka(r.coin), fmtAngka(r.rebirth),
       ]), 'Belum ada pemain.')),
-      section('Aktivitas terbaru', table(['Pemain', 'Coin', 'Kendaraan', 'Kota', 'Rebirth', 'Status', 'Aktif terakhir'], (t.recent ?? []).map((r: any) => [
+      tabSection('Aktivitas terbaru', table(['Pemain', 'Coin', 'Kendaraan', 'Kota', 'Rebirth', 'Status', 'Aktif terakhir'], (t.recent ?? []).map((r: any) => [
         pemain(r.userId, r.username), fmtAngka(r.coin), esc(r.vehicle), fmtAngka(r.cities), fmtAngka(r.rebirth),
         r.selling ? pill('jualan', 'ok') : pill('idle', 'muted'),
         `<span class="text-xs">${esc(fmtJam(r.lastActive))}</span>`,
       ]), 'Belum ada pemain.')),
-      editor ? section('Alat bantu', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      editor ? tabSection('Alat bantu', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${formCard({ id: 'tb-detail', title: 'Lihat detail pemain', fields: [FPLAYER], submit: 'Lihat' })}
         ${formCard({ id: 'tb-export', title: 'Export User ID pemain aktif', submit: 'Export',
           fields: [{ name: 'days', label: 'Aktif dalam (hari)', type: 'number', value: '30', step: '1', required: true }] })}
@@ -101,6 +102,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       </div>
       <div id="tb-detail-out"></div>`) : '',
     ].join('');
+    pasangTab(body);
 
     if (!editor) return;
     pasangAksi(document.getElementById('tb-detail') as HTMLFormElement, {

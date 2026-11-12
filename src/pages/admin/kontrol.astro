@@ -51,8 +51,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       </p>
     </div>
 
-    <form id="form-kontrol" class="space-y-10">
-      <div id="kontrol-body" class="space-y-10"></div>
+    <form id="form-kontrol" class="space-y-6">
+      <div id="kontrol-body"></div>
 
       <div id="kontrol-aksi" class="hidden flex-wrap items-center gap-3 pt-2">
         <button
@@ -78,6 +78,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtWaktu, fmtAngka } from '@/lib/admin-auth';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   // Registry ikon Lucide (NAMA → path SVG). Metadata kategori kini datang dari
   // tabel `bot_setting_categories` (data-driven); DB menyimpan nama ikon, bukan
@@ -256,6 +257,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       .map((c) => sectionKategori(c, perKategori.get(c.key) ?? []))
       .join('');
     document.getElementById('kontrol-aksi')!.classList.remove('hidden');
+    pasangTab(wadah);
     const tandai = (e: Event) => { (e.target as HTMLElement).closest<HTMLElement>('[data-key]')?.setAttribute('data-dirty', '1'); };
     wadah.oninput = tandai;
     wadah.onchange = tandai;
@@ -277,7 +279,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const desc = cat.description ? `<p class="mt-0.5 text-sm text-ink-500 dark:text-cream-300/60">${esc(cat.description)}</p>` : '';
     const badge = `<span class="ml-2 rounded-full bg-ink-900/5 dark:bg-cream-100/10 px-2 py-0.5 text-xs font-medium text-ink-500 dark:text-cream-300/60">${items.length}</span>`;
     return `
-      <section class="space-y-4">
+      <section class="space-y-4 pt-6" data-tab="${esc(cat.key)}" data-tab-label="${esc(cat.label)}" data-tab-badge="${items.length}" role="tabpanel">
         <div class="flex items-start gap-3">
           ${ikon}
           <div class="min-w-0">

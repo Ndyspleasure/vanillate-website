@@ -1,0 +1,37 @@
+---
+// /blog/masuk: masuk / daftar penulis blog (Google). Situs statis, halaman ini
+// hanya kerangka. Lihat docs/BLOG-PENULIS.md.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { url } from '@utils/url';
+---
+
+<BaseLayout
+  title="Masuk Penulis Blog"
+  description="Daftar atau masuk sebagai penulis di blog Vanillate."
+  noindex={true}
+>
+  <section class="container-page py-10 sm:py-16">
+    <div
+      data-writer="login"
+      data-login={url('/blog/masuk/')}
+      data-dashboard={url('/blog/dashboard/')}
+      data-blog={url('/blog/')}
+    >
+      <div class="flex items-center justify-center gap-3 py-20 text-sm text-ink-500" role="status">Memuat…</div>
+      <noscript><p class="py-10 text-center text-sm">Halaman ini membutuhkan JavaScript.</p></noscript>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountLogin } from '../../lib/blog/writer-pages';
+  const root = document.querySelector<HTMLElement>('[data-writer="login"]');
+  if (root) {
+    void mountLogin({
+      root,
+      loginUrl: root.dataset.login ?? '/blog/masuk/',
+      dashboardUrl: root.dataset.dashboard ?? '/blog/dashboard/',
+      blogUrl: root.dataset.blog ?? '/blog/',
+    });
+  }
+</script>

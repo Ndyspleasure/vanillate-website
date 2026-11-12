@@ -35,7 +35,7 @@ export const LIMITS = {
 };
 
 /** Segmen URL milik halaman blog lain — tidak boleh dipakai jadi slug artikel. */
-export const RESERVED_SLUGS = new Set(['kategori', 'tag', 'penulis', 'halaman', 'rss', 'rss-xml', 'feed', 'preview', 'admin']);
+export const RESERVED_SLUGS = new Set(['kategori', 'tag', 'penulis', 'halaman', 'rss', 'rss-xml', 'feed', 'preview', 'admin', 'masuk', 'dashboard']);
 
 export const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 
@@ -86,13 +86,13 @@ export function slugify(text: string, max = LIMITS.slug): string {
 // ─── Bersihkan input ─────────────────────────────────────────────────────────
 
 /** Teks satu baris: karakter kontrol dibuang, spasi dirapikan, dipotong. */
-function line(v: unknown, max: number): string {
+export function line(v: unknown, max: number): string {
   if (typeof v !== 'string') return '';
   return v.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
 /** Teks multi-baris (Markdown): hanya \n dan \t yang dipertahankan. */
-function multiline(v: unknown, max: number): string {
+export function multiline(v: unknown, max: number): string {
   if (typeof v !== 'string') return '';
   return v.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, max);
 }
@@ -128,6 +128,8 @@ export interface PostFields {
   relatedProducts: string[];
   relatedFaqs: string[];
   relatedPostIds: string[];
+  /** Tulisan penulis luar: tautan luar diberi rel="ugc nofollow" dan gambar luar tidak dimuat. */
+  ugc: boolean;
 }
 
 function isoOrNull(v: unknown): string | null {
@@ -176,6 +178,7 @@ export function cleanPostFields(input: any): PostFields {
     relatedProducts: uniq(list(input?.relatedProducts).filter((s) => typeof s === 'string' && PRODUCT_SLUG.test(s)) as string[]).slice(0, LIMITS.relatedProducts),
     relatedFaqs: uniq(list(input?.relatedFaqs).filter((s) => typeof s === 'string' && FAQ_REF.test(s)) as string[]).slice(0, LIMITS.relatedFaqs),
     relatedPostIds: uniq(list(input?.relatedPostIds).filter((s) => isDocId(s, 'post')) as string[]).slice(0, LIMITS.relatedPosts),
+    ugc: input?.ugc === true,
   };
 }
 
@@ -256,6 +259,7 @@ export function postDocument(id: string, f: PostFields, meta: PostMeta): Record<
     };
   }
   if (f.authorId) doc.author = ref(f.authorId);
+  if (f.ugc) doc.ugc = true;
   const publishedAt = meta.publishedAt ?? f.publishedAt;
   if (publishedAt) doc.publishedAt = publishedAt;
   if (meta.updatedAt) doc.updatedAt = meta.updatedAt;
@@ -293,6 +297,7 @@ export function fieldsFromDocument(doc: any): PostFields & { mainImageUrl: strin
     relatedProducts: doc?.relatedProducts,
     relatedFaqs: doc?.relatedFaqs,
     relatedPostIds: (doc?.relatedPosts ?? []).map((p: any) => p?._ref),
+    ugc: doc?.ugc === true,
   });
   return { ...f, mainImageUrl: typeof doc?.mainImageUrl === 'string' ? doc.mainImageUrl : null };
 }

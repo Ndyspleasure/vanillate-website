@@ -1,0 +1,33 @@
+---
+// /blog/dashboard: dasbor penulis (profil, tulisan, editor, riwayat tinjauan).
+// Data lewat Edge Function blog-writer. Lihat docs/BLOG-PENULIS.md.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { url } from '@utils/url';
+---
+
+<BaseLayout title="Dasbor Penulis" description="Dasbor penulis blog Vanillate." noindex={true}>
+  <section class="container-page py-10 sm:py-14">
+    <div
+      data-writer="dashboard"
+      data-login={url('/blog/masuk/')}
+      data-dashboard={url('/blog/dashboard/')}
+      data-blog={url('/blog/')}
+    >
+      <div class="flex items-center justify-center gap-3 py-20 text-sm text-ink-500" role="status">Memuat…</div>
+      <noscript><p class="py-10 text-center text-sm">Halaman ini membutuhkan JavaScript.</p></noscript>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountDashboard } from '../../lib/blog/writer-pages';
+  const root = document.querySelector<HTMLElement>('[data-writer="dashboard"]');
+  if (root) {
+    void mountDashboard({
+      root,
+      loginUrl: root.dataset.login ?? '/blog/masuk/',
+      dashboardUrl: root.dataset.dashboard ?? '/blog/dashboard/',
+      blogUrl: root.dataset.blog ?? '/blog/',
+    });
+  }
+</script>

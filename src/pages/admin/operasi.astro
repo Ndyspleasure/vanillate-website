@@ -31,7 +31,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     </div>
 
     <!-- FORM AKSI (dirender per kategori dari registry src/lib/dev-panel/actions.ts) -->
-    <div id="aksi-body" class="space-y-10"></div>
+    <div id="aksi-body"></div>
 
     <!-- RIWAYAT PERINTAH -->
     <section class="space-y-4">
@@ -55,6 +55,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { fmtWaktu } from '@/lib/admin-auth';
   import { GRUP, type Aksi } from '@/lib/dev-panel/actions';
   import { formCard, pasangAksi, pill, statusTone } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
   import { riwayatPerintah } from '@/lib/dev-panel/client';
 
   let bolehEdit = false;
@@ -78,7 +79,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     }
 
     body.innerHTML = GRUP.map((g) => `
-      <section class="space-y-4">
+      <section class="space-y-4 pt-6" data-tab="${esc(g.label.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}" data-tab-label="${esc(g.label)}" role="tabpanel">
         <div class="flex items-start gap-3">
           <span class="mt-0.5 flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${g.icon}</svg>
@@ -92,6 +93,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           ${g.aksi.map((a) => formCard({ id: idForm(a), title: a.label, fields: a.fields, danger: a.danger, desc: a.help, submit: 'Kirim' })).join('')}
         </div>
       </section>`).join('');
+    pasangTab(body);
 
     for (const g of GRUP) {
       for (const a of g.aksi) {

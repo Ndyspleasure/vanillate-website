@@ -24,7 +24,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
   import { FPLAYER } from '@/lib/dev-panel/actions';
-  import { KELAS, fmtJam, formCard, freshness, pasangAksi, notice, pill, section, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
+  import { KELAS, fmtJam, formCard, freshness, pasangAksi, notice, pill, section, tabSection, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   let role = 'viewer';
 
@@ -146,21 +147,21 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const editor = role === 'owner' || role === 'admin';
 
     body.innerHTML = [
-      section('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      tabSection('Ringkasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${stat('Total pemain', fmtAngka(t.summary?.total))}
         ${stat('Aktif 30 hari', fmtAngka(t.summary?.active))}
         ${stat('Pemain baru hari ini', fmtAngka(t.summary?.newToday), 'WIB')}
         ${stat('Utang lunas', fmtAngka(t.summary?.cleared))}
         ${stat('Hari tertinggi', fmtAngka(t.summary?.dayMax), `dari ${fmtAngka(t.summary?.totalDays)} hari`)}
       </div>`),
-      section('Aktivitas terbaru', table(['Pemain', 'Hari', 'Bab', 'Uang', 'Tabungan', 'Sisa utang', 'Lokasi', 'Aktif terakhir'], (t.recent ?? []).map((r: any) => [
+      tabSection('Aktivitas terbaru', table(['Pemain', 'Hari', 'Bab', 'Uang', 'Tabungan', 'Sisa utang', 'Lokasi', 'Aktif terakhir'], (t.recent ?? []).map((r: any) => [
         pemain(r.userId, r.name), fmtAngka(r.day), ada(r.chapter) ? fmtAngka(r.chapter) : 'belum ada',
         fmtAngka(r.money), fmtAngka(r.savings), fmtAngka(r.debtRemaining), esc(r.location ?? 'belum ada'),
         `<span class="text-xs">${esc(fmtJam(r.lastActive))}</span>`,
       ]), 'Belum ada pemain.')),
-      section('Tingkat kekalahan per minggu', kekalahanHtml(t.outcomes), 'Kalah = tidak sanggup membayar cicilan mingguan. Persen kalah 30 atau lebih ditandai merah.'),
-      section('Aturan kesulitan', '<div id="st-rules"></div>', 'Berlaku seketika di bot tanpa restart. Mengubah hanya untuk owner.'),
-      editor ? section('Alat bantu', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      tabSection('Tingkat kekalahan per minggu', kekalahanHtml(t.outcomes), 'Kalah = tidak sanggup membayar cicilan mingguan. Persen kalah 30 atau lebih ditandai merah.'),
+      tabSection('Aturan kesulitan', '<div id="st-rules"></div>', 'Berlaku seketika di bot tanpa restart. Mengubah hanya untuk owner.'),
+      editor ? tabSection('Alat bantu', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${formCard({ id: 'st-detail', title: 'Lihat detail pemain', fields: [FPLAYER], submit: 'Lihat' })}
         ${formCard({ id: 'st-export', title: 'Export User ID pemain aktif', submit: 'Export',
           fields: [{ name: 'days', label: 'Aktif dalam (hari)', type: 'number', value: '30', step: '1', required: true }] })}
@@ -170,6 +171,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       </div>
       <div id="st-detail-out"></div>`) : '',
     ].join('');
+    pasangTab(body);
 
     renderAturan(t.rules);
 

@@ -36,6 +36,11 @@ export interface RenderOptions {
   blockToken?: (name: string, arg: string) => string | null;
   /** Ubah path internal (mis. menambah `base`). Default: apa adanya. */
   internalUrl?: (path: string) => string;
+  /**
+   * Tulisan penulis luar (user generated content): tautan luar diberi
+   * rel="nofollow ugc" dan gambar dari alamat luar tidak dimuat.
+   */
+  ugc?: boolean;
 }
 
 export interface RenderResult {
@@ -166,7 +171,7 @@ function imgTag(src: string, alt: string, cls: string, eager = false): string {
 }
 
 /** Format inline pada teks yang SUDAH di-escape. */
-function inline(escaped: string, internal: (p: string) => string): string {
+function inlineBase(escaped: string, internal: (p: string) => string, ugc = false): string {
   // Kode, gambar, dan tautan yang sudah jadi tag disimpan di placeholder supaya
   // penanda tebal/miring tidak pernah menyusup ke dalam atribut href/src.
   const simpanan: string[] = [];
@@ -183,13 +188,14 @@ function inline(escaped: string, internal: (p: string) => string): string {
     .replace(/`([^`]+)`/g, (_, isi) => simpan(`<code class="${C.code}">${isi}</code>`))
     .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^)]*&quot;)?\)/g, (_, alt, href) => {
       const u = safeUrl(href, internal);
+      if (u && ugc && !isSanityImage(u.replace(/&amp;/g, '&'))) return alt;
       return u ? simpan(imgTag(u, alt, C.imgInline)) : alt;
     })
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, teks, href) => {
       const u = safeUrl(href, internal);
       if (!u) return teks;
       const luar = /^https?:\/\//i.test(u) && !/^https?:\/\/(www\.)?vanillate\.id(\/|$)/i.test(u);
-      const atribut = luar ? ' target="_blank" rel="noopener"' : '';
+      const atribut = luar ? ` target="_blank" rel="${ugc ? 'noopener noreferrer nofollow ugc' : 'noopener'}"` : '';
       return simpan(`<a href="${u}" class="${C.link}"${atribut}>${tekanan(teks)}</a>`);
     });
   // Placeholder bisa bersarang (kode di dalam teks tautan), jadi pulihkan berulang.
@@ -222,6 +228,10 @@ function teksPolos(s: string): string {
 /** Ubah Markdown artikel menjadi HTML aman untuk `set:html` + daftar heading. */
 export function renderBlogMarkdown(source: string, opts: RenderOptions = {}): RenderResult {
   const internal = opts.internalUrl ?? ((p: string) => p);
+  const ugc = opts.ugc === true;
+  // Semua pemanggilan `inline(x, internal)` di bawah otomatis membawa mode ugc.
+  const inl = (s: string) => inlineBase(s, internal, ugc);
+  const inline = (s: string, _internal?: unknown) => inl(s);
   const baris = String(source ?? '').replace(/\u0000/g, '').replace(/\r\n?/g, '\n').split('\n');
   const keluar: string[] = [];
   const headings: Heading[] = [];
@@ -265,7 +275,7 @@ export function renderBlogMarkdown(source: string, opts: RenderOptions = {}): Re
     if (heading) {
       const isi = heading[2].replace(/\s+#+\s*$/, '').trim();
       const lvl = heading[1].length;
-      const dalam = inline(escapeHtml(isi), internal);
+      const dalam = inl(escapeHtml(isi));
       if (lvl <= 3) {
         const level = lvl <= 2 ? 2 : 3;
         const polos = teksPolos(isi);
@@ -282,9 +292,9 @@ export function renderBlogMarkdown(source: string, opts: RenderOptions = {}): Re
     const gambar = teks.match(GAMBAR_SENDIRI);
     if (gambar) {
       const u = safeUrl(gambar[2], internal);
-      if (u) {
+      if (u && !(ugc && !isSanityImage(u.replace(/&amp;/g, '&')))) {
         const alt = escapeHtml(gambar[1]);
-        const cap = gambar[3] ? `<figcaption class="${C.caption}">${inline(escapeHtml(gambar[3]), internal)}</figcaption>` : '';
+        const cap = gambar[3] ? `<figcaption class="${C.caption}">${inl(escapeHtml(gambar[3]))}</figcaption>` : '';
         keluar.push(`<figure class="${C.figure}">${imgTag(u, alt, C.img)}${cap}</figure>`);
       }
       i++;
@@ -292,11 +302,11 @@ export function renderBlogMarkdown(source: string, opts: RenderOptions = {}): Re
     }
 
     if (teks.includes('|') && i + 1 < baris.length && PEMISAH_TABEL.test(baris[i + 1])) {
-      const header = selBaris(teks).map((h) => `<th class="${C.th}">${inline(escapeHtml(h), internal)}</th>`).join('');
+      const header = selBaris(teks).map((h) => `<th class="${C.th}">${inl(escapeHtml(h))}</th>`).join('');
       i += 2;
       const isi: string[] = [];
       while (i < baris.length && baris[i].includes('|') && baris[i].trim()) {
-        const sel = selBaris(baris[i]).map((c) => `<td class="${C.td}">${inline(escapeHtml(c), internal)}</td>`).join('');
+        const sel = selBaris(baris[i]).map((c) => `<td class="${C.td}">${inl(escapeHtml(c))}</td>`).join('');
         isi.push(`<tr class="border-b border-ink-900/5 dark:border-cream-100/5 last:border-0">${sel}</tr>`);
         i++;
       }
@@ -345,7 +355,7 @@ export function renderBlogMarkdown(source: string, opts: RenderOptions = {}): Re
         keluar.push(
           `<aside class="mb-6 rounded-2xl border ${callout.cls} px-5 py-4">` +
           `<p class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400 mb-1.5">${callout.label}</p>` +
-          `<p class="text-ink-700 dark:text-cream-200 leading-relaxed">${inline(escapeHtml(badan), internal)}</p></aside>`,
+          `<p class="text-ink-700 dark:text-cream-200 leading-relaxed">${inl(escapeHtml(badan))}</p></aside>`,
         );
       } else {
         keluar.push(`<blockquote class="${C.quote}">${inline(escapeHtml(isi.join(' ')), internal)}</blockquote>`);

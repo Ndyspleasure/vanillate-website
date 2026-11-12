@@ -32,7 +32,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { url } from '@/utils/url';
   import { bacaSnapshot, muatUlangDariBot, kirimPerintah } from '@/lib/dev-panel/client';
   import { fmtBytes, fmtDuration } from '@/lib/dev-panel/model';
-  import { freshness, pill, section, stat, table, KELAS } from '@/lib/dev-panel/ui';
+  import { freshness, pill, section, tabSection, stat, table, KELAS } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   let bolehEdit = false;
 
@@ -122,12 +123,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     </div>`;
 
     body.innerHTML = [
-      section('Ringkasan', ringkasan),
-      section('Kesehatan proses', kesehatan),
-      section('Status', status),
-      section('Versi & changelog', versi),
-      section('Database & ekonomi', database, 'Reset cooldown claim ada di Operasi; backup & bersihkan log ada di Kontrol Server (owner).'),
+      tabSection('Ringkasan', ringkasan),
+      tabSection('Kesehatan proses', kesehatan),
+      tabSection('Status', status),
+      tabSection('Versi & changelog', versi),
+      tabSection('Database & ekonomi', database, 'Reset cooldown claim ada di Operasi; backup & bersihkan log ada di Kontrol Server (owner).'),
     ].join('');
+    pasangTab(body);
   }
 
   function renderLog() {
