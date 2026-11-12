@@ -34,6 +34,15 @@ export function passwordProblem(password: unknown, username: string): string | n
   return null;
 }
 
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** Email kontak (huruf kecil, tanpa spasi) atau null bila tidak sah. */
+export function normalizeEmail(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const s = raw.trim().toLowerCase();
+  return s.length <= 254 && EMAIL.test(s) ? s : null;
+}
+
 export function validDisplayName(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   const s = raw.replace(/\s+/g, ' ').trim();
@@ -44,7 +53,8 @@ export type Action =
   | { action: 'create'; username: string; displayName: string; password: string }
   | { action: 'reset'; id: string; password: string }
   | { action: 'delete'; id: string }
-  | { action: 'change'; currentPassword: string; username: string; password: string };
+  | { action: 'change'; currentPassword: string; username: string; password: string; email: string | null }
+  | { action: 'email'; email: string };
 
 export type Parsed = { ok: true; value: Action } | { ok: false; error: string };
 
@@ -84,10 +94,21 @@ export function parseAction(body: unknown): Parsed {
       const problem = passwordProblem(b.password, username);
       if (problem) return { ok: false, error: problem };
       if (b.password === b.currentPassword) return { ok: false, error: 'Password baru harus berbeda dari yang lama.' };
+      // Email boleh kosong di sini (index.ts mewajibkannya untuk ganti pertama kali);
+      // bila diisi harus sah.
+      const email = b.email === undefined || b.email === null || b.email === '' ? null : normalizeEmail(b.email);
+      if (b.email !== undefined && b.email !== null && b.email !== '' && !email) {
+        return { ok: false, error: 'Format email tidak valid.' };
+      }
       return {
         ok: true,
-        value: { action: 'change', currentPassword: b.currentPassword, username, password: b.password as string },
+        value: { action: 'change', currentPassword: b.currentPassword, username, password: b.password as string, email },
       };
+    }
+    case 'email': {
+      const email = normalizeEmail(b.email);
+      if (!email) return { ok: false, error: 'Format email tidak valid.' };
+      return { ok: true, value: { action: 'email', email } };
     }
     default:
       return { ok: false, error: 'Aksi tidak dikenal.' };

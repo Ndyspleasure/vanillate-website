@@ -82,3 +82,8 @@ Tanpa polling dan tanpa snapshot dorong. Database hanya disentuh saat login, saa
 - Admin membuka draft dari **Pesanan Partner › Cek dan konfigurasi** atau **Campaign History › Lanjutkan di Broadcast DM** (`/admin/partnership/broadcast?draft=PTN-...`). Form terisi otomatis: ubah pesan, hidup/matikan tombol partner, tempel target User ID, Preview, Confirm. Confirm mengubah draft menjadi `queued` (bukan membuat campaign baru).
 - Gambar iklan tidak ikut ke pesan DM (Broadcast DM berisi teks dan tombol). Linknya tampil di halaman Pesanan Partner.
 - Bila pembuatan draft gagal (mis. bentrok Broadcast ID tiga kali), pesanan partner tetap tersimpan.
+
+
+## Email kontak dan layanan
+
+Partner mengisi **email aktif** saat ganti kredensial pertama kali (Edge Function `partner-admin`, aksi `change` dan `email`, kolom `partner_accounts.contact_email`). Dipakai untuk pengingat masa layanan: lihat `docs/PARTNERSHIP-JASA.md` bagian Pemantauan layanan partner. Dashboard menampilkan "Layanan saya".

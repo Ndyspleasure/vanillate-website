@@ -91,3 +91,19 @@ test('pembatas percobaan: lewat batas ditolak, jendela bergeser', () => {
   t = 1500;
   assert.equal(l.hit('a'), true);
 });
+
+test('email kontak: normalisasi, change opsional, aksi email', async () => {
+  const { normalizeEmail } = await import('../supabase/functions/partner-admin/logic.ts');
+  assert.equal(normalizeEmail('  Nama@Contoh.ID '), 'nama@contoh.id');
+  assert.equal(normalizeEmail('bukan-email'), null);
+  assert.equal(normalizeEmail('a b@c.id'), null);
+  assert.equal(normalizeEmail(5), null);
+  const base = { action: 'change', currentPassword: 'awal-12345', username: 'baru.nama', password: 'rahasia-kuat-1' };
+  const tanpa = parseAction(base);
+  assert.equal(tanpa.ok && (tanpa.value as any).email, null);
+  const ada = parseAction({ ...base, email: 'Mitra@Contoh.id' });
+  assert.equal(ada.ok && (ada.value as any).email, 'mitra@contoh.id');
+  assert.equal(parseAction({ ...base, email: 'salah' }).ok, false);
+  assert.equal(parseAction({ action: 'email', email: 'mitra@contoh.id' }).ok, true);
+  assert.equal(parseAction({ action: 'email', email: '' }).ok, false);
+});

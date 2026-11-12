@@ -126,7 +126,7 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
     box.innerHTML = stateBlock('loading', '');
     const { data, error } = await sb
       .from('partner_accounts')
-      .select('id,username,display_name,must_change_credentials,created_at')
+      .select('id,username,display_name,must_change_credentials,contact_email,created_at')
       .order('created_at', { ascending: false })
       .limit(200);
     if (error) { box.innerHTML = stateBlock('error', pesanError(error)); return; }
@@ -134,12 +134,13 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
     box.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-sm">
       <thead class="bg-ink-900/5 dark:bg-cream-100/5"><tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
         <th class="px-5 py-3 font-medium">Partner</th><th class="px-5 py-3 font-medium">Username</th>
-        <th class="px-5 py-3 font-medium">Status</th><th class="px-5 py-3 font-medium">Dibuat</th>
+        <th class="px-5 py-3 font-medium">Email pengingat</th><th class="px-5 py-3 font-medium">Status</th><th class="px-5 py-3 font-medium">Dibuat</th>
         <th class="px-5 py-3 font-medium text-right">Aksi</th></tr></thead>
       <tbody class="divide-y divide-ink-900/10 dark:divide-cream-100/10">
       ${data.map((a: any) => `<tr>
         <td class="px-5 py-3 font-medium">${esc(a.display_name)}</td>
         <td class="px-5 py-3 font-mono text-xs">${esc(a.username)}</td>
+        <td class="px-5 py-3 text-xs">${a.contact_email ? esc(a.contact_email) : '<span class="text-amber-700 dark:text-amber-400">belum diisi</span>'}</td>
         <td class="px-5 py-3">${a.must_change_credentials
           ? '<span class="text-amber-700 dark:text-amber-400">Belum ganti kredensial</span>'
           : 'Aktif'}</td>
