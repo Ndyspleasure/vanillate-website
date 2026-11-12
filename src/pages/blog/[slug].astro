@@ -55,7 +55,7 @@ interface Props {
 
 const { post, related, redirectTo } = Astro.props as Props;
 
-const { html: isiHtml, headings } = renderArticle(post.body);
+const { html: isiHtml, headings } = renderArticle(post.body, post.ugc);
 // Iklan hanya di halaman artikel (bukan /blog & daftar lain). Mati bila ID kosong.
 const adClient = adsenseClient();
 const html = withInArticleAd(isiHtml);
@@ -66,7 +66,7 @@ const ogImage = img ? sanityImageUrl(img.url, { w: 1200, h: 630, fit: 'crop', fm
 const kategori = post.categories[0];
 const produk = post.relatedProducts.map((s) => productList.find((p) => p.slug === s)).filter(Boolean) as typeof productList;
 const faqTerkait = post.relatedFaqs.map((r) => faqList.find((f) => f.ref === r)).filter(Boolean) as typeof faqList;
-const faqHtml = post.faqs.map((f) => ({ q: f.q, a: renderArticle(f.a).html }));
+const faqHtml = post.faqs.map((f) => ({ q: f.q, a: renderArticle(f.a, post.ugc).html }));
 const canonical = canonicalUrl(siteInfo.url, postPath(post.slug));
 const avatar = post.author?.avatar ? sanityImageUrl(post.author.avatar.url, { w: 96, h: 96, fit: 'crop' }) : null;
 

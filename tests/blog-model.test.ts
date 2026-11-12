@@ -234,3 +234,14 @@ test('konversi tanggal datetime-local bolak-balik', () => {
   assert.equal(lokalKeIso(''), null);
   assert.equal(isoKeLokal(null), '');
 });
+
+test('renderBlogMarkdown ugc: tautan luar nofollow ugc, gambar luar dibuang', () => {
+  const md = 'Lihat [situs](https://contoh.id/a) dan ![pelacak](https://evil.example/p.png).\n\n![besar](https://evil.example/b.png)\n\n![ok](https://cdn.sanity.io/images/62jp784l/production/0123456789abcdef-800x600.png)';
+  const ugc = renderBlogMarkdown(md, { ugc: true }).html;
+  assert.ok(ugc.includes('rel="noopener noreferrer nofollow ugc"'));
+  assert.ok(!ugc.includes('evil.example'), 'gambar luar tidak dimuat');
+  assert.ok(ugc.includes('cdn.sanity.io'), 'gambar Sanity tetap tampil');
+  const biasa = renderBlogMarkdown(md).html;
+  assert.ok(biasa.includes('rel="noopener"') && !biasa.includes('nofollow'));
+  assert.ok(biasa.includes('evil.example'), 'tulisan tim tidak berubah');
+});

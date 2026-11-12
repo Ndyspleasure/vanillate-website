@@ -32,12 +32,13 @@ export const adminMenu: MenuNode[] = [
     ],
   },
   {
-    // Blog /blog: ditulis & diterbitkan di sini, disimpan di Sanity (docs/BLOG.md).
+    // Blog /blog: penulis menulis lewat portal /blog/masuk, tim meninjau di sini;
+    // tulisan terbit disimpan di Sanity (docs/BLOG.md, docs/BLOG-PENULIS.md).
     key: 'grup-blog', label: 'Blog',
     icon: '<path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="M5 12v6"/><path d="M2 19h7"/>',
     items: [
       { key: 'blog', label: 'Semua Artikel', href: '/admin/blog' },
-      { key: 'blog-tulis', label: 'Tulis Artikel', href: '/admin/blog/tulis' },
+      { key: 'blog-review', label: 'Peninjauan Tulisan', href: '/admin/blog/peninjauan' },
       { key: 'blog-pengaturan', label: 'Kategori & Penulis', href: '/admin/blog/pengaturan' },
     ],
   },

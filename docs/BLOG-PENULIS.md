@@ -1,9 +1,25 @@
 # ✍️ Portal Penulis Blog (sedang dibangun)
 
-Status (2026-11-12): rancangan disetujui pemilik. **Tahap 1 selesai** (skema
-`supabase/blog-writers.sql` + rollback + tes `supabase/tests/blog-writers.test.sql`,
-di `npm run test:sql`). Migrasi **belum diterapkan** ke proyek produksi.
-Tahap 2 dan seterusnya belum dikerjakan.
+Status (2026-11-12): **kode selesai**, menunggu langkah manual owner (§7).
+
+| Tahap | Berkas |
+|---|---|
+| 1. Skema | `supabase/blog-writers.sql`, `-rollback.sql`, `supabase/tests/blog-writers.test.sql` (di `npm run test:sql`) |
+| 2. Server | `supabase/functions/blog-writer/` (sisi penulis), `blog-admin/review.ts` + aksi baru di `blog-admin/index.ts` (sisi tim), tes `tests/blog-review.test.ts` |
+| 3. Portal | `src/pages/blog/masuk.astro`, `dashboard.astro`, `src/lib/blog/writer-*.ts` |
+| 4. CMS | `src/pages/admin/blog/peninjauan.astro` (Antrean, Ditolak, Riwayat, Penulis) |
+| 5. Situs publik | `ugc` pada tulisan penulis tamu (`markdown.ts`, `model.ts`, `[slug].astro`) |
+
+Catatan implementasi:
+- `blog-writer` mengimpor `../blog-admin/logic.ts` dan `review.ts`; deploy dengan
+  Supabase CLI (`supabase functions deploy blog-writer`) agar impor relatif ikut
+  dibundel.
+- Anggota tim dikenali dari `admin_users` (Supabase menautkan identitas Google
+  dengan email yang sama ke akun CMS yang sama). Setelah mengajukan, portal
+  memanggil `approve` di `blog-admin` dengan JWT-nya sendiri.
+- Editor lama `/admin/blog/tulis` tetap ada **hanya** untuk mengedit artikel
+  yang sudah ada di Sanity. Menu "Tulis Artikel" diganti "Peninjauan Tulisan".
+- Avatar profil penulis belum didukung (hanya nama, bio, tautan).
 Tujuan: menulis blog pindah dari CMS admin ke portal sendiri
 `/blog/masuk` dan `/blog/dashboard`, mirip Portal Partner. Siapa pun boleh
 mendaftar jadi penulis. Tulisan baru masuk antrean persetujuan di CMS. Sanity
@@ -121,7 +137,7 @@ dan entri log tulisan itu.
 - Sanity: tulisan baru menambah aset gambar dan dokumen (lihat kuota di
   `docs/BLOG.md` §5). Pantau Usage setelah penulis luar mulai aktif.
 
-## 7. Langkah manual owner (saat dibangun)
+## 7. Langkah manual owner
 
 1. Supabase Auth: aktifkan **Discord provider** (buat aplikasi di Discord
    Developer Portal, isi client id dan secret, daftarkan redirect URL Supabase)
@@ -130,10 +146,16 @@ dan entri log tulisan itu.
    Redirect URLs Auth. Google sudah aktif untuk Live Chat.
 3. Secret Edge Function: `RESEND_API_KEY` sudah ada. Tambah
    `BLOG_FROM_EMAIL` (mis. `Vanillate Blog <blog@vanillate.id>`) bila berbeda.
-4. Deploy `blog-writer` dan `blog-admin` (versi baru), terapkan SQL lewat
-   `apply_migration`.
+4. Terapkan SQL `supabase/blog-writers.sql` lewat `apply_migration` (sudah
+   dilakukan 2026-11-12), lalu deploy `blog-writer` dan `blog-admin` (versi baru):
+   ```bash
+   supabase functions deploy blog-writer
+   supabase functions deploy blog-admin
+   ```
+5. Pastikan `RESEND_API_KEY` terpasang di secret `blog-admin` (pengirim email
+   penolakan/persetujuan) dan domain pengirim sudah terverifikasi di Resend.
 
-## 8. Tahap pembangunan (PR terpisah)
+## 8. Tahap pembangunan (selesai semua)
 
 1. **Skema + tes SQL** (`blog-writers.sql`, rollback, `supabase/tests/`).
 2. **Edge Function `blog-writer`** + logika murni teruji (batas, validasi,

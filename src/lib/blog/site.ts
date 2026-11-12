@@ -39,9 +39,10 @@ export const faqList: FaqLite[] = faqs.map((f) => ({
 }));
 
 /** Render isi artikel untuk halaman publik. */
-export function renderArticle(body: string): RenderResult {
+export function renderArticle(body: string, ugc = false): RenderResult {
   const bySlug = new Map(productList.map((p) => [p.slug, p]));
   return renderBlogMarkdown(body, {
+    ugc,
     internalUrl: url,
     blockToken: (name, arg) => {
       if (name !== 'produk') return null;
