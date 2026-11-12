@@ -9,6 +9,8 @@
 //   • site-content.json  ← tabel `site_content`      (banner pengumuman)
 //   • partnership.json   ← tabel `partnership_*`     (konten & HARGA halaman
 //                                                     publik /partnership)
+//   • partnership-jasa.json ← tabel `partnership_jasa_page` (isi halaman publik
+//                                                     /partnership/jasa, satu baris)
 //   • products.json      ← tabel `products` + media
 //   • pages.json         ← tabel `page_content`
 //   • faq.json           ← tabel `faq_categories` + `faqs` (seluruh panduan)
@@ -39,6 +41,7 @@ const DIR_SYNCED = path.join(ROOT, 'src', 'data', 'synced');
 
 const FILE_KONTEN = path.join(DIR_SYNCED, 'site-content.json');
 const FILE_PARTNERSHIP = path.join(DIR_SYNCED, 'partnership.json');
+const FILE_JASA = path.join(DIR_SYNCED, 'partnership-jasa.json');
 const FILE_PRODUCTS = path.join(DIR_SYNCED, 'products.json');
 const FILE_PAGES = path.join(DIR_SYNCED, 'pages.json');
 const FILE_FAQ = path.join(DIR_SYNCED, 'faq.json');
@@ -56,6 +59,7 @@ const KOSONG_PARTNERSHIP = {
   links: [],
   content: {},
 };
+const KOSONG_JASA = { content: {} };
 const KOSONG_PRODUCTS = { products: [] };
 const KOSONG_PAGES = { pages: {} };
 const KOSONG_FAQ = { categories: [], faqs: [] };
@@ -588,12 +592,30 @@ async function syncTeam() {
   console.log(`  anggota aktif: ${members.length}`);
 }
 
+// ─── Halaman Jasa Partnership (/partnership/jasa) ───────────────────────────
+// Satu GET satu baris per build, tanpa polling. Isi mentah disimpan apa adanya;
+// normalisasi & sanitasi dilakukan saat render (src/data/partnership-jasa.ts)
+// supaya bisa dites. Tabel belum dimigrasi → file lama dipertahankan.
+async function syncJasa() {
+  let raw;
+  try {
+    raw = await ambil('partnership_jasa_page?select=content&id=eq.1');
+  } catch (err) {
+    pertahankanYangLama(FILE_JASA, KOSONG_JASA, err.message);
+    return;
+  }
+  const content = raw[0]?.content && typeof raw[0].content === 'object' ? raw[0].content : {};
+  tulis(FILE_JASA, { content });
+  console.log('✓ partnership-jasa.json diperbarui.');
+}
+
 // ─── Jalan ──────────────────────────────────────────────────────────────────
 
 if (!URL_SUPABASE || !SERVICE_KEY) {
   const alasan = 'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY belum diisi.';
   pertahankanYangLama(FILE_KONTEN, KOSONG_KONTEN, alasan);
   pertahankanYangLama(FILE_PARTNERSHIP, KOSONG_PARTNERSHIP, alasan);
+  pertahankanYangLama(FILE_JASA, KOSONG_JASA, alasan);
   pertahankanYangLama(FILE_PRODUCTS, KOSONG_PRODUCTS, alasan);
   pertahankanYangLama(FILE_PAGES, KOSONG_PAGES, alasan);
   pertahankanYangLama(FILE_FAQ, KOSONG_FAQ, alasan);
@@ -606,6 +628,7 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
 // yang lain, dan build tetap lanjut.
 await syncSiteContent();
 await syncPartnership();
+await syncJasa();
 await syncProducts();
 await syncPages();
 await syncFaq();

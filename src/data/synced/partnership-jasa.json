@@ -1,0 +1,62 @@
+{
+  "content": {
+    "hero": {
+      "title": "Jasa Bot Discord",
+      "subtitle": "Hosting bot yang stabil dan pembuatan bot sesuai kebutuhan komunitasmu. Pesan lewat WhatsApp official kami.",
+      "ctaLabel": "Pesan Sekarang"
+    },
+    "packages": [
+      {
+        "key": "hosting_bot",
+        "name": "Hosting Bot",
+        "tagline": "Bot Discord kamu online terus tanpa mengurus server sendiri.",
+        "badge": "Terpopuler",
+        "price": 5000,
+        "currency": "IDR",
+        "unit": "bulan",
+        "priceNote": "",
+        "specs": [
+          { "label": "Memory (RAM)", "value": "512 MB" },
+          { "label": "Disk Storage", "value": "1 GB" },
+          { "label": "CPU Allocation", "value": "35%" },
+          { "label": "Uptime Target", "value": "99,9%" }
+        ],
+        "features": [],
+        "ctaLabel": "Pesan Hosting"
+      },
+      {
+        "key": "pembuatan_bot",
+        "name": "Pembuatan Bot",
+        "tagline": "Bot Discord dibuat sesuai kebutuhan komunitasmu.",
+        "badge": "",
+        "price": 30000,
+        "currency": "IDR",
+        "unit": "",
+        "priceNote": "Harga untuk bot ringan. Bot yang lebih kompleks menyesuaikan kesepakatan, hubungi WhatsApp official kami.",
+        "specs": [],
+        "features": [],
+        "ctaLabel": "Diskusi Pembuatan Bot"
+      }
+    ],
+    "process": [
+      { "title": "Hubungi", "text": "Pilih jasa lalu hubungi WhatsApp official kami." },
+      { "title": "Diskusi", "text": "Kami bahas kebutuhan, jadwal, dan harga yang disepakati." },
+      { "title": "Pengerjaan", "text": "Bot dibuat atau di-hosting sesuai kesepakatan." },
+      { "title": "Serah terima", "text": "Bot siap dipakai dan kami bantu sampai berjalan." }
+    ],
+    "faq": [
+      { "q": "Bagaimana cara memesan?", "a": "Tekan tombol pesan di paket yang kamu mau. WhatsApp official kami terbuka dengan pesan yang sudah terisi." },
+      { "q": "Apakah harga pembuatan bot pasti?", "a": "Harga yang tampil adalah harga untuk bot ringan. Bot yang lebih kompleks menyesuaikan kesepakatan, jadi hubungi kami dulu." }
+    ],
+    "cta": {
+      "title": "Butuh bot untuk komunitasmu?",
+      "text": "Ceritakan kebutuhanmu, kami bantu carikan paket yang pas.",
+      "label": "Hubungi via WhatsApp"
+    },
+    "seo": {
+      "title": "Jasa Hosting Bot dan Pembuatan Bot Discord",
+      "description": "Hosting bot Discord mulai Rp5.000 per bulan dan jasa pembuatan bot mulai Rp30.000. Pesan lewat WhatsApp official Vanillate Studio.",
+      "ogImage": ""
+    }
+  }
+}
