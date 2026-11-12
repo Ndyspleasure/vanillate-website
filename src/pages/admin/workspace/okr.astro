@@ -15,8 +15,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     description="Susun objective + key result, tugaskan ke staff/tim, dan perbarui progress. Bot mengeksekusi & mencerminkan hasilnya. OKR berulang bulanan otomatis dibuat scheduler bot."
   />
   <div class="px-6 lg:px-10 py-8 max-w-4xl space-y-10">
+    <div id="tabs-root">
     <!-- BUAT OKR -->
-    <section class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
+    <section data-tab="buat" data-tab-label="Buat OKR" role="tabpanel" class="pt-6 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
       <h2 class="font-display text-lg font-semibold tracking-tightest mb-3">Buat OKR</h2>
       <form id="form-buat" class="space-y-3">
         <input id="o-obj" placeholder="Objective (mis. Tingkatkan kepuasan pemain)" class="w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
@@ -41,7 +42,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     </section>
 
     <!-- DAFTAR OKR -->
-    <section class="space-y-3">
+    <section data-tab="daftar" data-tab-label="Daftar OKR" role="tabpanel" class="pt-6 space-y-3">
       <div class="flex items-center justify-between">
         <h2 class="font-display text-lg font-semibold tracking-tightest">Daftar OKR</h2>
         <button type="button" id="btn-refresh" class="text-xs rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">Segarkan</button>
@@ -50,7 +51,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     </section>
 
     <!-- OKR BERULANG BULANAN -->
-    <section class="space-y-3">
+    <section data-tab="berulang" data-tab-label="OKR berulang" role="tabpanel" class="pt-6 space-y-3">
       <div class="flex items-center justify-between">
         <h2 class="font-display text-lg font-semibold tracking-tightest">OKR berulang (bulanan)</h2>
         <button type="button" id="rec-add" class="hidden text-xs rounded-lg bg-amber-500/90 px-3 py-1.5 font-semibold text-ink-950 hover:bg-amber-400">+ Template berulang</button>
@@ -61,12 +62,19 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     </section>
 
     <!-- RIWAYAT PERINTAH -->
-    <section class="space-y-3">
+    <section data-tab="riwayat" data-tab-label="Riwayat perintah" role="tabpanel" class="pt-6 space-y-3">
       <h2 class="font-display text-lg font-semibold tracking-tightest">Riwayat perintah</h2>
       <div id="cmds-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
     </section>
+    </div>
   </div>
 </AdminLayout>
+
+<script>
+  import { pasangTab } from '@/lib/admin-tabs';
+  const w = document.getElementById('tabs-root');
+  if (w) pasangTab(w);
+</script>
 
 <script>
   import { getSupabase } from '@/lib/supabase';

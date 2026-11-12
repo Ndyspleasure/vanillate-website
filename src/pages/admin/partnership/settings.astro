@@ -23,11 +23,12 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
   />
   <PartnershipTabs active="settings" />
 
-  <div class="px-6 lg:px-10 py-8 space-y-10 max-w-3xl">
+  <div class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
     <p id="gate" class="hidden text-sm text-amber-700 dark:text-amber-400"></p>
 
+    <div id="tabs-root">
     <!-- 1. URL -->
-    <section class="space-y-4">
+    <section data-tab="url" data-tab-label="URL" role="tabpanel" class="pt-6 space-y-4">
       <h2 class="font-display text-lg font-semibold tracking-tightest">URL</h2>
       <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
         <div>
@@ -48,7 +49,7 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
     </section>
 
     <!-- 2. Custom links -->
-    <section class="space-y-4">
+    <section data-tab="custom-links" data-tab-label="Custom Links" role="tabpanel" class="pt-6 space-y-4">
       <div class="flex items-center justify-between gap-3">
         <h2 class="font-display text-lg font-semibold tracking-tightest">Custom Links</h2>
         <button type="button" id="btn-tambah-link"
@@ -63,10 +64,11 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
     </section>
 
     <!-- 3. Konten halaman publik -->
-    <section class="space-y-4">
+    <section data-tab="konten" data-tab-label="Konten halaman publik" role="tabpanel" class="pt-6 space-y-4">
       <h2 class="font-display text-lg font-semibold tracking-tightest">Konten halaman publik</h2>
       <div id="konten-body" class="space-y-6"></div>
     </section>
+    </div>
 
     <div class="flex flex-wrap items-center gap-3 pt-2">
       <button type="button" id="btn-simpan"
@@ -77,6 +79,12 @@ const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/
     </div>
   </div>
 </AdminLayout>
+
+<script>
+  import { pasangTab } from '@/lib/admin-tabs';
+  const w = document.getElementById('tabs-root');
+  if (w) pasangTab(w);
+</script>
 
 <script>
   import { getSupabase } from '@/lib/supabase';
