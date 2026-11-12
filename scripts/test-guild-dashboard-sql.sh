@@ -125,6 +125,11 @@ echo "✓ Tes SQL Showcase Server lulus."
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/partner-portal.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL Portal Partner lulus."
 
+# Halaman Jasa Partnership (/partnership/jasa): supabase/partnership-jasa.sql
+# dijalankan dua kali (idempoten) lalu rollback.
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/partnership-jasa.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
+echo "✓ Tes SQL Partnership Jasa lulus."
+
 # Suite kesepuluh: Portal Penulis Blog (/blog/masuk). Tesnya menjalankan
 # supabase/blog-writers.sql dua kali (idempoten) lalu rollback.
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/blog-writers.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"

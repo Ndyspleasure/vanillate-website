@@ -1,0 +1,245 @@
+---
+// Partnership: Halaman Jasa (/partnership/jasa).
+//
+// Mengelola SELURUH isi halaman publik Jasa (hosting bot & pembuatan bot):
+// paket + harga + spesifikasi, cara kerja, FAQ, CTA, dan SEO. Disimpan sebagai
+// satu baris jsonb di `partnership_jasa_page` (supabase/partnership-jasa.sql).
+//
+// Biaya database: satu SELECT saat halaman ini dibuka dan satu UPDATE saat
+// Simpan. Tanpa polling. Halaman publik ditarik sekali per build, jadi
+// perubahan tampil setelah website di-build ulang.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+---
+
+<AdminLayout title="Partnership Jasa" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Halaman Jasa"
+    description="Paket, harga, dan isi halaman publik /partnership/jasa (hosting bot dan pembuatan bot)."
+  />
+  <PartnershipTabs active="jasa" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
+    <p id="gate" class="hidden text-sm text-amber-700 dark:text-amber-400"></p>
+    <div id="jasa-root" class="space-y-6"></div>
+
+    <div class="flex flex-wrap items-center gap-3 pt-2">
+      <button type="button" id="btn-simpan"
+        class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+        Simpan
+      </button>
+      <p id="pesan" class="text-sm" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, pesanError } from '@/lib/admin-ui';
+  import { parsePrice } from '@/data/partnership';
+
+  const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+  const KARTU = 'rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4';
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  let bolehEdit = false;
+  let konten: any = {};
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    if (!bolehEdit) {
+      el('gate').textContent = 'Peran kamu hanya bisa melihat.';
+      el('gate').classList.remove('hidden');
+      el<HTMLButtonElement>('btn-simpan').disabled = true;
+    }
+    void muat();
+    el('btn-simpan').addEventListener('click', () => void simpan());
+  });
+
+  async function muat() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { data, error } = await supabase.from('partnership_jasa_page').select('content').eq('id', 1).maybeSingle();
+    if (error) {
+      el('pesan').textContent = `${pesanError(error)} Pastikan supabase/partnership-jasa.sql sudah diterapkan.`;
+      el('pesan').className = 'text-sm text-red-600 dark:text-red-400';
+      return;
+    }
+    konten = data?.content ?? {};
+    render();
+  }
+
+  const label = (t: string) =>
+    `<label class="block text-sm font-medium mb-1.5">${esc(t)}</label>`;
+  const bantu = (t: string) => (t ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(t)}</p>` : '');
+  const inp = (path: string, t: string, v: any, b = '') =>
+    `<div>${label(t)}<input data-kp="${esc(path)}" value="${esc(v ?? '')}" class="${INPUT}" />${bantu(b)}</div>`;
+  const ta = (path: string, t: string, v: any, rows = 2, b = '') =>
+    `<div>${label(t)}<textarea data-kp="${esc(path)}" rows="${rows}" class="${INPUT}">${esc(v ?? '')}</textarea>${bantu(b)}</div>`;
+  const daftar = (path: string, t: string, items: any[], kunci: string[], b: string) => {
+    const teks = (items ?? []).map((it: any) => kunci.map((k) => it[k] ?? '').join(' | ')).join('\n');
+    return `<div>${label(t)}<textarea data-klist="${esc(path)}" data-kk="${esc(kunci.join(','))}" rows="5" class="${INPUT} font-mono text-xs">${esc(teks)}</textarea>${bantu(b)}</div>`;
+  };
+
+  function kartuPaket(p: any, i: number): string {
+    const specs = (p.specs ?? []).map((s: any) => `${s.label ?? ''} | ${s.value ?? ''}`).join('\n');
+    const fitur = (p.features ?? []).join('\n');
+    return `
+      <div class="${KARTU}" data-paket>
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="font-display text-base font-semibold tracking-tightest">Paket ${i + 1}</h3>
+          <button type="button" data-hapus-paket class="rounded-lg border border-red-500/40 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">Hapus paket</button>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>${label('Kunci (huruf kecil, tanpa spasi)')}<input data-pf="key" value="${esc(p.key ?? '')}" class="${INPUT}" /></div>
+          <div>${label('Nama paket')}<input data-pf="name" value="${esc(p.name ?? '')}" maxlength="80" class="${INPUT}" /></div>
+          <div>${label('Badge (opsional)')}<input data-pf="badge" value="${esc(p.badge ?? '')}" maxlength="30" class="${INPUT}" /></div>
+          <div>${label('Label tombol')}<input data-pf="ctaLabel" value="${esc(p.ctaLabel ?? '')}" maxlength="40" class="${INPUT}" /></div>
+          <div>${label('Harga')}<input data-pf="price" value="${esc(p.price ?? '')}" inputmode="decimal" class="${INPUT}" placeholder="kosong = Hubungi kami" />${bantu('Angka bebas, mis. 5000 atau 5.000. Kosong menampilkan Hubungi kami.')}</div>
+          <div>${label('Satuan harga')}<input data-pf="unit" value="${esc(p.unit ?? '')}" maxlength="30" class="${INPUT}" placeholder="mis. bulan, kosong = sekali bayar" /></div>
+        </div>
+        <div>${label('Deskripsi singkat')}<textarea data-pf="tagline" rows="2" class="${INPUT}">${esc(p.tagline ?? '')}</textarea></div>
+        <div>${label('Catatan harga')}<textarea data-pf="priceNote" rows="2" class="${INPUT}">${esc(p.priceNote ?? '')}</textarea>${bantu('Tampil di bawah harga, mis. syarat atau kesepakatan.')}</div>
+        <div>${label('Spesifikasi')}<textarea data-pf="specs" rows="5" class="${INPUT} font-mono text-xs">${esc(specs)}</textarea>${bantu('Satu baris per spesifikasi, format: Nama | Nilai. Kosongkan bila tidak ada.')}</div>
+        <div>${label('Poin keunggulan')}<textarea data-pf="features" rows="4" class="${INPUT} font-mono text-xs">${esc(fitur)}</textarea>${bantu('Satu poin per baris. Kosongkan bila tidak ada.')}</div>
+      </div>`;
+  }
+
+  function render() {
+    const k = konten ?? {};
+    el('jasa-root').innerHTML = `
+      <div class="${KARTU}">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Hero</h3>
+        ${inp('hero.title', 'Judul', k.hero?.title)}
+        ${ta('hero.subtitle', 'Subjudul', k.hero?.subtitle)}
+        ${inp('hero.ctaLabel', 'Label tombol', k.hero?.ctaLabel)}
+      </div>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="font-display text-lg font-semibold tracking-tightest">Paket</h3>
+          <button type="button" id="btn-tambah-paket" class="rounded-lg border border-ink-900/15 dark:border-cream-100/15 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">+ Tambah paket</button>
+        </div>
+        <div id="paket-body" class="space-y-4">${(k.packages ?? []).map(kartuPaket).join('')}</div>
+      </div>
+      <div class="${KARTU}">
+        <h3 class="font-display text-base font-semibold tracking-tightest">Cara kerja</h3>
+        ${daftar('process', 'Tahapan', k.process, ['title', 'text'], 'Satu tahap per baris, format: Judul | Isi (nomor dibuat otomatis).')}
+      </div>
+      <div class="${KARTU}">
+        <h3 class="font-display text-base font-semibold tracking-tightest">FAQ</h3>
+        ${daftar('faq', 'Pertanyaan', k.faq, ['q', 'a'], 'Satu FAQ per baris, format: Pertanyaan | Jawaban.')}
+      </div>
+      <div class="${KARTU}">
+        <h3 class="font-display text-base font-semibold tracking-tightest">CTA penutup</h3>
+        ${inp('cta.title', 'Judul', k.cta?.title)}
+        ${ta('cta.text', 'Teks', k.cta?.text)}
+        ${inp('cta.label', 'Label tombol', k.cta?.label)}
+      </div>
+      <div class="${KARTU}">
+        <h3 class="font-display text-base font-semibold tracking-tightest">SEO</h3>
+        ${inp('seo.title', 'SEO title', k.seo?.title)}
+        ${ta('seo.description', 'SEO description', k.seo?.description, 3, 'Idealnya 120 sampai 160 karakter.')}
+        ${inp('seo.ogImage', 'Open Graph image', k.seo?.ogImage, 'URL gambar pratinjau. Kosong memakai OG default situs.')}
+      </div>`;
+
+    el('btn-tambah-paket').addEventListener('click', () => {
+      if (!bolehEdit) return;
+      el('paket-body').insertAdjacentHTML('beforeend', kartuPaket({ key: '', name: '', specs: [], features: [], currency: 'IDR', ctaLabel: 'Pesan Sekarang' }, el('paket-body').children.length));
+      pasangHapus();
+    });
+    pasangHapus();
+    if (!bolehEdit) {
+      el('jasa-root').querySelectorAll('input, textarea, button').forEach((n) => ((n as HTMLInputElement).disabled = true));
+    }
+  }
+
+  function pasangHapus() {
+    document.querySelectorAll<HTMLButtonElement>('[data-hapus-paket]').forEach((b) => {
+      b.onclick = () => b.closest('[data-paket]')?.remove();
+    });
+  }
+
+  function setPath(obj: any, path: string, value: any) {
+    const bagian = path.split('.');
+    let cur = obj;
+    for (let i = 0; i < bagian.length - 1; i++) {
+      if (typeof cur[bagian[i]] !== 'object' || cur[bagian[i]] === null) cur[bagian[i]] = {};
+      cur = cur[bagian[i]];
+    }
+    cur[bagian[bagian.length - 1]] = value;
+  }
+
+  const baris = (v: string) => v.split('\n').map((b) => b.trim()).filter(Boolean);
+
+  async function simpan() {
+    if (!bolehEdit) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const btn = el<HTMLButtonElement>('btn-simpan');
+    const pesan = el('pesan');
+    pesan.className = 'text-sm';
+    pesan.textContent = '';
+
+    const baru: any = JSON.parse(JSON.stringify(konten ?? {}));
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-kp]').forEach((n) => setPath(baru, n.dataset.kp!, n.value.trim()));
+    document.querySelectorAll<HTMLTextAreaElement>('[data-klist]').forEach((n) => {
+      const kunci = (n.dataset.kk ?? 'title,text').split(',');
+      setPath(baru, n.dataset.klist!, baris(n.value).map((b, i) => {
+        const bagian = b.split('|').map((v) => v.trim());
+        const nilai = bagian.length > kunci.length
+          ? [...bagian.slice(0, kunci.length - 1), bagian.slice(kunci.length - 1).join(' | ')]
+          : bagian;
+        const o: any = {};
+        kunci.forEach((k, idx) => { o[k] = nilai[idx] ?? ''; });
+        if (n.dataset.klist === 'process') o.n = String(i + 1).padStart(2, '0');
+        return o;
+      }));
+    });
+
+    // Paket: harga dibaca lewat parsePrice; harga yang bukan angka menghentikan simpan.
+    const paket: any[] = [];
+    for (const kartu of Array.from(document.querySelectorAll<HTMLElement>('[data-paket]'))) {
+      const f = (k: string) => (kartu.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-pf="${k}"]`)?.value ?? '').trim();
+      const nama = f('name');
+      if (!nama) continue; // kartu tanpa nama diabaikan
+      const harga = parsePrice(f('price'));
+      if (!harga.valid) {
+        pesan.textContent = `Harga paket "${nama}" bukan angka.`;
+        pesan.className = 'text-sm text-red-600 dark:text-red-400';
+        return;
+      }
+      paket.push({
+        key: f('key').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || `paket-${paket.length + 1}`,
+        name: nama, tagline: f('tagline'), badge: f('badge'),
+        price: harga.value, currency: 'IDR', unit: f('unit'), priceNote: f('priceNote'),
+        specs: baris(f('specs')).map((b) => {
+          const [l, ...sisa] = b.split('|');
+          return { label: (l ?? '').trim(), value: sisa.join('|').trim() };
+        }).filter((s) => s.label && s.value),
+        features: baris(f('features')),
+        ctaLabel: f('ctaLabel') || 'Pesan Sekarang',
+      });
+    }
+    baru.packages = paket;
+
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan…';
+    const { data: sesi } = await supabase.auth.getSession();
+    const { error } = await supabase.from('partnership_jasa_page')
+      .upsert({ id: 1, content: baru, updated_at: new Date().toISOString(), updated_by: sesi.session?.user.id ?? null });
+    if (error) {
+      pesan.textContent = pesanError(error);
+      pesan.className = 'text-sm text-red-600 dark:text-red-400';
+    } else {
+      konten = baru;
+      pesan.textContent = 'Tersimpan. Halaman publik ter-update setelah build berikutnya.';
+      pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+      render();
+    }
+    btn.disabled = false;
+    btn.textContent = 'Simpan';
+  }
+</script>
