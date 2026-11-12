@@ -1,6 +1,9 @@
-# ✍️ Portal Penulis Blog (RANCANGAN, belum dibangun)
+# ✍️ Portal Penulis Blog (sedang dibangun)
 
-Status: **rancangan** (2026-11-12), disetujui garis besarnya oleh pemilik.
+Status (2026-11-12): rancangan disetujui pemilik. **Tahap 1 selesai** (skema
+`supabase/blog-writers.sql` + rollback + tes `supabase/tests/blog-writers.test.sql`,
+di `npm run test:sql`). Migrasi **belum diterapkan** ke proyek produksi.
+Tahap 2 dan seterusnya belum dikerjakan.
 Tujuan: menulis blog pindah dari CMS admin ke portal sendiri
 `/blog/masuk` dan `/blog/dashboard`, mirip Portal Partner. Siapa pun boleh
 mendaftar jadi penulis. Tulisan baru masuk antrean persetujuan di CMS. Sanity
@@ -144,6 +147,8 @@ dan entri log tulisan itu.
 
 ## 9. Pertanyaan terbuka
 
-- Artikel lama di Sanity: penulisnya belum punya akun. Usul: biarkan, dan
-  tautkan ke akun penulis saat orangnya mendaftar (dipilih admin di CMS).
-- Riwayat setelah hapus permanen: usul ikut terhapus (sesuai arti "permanen").
+- Keputusan pemilik: artikel lama di Sanity dibiarkan dan ditautkan ke akun
+  penulis saat orangnya mendaftar (dipilih admin di CMS). Riwayat ikut
+  terhapus saat hapus permanen.
+- Kuota paket Free Sanity: angka resmi belum dikonfirmasi (lihat Plan di
+  sanity.io/manage). Batas gambar per tulisan disesuaikan setelah itu.
