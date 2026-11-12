@@ -114,3 +114,30 @@ test('form lengkap: judul, footer, gambar, tombol', () => {
   assert.equal(pv.adTitle, 'J');
   assert.equal(pv.buttons.length, 1);
 });
+
+import { emailProblem, serviceKindName, serviceMeta } from '../src/lib/partner/model.ts';
+
+test('emailProblem menerima email wajar dan menolak yang rusak', () => {
+  assert.equal(emailProblem(' nama@contoh.id '), null);
+  for (const bad of ['', 'x', 'a@b', 'a b@c.id', '@c.id', 'a@@c.id', 'a'.repeat(250) + '@c.id']) {
+    assert.ok(emailProblem(bad), bad);
+  }
+});
+
+test('serviceMeta: sisa hari, peringatan 5 hari, hari terakhir, habis, dihentikan', () => {
+  const t = '2026-11-12';
+  assert.deepEqual(serviceMeta('2026-12-12', 'aktif', t), { daysLeft: 30, label: 'Sisa 30 hari', tone: 'ok' });
+  assert.equal(serviceMeta('2026-11-18', 'aktif', t).tone, 'ok');
+  assert.equal(serviceMeta('2026-11-17', 'aktif', t).tone, 'warn');
+  assert.equal(serviceMeta('2026-11-17', 'aktif', t).label, 'Sisa 5 hari');
+  assert.equal(serviceMeta('2026-11-12', 'aktif', t).label, 'Berakhir hari ini');
+  assert.equal(serviceMeta('2026-11-11', 'aktif', t).tone, 'bad');
+  assert.equal(serviceMeta('2026-12-12', 'habis', t).tone, 'bad');
+  assert.equal(serviceMeta('2026-12-12', 'dihentikan', t).tone, 'off');
+});
+
+test('serviceKindName', () => {
+  assert.equal(serviceKindName('lobby'), 'Broadcast Lobby');
+  assert.equal(serviceKindName('hosting_bot'), 'Hosting Bot');
+  assert.equal(serviceKindName('apa-saja'), 'Layanan');
+});

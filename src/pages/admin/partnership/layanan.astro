@@ -1,0 +1,263 @@
+---
+// Partnership: Layanan & Masa Aktif.
+//
+// Memantau semua layanan berbatas waktu milik partner (Broadcast Lobby dari
+// pesanan yang berjalan, Hosting Bot yang dicatat di sini). Pemeriksa harian
+// (pg_cron, supabase/partner-services.sql) menandai yang habis dan mengantre
+// email pengingat H-5; Edge Function partner-reminders mengirimnya.
+//
+// Biaya database: dua SELECT berbatas saat halaman dibuka (layanan + status
+// email), satu SELECT daftar partner untuk formulir. Tanpa polling.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import PartnershipTabs from '@components/PartnershipTabs.astro';
+
+const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
+---
+
+<AdminLayout title="Layanan Partner" active="partnership">
+  <AdminPageHeader
+    eyebrow="Partnership"
+    title="Layanan & Masa Aktif"
+    description="Pantau Broadcast Lobby dan Hosting Bot milik partner. Email pengingat dikirim otomatis 5 hari sebelum habis."
+  />
+  <PartnershipTabs active="layanan" />
+
+  <div class="px-6 lg:px-10 py-8 space-y-6">
+    <p id="gate" class="hidden text-sm text-amber-700 dark:text-amber-400"></p>
+
+    <div id="ringkas" class="grid gap-3 sm:grid-cols-4"></div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="button" id="b-periksa" class="rounded-xl border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 disabled:opacity-60 transition-colors">Periksa sekarang</button>
+      <p id="periksa-msg" class="text-sm text-ink-500 dark:text-cream-300/60" role="status" aria-live="polite">
+        Pemeriksa otomatis berjalan tiap hari pukul 08.05 WIB.
+      </p>
+    </div>
+
+    <section id="box-tambah" class="hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4 max-w-3xl">
+      <h2 class="font-display text-lg font-semibold tracking-tightest">Catat layanan baru</h2>
+      <p class="text-sm text-ink-500 dark:text-cream-300/60">Untuk Hosting Bot dan layanan lain yang dipesan lewat WhatsApp. Layanan Lobby muncul otomatis saat pesanannya berstatus berjalan.</p>
+      <form id="f-tambah" class="grid gap-4 sm:grid-cols-2" novalidate>
+        <div><label class="block text-sm font-medium mb-1.5" for="t-partner">Partner</label><select id="t-partner" class={INPUT}></select></div>
+        <div><label class="block text-sm font-medium mb-1.5" for="t-kind">Jenis</label>
+          <select id="t-kind" class={INPUT}>
+            <option value="hosting_bot">Hosting Bot</option>
+            <option value="lobby">Broadcast Lobby</option>
+            <option value="lainnya">Layanan lain</option>
+          </select></div>
+        <div class="sm:col-span-2"><label class="block text-sm font-medium mb-1.5" for="t-label">Nama layanan</label><input id="t-label" maxlength="120" class={INPUT} placeholder="mis. Hosting Bot Server Uji" /></div>
+        <div><label class="block text-sm font-medium mb-1.5" for="t-mulai">Mulai</label><input id="t-mulai" type="date" class={INPUT} /></div>
+        <div class="flex gap-2">
+          <div class="flex-1"><label class="block text-sm font-medium mb-1.5" for="t-lama">Masa aktif</label><input id="t-lama" type="number" min="1" step="1" value="1" class={INPUT} /></div>
+          <div class="w-28"><label class="block text-sm font-medium mb-1.5" for="t-unit">Satuan</label>
+            <select id="t-unit" class={INPUT}><option value="bulan">Bulan</option><option value="hari">Hari</option></select></div>
+        </div>
+        <div class="sm:col-span-2"><label class="block text-sm font-medium mb-1.5" for="t-note">Catatan (opsional)</label><input id="t-note" maxlength="500" class={INPUT} /></div>
+        <div class="sm:col-span-2 flex flex-wrap items-center gap-3">
+          <button type="submit" class="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 transition-colors">Catat layanan</button>
+          <p id="t-msg" class="text-sm" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <div id="tabel" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { addDays, formatDateId, serviceKindName, serviceMeta, todayWib } from '@/lib/partner/model';
+
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  let bolehEdit = false;
+
+  document.addEventListener('admin:ready', (e) => {
+    const profile = (e as CustomEvent).detail;
+    bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
+    if (bolehEdit) el('box-tambah').classList.remove('hidden');
+    else {
+      el('gate').textContent = 'Peran kamu hanya bisa melihat.';
+      el('gate').classList.remove('hidden');
+      el<HTMLButtonElement>('b-periksa').disabled = true;
+    }
+    el<HTMLInputElement>('t-mulai').value = todayWib();
+    el<HTMLFormElement>('f-tambah').addEventListener('submit', tambah);
+    el('b-periksa').addEventListener('click', () => void periksa());
+    void muat();
+  });
+
+  /** Tanggal selesai (inklusif) dari mulai + masa aktif. Bulan dihitung kalender, bukan 30 hari. */
+  function hitungSelesai(mulai: string, lama: number, unit: string): string {
+    if (unit === 'hari') return addDays(mulai, lama - 1);
+    const d = new Date(`${mulai}T00:00:00Z`);
+    const hari = d.getUTCDate();
+    d.setUTCDate(1);
+    d.setUTCMonth(d.getUTCMonth() + lama);
+    const akhirBulan = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+    d.setUTCDate(Math.min(hari, akhirBulan));
+    return addDays(d.toISOString().slice(0, 10), -1);
+  }
+
+  const TONE: Record<string, string> = {
+    ok: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+    warn: 'bg-amber-500/15 text-amber-800 dark:text-amber-300',
+    bad: 'bg-red-500/15 text-red-700 dark:text-red-300',
+    off: 'bg-ink-500/10 text-ink-600 dark:text-cream-300',
+  };
+
+  function statusEmail(rows: any[]): string {
+    if (!rows.length) return '<span class="text-ink-400 dark:text-cream-300/40">belum ada</span>';
+    return rows.map((n) => {
+      const nama = n.kind === 'h5' ? 'H-5' : 'Habis';
+      const label = n.status === 'sent' ? 'terkirim' : n.status === 'pending' ? 'menunggu' : n.status === 'failed' ? 'gagal' : 'email belum ada';
+      const warna = n.status === 'sent' ? 'text-emerald-700 dark:text-emerald-300' : n.status === 'pending' ? 'text-ink-600 dark:text-cream-300' : 'text-red-700 dark:text-red-300';
+      return `<span class="${warna}" title="${esc(n.error ?? '')}">${nama} ${label}</span>`;
+    }).join('<br>');
+  }
+
+  async function muat() {
+    const sb = getSupabase();
+    if (!sb) return;
+    const box = el('tabel');
+    const [sv, pt] = await Promise.all([
+      sb.from('partner_services')
+        .select('id,partner_id,partner_name,kind,label,order_id,starts_on,ends_on,status,note')
+        .order('ends_on', { ascending: true }).limit(300),
+      sb.from('partner_accounts').select('id,display_name,contact_email').order('display_name').limit(200),
+    ]);
+    if (sv.error) { box.innerHTML = stateBlock('error', `${pesanError(sv.error)} Pastikan supabase/partner-services.sql sudah diterapkan.`); return; }
+    const rows: any[] = sv.data ?? [];
+    const partners: any[] = pt.data ?? [];
+    el<HTMLSelectElement>('t-partner').innerHTML = partners.length
+      ? partners.map((p) => `<option value="${esc(p.id)}">${esc(p.display_name)}</option>`).join('')
+      : '<option value="">Belum ada akun partner</option>';
+    const emailOf = new Map(partners.map((p) => [p.id, p.contact_email as string | null]));
+
+    // Status email: satu query untuk semua layanan yang tampil.
+    const notices = new Map<number, any[]>();
+    if (rows.length) {
+      const nt = await sb.from('partner_service_notices')
+        .select('service_id,kind,status,ends_on,error')
+        .in('service_id', rows.map((r) => r.id)).order('id', { ascending: true }).limit(1000);
+      for (const n of nt.data ?? []) {
+        // Hanya pengingat untuk masa aktif saat ini yang ditampilkan.
+        const sv2 = rows.find((r) => r.id === n.service_id);
+        if (sv2 && n.ends_on === sv2.ends_on) notices.set(n.service_id, [...(notices.get(n.service_id) ?? []), n]);
+      }
+    }
+
+    const hariIni = todayWib();
+    const metas = rows.map((r) => serviceMeta(r.ends_on, r.status, hariIni));
+    const aktif = rows.filter((r, i) => r.status === 'aktif' && metas[i].daysLeft >= 0).length;
+    const segera = rows.filter((r, i) => r.status === 'aktif' && metas[i].daysLeft >= 0 && metas[i].daysLeft <= 5).length;
+    const habis = rows.filter((r) => r.status === 'habis').length;
+    const tanpaEmail = partners.filter((p) => !p.contact_email).length;
+    const kartu = (judul: string, nilai: number, warna = '') =>
+      `<div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-4"><p class="text-xs text-ink-500 dark:text-cream-300/60">${esc(judul)}</p><p class="mt-1 font-display text-2xl font-semibold ${warna}">${nilai}</p></div>`;
+    el('ringkas').innerHTML = kartu('Aktif', aktif) + kartu('Habis dalam 5 hari', segera, segera ? 'text-amber-700 dark:text-amber-400' : '')
+      + kartu('Sudah habis', habis, habis ? 'text-red-700 dark:text-red-400' : '') + kartu('Partner tanpa email', tanpaEmail, tanpaEmail ? 'text-amber-700 dark:text-amber-400' : '');
+
+    if (!rows.length) { box.innerHTML = stateBlock('empty', 'Belum ada layanan. Layanan Lobby muncul saat pesanan berstatus berjalan.'); return; }
+
+    box.innerHTML = `<div class="overflow-x-auto"><table class="w-full min-w-[56rem] text-left text-sm">
+      <thead class="bg-ink-900/5 dark:bg-cream-100/5"><tr class="text-[0.7rem] uppercase tracking-wider text-ink-400 dark:text-cream-300/40">
+        <th class="px-4 py-3 font-medium">Partner</th><th class="px-4 py-3 font-medium">Layanan</th>
+        <th class="px-4 py-3 font-medium">Masa aktif</th><th class="px-4 py-3 font-medium">Status</th>
+        <th class="px-4 py-3 font-medium">Email pengingat</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr></thead>
+      <tbody class="divide-y divide-ink-900/10 dark:divide-cream-100/10">
+      ${rows.map((r, i) => {
+        const m = metas[i];
+        const mail = emailOf.get(r.partner_id);
+        return `<tr class="align-top">
+          <td class="px-4 py-3"><div class="font-medium">${esc(r.partner_name || '-')}</div>
+            <div class="text-xs text-ink-500 dark:text-cream-300/60">${mail ? esc(mail) : '<span class="text-amber-700 dark:text-amber-400">email belum diisi</span>'}</div></td>
+          <td class="px-4 py-3"><div>${esc(r.label)}</div>
+            <div class="text-xs text-ink-500 dark:text-cream-300/60">${esc(serviceKindName(r.kind))}${r.order_id ? ` · pesanan #${esc(r.order_id)}` : ''}</div>
+            ${r.note ? `<div class="text-xs text-ink-500 dark:text-cream-300/60">${esc(r.note)}</div>` : ''}</td>
+          <td class="px-4 py-3 text-xs">${esc(formatDateId(r.starts_on))}<br>sampai ${esc(formatDateId(r.ends_on))}</td>
+          <td class="px-4 py-3"><span class="inline-block rounded-full px-2.5 py-1 text-xs font-medium ${TONE[m.tone]}">${esc(m.label)}</span></td>
+          <td class="px-4 py-3 text-xs">${statusEmail(notices.get(r.id) ?? [])}</td>
+          <td class="px-4 py-3 text-right whitespace-nowrap">${bolehEdit ? `
+            <button data-ext="${esc(r.id)}" data-nama="${esc(r.label)}" data-akhir="${esc(r.ends_on)}" class="text-xs underline">Perpanjang</button>
+            ${r.status !== 'dihentikan' ? `<button data-stop="${esc(r.id)}" data-nama="${esc(r.label)}" class="ml-3 text-xs underline">Hentikan</button>` : ''}
+            <button data-del="${esc(r.id)}" data-nama="${esc(r.label)}" class="ml-3 text-xs text-red-600 underline dark:text-red-400">Hapus</button>` : ''}</td></tr>`;
+      }).join('')}
+      </tbody></table></div>`;
+
+    box.querySelectorAll<HTMLElement>('[data-ext]').forEach((b) => b.addEventListener('click', () => void perpanjang(Number(b.dataset.ext), b.dataset.nama!, b.dataset.akhir!)));
+    box.querySelectorAll<HTMLElement>('[data-stop]').forEach((b) => b.addEventListener('click', () => void hentikan(Number(b.dataset.stop), b.dataset.nama!)));
+    box.querySelectorAll<HTMLElement>('[data-del]').forEach((b) => b.addEventListener('click', () => void hapus(Number(b.dataset.del), b.dataset.nama!)));
+  }
+
+  async function tambah(ev: Event) {
+    ev.preventDefault();
+    const sb = getSupabase();
+    const msg = el('t-msg');
+    msg.className = 'text-sm text-red-600 dark:text-red-400';
+    if (!sb || !bolehEdit) return;
+    const partnerId = el<HTMLSelectElement>('t-partner').value;
+    const label = el<HTMLInputElement>('t-label').value.trim();
+    const mulai = el<HTMLInputElement>('t-mulai').value;
+    const lama = Math.trunc(Number(el<HTMLInputElement>('t-lama').value));
+    if (!partnerId) { msg.textContent = 'Pilih partner dulu.'; return; }
+    if (!label) { msg.textContent = 'Isi nama layanan.'; return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(mulai)) { msg.textContent = 'Isi tanggal mulai.'; return; }
+    if (!Number.isFinite(lama) || lama < 1 || lama > 1200) { msg.textContent = 'Masa aktif minimal 1.'; return; }
+    const { data: sesi } = await sb.auth.getSession();
+    const { error } = await sb.from('partner_services').insert({
+      partner_id: partnerId, kind: el<HTMLSelectElement>('t-kind').value, label,
+      starts_on: mulai, ends_on: hitungSelesai(mulai, lama, el<HTMLSelectElement>('t-unit').value),
+      note: el<HTMLInputElement>('t-note').value.trim() || null, created_by: sesi.session?.user.id ?? null,
+    });
+    if (error) { msg.textContent = pesanError(error); return; }
+    msg.className = 'text-sm text-teal-700 dark:text-teal-300';
+    msg.textContent = 'Layanan dicatat.';
+    el<HTMLInputElement>('t-label').value = '';
+    void muat();
+  }
+
+  async function perpanjang(id: number, nama: string, akhir: string) {
+    const sb = getSupabase();
+    if (!sb) return;
+    const masuk = prompt(`Perpanjang "${nama}" berapa hari? Dihitung dari ${formatDateId(akhir)} (atau dari hari ini bila sudah lewat).`, '30');
+    const n = Math.trunc(Number(masuk));
+    if (masuk === null || !Number.isFinite(n) || n < 1 || n > 3660) return;
+    const dasar = akhir < todayWib() ? todayWib() : akhir;
+    const { error } = await sb.from('partner_services').update({ ends_on: addDays(dasar, n), status: 'aktif' }).eq('id', id);
+    if (error) { alert(pesanError(error)); return; }
+    void muat();
+  }
+
+  async function hentikan(id: number, nama: string) {
+    const sb = getSupabase();
+    if (!sb || !confirm(`Hentikan "${nama}"? Pengingat email tidak akan dikirim lagi.`)) return;
+    const { error } = await sb.from('partner_services').update({ status: 'dihentikan' }).eq('id', id);
+    if (error) { alert(pesanError(error)); return; }
+    void muat();
+  }
+
+  async function hapus(id: number, nama: string) {
+    const sb = getSupabase();
+    if (!sb || !confirm(`Hapus "${nama}" beserta riwayat emailnya? Tindakan ini tidak bisa dibatalkan.`)) return;
+    const { error } = await sb.from('partner_services').delete().eq('id', id);
+    if (error) { alert(pesanError(error)); return; }
+    void muat();
+  }
+
+  async function periksa() {
+    const sb = getSupabase();
+    const msg = el('periksa-msg');
+    if (!sb) return;
+    const b = el<HTMLButtonElement>('b-periksa');
+    b.disabled = true;
+    msg.textContent = 'Memeriksa…';
+    const { data, error } = await sb.rpc('partner_services_check_now');
+    b.disabled = !bolehEdit;
+    if (error) { msg.textContent = pesanError(error); return; }
+    const d = (data ?? {}) as Record<string, number>;
+    msg.textContent = `Selesai. Baru habis: ${d.habis ?? 0}, pengingat H-5 baru: ${d.h5_baru ?? 0}, email menunggu dikirim: ${d.menunggu ?? 0}.`;
+    void muat();
+  }
+</script>

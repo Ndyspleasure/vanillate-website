@@ -91,7 +91,7 @@
         "q": "Materi seperti apa yang tidak kami terima?"
       },
       {
-        "a": "Setelah materi dan paket disepakati, kampanye biasanya dijalankan dalam 1–3 hari kerja. Broadcast via Lobby mulai dihitung sejak hari pertama tayang.",
+        "a": "Setelah materi dan paket disepakati, kampanye biasanya dijalankan dalam 1 sampai 3 hari kerja. Broadcast via Lobby mulai dihitung sejak hari pertama tayang.",
         "q": "Berapa lama prosesnya sampai kampanye tayang?"
       },
       {
@@ -114,7 +114,7 @@
     "seo": {
       "title": "Partnership",
       "ogImage": "",
-      "description": "Jangkau ribuan pemain aktif Discord lewat Vanillate. Pilih Broadcast via DM atau Broadcast via Lobby — ajukan partnership langsung lewat WhatsApp."
+      "description": "Jangkau ribuan pemain aktif Discord lewat Vanillate. Pilih Broadcast via DM atau Broadcast via Lobby. Ajukan partnership langsung lewat WhatsApp."
     },
     "hero": {
       "title": "Partnership",
@@ -140,7 +140,7 @@
       }
     ],
     "rules": {
-      "note": "Aturan ini menjaga kenyamanan pemain — sekaligus menjaga kampanyemu tetap efektif.",
+      "note": "Aturan ini menjaga kenyamanan pemain, sekaligus menjaga kampanyemu tetap efektif.",
       "title": "Ketentuan singkat",
       "allowed": [
         "Promosi server, komunitas, kreator, produk, dan event",
@@ -156,7 +156,7 @@
       ]
     },
     "compare": {
-      "note": "Keduanya bisa dipakai bersamaan — DM untuk dorongan cepat, Lobby untuk kehadiran jangka panjang.",
+      "note": "Keduanya bisa dipakai bersamaan. DM untuk dorongan cepat, Lobby untuk kehadiran jangka panjang.",
       "rows": [
         {
           "a": "Masuk ke DM pemain, satu per satu",
@@ -179,8 +179,8 @@
           "label": "Sifat jangkauan"
         },
         {
-          "a": "Ya — dapat diarahkan ke pemain paling aktif",
-          "b": "Tidak — tampil ke semua pemain yang membuka lobby",
+          "a": "Ya, dapat diarahkan ke pemain paling aktif",
+          "b": "Tidak, tampil ke semua pemain yang membuka lobby",
           "label": "Bisa ditargetkan?"
         },
         {

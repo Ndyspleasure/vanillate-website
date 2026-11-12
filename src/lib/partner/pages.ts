@@ -8,12 +8,12 @@ import { discordMarkdownHtml } from '../dev-panel/discord-md';
 import { adPreviewHtml } from './render';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, loadingBlock, pill, toast } from '../dashboard/ui';
 import {
-  changeCredentials, getPartnerSupabase, isPartnerConfigured, listOrderCampaigns, listOrders, loadProfile,
-  signIn, signOut, submitOrder, type PartnerOrderRow, type PartnerProfile,
+  changeCredentials, getPartnerSupabase, isPartnerConfigured, listOrderCampaigns, listOrders, listServices, loadProfile,
+  setContactEmail, signIn, signOut, submitOrder, type PartnerOrderRow, type PartnerProfile,
 } from './api';
 import {
-  buildReportPreview, campaignStatusMeta, cleanButtons, MAX_BTN_LABEL, MAX_FOOTER, MAX_TITLE, campaignSummary, formatDateId, hasErrors, isRiwayatSaja, loginError, MAX_AD, MAX_NOTE, passwordProblem,
-  statusMeta, todayWib, totalText, usernameProblem, validateOrder,
+  buildReportPreview, campaignStatusMeta, cleanButtons, MAX_BTN_LABEL, MAX_FOOTER, MAX_TITLE, campaignSummary, emailProblem, formatDateId, hasErrors, isRiwayatSaja, loginError, MAX_AD, MAX_NOTE, passwordProblem,
+  serviceKindName, serviceMeta, statusMeta, todayWib, totalText, usernameProblem, validateOrder,
   type CampaignReport, type CatalogProduct, type OrderInput,
 } from './model';
 
@@ -121,7 +121,7 @@ export async function mountLogin(o: PageOpts): Promise<void> {
 // ═══ Dashboard ═════════════════════════════════════════════════════════════
 
 function credentialsForm(profile: PartnerProfile, forced: boolean): string {
-  return `<form id="pc-form" class="space-y-4" novalidate>
+  return `<form id="pc-form" class="space-y-4" novalidate data-forced="${forced ? '1' : '0'}">
     ${forced
       ? `<div class="rounded-xl bg-amber-500/10 p-4 text-sm ring-1 ring-inset ring-amber-500/25">
            Demi keamanan, ganti <strong>username</strong> dan <strong>password</strong> bawaan dari tim kami sebelum memakai dashboard.
@@ -144,6 +144,11 @@ function credentialsForm(profile: PartnerProfile, forced: boolean): string {
     <div>
       <label class="${LABEL}" for="pc-new2">Ulangi password baru</label>
       <input id="pc-new2" type="password" class="${INPUT}" autocomplete="new-password" required />
+    </div>
+    <div>
+      <label class="${LABEL}" for="pc-email">Email aktif${forced ? '' : ' (opsional)'}</label>
+      <input id="pc-email" type="email" class="${INPUT}" autocomplete="email" autocapitalize="none" spellcheck="false" value="${esc(profile.contact_email ?? '')}" ${forced ? 'required' : ''} />
+      <p class="${HINT}">Dipakai untuk pengingat 5 hari sebelum masa layananmu habis. Tidak dipakai untuk login.</p>
     </div>
     <p id="pc-err" class="${ERR} hidden" role="alert"></p>
     <button id="pc-submit" class="${BTN_PRIMARY}" type="submit">Simpan</button>
@@ -170,9 +175,15 @@ function wireCredentials(root: HTMLElement, onDone: () => void): void {
     if (pp) return show(pp);
     if (pw !== pw2) return show('Ulangi password baru dengan sama persis.');
     if (pw === cur) return show('Password baru harus berbeda dari yang lama.');
+    const email = (root.querySelector<HTMLInputElement>('#pc-email')?.value ?? '').trim();
+    if (form.dataset.forced === '1' && !email) return show('Isi email aktif untuk pengingat masa layanan.');
+    if (email) {
+      const ep = emailProblem(email);
+      if (ep) return show(ep);
+    }
     btn.disabled = true;
     btn.textContent = 'Menyimpan…';
-    const r = await changeCredentials({ currentPassword: cur, username: user, password: pw });
+    const r = await changeCredentials({ currentPassword: cur, username: user, password: pw, email: email || undefined });
     btn.disabled = false;
     btn.textContent = 'Simpan';
     if (!r.ok) return show(r.error ?? 'Gagal menyimpan.');
@@ -273,6 +284,19 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
     </div>
 
     <section id="p-akun-box" class="${CARD} mt-6 hidden max-w-md p-6">${credentialsForm(profile, false)}</section>
+
+    <section id="p-layanan" class="mt-8" aria-labelledby="p-layanan-h">
+      <h2 id="p-layanan-h" class="font-display text-lg font-semibold tracking-tightest">Layanan saya</h2>
+      <div id="p-layanan-list" class="mt-3 grid gap-3 sm:grid-cols-2">${loadingBlock('Memuat layanan…')}</div>
+      <form id="pe-form" class="mt-4 flex max-w-md flex-wrap items-end gap-2" novalidate>
+        <div class="min-w-[14rem] flex-1">
+          <label class="${LABEL}" for="pe-email">Email pengingat masa layanan</label>
+          <input id="pe-email" type="email" class="${INPUT}" autocomplete="email" autocapitalize="none" spellcheck="false" value="${esc(profile.contact_email ?? '')}" placeholder="belum diisi" />
+        </div>
+        <button id="pe-submit" class="${BTN_SECONDARY}" type="submit">Simpan email</button>
+        <p id="pe-msg" class="${HINT} w-full" role="status"></p>
+      </form>
+    </section>
 
     <div class="mt-8 flex gap-2" role="tablist">
       <button id="tab-baru" role="tab" class="${BTN_PRIMARY}" type="button">Catat pesanan</button>
@@ -377,6 +401,46 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
   const akunBox = root.querySelector<HTMLElement>('#p-akun-box')!;
   root.querySelector('#p-akun')?.addEventListener('click', () => akunBox.classList.toggle('hidden'));
   wireCredentials(akunBox, () => { void mountDashboard(o); });
+
+  // ── Email pengingat ──
+  const eForm = root.querySelector<HTMLFormElement>('#pe-form')!;
+  const eMsg = root.querySelector<HTMLElement>('#pe-msg')!;
+  eForm.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const v = (root.querySelector<HTMLInputElement>('#pe-email')!).value.trim();
+    const bad = emailProblem(v);
+    if (bad) { eMsg.textContent = bad; return; }
+    const b = root.querySelector<HTMLButtonElement>('#pe-submit')!;
+    b.disabled = true;
+    eMsg.textContent = 'Menyimpan…';
+    const r = await setContactEmail(v);
+    b.disabled = false;
+    eMsg.textContent = r.ok ? 'Email tersimpan. Pengingat dikirim 5 hari sebelum masa layanan habis.' : (r.error ?? 'Gagal menyimpan.');
+  });
+
+  // ── Layanan saya (satu query) ──
+  void listServices().then((rows) => {
+    const box = root.querySelector<HTMLElement>('#p-layanan-list');
+    if (!box) return;
+    if (rows.length === 0) {
+      box.innerHTML = `<p class="text-sm text-ink-500 dark:text-cream-300/60 sm:col-span-2">Belum ada layanan berjalan. Layanan Lobby muncul di sini saat pesananmu mulai berjalan, dan Hosting Bot dicatat oleh tim kami.</p>`;
+      return;
+    }
+    box.innerHTML = rows.map((r) => {
+      const m = serviceMeta(r.ends_on, r.status, hariIni);
+      const tone = m.tone === 'ok' ? 'success' : m.tone === 'warn' ? 'warning' : m.tone === 'bad' ? 'danger' : 'neutral';
+      return `<article class="${CARD} p-4">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <p class="text-xs uppercase tracking-wider text-ink-500 dark:text-cream-300/60">${esc(serviceKindName(r.kind))}</p>
+            <h3 class="font-medium">${esc(r.label)}</h3>
+          </div>
+          ${pill(m.label, tone)}
+        </div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">${esc(formatDateId(r.starts_on))} sampai ${esc(formatDateId(r.ends_on))}</p>
+      </article>`;
+    }).join('');
+  });
 
   // ── Tab ──
   const panelBaru = root.querySelector<HTMLElement>('#panel-baru')!;

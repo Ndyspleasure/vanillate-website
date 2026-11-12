@@ -235,6 +235,13 @@ export function usernameProblem(raw: string): string | null {
   return null;
 }
 
+/** Email kontak untuk pengingat masa layanan (sama dengan Edge Function partner-admin). */
+export function emailProblem(raw: string): string | null {
+  const e = raw.trim();
+  if (e.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return 'Format email tidak valid.';
+  return null;
+}
+
 export function passwordProblem(password: string, username: string): string | null {
   if (password.length < 8) return 'Password minimal 8 karakter.';
   if (password.length > 72) return 'Password maksimal 72 karakter.';
@@ -286,4 +293,33 @@ export function campaignSummary(c: Pick<CampaignReport, 'target_total' | 'succes
 /** Paket Lobby tidak punya campaign otomatis: hanya riwayat pemesanan. */
 export function isRiwayatSaja(productKey: string | null | undefined): boolean {
   return productKey === 'broadcast_lobby';
+}
+
+// ─── Layanan berbatas waktu (Lobby, Hosting Bot) ────────────────────────────
+
+export type ServiceTone = 'ok' | 'warn' | 'bad' | 'off';
+
+export function serviceKindName(kind: string): string {
+  if (kind === 'lobby') return 'Broadcast Lobby';
+  if (kind === 'hosting_bot') return 'Hosting Bot';
+  return 'Layanan';
+}
+
+/**
+ * Sisa hari dan label status. `endsOn` adalah hari aktif TERAKHIR (inklusif),
+ * jadi pada tanggal itu sisa 0 hari tetapi layanan masih aktif.
+ * Peringatan (warn) mulai 5 hari sebelum habis, sama dengan pengingat email.
+ */
+export function serviceMeta(
+  endsOn: string,
+  status: string,
+  today: string = todayWib(),
+): { daysLeft: number; label: string; tone: ServiceTone } {
+  const sisa = Math.round((Date.parse(`${endsOn}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+  const daysLeft = Number.isFinite(sisa) ? sisa : 0;
+  if (status === 'dihentikan') return { daysLeft, label: 'Dihentikan', tone: 'off' };
+  if (status === 'habis' || daysLeft < 0) return { daysLeft, label: 'Sudah habis', tone: 'bad' };
+  if (daysLeft === 0) return { daysLeft, label: 'Berakhir hari ini', tone: 'warn' };
+  if (daysLeft <= 5) return { daysLeft, label: `Sisa ${daysLeft} hari`, tone: 'warn' };
+  return { daysLeft, label: `Sisa ${daysLeft} hari`, tone: 'ok' };
 }

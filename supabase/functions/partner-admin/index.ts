@@ -76,8 +76,8 @@ async function isOwner(uid: string): Promise<boolean> {
   return rows?.[0]?.role === 'owner';
 }
 
-async function partnerRow(id: string): Promise<{ id: string; username: string; must_change_credentials: boolean } | null> {
-  const res = await rest(`partner_accounts?select=id,username,must_change_credentials&id=eq.${id}&limit=1`);
+async function partnerRow(id: string): Promise<{ id: string; username: string; must_change_credentials: boolean; contact_email: string | null } | null> {
+  const res = await rest(`partner_accounts?select=id,username,must_change_credentials,contact_email&id=eq.${id}&limit=1`);
   if (!res.ok) throw new HttpError(502, 'UPSTREAM_ERROR', 'Gagal membaca akun.');
   return ((await res.json()) as any[])[0] ?? null;
 }
@@ -109,6 +109,10 @@ async function run(token: string, input: ReturnType<typeof parseAction> & { ok: 
     if (me.must_change_credentials && a.username === me.username) {
       throw new HttpError(400, 'BAD_REQUEST', 'Pilih username baru yang berbeda dari username bawaan.');
     }
+    // Ganti pertama kali wajib mengisi email kontak (untuk pengingat layanan).
+    if (me.must_change_credentials && !a.email && !me.contact_email) {
+      throw new HttpError(400, 'BAD_REQUEST', 'Isi email aktif untuk pengingat masa layanan.');
+    }
     if (a.username !== me.username) {
       const dup = await rest(`partner_accounts?select=id&username=eq.${a.username}&limit=1`);
       if (((await dup.json()) as unknown[]).length) throw new HttpError(409, 'CONFLICT', 'Username sudah dipakai.');
@@ -118,10 +122,23 @@ async function run(token: string, input: ReturnType<typeof parseAction> & { ok: 
     const pr = await rest(`partner_accounts?id=eq.${user.id}`, {
       method: 'PATCH',
       headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify({ username: a.username, must_change_credentials: false }),
+      body: JSON.stringify({ username: a.username, must_change_credentials: false, ...(a.email ? { contact_email: a.email } : {}) }),
     });
     if (!pr.ok) throw new HttpError(502, 'UPSTREAM_ERROR', 'Gagal memperbarui profil.');
     return { username: a.username };
+  }
+
+  if (a.action === 'email') {
+    const me = await partnerRow(user.id);
+    if (!me) throw new HttpError(403, 'FORBIDDEN', 'Akun ini bukan akun partner.');
+    if (!limiter.hit(user.id)) throw new HttpError(429, 'TOO_MANY', 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.');
+    const pr = await rest(`partner_accounts?id=eq.${user.id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ contact_email: a.email }),
+    });
+    if (!pr.ok) throw new HttpError(502, 'UPSTREAM_ERROR', 'Gagal menyimpan email.');
+    return { email: a.email };
   }
 
   // Selebihnya khusus owner CMS.
