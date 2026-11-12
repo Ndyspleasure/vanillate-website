@@ -20,7 +20,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     description="Restart, update kode dari origin/main, deploy slash command, backup database, dan bersihkan log lama di server bot."
   />
 
-  <div class="px-6 lg:px-10 py-8 max-w-4xl space-y-10" id="ks-root"></div>
+  <div class="px-6 lg:px-10 py-8 max-w-4xl" id="ks-root"></div>
 </AdminLayout>
 
 <script>
@@ -29,6 +29,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
   import { fmtBytes } from '@/lib/dev-panel/model';
   import { formCard, notice, pasangAksi, pill, section, table, KELAS } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   const BUCKET = 'bot-backups';
 
@@ -43,8 +44,10 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const pm2 = sys?.control?.pm2;
     const games = sys?.overview?.activeGames ?? 0;
 
+    const tab = (id: string, label: string, html: string) =>
+      `<div data-tab="${id}" data-tab-label="${label}" role="tabpanel" class="pt-6">${html}</div>`;
     root.innerHTML = [
-      section('Kontrol Bot', `<div class="${KELAS.kartu} space-y-4">
+      tab('bot', 'Kontrol Bot', section('Kontrol Bot', `<div class="${KELAS.kartu} space-y-4">
         <div class="flex flex-wrap items-center gap-2 text-sm">
           Versi <strong>v${esc(sys?.version?.version ?? '?')}</strong>
           ${pm2 ? pill(`PM2: ${sys?.control?.pm2App ?? ''}`, 'ok') : pill('PM2 tidak terdeteksi', 'bad')}
@@ -55,25 +58,24 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           <button type="button" id="ks-restart" class="${KELAS.tombolBahaya}">Restart bot</button>
         </div>
         <div id="ks-out" class="space-y-3"></div>
-      </div>`, 'Update = git fetch → pratinjau → fast-forward ke SHA yang dipratinjau → restart. Dependensi dipasang saat boot bila berubah; gagal boot → rollback otomatis.'),
-      section('Slash Command', `<div class="${KELAS.kartu} space-y-4">
+      </div>`, 'Update = git fetch → pratinjau → fast-forward ke SHA yang dipratinjau → restart. Dependensi dipasang saat boot bila berubah; gagal boot → rollback otomatis.')),
+      tab('command', 'Slash Command', section('Slash Command', `<div class="${KELAS.kartu} space-y-4">
         <div class="flex flex-wrap gap-3">
           <button type="button" id="ks-cmd-check" class="${KELAS.tombol}">Cek slash command</button>
         </div>
         <div id="ks-cmd-out" class="space-y-3"></div>
-      </div>`, 'Sama dengan npm run deploy: daftar command global di Discord diganti dengan command yang sedang dimuat bot — command yang tidak ada ikut terhapus. Jalankan setelah Update & Restart. Perubahan bisa butuh beberapa menit sampai tampil di Discord.'),
-      section('Backup database', `<div class="${KELAS.kartu} space-y-4">
+      </div>`, 'Sama dengan npm run deploy: daftar command global di Discord diganti dengan command yang sedang dimuat bot — command yang tidak ada ikut terhapus. Jalankan setelah Update & Restart. Perubahan bisa butuh beberapa menit sampai tampil di Discord.')),
+      tab('backup', 'Backup & Log', section('Backup database', `<div class="${KELAS.kartu} space-y-4">
         <div class="flex flex-wrap items-center gap-3">
           <button type="button" id="ks-backup" class="${KELAS.tombol}">Buat backup sekarang</button>
           <p id="ks-backup-status" class="text-xs" role="status" aria-live="polite"></p>
         </div>
         <div id="ks-backup-list"></div>
-      </div>`, 'Snapshot konsisten database game (Supabase Database Bot, NDJSON, dipulihkan dengan npm run db:restore di host bot), dikompres gzip. Berisi data pemain — unduh hanya ke perangkat yang aman. Berkas dihapus otomatis setelah 24 jam.'),
-      section('Bersihkan log', formCard({
+      </div>`, 'Snapshot konsisten database game (Supabase Database Bot, NDJSON, dipulihkan dengan npm run db:restore di host bot), dikompres gzip. Berisi data pemain — unduh hanya ke perangkat yang aman. Berkas dihapus otomatis setelah 24 jam.') + '<div class="mt-10"></div>' + section('Bersihkan log', formCard({
         id: 'ks-cleanup', title: 'Hapus file log lama di server', danger: true, submit: 'Bersihkan', ownerOnly: true,
         fields: [{ name: 'days', label: 'Hapus yang lebih tua dari (hari)', type: 'number', value: '7', required: true }],
-      })),
-      section('Konsol', `<div class="${KELAS.kartu} space-y-3">
+      }))),
+      tab('konsol', 'Konsol', section('Konsol', `<div class="${KELAS.kartu} space-y-3">
         <div id="ks-con-head" class="text-xs ${KELAS.muted}">Memeriksa konsol…</div>
         <div id="ks-con-chips" class="flex flex-wrap gap-2"></div>
         <div class="flex items-stretch gap-2 font-mono text-sm">
@@ -84,8 +86,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           <button type="button" id="ks-con-run" class="${KELAS.tombol}" disabled>Jalankan</button>
         </div>
         <pre id="ks-con-out" class="hidden max-h-[28rem] overflow-auto rounded-xl border border-ink-900/10 dark:border-cream-100/10 bg-ink-950/90 dark:bg-black/60 p-4 text-xs leading-relaxed text-cream-100 whitespace-pre-wrap break-words"></pre>
-      </div>`, 'Allowlist baca-saja (git · npm · pm2 · node) — tanpa shell. Mati default; nyalakan DEV_CONSOLE_ENABLED=1 di host. Aksi yang mengubah tetap lewat tombol di atas.'),
+      </div>`, 'Allowlist baca-saja (git · npm · pm2 · node) — tanpa shell. Mati default; nyalakan DEV_CONSOLE_ENABLED=1 di host. Aksi yang mengubah tetap lewat tombol di tab lain.')),
     ].join('');
+    pasangTab(root);
     void initKonsol();
 
     pasangAksi(document.getElementById('ks-cleanup') as HTMLFormElement, {
