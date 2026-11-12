@@ -15,7 +15,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   />
   <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-10">
     <p id="ev-fresh"></p>
-    <div id="ev-body" class="space-y-10"></div>
+    <div id="ev-body"></div>
   </div>
 </AdminLayout>
 
@@ -23,7 +23,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { bacaSnapshot } from '@/lib/dev-panel/client';
   import { EVENT_KEYS, chanceTotal, validateChances } from '@/lib/dev-panel/model';
-  import { formCard, freshness, pasangAksi, section, stat, KELAS } from '@/lib/dev-panel/ui';
+  import { formCard, freshness, pasangAksi, section, tabSection, stat, KELAS } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   const NAMA: Record<string, string> = {
     ai_challenger: 'AI Challenger', lost_signal: 'Lost Signal', traveling_merchant: 'Traveling Merchant', invader: 'Penjajah (musiman)',
@@ -76,9 +77,10 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       ${formCard({ id: 'ev-reset', title: 'Reset statistik pemicu', danger: true, submit: 'Reset statistik', fields: [], desc: 'Mengosongkan hitungan berapa kali tiap event terpicu.' })}
     </div>` : `<p class="text-sm ${KELAS.muted}">Peran kamu hanya bisa melihat.</p>`;
 
-    body.innerHTML = section('Peluang & pemicu', ringkas)
-      + section('Penjajah — target', `<p class="text-sm">Benar <strong>${esc(invader.win_correct)}</strong> = Penjajah terusir · Salah <strong>${esc(invader.lose_wrong)}</strong> = Penjajah menang · bonus ${esc(invader.reward_coin_multiplier)}× coin / ${esc(invader.reward_exp_multiplier)}× EXP</p>`)
-      + section('Pengaturan', forms);
+    body.innerHTML = tabSection('Peluang & pemicu', ringkas)
+      + tabSection('Penjajah — target', `<p class="text-sm">Benar <strong>${esc(invader.win_correct)}</strong> = Penjajah terusir · Salah <strong>${esc(invader.lose_wrong)}</strong> = Penjajah menang · bonus ${esc(invader.reward_coin_multiplier)}× coin / ${esc(invader.reward_exp_multiplier)}× EXP</p>`)
+      + tabSection('Pengaturan', forms);
+    pasangTab(body);
     if (!bolehEdit) return;
 
     const fChances = document.getElementById('ev-chances') as HTMLFormElement;

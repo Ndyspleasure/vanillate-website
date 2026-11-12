@@ -59,6 +59,15 @@ export function section(title: string, body: string, desc = ''): string {
   </section>`;
 }
 
+/**
+ * Seperti `section`, tetapi menjadi satu tab (lihat `pasangTab` di
+ * `@/lib/admin-tabs`). Pakai di wadah yang lalu dipanggil `pasangTab(wadah)`.
+ */
+export function tabSection(title: string, body: string, desc = ''): string {
+  const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'tab';
+  return section(title, body, desc).replace('<section class="space-y-4">', `<section class="space-y-4 pt-6" data-tab="${esc(id)}" data-tab-label="${esc(title)}" role="tabpanel">`);
+}
+
 /** Tabel sederhana. Sel sudah HTML aman. */
 export function table(headers: string[], rows: string[][], empty = 'Belum ada data.'): string {
   if (!rows.length) return `<p class="py-8 text-center text-sm ${KELAS.muted}">${esc(empty)}</p>`;

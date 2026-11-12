@@ -49,7 +49,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
   import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
   import { BULK_ACTIONS, countBulkWords, toEpoch } from '@/lib/dev-panel/model';
-  import { KELAS, fmtJam, formCard, freshness, notice, pasangAksi, pill, section, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
+  import { KELAS, fmtJam, formCard, freshness, notice, pasangAksi, pill, section, tabSection, stat, table, unduhTeks } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   let bolehEdit = false;
 
@@ -184,23 +185,23 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     }
     const opsiBulk = Object.entries(BULK_ACTIONS).map(([value, a]) => ({ value, label: a.label }));
     el.innerHTML = [
-      section('Cari kata', `${formCard({
+      tabSection('Cari kata', `${formCard({
         id: 'cari-kata', title: 'Cari di pending, diterima, dan ditolak', submit: 'Cari',
         fields: [{ name: 'query', label: 'Kata / potongan kata (min. 2 huruf)', required: true, placeholder: 'mis. ngab' }],
       })}<div id="cari-hasil"></div>`),
-      section('Review ulang (antrean cepat)', `<div class="flex items-center gap-3">
+      tabSection('Review ulang (antrean cepat)', `<div class="flex items-center gap-3">
           <button type="button" id="rr-muat" class="${KELAS.tombolNetral}">Muat antrean</button>
           <p id="rr-status" class="text-xs ${KELAS.muted}" role="status" aria-live="polite"></p>
         </div>
         <div id="rr-body"></div>`, 'Kata yang pernah ditolak tetapi terus dipakai pemain. Terima untuk memasukkannya ke kamus.'),
-      section('Export daftar kata', `<div class="${KELAS.kartu} space-y-3">
+      tabSection('Export daftar kata', `<div class="${KELAS.kartu} space-y-3">
           <p class="text-xs ${KELAS.muted}">Export membuat <strong>sesi review</strong> atas namamu (berlaku 24 jam) beserta berkas TXT & CSV. Review massal hanya memproses kata dari sesi export terbaru milikmu.</p>
           <div class="flex flex-wrap gap-2">
             ${Object.entries(LABEL_EXPORT).map(([k, l]) => `<button type="button" data-export="${k}" class="${KELAS.tombolNetral}">Export ${esc(l)}</button>`).join('')}
           </div>
           <p id="export-status" class="text-xs" role="status" aria-live="polite"></p>
         </div>`),
-      section('Review massal', `${formCard({
+      tabSection('Review massal', `${formCard({
         id: 'bulk', title: 'Proses hasil review', submit: 'Proses',
         desc: 'Tempel kata hasil review (satu per baris atau pisahkan koma), atau ketik SEMUA untuk seluruh isi sesi.',
         fields: [
@@ -210,6 +211,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ],
       })}<p id="bulk-hint" class="text-xs ${KELAS.muted}"></p><div id="bulk-hasil"></div>`),
     ].join('');
+    pasangTab(el);
 
     pasangCari();
     pasangReReview();

@@ -28,7 +28,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 <script>
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { bacaSnapshot, kirimPerintah, muatUlangDariBot } from '@/lib/dev-panel/client';
-  import { fmtJam, freshness, notice, pill, section, stat, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
+  import { fmtJam, freshness, notice, pill, section, tabSection, stat, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
+  import { pasangTab } from '@/lib/admin-tabs';
 
   const RISK: Record<string, Tone> = { SAFE: 'ok', MODERATE: 'warn', CRITICAL: 'bad', LOW: 'ok', MEDIUM: 'warn', HIGH: 'bad' };
   const CB: Record<string, Tone> = { CLOSED: 'ok', HALF_OPEN: 'warn', OPEN: 'bad' };
@@ -83,7 +84,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     </div>`).join('');
 
     body.innerHTML = [
-      section('Status', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      tabSection('Status', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         ${stat('Circuit breaker', cb.state ?? '—', `skor ${cb.score ?? 0}${cb.cooldown_until ? ` · cooldown sampai ${fmtJam(cb.cooldown_until)}` : ''}`)}
         ${stat('Incident terbuka', a.openIncidents ?? 0)}
         ${stat('Approval menunggu', (a.approvals ?? []).length)}
@@ -94,23 +95,24 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       <div class="flex flex-wrap gap-2">${pill(`breaker ${cb.state ?? '—'}`, CB[cb.state] ?? 'muted')}${d.locked ? pill(`terkunci: ${d.lockReason ?? ''}`, 'bad') : ''}</div>
       ${cb.reason ? `<pre class="rounded-xl bg-ink-900/5 dark:bg-cream-100/5 p-3 text-xs whitespace-pre-wrap">${esc(cb.reason)}</pre>` : ''}
       ${a.originOutOfSync ? notice('warn', 'Produksi punya commit (mis. rilis Auto-Heal) yang belum ada di GitHub. Sinkronkan dulu sebelum rilis manual apa pun.') : ''}`),
-      section('Permintaan izin', approvals || `<p class="text-sm ${KELAS.muted}">Tidak ada permintaan yang menunggu.</p>`,
+      tabSection('Permintaan izin', approvals || `<p class="text-sm ${KELAS.muted}">Tidak ada permintaan yang menunggu.</p>`,
         'Izin hanya untuk incident terkait, punya batas waktu, dan dicabut otomatis setelah selesai.'),
-      owner ? section('Kontrol', `<div class="flex flex-wrap gap-3">
+      owner ? tabSection('Kontrol', `<div class="flex flex-wrap gap-3">
         <button type="button" data-ctl="sys.autoheal.closeBreaker" data-confirm="Tutup paksa circuit breaker?" class="${KELAS.tombolNetral}">Tutup breaker</button>
         <button type="button" data-ctl="sys.autoheal.unlock" data-confirm="Buka kembali auto-deploy?" class="${KELAS.tombolNetral}" ${d.locked ? '' : 'disabled'}>Buka kunci auto-deploy</button>
         <button type="button" data-ctl="sys.autoheal.selftest" class="${KELAS.tombolNetral}">Uji sandbox</button>
         <button type="button" data-ctl="sys.autoheal.simheal" class="${KELAS.tombolNetral}">Simulasi heal</button>
       </div><div id="ah-ctl-out">${hasilKontrol}</div>`, 'Uji sandbox membuktikan isolasi worktree di server produksi; simulasi heal menjalankan klasifikasi → aturan → validasi tanpa menyentuh produksi.') : '',
-      section('Incident terbaru', table(['Incident', 'State', 'Risiko', 'Kejadian', 'Error', ''], (a.recent ?? []).map((i: any) => [
+      tabSection('Incident terbaru', table(['Incident', 'State', 'Risiko', 'Kejadian', 'Error', ''], (a.recent ?? []).map((i: any) => [
         `<code class="text-xs">${esc(i.incident_no)}</code>`, `<code class="text-xs">${esc(i.state)}</code>`, pill(i.risk_class ?? '—', RISK[i.risk_class] ?? 'muted'),
         esc(`×${i.occurrence_count ?? 1}`), `<span class="text-xs">${esc(i.error_name ?? '—')}</span>`,
         `<button type="button" data-inc="${esc(i.incident_no)}" class="${KELAS.tombolNetral}">Detail</button>`,
       ]), 'Belum ada incident.')),
-      section('Izin aktif', table(['Grant', 'Izin', 'Mode', 'Incident', 'Habis'], (a.grants ?? []).map((g: any) => [
+      tabSection('Izin aktif', table(['Grant', 'Izin', 'Mode', 'Incident', 'Habis'], (a.grants ?? []).map((g: any) => [
         `<code class="text-xs">${esc(g.grant_no)}</code>`, `<code class="text-xs">${esc(g.permission)}</code>`, esc(g.mode), esc(`#${g.incident_id}`), `<span class="text-xs">${esc(fmtJam(g.expires_ms))}</span>`,
       ]), 'Tidak ada izin elevated yang aktif.')),
     ].join('');
+    pasangTab(body);
   }
 
   async function onKlik(e: Event) {
