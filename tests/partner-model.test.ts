@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   addDays, buildReportPreview, cleanButtons, clip, formatDateId, hasErrors, loginError, passwordProblem, priceText,
-  campaignStatusMeta, campaignSummary, isRiwayatSaja, rpcError, rupiah, statusMeta, todayWib, totalText, usernameProblem, validateOrder,
+  campaignStatusMeta, canEditOrder, campaignSummary, isRiwayatSaja, rpcError, rupiah, statusMeta, todayWib, totalText, usernameProblem, validateOrder,
   type CatalogProduct, type OrderInput,
 } from '../src/lib/partner/model.ts';
 
@@ -140,4 +140,15 @@ test('serviceKindName', () => {
   assert.equal(serviceKindName('lobby'), 'Broadcast Lobby');
   assert.equal(serviceKindName('hosting_bot'), 'Hosting Bot');
   assert.equal(serviceKindName('apa-saja'), 'Layanan');
+});
+
+test('canEditOrder: hanya dicatat dan diproses', () => {
+  assert.equal(canEditOrder('dicatat'), true);
+  assert.equal(canEditOrder('diproses'), true);
+  for (const s of ['berjalan', 'selesai', 'dibatalkan', '']) assert.equal(canEditOrder(s), false);
+});
+
+test('rpcError: pesan ubah pesanan diteruskan apa adanya', () => {
+  assert.equal(rpcError('Batas 10 kali ubah pesanan tercapai. Hubungi WhatsApp official.'), 'Batas 10 kali ubah pesanan tercapai. Hubungi WhatsApp official.');
+  assert.ok(rpcError('Pesanan sudah berjalan, selesai, atau dibatalkan sehingga tidak bisa diubah lagi.').startsWith('Pesanan sudah berjalan'));
 });

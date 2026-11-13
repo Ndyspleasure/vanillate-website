@@ -14,6 +14,7 @@ const produk = ((partnership as any).products ?? [])
     price: typeof p.price === 'number' ? p.price : null,
     priceUnit: String(p.priceUnit ?? ''),
     unit: String(p.unit ?? 'Unit'),
+    channel: String(p.channel ?? ''),
     minQuantity: Number.isInteger(p.minQuantity) && p.minQuantity > 0 ? p.minQuantity : 1,
   }));
 ---

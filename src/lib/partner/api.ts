@@ -67,6 +67,8 @@ export interface PartnerOrderRow {
   status: OrderStatus;
   status_note: string | null;
   created_at: string;
+  edited_at: string | null;
+  edit_count: number;
 }
 
 export async function signIn(username: string, password: string): Promise<{ ok: boolean; error?: string }> {
@@ -100,7 +102,7 @@ export async function loadProfile(): Promise<PartnerProfile | null> {
 }
 
 const ORDER_COLS =
-  'id,product_key,product_name,price_text,quantity,unit,total_text,brand_name,invite_url,scheduled_for,ad_text,ad_title,ad_footer,ad_image_url,ad_buttons,note,status,status_note,created_at';
+  'id,product_key,product_name,price_text,quantity,unit,total_text,brand_name,invite_url,scheduled_for,ad_text,ad_title,ad_footer,ad_image_url,ad_buttons,note,status,status_note,created_at,edited_at,edit_count';
 
 /** Riwayat pesanan milik sendiri (RLS), satu query terpaginasi. */
 export async function listOrders(before?: number, limit = 20): Promise<PartnerOrderRow[]> {
@@ -122,7 +124,7 @@ export async function listOrderCampaigns(orderIds: number[]): Promise<CampaignRe
   return (data ?? []) as CampaignReport[];
 }
 
-export async function submitOrder(a: {
+export interface OrderArgs {
   productKey: string;
   quantity: number;
   brandName: string;
@@ -134,7 +136,9 @@ export async function submitOrder(a: {
   imageUrl: string;
   buttons: AdButton[];
   note: string;
-}): Promise<{ ok: boolean; id?: number; error?: string }> {
+}
+
+export async function submitOrder(a: OrderArgs): Promise<{ ok: boolean; id?: number; error?: string }> {
   const sb = getPartnerSupabase();
   if (!sb) return { ok: false, error: 'Koneksi belum dikonfigurasi.' };
   const { data, error } = await sb.rpc('partner_order_submit', {
@@ -152,6 +156,27 @@ export async function submitOrder(a: {
   });
   if (error) return { ok: false, error: rpcError(error.message) };
   return { ok: true, id: Number(data) };
+}
+
+/** Ubah pesanan sendiri (RPC partner_order_update). Server menolak bila status sudah berjalan, selesai, atau dibatalkan. */
+export async function updateOrder(orderId: number, a: OrderArgs): Promise<{ ok: boolean; error?: string }> {
+  const sb = getPartnerSupabase();
+  if (!sb) return { ok: false, error: 'Koneksi belum dikonfigurasi.' };
+  const { error } = await sb.rpc('partner_order_update', {
+    p_order_id: orderId,
+    p_product_key: a.productKey,
+    p_quantity: a.quantity,
+    p_brand_name: a.brandName,
+    p_invite_url: a.inviteUrl || null,
+    p_scheduled_for: a.scheduledFor || null,
+    p_ad_text: a.adText || null,
+    p_ad_title: a.adTitle || null,
+    p_ad_footer: a.adFooter || null,
+    p_ad_image_url: a.imageUrl || null,
+    p_ad_buttons: a.buttons,
+    p_note: a.note || null,
+  });
+  return error ? { ok: false, error: rpcError(error.message).replace('Gagal menyimpan pesanan.', 'Gagal menyimpan perubahan.') } : { ok: true };
 }
 
 /** Ganti username + password sendiri lewat Edge Function partner-admin. */

@@ -38,6 +38,39 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
     <div id="daftar" class="space-y-3"></div>
     <button id="lagi" type="button" class="hidden rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-2 text-sm">Muat lebih banyak</button>
   </div>
+
+  <dialog id="dlg-ubah" class="w-[min(40rem,calc(100vw-2rem))] rounded-2xl border border-ink-900/15 bg-cream-50 p-0 text-ink-900 backdrop:bg-black/50 dark:border-cream-100/15 dark:bg-ink-950 dark:text-cream-100">
+    <form id="frm-ubah" method="dialog" class="max-h-[85vh] space-y-3 overflow-y-auto p-6" novalidate>
+      <h2 id="dlg-judul" class="font-display text-lg font-semibold"></h2>
+      <p class="text-xs text-ink-500 dark:text-cream-300/60">Perubahan admin tidak memakai jatah ubah partner dan tidak dilaporkan ke bot. Harga dan total dihitung ulang server. Campaign draft ikut disesuaikan, campaign yang sudah antre tidak.</p>
+      <label class="block text-sm">Paket <select id="u-produk" class={`mt-1 w-full ${kontrol}`}></select></label>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <label class="block text-sm">Jumlah <input id="u-qty" type="number" step="1" class={`mt-1 w-full ${kontrol}`} /></label>
+        <label class="block text-sm">Tanggal tayang <input id="u-date" type="date" class={`mt-1 w-full ${kontrol}`} /></label>
+      </div>
+      <label class="block text-sm">Nama server atau brand <input id="u-brand" maxlength="80" class={`mt-1 w-full ${kontrol}`} /></label>
+      <label class="block text-sm">Link undangan <input id="u-url" type="url" class={`mt-1 w-full ${kontrol}`} /></label>
+      <label class="block text-sm">Judul iklan <input id="u-title" maxlength="100" class={`mt-1 w-full ${kontrol}`} /></label>
+      <label class="block text-sm">Isi pesan <textarea id="u-ad" rows="7" maxlength="2000" class={`mt-1 w-full font-mono ${kontrol}`}></textarea></label>
+      <label class="block text-sm">Gambar (link) <input id="u-image" type="url" class={`mt-1 w-full ${kontrol}`} /></label>
+      <label class="block text-sm">Footer <input id="u-footer" maxlength="100" class={`mt-1 w-full ${kontrol}`} /></label>
+      <div>
+        <p class="text-sm">Tombol (maksimal 3)</p>
+        {[1, 2, 3].map((n) => (
+          <div class="mt-1 grid gap-2 sm:grid-cols-2">
+            <input data-ub-label={n} maxlength="80" placeholder={`Nama tombol ${n}`} aria-label={`Nama tombol ${n}`} class={`w-full ${kontrol}`} />
+            <input data-ub-url={n} type="url" placeholder="https://" aria-label={`Link tombol ${n}`} class={`w-full ${kontrol}`} />
+          </div>
+        ))}
+      </div>
+      <label class="block text-sm">Catatan partner <textarea id="u-note" rows="2" maxlength="1000" class={`mt-1 w-full ${kontrol}`}></textarea></label>
+      <p id="u-err" class="hidden text-sm text-red-600" role="alert"></p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="u-batal" type="button" class="rounded-full border border-ink-900/15 px-4 py-2 text-sm dark:border-cream-100/15">Batal</button>
+        <button id="u-simpan" type="submit" class="rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-50">Simpan perubahan</button>
+      </div>
+    </form>
+  </dialog>
 </AdminLayout>
 
 <script>
@@ -50,6 +83,8 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
   import { url } from '@/utils/url';
 
   /** order_id -> campaign tertaut (draft atau sudah jalan). */
+  const daftarPesanan = new Map<number, any>();
+  let produkAktif: Array<{ key: string; name: string; channel: string }> | null = null;
   let kampanye = new Map<number, { broadcast_id: string; status: string }>();
 
   const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -73,7 +108,7 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
     if (!sb) return;
     if (ulang) { box.innerHTML = stateBlock('loading', ''); terakhir = null; }
     let q = sb.from('partner_orders')
-      .select('id,partner_name,product_name,price_text,quantity,unit,total_text,brand_name,invite_url,scheduled_for,ad_text,ad_title,ad_footer,ad_image_url,ad_buttons,note,status,status_note,created_at')
+      .select('id,partner_name,product_name,price_text,quantity,unit,total_text,brand_name,invite_url,scheduled_for,ad_text,ad_title,ad_footer,ad_image_url,ad_buttons,note,status,status_note,created_at,edited_at,edit_count,admin_edited_at')
       .order('id', { ascending: false })
       .limit(PAGE);
     if (terakhir) q = q.lt('id', terakhir);
@@ -93,7 +128,12 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
       for (const k of (kp ?? []) as Array<{ order_id: number; broadcast_id: string; status: string }>) kampanye.set(k.order_id, k);
     }
     if (ulang && !data?.length) { box.innerHTML = stateBlock('empty', 'Belum ada pesanan.'); el('lagi').classList.add('hidden'); return; }
+    (data ?? []).forEach((o: any) => daftarPesanan.set(o.id, o));
     box.insertAdjacentHTML('beforeend', (data ?? []).map(kartu).join(''));
+    box.querySelectorAll<HTMLButtonElement>('[data-ubah]:not([data-w])').forEach((b) => {
+      b.dataset.w = '1';
+      b.addEventListener('click', () => bukaUbah(Number(b.dataset.ubah)));
+    });
     terakhir = data?.length ? (data[data.length - 1] as any).id : terakhir;
     el('lagi').classList.toggle('hidden', (data?.length ?? 0) < PAGE);
     box.querySelectorAll<HTMLButtonElement>('[data-simpan]:not([data-w])').forEach((b) => {
@@ -119,6 +159,8 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
         <div>
           <p class="text-xs text-ink-500 dark:text-cream-300/60">#${o.id} · ${esc(fmtWaktu(o.created_at))} · ${esc(o.partner_name)}</p>
           <h3 class="font-semibold">${esc(o.brand_name)}</h3>
+          ${o.admin_edited_at ? `<p class="text-xs font-semibold text-sky-600 dark:text-sky-400">Diubah admin, terakhir ${esc(fmtWaktu(o.admin_edited_at))}.</p>` : ''}
+          ${o.edit_count > 0 ? `<p class="text-xs font-semibold text-amber-600 dark:text-amber-400">Diubah partner ${Number(o.edit_count)}x, terakhir ${esc(fmtWaktu(o.edited_at))}. Cek ulang isi dan draft campaign.</p>` : ''}
         </div>
         ${pill(m.label, m.tone)}
       </div>
@@ -137,9 +179,87 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
         <input data-n maxlength="300" value="${esc(o.status_note ?? '')}" placeholder="Catatan untuk partner (opsional)"
           class="min-w-[14rem] flex-1 rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-transparent px-3 py-1.5 text-sm" />
         <button data-simpan="${o.id}" class="rounded-full bg-amber-500 px-4 py-1.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-50">Simpan</button>
+        <button data-ubah="${o.id}" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Ubah isi pesanan</button>
       </div>` : ''}
     </article>`;
   }
+
+  const $in = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const dlg = $in<HTMLDialogElement>('dlg-ubah');
+  let sedangUbah: any = null;
+
+  async function bukaUbah(id: number) {
+    const o = daftarPesanan.get(id);
+    const sb = getSupabase();
+    if (!o || !sb) return;
+    if (!produkAktif) {
+      const { data } = await sb.from('partnership_products').select('key,name,channel').eq('enabled', true).order('name').limit(50);
+      produkAktif = (data ?? []) as any[];
+    }
+    sedangUbah = o;
+    const asal = produkAktif.find((p) => p.key === o.product_key);
+    $in('dlg-judul').textContent = `Ubah pesanan #${o.id}`;
+    const sel = $in<HTMLSelectElement>('u-produk');
+    sel.innerHTML = produkAktif
+      .map((p) => `<option value="${esc(p.key)}" ${p.key === o.product_key ? 'selected' : ''} ${asal && p.channel !== asal.channel ? 'disabled' : ''}>${esc(p.name)}</option>`)
+      .join('');
+    $in<HTMLInputElement>('u-qty').value = String(o.quantity);
+    $in<HTMLInputElement>('u-date').value = o.scheduled_for ?? '';
+    $in<HTMLInputElement>('u-brand').value = o.brand_name ?? '';
+    $in<HTMLInputElement>('u-url').value = o.invite_url ?? '';
+    $in<HTMLInputElement>('u-title').value = o.ad_title ?? '';
+    $in<HTMLTextAreaElement>('u-ad').value = o.ad_text ?? '';
+    $in<HTMLInputElement>('u-image').value = o.ad_image_url ?? '';
+    $in<HTMLInputElement>('u-footer').value = o.ad_footer ?? '';
+    $in<HTMLTextAreaElement>('u-note').value = o.note ?? '';
+    [1, 2, 3].forEach((n, i) => {
+      const btn = (o.ad_buttons ?? [])[i];
+      document.querySelector<HTMLInputElement>(`[data-ub-label="${n}"]`)!.value = btn?.label ?? '';
+      document.querySelector<HTMLInputElement>(`[data-ub-url="${n}"]`)!.value = btn?.url ?? '';
+    });
+    $in('u-err').classList.add('hidden');
+    dlg.showModal();
+  }
+
+  $in('u-batal').addEventListener('click', () => dlg.close());
+  $in<HTMLFormElement>('frm-ubah').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const sb = getSupabase();
+    if (!sb || !sedangUbah) return;
+    const v = (id: string) => $in<HTMLInputElement>(id).value.trim();
+    const tombol = [1, 2, 3]
+      .map((n) => ({
+        label: document.querySelector<HTMLInputElement>(`[data-ub-label="${n}"]`)!.value.trim(),
+        url: document.querySelector<HTMLInputElement>(`[data-ub-url="${n}"]`)!.value.trim(),
+      }))
+      .filter((t) => t.label || t.url);
+    const err = $in('u-err');
+    const simpanBtn = $in<HTMLButtonElement>('u-simpan');
+    simpanBtn.disabled = true;
+    const { error } = await sb.rpc('partner_order_admin_update', {
+      p_order_id: sedangUbah.id,
+      p_product_key: v('u-produk'),
+      p_quantity: Number(v('u-qty')),
+      p_brand_name: v('u-brand'),
+      p_invite_url: v('u-url') || null,
+      p_scheduled_for: v('u-date') || null,
+      p_ad_text: v('u-ad') || null,
+      p_note: v('u-note') || null,
+      p_ad_title: v('u-title') || null,
+      p_ad_footer: v('u-footer') || null,
+      p_ad_image_url: v('u-image') || null,
+      p_ad_buttons: tombol,
+    });
+    simpanBtn.disabled = false;
+    if (error) {
+      err.textContent = error.code === '22023' || error.code === '54000' ? error.message : pesanError(error);
+      err.classList.remove('hidden');
+      return;
+    }
+    dlg.close();
+    sedangUbah = null;
+    void muat(true);
+  });
 
   async function simpan(b: HTMLButtonElement) {
     const sb = getSupabase();

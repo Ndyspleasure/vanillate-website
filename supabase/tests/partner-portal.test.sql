@@ -317,6 +317,132 @@ select tests_dev.ok(
   (select count(*) = 2 from public.partnership_campaigns where status = 'draft'), 'editor CMS melihat draft');
 reset role;
 
+-- ─── Ubah pesanan oleh partner ──────────────────────────────────────────────
+\ir ../partner-order-edit.sql
+\ir ../partner-order-edit.sql
+
+delete from public.bot_commands where type = 'partner.order.report';
+create temp table t_ids as
+  select o.brand_name, o.id from public.partner_orders o where o.brand_name in ('Brand Draft', 'Brand Lobby');
+grant select on t_ids to authenticated;
+
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+
+select public.partner_order_update((select id from t_ids where brand_name = 'Brand Draft'), 'broadcast_dm', 200, 'Brand Draft Baru',
+  null, null, 'Isi baru', 'catatan baru', 'Judul Baru', 'Footer Baru', null, '[{"label":"Daftar","url":"https://discord.gg/e"}]'::jsonb);
+reset role;
+
+select tests_dev.ok(
+  (select o.brand_name = 'Brand Draft Baru' and o.quantity = 200 and o.total_text = 'Rp 30.000' and o.edit_count = 1
+          and o.edited_at is not null and o.ad_title = 'Judul Baru' and o.status = 'dicatat'
+     from public.partner_orders o where o.id = (select id from t_ids where brand_name = 'Brand Draft')),
+  'ubah: isi berubah, total dihitung ulang server, edit_count naik');
+select tests_dev.ok(
+  (select c.status = 'draft' and c.message = E'# Judul Baru\n\nIsi baru\n\n-# Footer Baru'
+          and c.name = 'Partner Brand Draft Baru #' || o.id and c.buttons->1->>'label' = 'Daftar'
+     from public.partnership_campaigns c join public.partner_orders o on o.id = c.order_id where o.brand_name = 'Brand Draft Baru'),
+  'ubah: campaign draft ikut disinkronkan');
+select tests_dev.ok(
+  (select count(*) = 1 and bool_and((payload->>'edited')::boolean and (payload->>'editCount')::int = 1
+          and payload->>'brandName' = 'Brand Draft Baru' and (payload->>'campaignLocked')::boolean = false and created_by is null)
+     from public.bot_commands where type = 'partner.order.report'),
+  'ubah: tepat satu laporan bot edited=true, campaign tidak terkunci');
+
+-- status diproses: masih boleh, tetapi campaign yang sudah antre dikunci
+update public.partner_orders set status = 'diproses' where brand_name = 'Brand Draft Baru';
+update public.partnership_campaigns set status = 'queued' where order_id = (select id from t_ids where brand_name = 'Brand Draft');
+update public.partner_orders set status = 'diproses' where brand_name = 'Brand Draft Baru';
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+select public.partner_order_update((select id from t_ids where brand_name = 'Brand Draft'), 'broadcast_dm', 200, 'Brand Diproses');
+reset role;
+select tests_dev.ok(
+  (select c.message = E'# Judul Baru\n\nIsi baru\n\n-# Footer Baru' from public.partnership_campaigns c where c.order_id = (select id from t_ids where brand_name = 'Brand Draft')),
+  'campaign yang sudah antre tidak disentuh');
+select tests_dev.ok(
+  (select (payload->>'campaignLocked')::boolean and payload->>'orderStatus' = 'diproses' and (payload->>'editCount')::int = 2
+     from public.bot_commands where type = 'partner.order.report' order by id desc limit 1),
+  'laporan menandai campaignLocked dan status diproses');
+
+-- status berjalan, selesai, dibatalkan terkunci
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+reset role;
+update public.partner_orders set status = 'berjalan' where id = (select id from t_ids where brand_name = 'Brand Draft');
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+select tests_dev.throws($$select public.partner_order_update((select id from t_ids where brand_name = 'Brand Draft'), 'broadcast_dm', 200, 'X')$$,
+  '22023', 'status berjalan tidak bisa diubah');
+reset role;
+update public.partner_orders set status = 'dibatalkan' where id = (select id from t_ids where brand_name = 'Brand Draft');
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+select tests_dev.throws($$select public.partner_order_update((select id from t_ids where brand_name = 'Brand Draft'), 'broadcast_dm', 200, 'X')$$,
+  '22023', 'status dibatalkan tidak bisa diubah');
+
+-- paket beda kanal ditolak, validasi tetap berlaku, batas 10 kali
+select tests_dev.throws($$select public.partner_order_update((select id from t_ids where brand_name = 'Brand Lobby'), 'broadcast_dm', 200, 'X')$$,
+  '22023', 'ganti paket beda kanal ditolak');
+select tests_dev.throws($$select public.partner_order_update((select id from t_ids where brand_name = 'Brand Lobby'), 'broadcast_lobby', 1, 'X')$$,
+  '22023', 'jumlah di bawah minimal ditolak');
+select tests_dev.throws($$select public.partner_order_update((select id from t_ids where brand_name = 'Brand Lobby'), 'broadcast_lobby', 20, 'X', 'http://x.id')$$,
+  '22023', 'link non-https ditolak');
+select tests_dev.throws($$select public.partner_order_update((select id from t_ids where brand_name = 'Brand Lobby'), 'broadcast_lobby', 20, 'X', null, current_date - 3)$$,
+  '22023', 'tanggal baru yang sudah lewat ditolak');
+select public.partner_order_update((select id from t_ids where brand_name = 'Brand Lobby'), 'broadcast_lobby', 25, 'Lobby Baru');
+select tests_dev.ok((select o.quantity = 25 and o.total_text = 'Rp 5.000' from public.partner_orders o where o.brand_name = 'Lobby Baru'),
+  'pesanan Lobby bisa diubah (tanpa campaign)');
+reset role;
+update public.partner_orders set edit_count = 10 where brand_name = 'Lobby Baru';
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+select tests_dev.throws($$select public.partner_order_update((select id from t_ids where brand_name = 'Brand Lobby'), 'broadcast_lobby', 25, 'Lobby Baru')$$,
+  '54000', 'batas 10 kali ubah');
+
+-- partner lain tidak bisa mengubah pesanan ini; tanpa login ditolak
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000002","role":"authenticated"}', false);
+select tests_dev.throws($$select public.partner_order_update((select id from t_ids where brand_name = 'Brand Lobby'), 'broadcast_lobby', 25, 'Curang')$$,
+  '22023', 'partner lain tidak bisa mengubah pesanan orang');
+select set_config('request.jwt.claims', '{}', false);
+select tests_dev.throws($$select public.partner_order_update(1, 'broadcast_lobby', 25, 'X')$$, '42501', 'tanpa login ditolak');
+reset role;
+
+-- ─── Admin editor mengubah pesanan ──────────────────────────────────────────
+delete from public.bot_commands where type = 'partner.order.report';
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-000000000101","role":"authenticated"}', false);
+-- pesanan Brand Draft sudah dibatalkan (admin tetap boleh), edit_count partner tidak berubah
+select public.partner_order_admin_update((select id from t_ids where brand_name = 'Brand Draft'), 'broadcast_dm', 300, 'Diperbaiki Admin',
+  null, null, 'Isi admin', null, 'Judul Admin', null, null, '[]'::jsonb);
+select tests_dev.ok(
+  (select o.brand_name = 'Diperbaiki Admin' and o.quantity = 300 and o.total_text = 'Rp 45.000' and o.admin_edited_at is not null
+          and o.edit_count = 2 and o.status = 'dibatalkan'
+     from public.partner_orders o where o.id = (select id from t_ids where brand_name = 'Brand Draft')),
+  'admin: ubah semua status, total dihitung ulang, jatah ubah partner tidak terpakai');
+select tests_dev.throws($$select public.partner_order_admin_update((select id from t_ids where brand_name = 'Brand Draft'), 'broadcast_lobby', 20, 'X')$$,
+  '22023', 'admin: ganti paket beda kanal ditolak');
+select tests_dev.throws($$select public.partner_order_admin_update(999999, 'broadcast_dm', 100, 'X')$$, '22023', 'admin: pesanan tidak ada');
+select set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-000000000102","role":"authenticated"}', false);
+select tests_dev.throws($$select public.partner_order_admin_update((select id from t_ids where brand_name = 'Brand Draft'), 'broadcast_dm', 100, 'X')$$,
+  '42501', 'admin: viewer ditolak');
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000004","role":"authenticated"}', false);
+select tests_dev.throws($$select public.partner_order_admin_update((select id from t_ids where brand_name = 'Brand Draft'), 'broadcast_dm', 100, 'X')$$,
+  '42501', 'admin: partner tidak bisa memakai RPC admin');
+reset role;
+select tests_dev.ok((select count(*) = 0 from public.bot_commands where type = 'partner.order.report'),
+  'admin: ubah tidak mengantre laporan "diubah partner"');
+
+select tests_dev.ok(
+  (select position('partner_order_report_payload' in prosrc) > 0 from pg_proc where proname = 'partner_orders_report'),
+  'trigger laporan memakai payload bersama');
+
+\ir ../partner-order-edit-rollback.sql
+select tests_dev.ok(
+  (select count(*) = 0 from information_schema.columns where table_name = 'partner_orders' and column_name in ('edited_at', 'edit_count', 'admin_edited_at'))
+  and not exists (select 1 from pg_proc where proname in ('partner_order_update', 'partner_order_admin_update', 'partner_order_edit_core', 'partner_order_report_payload')),
+  'rollback ubah pesanan menghapus RPC dan kolom');
+
 \ir ../partner-order-draft-rollback.sql
 select tests_dev.ok(
   (select count(*) = 0 from pg_trigger where tgname = 'partner_orders_draft'), 'rollback draft menghapus trigger');
