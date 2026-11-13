@@ -87,3 +87,15 @@ Tanpa polling dan tanpa snapshot dorong. Database hanya disentuh saat login, saa
 ## Email kontak dan layanan
 
 Partner mengisi **email aktif** saat ganti kredensial pertama kali (Edge Function `partner-admin`, aksi `change` dan `email`, kolom `partner_accounts.contact_email`). Dipakai untuk pengingat masa layanan: lihat `docs/PARTNERSHIP-JASA.md` bagian Pemantauan layanan partner. Dashboard menampilkan "Layanan saya".
+
+
+## Ubah pesanan (tombol Ubah)
+`supabase/partner-order-edit.sql` (setelah `partner-order-draft.sql`; rollback `partner-order-edit-rollback.sql`). Partner bisa mengubah pesanannya dari **Riwayat pesanan › Ubah** selama status `dicatat` atau `diproses`. Status `berjalan`, `selesai`, `dibatalkan` terkunci.
+- RPC `partner_order_update()` (SECURITY DEFINER): validasi sama dengan `partner_order_submit`, harga dan total dihitung ulang server dari katalog, hanya pemilik pesanan, maks. 10 kali ubah per pesanan (`edit_count`, `edited_at`). Paket hanya boleh diganti ke paket sekanal (DM ke DM, Lobby ke Lobby). Tanggal tayang yang tidak diubah boleh sudah lewat.
+- Campaign **draft** tertaut ikut disinkronkan (nama, pesan, tombol). Campaign yang sudah antre (`queued`, `scheduled`) tidak disentuh, laporan ke bot membawa `campaignLocked: true` supaya tim menyesuaikan manual.
+- Setiap perubahan mengantre satu `partner.order.report` dengan `edited: true`, `editCount`, `editedAt`, `orderStatus`, `campaignLocked`. Bot menampilkan kartu "Pesanan partnership diubah #N" (handler di repo Vanillate.ID). Payload dibangun oleh fungsi bersama `partner_order_report_payload()`.
+- CMS Pesanan Partner menampilkan penanda "Diubah partner Nx".
+- Biaya sumber daya: tanpa polling. Satu RPC per perubahan (1 update pesanan, paling banyak 1 update draft, 1 antrean bot), tidak ada query tambahan saat membuka riwayat selain dua kolom baru.
+
+### Admin mengubah pesanan di CMS
+Di **Pesanan Partner** editor/admin punya tombol **Ubah isi pesanan** (RPC `partner_order_admin_update()`, hanya `is_admin_editor()`, semua status, tanpa batas ubah). Logika sama dengan partner lewat `partner_order_edit_core()` (validasi, hitung ulang total, sinkron campaign draft, paket hanya sekanal). Ditandai `admin_edited_at` ("Diubah admin" di kartu), tidak memakai jatah `edit_count` partner, dan tidak mengantre laporan bot "diubah partner". Satu RPC per simpan.

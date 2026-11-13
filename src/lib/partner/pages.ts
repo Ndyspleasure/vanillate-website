@@ -9,10 +9,10 @@ import { adPreviewHtml } from './render';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, loadingBlock, pill, toast } from '../dashboard/ui';
 import {
   changeCredentials, getPartnerSupabase, isPartnerConfigured, listOrderCampaigns, listOrders, listServices, loadProfile,
-  setContactEmail, signIn, signOut, submitOrder, type PartnerOrderRow, type PartnerProfile,
+  setContactEmail, signIn, signOut, submitOrder, updateOrder, type OrderArgs, type PartnerOrderRow, type PartnerProfile,
 } from './api';
 import {
-  buildReportPreview, campaignStatusMeta, cleanButtons, MAX_BTN_LABEL, MAX_FOOTER, MAX_TITLE, campaignSummary, emailProblem, formatDateId, hasErrors, isRiwayatSaja, loginError, MAX_AD, MAX_NOTE, passwordProblem,
+  buildReportPreview, campaignStatusMeta, canEditOrder, cleanButtons, MAX_BTN_LABEL, MAX_FOOTER, MAX_TITLE, campaignSummary, emailProblem, formatDateId, hasErrors, isRiwayatSaja, loginError, MAX_AD, MAX_NOTE, passwordProblem,
   serviceKindName, serviceMeta, statusMeta, todayWib, totalText, usernameProblem, validateOrder,
   type CampaignReport, type CatalogProduct, type OrderInput,
 } from './model';
@@ -221,8 +221,12 @@ function orderCard(o: PartnerOrderRow, kampanye: CampaignReport[] = []): string 
       <div>
         <p class="text-xs text-ink-500 dark:text-cream-300/60">Pesanan #${o.id} · ${esc(dibuat)}</p>
         <h3 class="mt-0.5 font-semibold">${esc(o.brand_name)}</h3>
+        ${o.edit_count > 0 && o.edited_at ? `<p class="text-xs text-ink-500 dark:text-cream-300/60">Diubah ${o.edit_count}x, terakhir ${esc(new Date(o.edited_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }))}</p>` : ''}
       </div>
-      ${pill(m.label, m.tone)}
+      <div class="flex items-center gap-2">
+        ${pill(m.label, m.tone)}
+        ${canEditOrder(o.status) ? `<button type="button" data-edit="${o.id}" class="${BTN_SECONDARY}">Ubah</button>` : ''}
+      </div>
     </div>
     <dl class="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
       <div><dt class="inline text-ink-500 dark:text-cream-300/60">Paket: </dt><dd class="inline">${esc(o.product_name)}</dd></div>
@@ -305,6 +309,11 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
 
     <section id="panel-baru" class="mt-6 grid gap-8 lg:grid-cols-2">
       <form id="po-form" class="space-y-4" novalidate>
+        <div id="po-edit-banner" class="hidden rounded-xl bg-amber-500/10 p-4 text-sm ring-1 ring-inset ring-amber-500/30" role="status">
+          <p id="po-edit-title" class="font-semibold"></p>
+          <p id="po-edit-hint" class="mt-1"></p>
+          <button id="po-edit-cancel" type="button" class="mt-2 underline">Batal ubah</button>
+        </div>
         <div>
           <label class="${LABEL}" for="po-produk">Paket</label>
           <select id="po-produk" class="${INPUT}">
@@ -532,14 +541,68 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
     });
   };
 
+  // ── Mode ubah pesanan ──
+  const orderCache = new Map<number, PartnerOrderRow>();
+  let editing: PartnerOrderRow | null = null;
+  const banner = $('#po-edit-banner');
   const formEl = $<HTMLFormElement>('#po-form');
-  const poErr = $('#po-err');
   const poBtn = $<HTMLButtonElement>('#po-submit');
+  const setOpsiProduk = (kanal: string | null) => {
+    Array.from(selProduk.options).forEach((opt) => {
+      const p = products.find((x) => x.key === opt.value);
+      opt.disabled = Boolean(kanal && p?.channel && p.channel !== kanal);
+    });
+  };
+  const keluarModeUbah = () => {
+    editing = null;
+    banner.classList.add('hidden');
+    poBtn.textContent = 'Catat pesanan';
+    setOpsiProduk(null);
+    formEl.reset();
+    tampilGalat({});
+    setMin();
+  };
+  const masukModeUbah = (o: PartnerOrderRow) => {
+    editing = o;
+    formEl.reset();
+    const asal = products.find((p) => p.key === o.product_key);
+    setOpsiProduk(asal?.channel ?? null);
+    if (o.product_key) selProduk.value = o.product_key;
+    inQty.value = String(o.quantity);
+    inBrand.value = o.brand_name;
+    inDate.value = o.scheduled_for ?? '';
+    inUrl.value = o.invite_url ?? '';
+    inTitle.value = o.ad_title ?? '';
+    inAd.value = o.ad_text ?? '';
+    inImage.value = o.ad_image_url ?? '';
+    inFooter.value = o.ad_footer ?? '';
+    inNote.value = o.note ?? '';
+    [1, 2, 3].forEach((n, i) => {
+      const b = (o.ad_buttons ?? [])[i];
+      root.querySelector<HTMLInputElement>(`[data-btn-label="${n}"]`)!.value = b?.label ?? '';
+      root.querySelector<HTMLInputElement>(`[data-btn-url="${n}"]`)!.value = b?.url ?? '';
+    });
+    $('#po-edit-title').textContent = `Mengubah pesanan #${o.id}`;
+    $('#po-edit-hint').textContent = o.status === 'diproses'
+      ? 'Pesanan sedang diproses tim. Perubahan dilaporkan ke tim. Bila campaign sudah masuk antrean, tim menyesuaikannya secara manual.'
+      : 'Perubahan dilaporkan ke tim. Pesanan tidak bisa diubah lagi setelah berjalan, selesai, atau dibatalkan.';
+    banner.classList.remove('hidden');
+    poBtn.textContent = 'Simpan perubahan';
+    tampilGalat({});
+    render();
+    pilihTab('baru');
+    banner.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
+  $('#po-edit-cancel').addEventListener('click', keluarModeUbah);
+
+  const poErr = $('#po-err');
   formEl.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     poErr.classList.add('hidden');
     const input = baca();
     const errors = validateOrder(input, produkAktif());
+    // Tanggal tayang yang tidak diubah boleh sudah lewat saat pesanan diedit.
+    if (editing && input.scheduledFor.trim() === (editing.scheduled_for ?? '')) delete errors.scheduledFor;
     tampilGalat(errors as Record<string, string>);
     if (hasErrors(errors)) {
       poErr.textContent = 'Periksa isian yang bertanda merah.';
@@ -548,23 +611,27 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
     }
     poBtn.disabled = true;
     poBtn.textContent = 'Menyimpan…';
-    const r = await submitOrder({
+    const args: OrderArgs = {
       productKey: input.productKey, quantity: Number(input.quantity), brandName: input.brandName.trim(),
       inviteUrl: input.inviteUrl.trim(), scheduledFor: input.scheduledFor.trim(),
       adText: input.adText.trim(), note: input.note.trim(),
       adTitle: input.adTitle.trim(), adFooter: input.adFooter.trim(), imageUrl: input.imageUrl.trim(),
       buttons: cleanButtons(input.buttons),
-    });
+    };
+    const sedangUbah = editing;
+    const r = sedangUbah ? await updateOrder(sedangUbah.id, args) : await submitOrder(args);
     poBtn.disabled = false;
-    poBtn.textContent = 'Catat pesanan';
+    poBtn.textContent = sedangUbah ? 'Simpan perubahan' : 'Catat pesanan';
     if (!r.ok) {
       poErr.textContent = r.error ?? 'Gagal menyimpan pesanan.';
       poErr.classList.remove('hidden');
       return;
     }
-    toast(`Pesanan #${r.id} tercatat dan dilaporkan ke tim.`, 'success');
-    formEl.reset();
-    setMin();
+    toast(
+      sedangUbah ? `Pesanan #${sedangUbah.id} diperbarui dan dilaporkan ke tim.` : `Pesanan #${(r as { id?: number }).id} tercatat dan dilaporkan ke tim.`,
+      'success',
+    );
+    keluarModeUbah();
     pilihTab('riwayat');
   });
 
@@ -581,6 +648,7 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
         rwList.innerHTML = `<p class="${CARD} p-6 text-sm">Belum ada pesanan tercatat.</p>`;
       }
       const laporan = await listOrderCampaigns(rows.filter((r) => !isRiwayatSaja(r.product_key)).map((r) => r.id));
+      rows.forEach((r) => orderCache.set(r.id, r));
       rwList.insertAdjacentHTML('beforeend', rows.map((r) => orderCard(r, laporan.filter((c) => c.order_id === r.id))).join(''));
       terakhirId = rows.length ? rows[rows.length - 1].id : terakhirId;
       rwMore.classList.toggle('hidden', rows.length < 20);
@@ -589,6 +657,11 @@ export async function mountDashboard(o: PageOpts): Promise<void> {
     }
   }
   rwMore.addEventListener('click', () => { void muatRiwayat(false); });
+  rwList.addEventListener('click', (ev) => {
+    const b = (ev.target as HTMLElement).closest<HTMLElement>('[data-edit]');
+    const o = b ? orderCache.get(Number(b.dataset.edit)) : null;
+    if (o) masukModeUbah(o);
+  });
 
   // Sesi berakhir di tab lain / token dicabut → kembali ke halaman masuk.
   getPartnerSupabase()?.auth.onAuthStateChange((evt) => {

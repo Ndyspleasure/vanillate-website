@@ -22,6 +22,7 @@ export interface CatalogProduct {
   priceUnit: string;
   unit: string;
   minQuantity: number;
+  channel?: string;
 }
 
 export interface OrderInput {
@@ -129,6 +130,11 @@ export function cleanButtons(list: AdButton[]): AdButton[] {
 
 // ─── Status pesanan ────────────────────────────────────────────────────────
 
+/** Pesanan masih boleh diubah partner selama belum berjalan, selesai, atau dibatalkan. */
+export function canEditOrder(status: string): boolean {
+  return status === 'dicatat' || status === 'diproses';
+}
+
 export const ORDER_STATUSES = ['dicatat', 'diproses', 'berjalan', 'selesai', 'dibatalkan'] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
@@ -221,7 +227,8 @@ export function rpcError(message: string | undefined): string {
   const m = message ?? '';
   const known = [
     'Jumlah minimal', 'Nama server', 'Link harus', 'Tanggal tayang', 'Teks iklan', 'Catatan maksimal',
-    'Batas 10 catatan', 'Paket tidak ditemukan', 'Ganti username',
+    'Batas 10 catatan', 'Paket tidak ditemukan', 'Ganti username', 'Pesanan tidak ditemukan', 'Pesanan sudah berjalan',
+    'Batas 10 kali ubah', 'Paket hanya bisa diganti', 'Judul iklan', 'Footer iklan', 'Link gambar', 'Link tombol', 'Nama tombol', 'Tombol iklan',
   ];
   return known.some((k) => m.includes(k)) ? m : 'Gagal menyimpan pesanan. Coba lagi.';
 }
