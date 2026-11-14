@@ -36,12 +36,15 @@ const kelasAnak = (ini: boolean, kategori: boolean) =>
       type="button"
       class={depth === 0 ? kelasTop : kelasAnak(false, true)}
       data-grup-toggle
+      data-top={depth === 0 ? '' : undefined}
+      aria-label={depth === 0 ? node.label : undefined}
+      title={depth === 0 ? node.label : undefined}
       aria-expanded={aktif ? 'true' : 'false'}
     >
       {depth === 0 && node.icon && (
         <svg class="h-4 w-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={node.icon} />
       )}
-      <span class="flex-1 text-left">{node.label}</span>
+      <span class="flex-1 text-left" data-label>{node.label}</span>
       <svg class="h-3.5 w-3.5 flex-none transition-transform" data-grup-chevron viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style={aktif ? '' : 'transform: rotate(-90deg)'}>
         <path d="m6 9 6 6 6-6" />
       </svg>
@@ -60,13 +63,16 @@ const kelasAnak = (ini: boolean, kategori: boolean) =>
       href={url(node.href!)}
       aria-current={halamanIni ? 'page' : undefined}
       class={depth === 0 ? kelasTop : kelasAnak(halamanIni, false)}
+      data-top={depth === 0 ? '' : undefined}
+      aria-label={depth === 0 ? node.label : undefined}
+      title={depth === 0 ? node.label : undefined}
       data-sidebar-tab={node.tab}
       data-sidebar-dinamis={node.dinamis ? node.href : undefined}
     >
       {depth === 0 && node.icon && (
         <svg class="h-4 w-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={node.icon} />
       )}
-      {node.label}
+      <span data-label>{node.label}</span>
     </a>
     {node.dinamis && halamanIni && (
       <ul class="mt-1 space-y-0.5 border-l border-ink-900/10 dark:border-cream-100/10 ml-5 pl-1" data-sidebar-tabs-dinamis></ul>

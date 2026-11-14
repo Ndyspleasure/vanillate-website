@@ -107,8 +107,8 @@ test('sub-menu tab: id sama dengan data-tab / tabSection di sumber halaman', asy
     'dev-home': 'developer/index', 'dev-tahu': 'developer/tahu-bulat', 'dev-story': 'developer/story',
     'dev-event': 'developer/event', 'hub-server': 'server-hub', 'dev-server': 'developer/kontrol-server',
     'dev-error': 'developer/error', 'dev-autoheal': 'developer/autoheal', 'blog-review': 'blog/peninjauan',
-    'blog-pengaturan': 'blog/pengaturan', 'ws-okr': 'workspace/okr', pemain: 'pemain', kata: 'kata',
-    'partnership-settings': 'partnership/settings',
+    'blog-pengaturan': 'blog/pengaturan', 'ws-okr': 'workspace/okr', pemain: 'pemain', kata: 'kata', operasi: 'operasi',
+    'partnership-settings': 'partnership/settings', operasi: 'operasi',
   };
   const semua = (d: typeof adminMenu): typeof adminMenu => d.flatMap((n) => [n, ...semua(n.items ?? [])]);
   for (const [key, berkas] of Object.entries(halaman)) {
@@ -121,6 +121,11 @@ test('sub-menu tab: id sama dengan data-tab / tabSection di sumber halaman', asy
       ...[...src.matchAll(/\btab\('([a-z0-9-]+)',/g)].map((m) => m[1]),
       ...[...src.matchAll(/bagian\('([a-z0-9-]+)',/g)].map((m) => m[1]),
     ]);
+    // Operasi: tab per kategori dibentuk dari registry aksi (label kategori jadi id).
+    if (key === 'operasi') {
+      const reg = readFileSync(new URL('../src/lib/dev-panel/actions.ts', import.meta.url), 'utf8');
+      for (const m of reg.matchAll(/key: '[a-z]+', label: '([^']+)', icon:/g)) ada.add(slug(m[1]));
+    }
     for (const anak of node.items!) assert.ok(ada.has(anak.tab!), `${key}: tab "${anak.tab}" tidak ada di ${berkas}`);
   }
 });
