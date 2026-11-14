@@ -107,7 +107,7 @@ test('sub-menu tab: id sama dengan data-tab / tabSection di sumber halaman', asy
     'dev-home': 'developer/index', 'dev-tahu': 'developer/tahu-bulat', 'dev-story': 'developer/story',
     'dev-event': 'developer/event', 'hub-server': 'server-hub', 'dev-server': 'developer/kontrol-server',
     'dev-error': 'developer/error', 'dev-autoheal': 'developer/autoheal', 'blog-review': 'blog/peninjauan',
-    'blog-pengaturan': 'blog/pengaturan', 'ws-okr': 'workspace/okr', pemain: 'pemain',
+    'blog-pengaturan': 'blog/pengaturan', 'ws-okr': 'workspace/okr', pemain: 'pemain', kata: 'kata',
     'partnership-settings': 'partnership/settings',
   };
   const semua = (d: typeof adminMenu): typeof adminMenu => d.flatMap((n) => [n, ...semua(n.items ?? [])]);

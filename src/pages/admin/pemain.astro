@@ -144,7 +144,7 @@ const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors aria-s
   import { getSupabase } from '@/lib/supabase';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
-  import { pilihTab as tabDariHash, tandaiTabSidebar, tautanTabSidebar } from '@/lib/admin-tabs';
+  import { pasangKlikTabSidebar, pilihTab as tabDariHash, tandaiTabSidebar, tautanTabSidebar } from '@/lib/admin-tabs';
   import { GRUP, PLAYER_GROUP_KEYS, type Aksi } from '@/lib/dev-panel/actions';
   import { kirimPerintah } from '@/lib/dev-panel/client';
   import { toEpoch } from '@/lib/dev-panel/model';
@@ -203,6 +203,7 @@ const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors aria-s
     // Sub-menu sidebar menggantikan tombol tab: ikuti hash URL (#ranking, dst).
     if (tautanTabSidebar().length > 0) {
       document.querySelector('[role="tablist"][aria-label="Tampilan pemain"]')?.classList.add('hidden');
+      pasangKlikTabSidebar();
       window.addEventListener('hashchange', () => pilihTab(tabDariHash(TAB_PEMAIN, location.hash)));
       pilihTab(tabDariHash(TAB_PEMAIN, location.hash));
     }
