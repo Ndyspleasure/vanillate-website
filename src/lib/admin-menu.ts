@@ -27,7 +27,17 @@ export const adminMenu: MenuNode[] = [
     key: 'grup-konten', label: 'Konten',
     icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/>',
     items: [
-      { key: 'halaman', label: 'Konten Halaman', href: '/admin/halaman' },
+      {
+        // Satu sub-menu per halaman publik (sumber: pageSchemas di src/data/pages.ts).
+        key: 'grup-halaman', label: 'Konten Halaman',
+        items: [
+          { key: 'halaman-home', label: 'Beranda', href: '/admin/halaman/home' },
+          { key: 'halaman-products', label: 'Game & Bot', href: '/admin/halaman/products' },
+          { key: 'halaman-about', label: 'Tentang', href: '/admin/halaman/about' },
+          { key: 'halaman-support', label: 'Bantuan', href: '/admin/halaman/support' },
+          { key: 'halaman-global', label: 'Global', href: '/admin/halaman/global' },
+        ],
+      },
       { key: 'konten', label: 'Pengumuman', href: '/admin/konten' },
     ],
   },

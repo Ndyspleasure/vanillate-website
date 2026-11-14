@@ -884,7 +884,7 @@ ikut terbit** walau bisa diisi di panel.
 
 ## 16. Konten Halaman Publik
 
-Teks halaman publik dikelola dari **`/admin/halaman`** — tanpa menyentuh kode.
+Teks halaman publik dikelola dari **`/admin/halaman`** (sub-menu per halaman: `/admin/halaman/<key>`) — tanpa menyentuh kode.
 
 ### Cara kerja
 
