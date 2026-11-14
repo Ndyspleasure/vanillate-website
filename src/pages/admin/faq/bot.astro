@@ -8,7 +8,6 @@
 // sampai ke Discord tanpa build ulang website. Pengganti /supportfaq.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import FaqTabs from '@components/FaqTabs.astro';
 ---
 
 <AdminLayout title="FAQ Bot" active="faq-bot">
@@ -17,7 +16,6 @@ import FaqTabs from '@components/FaqTabs.astro';
     title="FAQ Bot Discord"
     description="Isi menu FAQ di Pusat Bantuan bot Vanillate.ID (/help › Pusat Bantuan dan DM bot). Terpisah dari FAQ website. Perubahan sampai ke Discord dalam ±2 menit."
   />
-  <FaqTabs active="bot" />
 
   <div id="bf-root" class="px-6 lg:px-10 py-8 max-w-4xl">
     <div id="list-view"></div>

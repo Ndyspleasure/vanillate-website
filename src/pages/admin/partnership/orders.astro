@@ -4,18 +4,16 @@
 // Lihat docs/PARTNER-PORTAL.md.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 
 const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
 ---
 
-<AdminLayout title="Pesanan Partner" active="partnership">
+<AdminLayout title="Pesanan Partner" active="partnership-orders">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Pesanan Partner"
     description="Catatan pesanan yang dikirim partner dari dashboard mereka. Ubah status supaya partner ikut melihat perkembangannya."
   />
-  <PartnershipTabs active="orders" />
 
   <div class="px-6 lg:px-10 py-8 space-y-5">
     <div class="grid gap-3 sm:grid-cols-3">

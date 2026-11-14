@@ -10,7 +10,6 @@
 // bukan perkiraan — ia hasil yang sama.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import FaqTabs from '@components/FaqTabs.astro';
 ---
 
 <AdminLayout title="FAQ" active="faq">
@@ -19,7 +18,6 @@ import FaqTabs from '@components/FaqTabs.astro';
     title="Pertanyaan"
     description="Seluruh panduan Vanillate. Setiap pertanyaan punya URL sendiri, jadi halaman atau produk mana pun bisa menautkannya langsung. Perubahan tampil di /faq setelah build berikutnya."
   />
-  <FaqTabs active="faqs" />
 
   <div id="faq-root" class="px-6 lg:px-10 py-8 max-w-4xl">
     <div id="list-view"></div>

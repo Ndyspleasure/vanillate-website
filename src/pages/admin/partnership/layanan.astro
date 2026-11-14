@@ -10,18 +10,16 @@
 // email), satu SELECT daftar partner untuk formulir. Tanpa polling.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 
 const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
 ---
 
-<AdminLayout title="Layanan Partner" active="partnership">
+<AdminLayout title="Layanan Partner" active="partnership-layanan">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Layanan & Masa Aktif"
     description="Pantau Broadcast Lobby dan Hosting Bot milik partner. Email pengingat dikirim otomatis 5 hari sebelum habis."
   />
-  <PartnershipTabs active="layanan" />
 
   <div class="px-6 lg:px-10 py-8 space-y-6">
     <p id="gate" class="hidden text-sm text-amber-700 dark:text-amber-400"></p>

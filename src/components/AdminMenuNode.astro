@@ -55,14 +55,21 @@ const kelasAnak = (ini: boolean, kategori: boolean) =>
     </ul>
   </div>
 ) : (
-  <a
-    href={url(node.href!)}
-    aria-current={halamanIni ? 'page' : undefined}
-    class={depth === 0 ? kelasTop : kelasAnak(halamanIni, false)}
-  >
-    {depth === 0 && node.icon && (
-      <svg class="h-4 w-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={node.icon} />
+  <>
+    <a
+      href={url(node.href!)}
+      aria-current={halamanIni ? 'page' : undefined}
+      class={depth === 0 ? kelasTop : kelasAnak(halamanIni, false)}
+      data-sidebar-tab={node.tab}
+      data-sidebar-dinamis={node.dinamis ? node.href : undefined}
+    >
+      {depth === 0 && node.icon && (
+        <svg class="h-4 w-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={node.icon} />
+      )}
+      {node.label}
+    </a>
+    {node.dinamis && halamanIni && (
+      <ul class="mt-1 space-y-0.5 border-l border-ink-900/10 dark:border-cream-100/10 ml-5 pl-1" data-sidebar-tabs-dinamis></ul>
     )}
-    {node.label}
-  </a>
+  </>
 )}

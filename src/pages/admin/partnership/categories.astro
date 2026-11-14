@@ -16,16 +16,14 @@
 // `emoji` dipakai bot karena Discord tidak bisa merender SVG.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 ---
 
-<AdminLayout title="Kategori Partnership" active="partnership">
+<AdminLayout title="Kategori Partnership" active="partnership-categories">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Kategori"
     description="Struktur kategori untuk partner & paket — dipakai CMS, halaman publik, dan Dashboard Partnership di bot."
   />
-  <PartnershipTabs active="categories" />
 
   <div class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
     <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">

@@ -13,17 +13,15 @@
 //     memakai `partnership_categories`, bukan menumpuk jadi satu daftar.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 import { url } from '@utils/url';
 ---
 
-<AdminLayout title="Produk & Harga" active="partnership">
+<AdminLayout title="Produk & Harga" active="partnership-products">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Produk & Harga"
     description="Atur produk yang dijual beserta harganya. Nilai di sini yang tampil di halaman publik."
   />
-  <PartnershipTabs active="products" />
 
   <div class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
     <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">

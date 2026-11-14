@@ -10,18 +10,16 @@
 // tampil setelah website di-build ulang.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 
 const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
 ---
 
-<AdminLayout title="Partnership Settings" active="partnership">
+<AdminLayout title="Partnership Settings" active="partnership-settings">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Settings"
     description="URL, custom link broadcast, dan seluruh konten halaman publik Partnership."
   />
-  <PartnershipTabs active="settings" />
 
   <div class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
     <p id="gate" class="hidden text-sm text-amber-700 dark:text-amber-400"></p>

@@ -10,18 +10,16 @@
 // (`cancel_requested`) yang dihormati bot di antara pengiriman.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 
 const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500';
 ---
 
-<AdminLayout title="Campaign History" active="partnership">
+<AdminLayout title="Campaign History" active="partnership-history">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Campaign History"
     description="Riwayat lengkap campaign beserta hasil pengiriman per penerima."
   />
-  <PartnershipTabs active="history" />
 
   <!-- DAFTAR -->
   <div id="tampil-daftar" class="px-6 lg:px-10 py-8 space-y-5">
