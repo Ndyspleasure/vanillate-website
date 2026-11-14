@@ -40,7 +40,7 @@ test('semua halaman lama tetap ada dengan href yang sama', () => {
     'ws-automation': '/admin/workspace/automation', 'ws-settings': '/admin/workspace/settings',
     ringkasan: '/admin/dashboard', blog: '/admin/blog', faq: '/admin/faq',
     produk: '/admin/produk', statistik: '/admin/statistik', logs: '/admin/logs',
-    server: '/admin/server', team: '/admin/team', halaman: '/admin/halaman',
+    server: '/admin/server', team: '/admin/team', 'halaman-home': '/admin/halaman/home',
     konten: '/admin/konten', 'after-dark': '/admin/after-dark',
   };
   for (const [key, h] of Object.entries(lama)) assert.equal(href.get(key), h, key);
