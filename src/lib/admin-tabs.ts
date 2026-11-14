@@ -53,10 +53,25 @@ function isiTabSidebarDinamis(panel: HTMLElement[]): void {
 }
 
 let hashDipasang = false;
-/** Klik sub-menu sidebar di halaman yang sama hanya mengganti hash: ikuti. */
-function pasangHash(): void {
+/**
+ * Klik sub-menu sidebar di halaman yang sama TIDAK memuat ulang halaman:
+ * alamat tautan (`/admin/x#id`) bisa beda garis miring akhir dari alamat yang
+ * dibuka (`/admin/x/`), dan browser lalu memuat ulang serta melompat ke atas.
+ * Jadi klik ditangkap, hash diganti lewat history, dan tab berganti lewat
+ * peristiwa `hashchange` (didengar `pasangTab` dan halaman Pemain).
+ */
+export function pasangKlikTabSidebar(): void {
   if (hashDipasang) return;
   hashDipasang = true;
+  document.addEventListener('click', (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-sidebar-tab]');
+    if (!a || !samaAlamat(a) || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    if (location.hash !== a.hash) {
+      history.pushState(null, '', a.hash);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
+  });
   window.addEventListener('hashchange', () => {
     const id = decodeURIComponent(location.hash.replace(/^#/, ''));
     if (id) document.querySelector<HTMLElement>(`[data-tab-btn="${CSS.escape(id)}"]`)?.click();
@@ -92,7 +107,7 @@ export function pasangTab(wadah: HTMLElement, opsi: { hash?: boolean } = {}): vo
   wadah.before(nav);
   isiTabSidebarDinamis(panel);
   const disidebar = tautanTabSidebar().length > 0;
-  if (disidebar) { nav.hidden = true; pasangHash(); }
+  if (disidebar) { nav.hidden = true; pasangKlikTabSidebar(); }
 
   const tampil = (id: string, simpanHash: boolean) => {
     panel.forEach((p) => p.classList.toggle('hidden', p.dataset.tab !== id));

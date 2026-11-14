@@ -279,6 +279,20 @@ const indeksCari = indeksPencarian(adminMenu);
       // Buka-tutup grup sidebar. Grup halaman yang sedang dibuka selalu
       // terbuka dari server; pilihan manual disimpan supaya bertahan antar
       // halaman. Tanpa JS, grup aktif tetap terlihat (kelas hidden dari server).
+      // Posisi gulir sidebar diingat antar halaman, supaya pindah halaman tidak
+      // melempar menu kembali ke atas.
+      (() => {
+        const nav = document.getElementById('admin-nav');
+        if (!nav) return;
+        try {
+          const simpan = Number(sessionStorage.getItem('vanillate-admin-nav-scroll'));
+          if (simpan > 0) nav.scrollTop = simpan;
+        } catch (_) {}
+        nav.addEventListener('scroll', () => {
+          try { sessionStorage.setItem('vanillate-admin-nav-scroll', String(nav.scrollTop)); } catch (_) {}
+        }, { passive: true });
+      })();
+
       (() => {
         const KUNCI = 'vanillate-admin-grup';
         let tertutup: string[] = [];
