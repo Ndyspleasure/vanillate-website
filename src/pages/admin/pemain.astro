@@ -144,6 +144,7 @@ const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors aria-s
   import { getSupabase } from '@/lib/supabase';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
+  import { pilihTab as tabDariHash, tandaiTabSidebar, tautanTabSidebar } from '@/lib/admin-tabs';
   import { GRUP, PLAYER_GROUP_KEYS, type Aksi } from '@/lib/dev-panel/actions';
   import { kirimPerintah } from '@/lib/dev-panel/client';
   import { toEpoch } from '@/lib/dev-panel/model';
@@ -183,7 +184,10 @@ const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors aria-s
   // ─── Tab ──────────────────────────────────────────────────────────────────
   const dimuat = new Set<string>();
 
+  const TAB_PEMAIN = ['cermin', 'kelola', 'ranking', 'banned'];
+
   function pilihTab(nama: string) {
+    tandaiTabSidebar(TAB_PEMAIN, nama);
     document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === nama)));
     document.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== nama));
     if (!bolehEdit || dimuat.has(nama)) return;
@@ -196,6 +200,12 @@ const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors aria-s
     document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => {
       b.addEventListener('click', () => pilihTab(b.dataset.tab!));
     });
+    // Sub-menu sidebar menggantikan tombol tab: ikuti hash URL (#ranking, dst).
+    if (tautanTabSidebar().length > 0) {
+      document.querySelector('[role="tablist"][aria-label="Tampilan pemain"]')?.classList.add('hidden');
+      window.addEventListener('hashchange', () => pilihTab(tabDariHash(TAB_PEMAIN, location.hash)));
+      pilihTab(tabDariHash(TAB_PEMAIN, location.hash));
+    }
     if (!bolehEdit) {
       const pesan = notice('info', 'Peran kamu hanya bisa melihat cermin data pemain. Kelola pemain butuh peran admin atau owner.');
       for (const id of ['profil', 'rank-body', 'banned-body']) document.getElementById(id)!.innerHTML = pesan;

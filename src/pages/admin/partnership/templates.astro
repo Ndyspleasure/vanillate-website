@@ -6,18 +6,16 @@
 // strukturnya siap dikembangkan (mis. template dengan konfigurasi tombol).
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 
 const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
 ---
 
-<AdminLayout title="Broadcast Templates" active="partnership">
+<AdminLayout title="Broadcast Templates" active="partnership-templates">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Templates"
     description="Simpan pesan yang sering dipakai untuk campaign berikutnya."
   />
-  <PartnershipTabs active="templates" />
 
   <div class="px-6 lg:px-10 py-8 space-y-8 max-w-3xl">
     <!-- Tambah -->

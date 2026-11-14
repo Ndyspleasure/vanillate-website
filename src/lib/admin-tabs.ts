@@ -12,6 +12,57 @@ export function pilihTab(ids: string[], hash: string, awal?: string): string {
   return ids[0] ?? '';
 }
 
+// ── Tab di sidebar ──────────────────────────────────────────────────────────
+// Bila sidebar admin memuat sub-menu untuk tab halaman ini (`data-sidebar-tab`,
+// dari src/lib/admin-menu.ts), bar tab di dalam halaman disembunyikan dan
+// sidebar yang berganti tab lewat hash URL (#id). Tanpa sub-menu, bar tab
+// tetap tampil seperti biasa.
+
+const KELAS_AKTIF = ['bg-amber-500/10', 'text-amber-700', 'dark:text-amber-400', 'font-medium'];
+
+function samaAlamat(a: HTMLAnchorElement): boolean {
+  const rapikan = (p: string) => p.replace(/\/+$/, '') || '/';
+  return rapikan(a.pathname) === rapikan(location.pathname);
+}
+
+/** Tautan sub-menu sidebar milik halaman yang sedang dibuka. */
+export function tautanTabSidebar(): HTMLAnchorElement[] {
+  return Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-sidebar-tab]')).filter(samaAlamat);
+}
+
+/** Sorot tab aktif di sidebar; sembunyikan tab yang tidak ada di halaman (mis. khusus owner). */
+export function tandaiTabSidebar(ids: string[], aktif: string): void {
+  for (const a of tautanTabSidebar()) {
+    const id = a.dataset.sidebarTab!;
+    const ada = ids.includes(id);
+    (a.closest('li') ?? a).classList.toggle('hidden', !ada);
+    const ini = ada && id === aktif;
+    a.toggleAttribute('aria-current', ini);
+    if (ini) a.setAttribute('aria-current', 'page');
+    KELAS_AKTIF.forEach((k) => a.classList.toggle(k, ini));
+  }
+}
+
+/** Halaman yang tab-nya dibentuk dari data: isi sub-menu sidebar setelah data tampil. */
+function isiTabSidebarDinamis(panel: HTMLElement[]): void {
+  const wadah = document.querySelector<HTMLElement>('[data-sidebar-tabs-dinamis]');
+  const induk = document.querySelector<HTMLAnchorElement>('[data-sidebar-dinamis]');
+  if (!wadah || !induk || !samaAlamat(induk)) return;
+  wadah.innerHTML = panel.map((p) => `<li><a href="${esc(induk.pathname)}#${esc(encodeURIComponent(p.dataset.tab!))}" data-sidebar-tab="${esc(p.dataset.tab!)}"
+    class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm whitespace-nowrap transition-colors text-ink-600 dark:text-cream-200/70 hover:bg-ink-900/5 dark:hover:bg-cream-100/5">${esc(p.dataset.tabLabel ?? p.dataset.tab!)}</a></li>`).join('');
+}
+
+let hashDipasang = false;
+/** Klik sub-menu sidebar di halaman yang sama hanya mengganti hash: ikuti. */
+function pasangHash(): void {
+  if (hashDipasang) return;
+  hashDipasang = true;
+  window.addEventListener('hashchange', () => {
+    const id = decodeURIComponent(location.hash.replace(/^#/, ''));
+    if (id) document.querySelector<HTMLElement>(`[data-tab-btn="${CSS.escape(id)}"]`)?.click();
+  });
+}
+
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -39,6 +90,9 @@ export function pasangTab(wadah: HTMLElement, opsi: { hash?: boolean } = {}): vo
       </button>
     </li>`).join('')}</ul>`;
   wadah.before(nav);
+  isiTabSidebarDinamis(panel);
+  const disidebar = tautanTabSidebar().length > 0;
+  if (disidebar) { nav.hidden = true; pasangHash(); }
 
   const tampil = (id: string, simpanHash: boolean) => {
     panel.forEach((p) => p.classList.toggle('hidden', p.dataset.tab !== id));
@@ -51,6 +105,7 @@ export function pasangTab(wadah: HTMLElement, opsi: { hash?: boolean } = {}): vo
           : 'border-transparent text-ink-600 dark:text-cream-200/70 hover:text-ink-900 dark:hover:text-cream-100'
       }`;
     });
+    if (disidebar) tandaiTabSidebar(ids, id);
     if (simpanHash && opsi.hash !== false) history.replaceState(null, '', `#${encodeURIComponent(id)}`);
   };
 

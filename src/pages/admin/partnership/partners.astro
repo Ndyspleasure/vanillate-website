@@ -4,18 +4,16 @@
 // (service_role hanya di server). Lihat docs/PARTNER-PORTAL.md.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 
 const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
 ---
 
-<AdminLayout title="Akun Partner" active="partnership">
+<AdminLayout title="Akun Partner" active="partnership-partners">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Akun Partner"
     description="Daftarkan akun login untuk partner. Partner mengganti username dan password saat masuk pertama kali."
   />
-  <PartnershipTabs active="partners" />
 
   <div class="px-6 lg:px-10 py-8 space-y-8 max-w-4xl">
     <section id="box-buat" class="hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">

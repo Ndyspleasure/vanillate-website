@@ -10,7 +10,6 @@
 // pribadi lain ke sini.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 
 const jumlahOpsi = [
   { value: '100', label: 'Top 100' },
@@ -33,13 +32,12 @@ const urutOpsi = [
 ];
 ---
 
-<AdminLayout title="Active Players" active="partnership">
+<AdminLayout title="Active Players" active="partnership-players">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Active Players"
     description="Ambil pemain paling aktif, lalu salin User ID-nya untuk dipakai di Broadcast DM."
   />
-  <PartnershipTabs active="players" />
 
   <div class="px-6 lg:px-10 py-8 space-y-6 max-w-4xl">
     <div class="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-5 py-4">

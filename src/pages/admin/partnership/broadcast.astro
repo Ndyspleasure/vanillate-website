@@ -10,19 +10,17 @@
 // Settings, bukan diketik ulang tiap campaign.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 
 const input = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
 const labelCls = 'block text-sm font-medium mb-1.5';
 ---
 
-<AdminLayout title="Broadcast DM" active="partnership">
+<AdminLayout title="Broadcast DM" active="partnership-broadcast">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Broadcast DM"
     description="Kirim campaign ke daftar User ID. Bot yang mengirim DM-nya, dengan jeda aman antar pesan."
   />
-  <PartnershipTabs active="broadcast" />
 
   <div class="px-6 lg:px-10 py-8 space-y-8 max-w-3xl">
     <div id="gate-pesan" class="hidden rounded-2xl border border-amber-500/25 bg-amber-500/5 px-5 py-4">

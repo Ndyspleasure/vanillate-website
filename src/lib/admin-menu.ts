@@ -16,6 +16,27 @@ export interface MenuNode {
   items?: MenuNode[];
   /** Kunci `active` tambahan yang dianggap bagian dari simpul ini. */
   match?: string;
+  /** Alamat halaman untuk kategori yang isinya tab halaman itu (tidak punya `href`). */
+  page?: string;
+  /** Id tab di halaman (`href` = alamat halaman + `#tab`); disorot lewat script. */
+  tab?: string;
+  /**
+   * Halaman yang tab-nya dibentuk dari data saat dimuat (kategori dari database).
+   * Sidebar mengisi sub-itemnya lewat `pasangTab` setelah data tampil.
+   */
+  dinamis?: boolean;
+}
+
+/**
+ * Kategori sidebar dari tab sebuah halaman. `key` = kunci `active` halaman itu;
+ * tiap tab menjadi sub-menu `alamat#id`. Id harus sama dengan `data-tab` di
+ * halaman (dijaga tests/admin-menu.test.ts).
+ */
+function tabHalaman(key: string, label: string, page: string, tabs: [id: string, label: string][]): MenuNode {
+  return {
+    key, label, page,
+    items: tabs.map(([id, nama]) => ({ key: `${key}:${id}`, label: nama, href: `${page}#${id}`, tab: id })),
+  };
 }
 
 export const adminMenu: MenuNode[] = [
@@ -48,8 +69,12 @@ export const adminMenu: MenuNode[] = [
     icon: '<path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="M5 12v6"/><path d="M2 19h7"/>',
     items: [
       { key: 'blog', label: 'Semua Artikel', href: '/admin/blog' },
-      { key: 'blog-review', label: 'Peninjauan Tulisan', href: '/admin/blog/peninjauan' },
-      { key: 'blog-pengaturan', label: 'Kategori & Penulis', href: '/admin/blog/pengaturan' },
+      tabHalaman('blog-review', 'Peninjauan Tulisan', '/admin/blog/peninjauan', [
+          ['antrean', 'Antrean'], ['ditolak', 'Ditolak'], ['riwayat', 'Riwayat'], ['penulis', 'Penulis'],
+        ]),
+      tabHalaman('blog-pengaturan', 'Kategori & Penulis', '/admin/blog/pengaturan', [
+          ['kategori', 'Kategori'], ['penulis', 'Penulis'],
+        ]),
     ],
   },
   {
@@ -82,9 +107,11 @@ export const adminMenu: MenuNode[] = [
       {
         key: 'bot-kontrol', label: 'Ringkasan & Kontrol',
         items: [
-          { key: 'dev-home', label: 'Ringkasan & Sistem', href: '/admin/developer' },
-          { key: 'kontrol', label: 'Kontrol Bot', href: '/admin/kontrol' },
-          { key: 'operasi', label: 'Operasi & Riwayat', href: '/admin/operasi' },
+          tabHalaman('dev-home', 'Ringkasan & Sistem', '/admin/developer', [
+          ['ringkasan', 'Ringkasan'], ['kesehatan-proses', 'Kesehatan proses'], ['status', 'Status'], ['versi-changelog', 'Versi & changelog'], ['database-ekonomi', 'Database & ekonomi'],
+        ]),
+          { key: 'kontrol', label: 'Kontrol Bot', href: '/admin/kontrol', dinamis: true },
+          { key: 'operasi', label: 'Operasi & Riwayat', href: '/admin/operasi', dinamis: true },
         ],
       },
       {
@@ -96,13 +123,19 @@ export const adminMenu: MenuNode[] = [
         items: [
           { key: 'games', label: 'Monitor Game', href: '/admin/games' },
           { key: 'lagu', label: 'Tebak Lagu', href: '/admin/lagu' },
-          { key: 'dev-tahu', label: 'Tahu Bulat', href: '/admin/developer/tahu-bulat' },
-          { key: 'dev-story', label: 'Vanillate Story', href: '/admin/developer/story' },
+          tabHalaman('dev-tahu', 'Tahu Bulat', '/admin/developer/tahu-bulat', [
+          ['ringkasan', 'Ringkasan'], ['kolam-donasi', 'Kolam donasi'], ['10-besar-total-coin-dihasilkan', '10 besar coin'], ['aktivitas-terbaru', 'Aktivitas terbaru'], ['alat-bantu', 'Alat bantu'],
+        ]),
+          tabHalaman('dev-story', 'Vanillate Story', '/admin/developer/story', [
+          ['ringkasan', 'Ringkasan'], ['aktivitas-terbaru', 'Aktivitas terbaru'], ['tingkat-kekalahan-per-minggu', 'Tingkat kekalahan'], ['aturan-kesulitan', 'Aturan kesulitan'], ['alat-bantu', 'Alat bantu'],
+        ]),
           {
             key: 'bot-game-konfigurasi', label: 'Konfigurasi',
             items: [
               { key: 'kata', label: 'Word Collection', href: '/admin/kata' },
-              { key: 'dev-event', label: 'Event System', href: '/admin/developer/event' },
+              tabHalaman('dev-event', 'Event System', '/admin/developer/event', [
+          ['peluang-pemicu', 'Peluang & pemicu'], ['penjajah-target', 'Penjajah target'], ['pengaturan', 'Pengaturan'],
+        ]),
             ],
           },
         ],
@@ -125,14 +158,18 @@ export const adminMenu: MenuNode[] = [
           {
             key: 'bot-server-fitur', label: 'Fitur',
             items: [
-              { key: 'hub-server', label: 'Ringkasan Server Hub', href: '/admin/server-hub' },
+              tabHalaman('hub-server', 'Ringkasan Server Hub', '/admin/server-hub', [
+          ['perlu-diperhatikan', 'Perlu diperhatikan'], ['verification', 'Verification'], ['leveling', 'Leveling'], ['auto-role', 'Auto Role'], ['welcome-dan-goodbye', 'Welcome dan Goodbye'], ['security-center', 'Security Center'],
+        ]),
               { key: 'showcase', label: 'Showcase Server', href: '/admin/showcase' },
             ],
           },
           {
             key: 'bot-server-konfigurasi', label: 'Konfigurasi',
             items: [
-              { key: 'dev-server', label: 'Kontrol Server', href: '/admin/developer/kontrol-server' },
+              tabHalaman('dev-server', 'Kontrol Server', '/admin/developer/kontrol-server', [
+          ['bot', 'Kontrol Bot'], ['command', 'Slash Command'], ['backup', 'Backup & Log'], ['konsol', 'Konsol'],
+        ]),
             ],
           },
         ],
@@ -140,7 +177,9 @@ export const adminMenu: MenuNode[] = [
       {
         key: 'bot-pemain', label: 'Pemain & Promosi',
         items: [
-          { key: 'pemain', label: 'Pemain', href: '/admin/pemain' },
+          tabHalaman('pemain', 'Pemain', '/admin/pemain', [
+          ['cermin', 'Cermin website'], ['kelola', 'Kelola pemain'], ['ranking', 'Ranking live'], ['banned', 'Banned'],
+        ]),
           { key: 'promo', label: 'Promo', href: '/admin/promo' },
           { key: 'dev-tutorial', label: 'Tutorial', href: '/admin/developer/tutorial' },
         ],
@@ -156,8 +195,12 @@ export const adminMenu: MenuNode[] = [
       {
         key: 'bot-perawatan', label: 'Perawatan',
         items: [
-          { key: 'dev-error', label: 'Error KB', href: '/admin/developer/error' },
-          { key: 'dev-autoheal', label: 'Auto-Heal', href: '/admin/developer/autoheal' },
+          tabHalaman('dev-error', 'Error KB', '/admin/developer/error', [
+          ['ringkasan', 'Ringkasan'], ['error-terbaru', 'Error terbaru'], ['fingerprint-teratas', 'Fingerprint teratas'], ['auto-recovery-per-metode', 'Auto-recovery'],
+        ]),
+          tabHalaman('dev-autoheal', 'Auto-Heal', '/admin/developer/autoheal', [
+          ['status', 'Status'], ['permintaan-izin', 'Permintaan izin'], ['kontrol', 'Kontrol'], ['incident-terbaru', 'Incident terbaru'], ['izin-aktif', 'Izin aktif'],
+        ]),
         ],
       },
     ],
@@ -181,7 +224,9 @@ export const adminMenu: MenuNode[] = [
         items: [
           { key: 'ws-tasks', label: 'Tugas', href: '/admin/workspace/tasks' },
           { key: 'ws-routines', label: 'Tugas Berulang', href: '/admin/workspace/routines' },
-          { key: 'ws-okr', label: 'Target / OKR', href: '/admin/workspace/okr' },
+          tabHalaman('ws-okr', 'Target / OKR', '/admin/workspace/okr', [
+          ['buat', 'Buat OKR'], ['daftar', 'Daftar OKR'], ['berulang', 'OKR berulang'], ['riwayat', 'Riwayat perintah'],
+        ]),
           { key: 'ws-automation', label: 'Automation', href: '/admin/workspace/automation' },
         ],
       },
@@ -210,9 +255,26 @@ export const adminMenu: MenuNode[] = [
     icon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
   },
   {
-    key: 'grup-partnership', label: 'Partnership', href: '/admin/partnership',
+    // Satu sub-menu per halaman Partnership (dulu tab PartnershipTabs di tiap halaman).
+    key: 'grup-partnership', label: 'Partnership',
     icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 11 2 2 4-4"/>',
-    match: 'partnership',
+    items: [
+      { key: 'partnership-overview', label: 'Overview', href: '/admin/partnership' },
+      { key: 'partnership-broadcast', label: 'Broadcast DM', href: '/admin/partnership/broadcast' },
+      { key: 'partnership-active-players', label: 'Active Players', href: '/admin/partnership/active-players' },
+      { key: 'partnership-history', label: 'Campaign History', href: '/admin/partnership/history' },
+      { key: 'partnership-products', label: 'Paket Campaign', href: '/admin/partnership/products' },
+      { key: 'partnership-jasa', label: 'Halaman Jasa', href: '/admin/partnership/jasa' },
+      { key: 'partnership-layanan', label: 'Layanan & Masa Aktif', href: '/admin/partnership/layanan' },
+      { key: 'partnership-orders', label: 'Pesanan Partner', href: '/admin/partnership/orders' },
+      { key: 'partnership-partners', label: 'Akun Partner', href: '/admin/partnership/partners' },
+      { key: 'partnership-categories', label: 'Kategori', href: '/admin/partnership/categories' },
+      { key: 'partnership-lobby', label: 'Lobby Bot', href: '/admin/partnership/lobby' },
+      { key: 'partnership-templates', label: 'Templates', href: '/admin/partnership/templates' },
+      tabHalaman('partnership-settings', 'Settings', '/admin/partnership/settings', [
+        ['url', 'URL'], ['custom-links', 'Custom Links'], ['konten', 'Konten halaman publik'],
+      ]),
+    ],
   },
   {
     key: 'grup-data', label: 'Data & Laporan',
@@ -270,8 +332,10 @@ export function normalisasi(s: string): string {
 export function indeksPencarian(menu: MenuNode[], induk: string[] = []): EntriPencarian[] {
   return menu.flatMap((n) => {
     const jalur = [...induk, n.label];
-    const sendiri: EntriPencarian[] = n.href
-      ? [{ node: n, jalur, teks: normalisasi(`${jalur.join(' ')} ${n.href}`) }]
+    // Kategori tab halaman (`page`) tetap bisa dicari sebagai halamannya.
+    const alamat = n.href ?? n.page;
+    const sendiri: EntriPencarian[] = alamat
+      ? [{ node: n.href ? n : { ...n, href: alamat }, jalur, teks: normalisasi(`${jalur.join(' ')} ${alamat}`) }]
       : [];
     return [...sendiri, ...indeksPencarian(n.items ?? [], jalur)];
   });

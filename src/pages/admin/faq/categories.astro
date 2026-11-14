@@ -7,7 +7,6 @@
 // mengubahnya sama dengan memindahkan alamat — halaman ini mengingatkan itu.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import FaqTabs from '@components/FaqTabs.astro';
 ---
 
 <AdminLayout title="Kategori FAQ" active="faq-kategori">
@@ -16,7 +15,6 @@ import FaqTabs from '@components/FaqTabs.astro';
     title="Kategori"
     description="Kelompok panduan di halaman /faq. Produk menunjuk kategorinya lewat halaman Katalog Produk, jadi satu kategori bisa dipakai ulang oleh produk atau fitur mana pun."
   />
-  <FaqTabs active="categories" />
 
   <div id="kat-root" class="px-6 lg:px-10 py-8 space-y-6 max-w-3xl">
     <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">

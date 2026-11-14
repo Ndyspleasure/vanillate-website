@@ -15,17 +15,15 @@
 // build website.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
-import PartnershipTabs from '@components/PartnershipTabs.astro';
 import { url } from '@utils/url';
 ---
 
-<AdminLayout title="Lobby Bot" active="partnership">
+<AdminLayout title="Lobby Bot" active="partnership-lobby">
   <AdminPageHeader
     eyebrow="Partnership"
     title="Lobby Bot"
     description="Atur partner yang tampil di Dashboard Partnership dalam permainan, detail tiap partner, dan teks item Order Partnership."
   />
-  <PartnershipTabs active="lobby" />
 
   <div class="px-6 lg:px-10 py-8 space-y-10 max-w-3xl">
     <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
