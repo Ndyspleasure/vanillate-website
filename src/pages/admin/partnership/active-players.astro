@@ -176,19 +176,30 @@ const urutOpsi = [
     const limit = batasJumlah();
     const urut = el<HTMLSelectElement>('f-urut').value;
 
-    let q = supabase
-      .from('bot_players')
-      .select('player_id, display_name, games_played, wins, last_seen_at, is_banned')
-      .eq('is_banned', false)
-      .order(urut, { ascending: false, nullsFirst: false })
-      .limit(limit);
-
     const sejak = sejakIso();
-    if (sejak) q = q.gte('last_seen_at', sejak);
     const sampai = sampaiIso();
-    if (sampai) q = q.lte('last_seen_at', sampai);
-
-    const { data, error } = await q;
+    // PostgREST membatasi jumlah baris per permintaan (bawaan Supabase 1000),
+    // jadi ambil per halaman sampai `limit` terpenuhi atau data habis.
+    const HALAMAN = 1000;
+    const data: any[] = [];
+    let error: { message: string } | null = null;
+    for (let dari = 0; dari < limit; dari += HALAMAN) {
+      const sampaiBaris = Math.min(dari + HALAMAN, limit) - 1;
+      let q = supabase
+        .from('bot_players')
+        .select('player_id, display_name, games_played, wins, last_seen_at, is_banned')
+        .eq('is_banned', false)
+        // player_id sebagai pemecah seri supaya urutan antar halaman stabil.
+        .order(urut, { ascending: false, nullsFirst: false })
+        .order('player_id', { ascending: true })
+        .range(dari, sampaiBaris);
+      if (sejak) q = q.gte('last_seen_at', sejak);
+      if (sampai) q = q.lte('last_seen_at', sampai);
+      const r = await q;
+      if (r.error) { error = r.error; break; }
+      data.push(...(r.data ?? []));
+      if ((r.data?.length ?? 0) < sampaiBaris - dari + 1) break;
+    }
 
     btn.disabled = false;
     btn.textContent = 'Ambil pemain';
