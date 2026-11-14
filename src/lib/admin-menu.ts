@@ -132,7 +132,10 @@ export const adminMenu: MenuNode[] = [
           {
             key: 'bot-game-konfigurasi', label: 'Konfigurasi',
             items: [
-              { key: 'kata', label: 'Word Collection', href: '/admin/kata' },
+              tabHalaman('kata', 'Word Collection', '/admin/kata', [
+                ['cari-kata', 'Cari kata'], ['review-ulang-antrean-cepat', 'Review ulang'],
+                ['export-daftar-kata', 'Export daftar kata'], ['review-massal', 'Review massal'],
+              ]),
               tabHalaman('dev-event', 'Event System', '/admin/developer/event', [
           ['peluang-pemicu', 'Peluang & pemicu'], ['penjajah-target', 'Penjajah target'], ['pengaturan', 'Pengaturan'],
         ]),
