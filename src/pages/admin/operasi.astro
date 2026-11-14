@@ -30,23 +30,24 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       </p>
     </div>
 
-    <!-- FORM AKSI (dirender per kategori dari registry src/lib/dev-panel/actions.ts) -->
-    <div id="aksi-body"></div>
-
-    <!-- RIWAYAT PERINTAH -->
-    <section class="space-y-4">
-      <div class="flex items-center justify-between gap-3">
-        <h2 class="font-display text-lg font-semibold tracking-tightest">Riwayat perintah</h2>
-        <button
-          type="button"
-          id="btn-refresh"
-          class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium text-ink-600 dark:text-cream-200/70 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
-        >
-          Muat ulang
-        </button>
-      </div>
-      <div id="riwayat-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
-    </section>
+    <!-- Semua bagian jadi tab (sub-menu sidebar): form aksi per kategori
+         (dirender dari registry src/lib/dev-panel/actions.ts) + riwayat perintah. -->
+    <div id="operasi-tabs">
+      <section class="space-y-4 pt-6" data-tab="riwayat" data-tab-label="Riwayat perintah" role="tabpanel">
+        <div id="aksi-info"></div>
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="font-display text-lg font-semibold tracking-tightest">Riwayat perintah</h2>
+          <button
+            type="button"
+            id="btn-refresh"
+            class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium text-ink-600 dark:text-cream-200/70 hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors"
+          >
+            Muat ulang
+          </button>
+        </div>
+        <div id="riwayat-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+      </section>
+    </div>
   </div>
 </AdminLayout>
 
@@ -72,13 +73,14 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   const idForm = (a: Aksi) => `aksi-${a.type.replace(/\./g, '-')}`;
 
   function render() {
-    const body = document.getElementById('aksi-body')!;
+    const wadah = document.getElementById('operasi-tabs')!;
     if (!bolehEdit) {
-      body.innerHTML = `<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat riwayat perintah di bawah.</p>`;
+      document.getElementById('aksi-info')!.innerHTML = `<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat riwayat perintah.</p>`;
+      pasangTab(wadah);
       return;
     }
 
-    body.innerHTML = GRUP.map((g) => `
+    wadah.insertAdjacentHTML('afterbegin', GRUP.map((g) => `
       <section class="space-y-4 pt-6" data-tab="${esc(g.label.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}" data-tab-label="${esc(g.label)}" role="tabpanel">
         <div class="flex items-start gap-3">
           <span class="mt-0.5 flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
@@ -92,8 +94,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         <div class="grid gap-4 sm:grid-cols-2">
           ${g.aksi.map((a) => formCard({ id: idForm(a), title: a.label, fields: a.fields, danger: a.danger, desc: a.help, submit: 'Kirim' })).join('')}
         </div>
-      </section>`).join('');
-    pasangTab(body);
+      </section>`).join(''));
+    pasangTab(wadah);
 
     for (const g of GRUP) {
       for (const a of g.aksi) {

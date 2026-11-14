@@ -19,27 +19,29 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     description="Kata yang diajukan pemain dan menunggu ditinjau. Terima untuk masuk kamus, atau tolak — satu per satu atau massal."
   />
 
-  <div class="px-6 lg:px-10 py-8 space-y-10">
-    <section class="space-y-4">
-      <div class="flex items-center justify-between gap-3">
-        <h2 class="font-display text-lg font-semibold tracking-tightest">Statistik</h2>
-        <p id="stat-fresh"></p>
-      </div>
-      <div id="stat-body"></div>
-    </section>
-
-    <section class="space-y-4">
-      <div class="flex items-center justify-between gap-3">
-        <div>
-          <h2 class="font-display text-lg font-semibold tracking-tightest">Antrean pending</h2>
-          <p id="kata-info" class="mt-0.5 text-sm text-ink-500 dark:text-cream-300/60"></p>
+  <div class="px-6 lg:px-10 py-8">
+    <!-- Semua bagian jadi tab (sub-menu sidebar): tidak ada lagi bagian yang selalu tampil di atas tab. -->
+    <div id="kata-tabs">
+      <section class="space-y-4 pt-6" data-tab="statistik" data-tab-label="Statistik" role="tabpanel">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="font-display text-lg font-semibold tracking-tightest">Statistik</h2>
+          <p id="stat-fresh"></p>
         </div>
-        <button type="button" id="kata-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
-      </div>
-      <div id="kata-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
-    </section>
+        <div id="stat-body"></div>
+      </section>
 
-    <div id="kata-alat" class="space-y-10"></div>
+      <section class="space-y-4 pt-6" data-tab="antrean-pending" data-tab-label="Antrean pending" role="tabpanel">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-display text-lg font-semibold tracking-tightest">Antrean pending</h2>
+            <p id="kata-info" class="mt-0.5 text-sm text-ink-500 dark:text-cream-300/60"></p>
+          </div>
+          <button type="button" id="kata-refresh" class="rounded-lg border border-ink-900/10 dark:border-cream-100/10 px-3 py-1.5 text-xs font-medium hover:bg-ink-900/5 dark:hover:bg-cream-100/5 transition-colors">Muat ulang</button>
+        </div>
+        <div id="kata-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
+        <div id="kata-alat-info"></div>
+      </section>
+    </div>
   </div>
 </AdminLayout>
 
@@ -178,13 +180,14 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   // ─── Alat: cari, review ulang, export & review massal ─────────────────────
   function renderAlat() {
-    const el = document.getElementById('kata-alat')!;
+    const wadah = document.getElementById('kata-tabs')!;
     if (!bolehEdit) {
-      el.innerHTML = notice('info', 'Peran kamu hanya bisa melihat. Cari kata, review ulang, dan review massal butuh peran admin atau owner.');
+      document.getElementById('kata-alat-info')!.innerHTML = notice('info', 'Peran kamu hanya bisa melihat. Cari kata, review ulang, dan review massal butuh peran admin atau owner.');
+      pasangTab(wadah);
       return;
     }
     const opsiBulk = Object.entries(BULK_ACTIONS).map(([value, a]) => ({ value, label: a.label }));
-    el.innerHTML = [
+    wadah.insertAdjacentHTML('beforeend', [
       tabSection('Cari kata', `${formCard({
         id: 'cari-kata', title: 'Cari di pending, diterima, dan ditolak', submit: 'Cari',
         fields: [{ name: 'query', label: 'Kata / potongan kata (min. 2 huruf)', required: true, placeholder: 'mis. ngab' }],
@@ -210,8 +213,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           { name: 'reason', label: 'Alasan tolak (opsional)', placeholder: 'hanya untuk aksi Tolak' },
         ],
       })}<p id="bulk-hint" class="text-xs ${KELAS.muted}"></p><div id="bulk-hasil"></div>`),
-    ].join('');
-    pasangTab(el);
+    ].join(''));
+    pasangTab(wadah);
 
     pasangCari();
     pasangReReview();

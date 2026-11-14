@@ -111,7 +111,11 @@ export const adminMenu: MenuNode[] = [
           ['ringkasan', 'Ringkasan'], ['kesehatan-proses', 'Kesehatan proses'], ['status', 'Status'], ['versi-changelog', 'Versi & changelog'], ['database-ekonomi', 'Database & ekonomi'],
         ]),
           { key: 'kontrol', label: 'Kontrol Bot', href: '/admin/kontrol', dinamis: true },
-          { key: 'operasi', label: 'Operasi & Riwayat', href: '/admin/operasi', dinamis: true },
+          tabHalaman('operasi', 'Operasi & Riwayat', '/admin/operasi', [
+            ['pemain', 'Pemain'], ['progression', 'Progression'], ['boost', 'Boost'], ['promo', 'Promo'],
+            ['quest', 'Quest'], ['tutorial', 'Tutorial'], ['dm-campaign', 'DM Campaign'],
+            ['database', 'Database'], ['riwayat', 'Riwayat perintah'],
+          ]),
         ],
       },
       {
@@ -133,6 +137,7 @@ export const adminMenu: MenuNode[] = [
             key: 'bot-game-konfigurasi', label: 'Konfigurasi',
             items: [
               tabHalaman('kata', 'Word Collection', '/admin/kata', [
+                ['statistik', 'Statistik'], ['antrean-pending', 'Antrean pending'],
                 ['cari-kata', 'Cari kata'], ['review-ulang-antrean-cepat', 'Review ulang'],
                 ['export-daftar-kata', 'Export daftar kata'], ['review-massal', 'Review massal'],
               ]),

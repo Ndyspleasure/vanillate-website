@@ -37,6 +37,8 @@ const kelasAnak = (ini: boolean, kategori: boolean) =>
       class={depth === 0 ? kelasTop : kelasAnak(false, true)}
       data-grup-toggle
       data-top={depth === 0 ? '' : undefined}
+      aria-label={depth === 0 ? node.label : undefined}
+      title={depth === 0 ? node.label : undefined}
       aria-expanded={aktif ? 'true' : 'false'}
     >
       {depth === 0 && node.icon && (
@@ -62,6 +64,8 @@ const kelasAnak = (ini: boolean, kategori: boolean) =>
       aria-current={halamanIni ? 'page' : undefined}
       class={depth === 0 ? kelasTop : kelasAnak(halamanIni, false)}
       data-top={depth === 0 ? '' : undefined}
+      aria-label={depth === 0 ? node.label : undefined}
+      title={depth === 0 ? node.label : undefined}
       data-sidebar-tab={node.tab}
       data-sidebar-dinamis={node.dinamis ? node.href : undefined}
     >

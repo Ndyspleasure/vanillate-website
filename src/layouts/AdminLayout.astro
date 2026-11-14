@@ -336,6 +336,9 @@ const indeksCari = indeksPencarian(adminMenu);
           shell.classList.toggle('sidebar-tutup', tutup);
           melayang.classList.toggle('hidden', !tutup);
           melayang.classList.toggle('flex', tutup);
+          // Pencarian aktif menyembunyikan menu; kosongkan supaya rail tetap berisi ikon.
+          const cari = document.getElementById('admin-cari') as HTMLInputElement | null;
+          if (tutup && cari?.value) { cari.value = ''; cari.dispatchEvent(new Event('input')); }
           try { localStorage.setItem(KUNCI, tutup ? 'tutup' : 'buka'); } catch (_) {}
         };
         try { if (localStorage.getItem(KUNCI) === 'tutup') atur(true); } catch (_) {}
