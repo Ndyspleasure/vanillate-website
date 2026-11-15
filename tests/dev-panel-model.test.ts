@@ -96,6 +96,9 @@ test('label & kelompok mode game', () => {
   assert.equal(modeLabel(null), '—');
   assert.equal(modeGroup('uno'), 'sampingan');
   assert.equal(modeGroup('pvp'), 'sambung');
+  // Vanillate Dungeon (party): game sampingan dengan label sendiri (bot: src/game/vdungeon/monitorAdapter.js)
+  assert.equal(modeLabel('vdungeon'), 'Vanillate Dungeon');
+  assert.equal(modeGroup('vdungeon'), 'sampingan');
 });
 
 test('peluang event: tiap nilai 0–1 dan jumlah ≤ 1 (cermin event.setChances)', () => {

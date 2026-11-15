@@ -135,6 +135,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (r.caseInfo) baris.push(`Kasus ${esc(r.caseInfo.caseId ?? '?')} — ${esc(r.caseInfo.victim ?? '?')} @ ${esc(r.caseInfo.location ?? '?')} · bukti ${esc(r.evidence)} · keberatan ${esc(r.objections)} · pernyataan ${esc(r.statements)} (⚑ ${esc(r.contradictions)})`);
     if (r.missingSeats?.length) baris.push(`⚠ Kursi wajib kosong: ${esc(r.missingSeats.join(', '))}`);
     if (r.topCard !== undefined) baris.push(`Kartu teratas ${esc(r.topCard ?? '—')} · warna ${esc(r.activeColor ?? '—')} · arah ${esc(r.direction)}${r.voting !== null ? ` · voting ${esc(r.voting)} suara` : ''}`);
+    if (r.dungeon) baris.push(`Dungeon <strong>${esc(r.dungeon.name ?? r.dungeon.id)}</strong> · lantai ${esc(r.dungeon.floor ?? '?')}${r.dungeon.floors ? `/${esc(r.dungeon.floors)}` : ''} · ruangan: ${esc(r.phase ?? '—')} · ${esc(r.roomsCleared ?? 0)} ruangan selesai${r.round ? ` · ronde ${esc(r.round)}` : ''}`);
+    if (r.dungeon && r.pending?.length) baris.push(`Belum memilih aksi: ${esc(r.pending.join(', '))}${r.roundDeadline ? ` · ronde diproses otomatis sekitar ${esc(new Date(r.roundDeadline).toLocaleTimeString('id-ID'))}` : ''}`);
     if (r.totalRounds !== undefined) baris.push(`Ronde ${esc(r.round)}/${esc(r.totalRounds ?? '?')} · fase ${esc(r.phase ?? '—')} · voice ${esc(r.voiceChannelName ?? '—')}`);
     return baris.map((b) => `<p class="text-sm">${b}</p>`).join('');
   }
