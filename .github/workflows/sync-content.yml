@@ -4,6 +4,7 @@ name: Sync konten dari Supabase
 # HANYA bila ada perubahan — commit dan deploy ulang ke GitHub Pages.
 #   • site-content.json ← tabel `site_content`  (banner pengumuman)
 #   • partnership.json  ← tabel `partnership_*` (konten & HARGA /partnership)
+#   • partnership-jasa.json ← tabel `partnership_jasa_page` (halaman /partnership/jasa)
 #   • products.json     ← tabel `products` + media & rilis
 #   • pages.json        ← tabel `page_content`
 #   • faq.json          ← tabel `faq_categories` + `faqs` (seluruh panduan)
@@ -76,6 +77,7 @@ jobs:
           # bila kebetulan ada commit lain. faq.json ikut aturan yang sama.
           git add src/data/synced/site-content.json \
                   src/data/synced/partnership.json \
+                  src/data/synced/partnership-jasa.json \
                   src/data/synced/products.json \
                   src/data/synced/pages.json \
                   src/data/synced/faq.json \
