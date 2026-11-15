@@ -94,6 +94,7 @@ export const MODE_LABEL: Record<string, string> = {
   pengacara: 'Pengacara',
   uno: 'UNO',
   tebaklagu: 'Tebak Lagu',
+  vdungeon: 'Vanillate Dungeon',
 };
 
 export function modeLabel(mode: string | null | undefined): string {
@@ -105,7 +106,7 @@ export function modeLabel(mode: string | null | undefined): string {
 
 /** Kelompok tampilan Game Monitor (sama dengan panel lama). */
 export function modeGroup(mode: string | null | undefined): 'sambung' | 'sampingan' {
-  return ['werewolf', 'werewolf_adv', 'pengacara', 'uno', 'tebaklagu'].includes(String(mode)) ? 'sampingan' : 'sambung';
+  return ['werewolf', 'werewolf_adv', 'pengacara', 'uno', 'tebaklagu', 'vdungeon'].includes(String(mode)) ? 'sampingan' : 'sambung';
 }
 
 export const GAME_ACTIONS: Record<string, { label: string; type: string; danger?: boolean }> = {
