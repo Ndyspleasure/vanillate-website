@@ -20,14 +20,14 @@
       "description": "Kami mengirim pesan promosi kamu langsung ke DM pemain yang masih aktif bermain. Cocok untuk pengumuman, promo, dan undangan komunitas.",
       "channel": "dm",
       "category": "lainnya",
-      "price": 150,
+      "price": 300,
       "currency": "IDR",
       "priceUnit": "per dm",
       "unit": "Pemain",
       "minQuantity": 100,
       "info": "",
       "terms": "",
-      "priceNote": "Akumulasi untuk minimum 100 order adalah Rp 15.000",
+      "priceNote": "Akumulasi untuk minimum 100 order adalah Rp 30.000",
       "features": [
         "Terkirim langsung ke DM pemain aktif",
         "Target bisa dipilih (pemain paling aktif)",
@@ -67,8 +67,8 @@
   ],
   "links": [
     {
-      "label": "Gabung ELVAR",
-      "url": "https://discord.gg/bEsrsacPve"
+      "label": "CEK DISINI",
+      "url": "https://discord.gg/BryrR6n44k"
     }
   ],
   "content": {
