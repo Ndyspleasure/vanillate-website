@@ -1,5 +1,25 @@
 [
   {
+    "version": "3.52.1",
+    "date": "2026-11-16",
+    "title": "Bot lebih responsif: tombol game tidak lagi sering gagal ditekan",
+    "highlights": [
+      "⚡ Tombol dan menu game (UNO, Tahu Bulat, Story, Dungeon, Sambung Kata) lebih jarang gagal dengan pesan interaksi tidak dikenal",
+      "🛠️ Bot tidak lagi tersendat beberapa detik setiap beberapa menit saat memeriksa pengaturan server",
+      "🧹 Pekerjaan latar bot dibuat jauh lebih ringan supaya balasan tetap cepat saat ramai"
+    ]
+  },
+  {
+    "version": "3.52.0",
+    "date": "2026-11-16",
+    "title": "Vanillate Dungeon: ganti kelas di tengah petualangan",
+    "highlights": [
+      "🎭 Kini kamu bisa berganti kelas saat run solo, di persimpangan dan Tempat Istirahat, jadi skill kelas lain bisa dipakai di pertarungan berikutnya",
+      "📈 Level, perlengkapan, dan talenta kelas tujuan yang dipakai, jadi tiap kelas tetap punya perkembangan sendiri",
+      "🔒 Tidak bisa ganti kelas di tengah pertarungan dan di run party"
+    ]
+  },
+  {
     "version": "3.51.1",
     "date": "2026-11-16",
     "title": "Vanillate Dungeon: perlengkapan awal, latihan lebih ramah, dan layar pertarungan lebih jelas",
