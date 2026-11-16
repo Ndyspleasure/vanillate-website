@@ -40,6 +40,7 @@ function tabHalaman(key: string, label: string, page: string, tabs: [id: string,
 }
 
 export const adminMenu: MenuNode[] = [
+  { key: 'member-network', label: 'Member Network', href: '/admin/member-network', icon: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="m10 10 4 4"/>' },
   {
     key: 'ringkasan', label: 'Ringkasan', href: '/admin/dashboard',
     icon: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
