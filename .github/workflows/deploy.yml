@@ -54,6 +54,7 @@ jobs:
           # adalah Row Level Security di Supabase, bukan kerahasiaan kunci ini.
           # Bila secret belum diisi, build tetap jalan dan form login otomatis
           # menampilkan panduan setup.
+          PUBLIC_MEMBER_NETWORK_API_URL: ${{ vars.PUBLIC_MEMBER_NETWORK_API_URL }}
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
           PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
           PUBLIC_BOT_SUPABASE_URL: ${{ secrets.PUBLIC_BOT_SUPABASE_URL }}

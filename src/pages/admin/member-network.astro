@@ -1,0 +1,55 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+<AdminLayout title="Member Network" active="member-network">
+  <AdminPageHeader eyebrow="Layanan komunitas" title="Member Network" description="Pengelolaan anggota dan promosi komunitas melalui layanan mandiri. Data dibaca saat halaman dibuka, tanpa polling ke bot utama." />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-6">
+    <p id="mn-info" role="status" class="text-sm text-ink-500 dark:text-cream-300/70">Memeriksa konfigurasi Member Network.</p>
+    <div id="mn-stats" class="grid gap-4 sm:grid-cols-4"></div>
+    <div class="flex flex-wrap gap-3" id="mn-links"></div>
+    <button id="mn-reload" type="button" class="rounded-xl border px-4 py-2 text-sm">Muat ulang</button>
+    <p class="text-xs text-ink-500 dark:text-cream-300/70">Panel pengelolaan berada pada layanan Member Network. Hak admin ditetapkan operator layanan. Akun CMS yang belum diberi akses akan ditolak oleh backend.</p>
+  </div>
+</AdminLayout>
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { networkOrigin, parseStats } from '@/lib/member-network/model';
+  const origin = networkOrigin(import.meta.env.PUBLIC_MEMBER_NETWORK_API_URL);
+  const info = document.getElementById('mn-info')!;
+  const reload = document.getElementById('mn-reload') as HTMLButtonElement;
+  let lastLoad = 0;
+  async function load() {
+    if (!origin) { info.textContent = 'Member Network belum dikonfigurasi. Operator perlu mengisi PUBLIC_MEMBER_NETWORK_API_URL dengan origin HTTPS layanan, lalu membangun ulang website.'; reload.disabled = true; return; }
+    if (Date.now() - lastLoad < 15000) return;
+    lastLoad = Date.now(); reload.disabled = true;
+    try {
+      const client = getSupabase();
+      const session = client && await client.auth.getSession();
+      const token = session?.data.session?.access_token;
+      if (!token) throw new Error('Sesi CMS tidak ditemukan. Silakan masuk ulang.');
+      const response = await fetch(`${origin}/api/admin/analytics`, { headers: { Authorization: `Bearer ${token}` }, credentials: 'omit', signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error(response.status === 403 ? 'Akun CMS ini belum diberi akses Member Network oleh operator.' : 'Layanan Member Network belum dapat dihubungi. Periksa konfigurasi dan coba lagi.');
+      const stats = parseStats(await response.json());
+      if (!stats) throw new Error('Format data layanan belum sesuai. Periksa versi backend.');
+      const target = document.getElementById('mn-stats')!; target.replaceChildren();
+      for (const [label, value] of [['Anggota', stats.members], ['Komunitas', stats.communities], ['Campaign', stats.campaigns], ['Bergabung baru', stats.added]] as const) {
+        const card = document.createElement('div'); card.className = 'rounded-xl border p-5';
+        const title = document.createElement('p'); title.className = 'text-xs opacity-60'; title.textContent = label;
+        const number = document.createElement('strong'); number.className = 'block text-2xl mt-2'; number.textContent = value.toLocaleString('id-ID');
+        card.append(title, number); target.append(card);
+      }
+      info.textContent = stats.enabled ? 'Auto-join aktif. Setiap anggota tetap harus memberi persetujuan komunitas.' : 'Auto-join belum aktif. Konfigurasi dan acceptance test operator diperlukan.';
+    } catch (error) { info.textContent = error instanceof Error ? error.message : 'Gagal memuat Member Network.'; }
+    finally { reload.disabled = false; }
+  }
+  document.addEventListener('admin:ready', () => {
+    if (origin) {
+      const target = document.getElementById('mn-links')!;
+      for (const [name, path] of [['Panel anggota', '/'], ['Anggota', '/admin#members'], ['Komunitas', '/admin#communities'], ['Campaign', '/admin#campaigns'], ['Analitik', '/admin#analytics']]) {
+        const link = document.createElement('a'); link.href = `${origin}${path}`; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.className = 'rounded-xl border px-4 py-2 text-sm'; link.textContent = name; target.append(link);
+      }
+    }
+    void load(); reload.addEventListener('click', () => void load());
+  });
+</script>
