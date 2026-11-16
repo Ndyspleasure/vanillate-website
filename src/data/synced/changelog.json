@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.50.0",
+    "date": "2026-11-15",
+    "title": "Vanillate Dungeon hadir di Game Hub",
+    "highlights": [
+      "🏰 Game baru Vanillate Dungeon: RPG dungeon survival dengan 6 kelas, skill, boss, dan hadiah yang tersimpan",
+      "⚔️ Pertempuran bergiliran: tiap ronde pilih Serang, Skill, Ramuan, atau Bertahan",
+      "🎒 Kumpulkan Gold, EXP, dan equipment. Hadiah yang sudah kamu amankan tetap milikmu walau kalah",
+      "🎓 Mulai dari Gerbang Katakombe untuk berlatih, lalu masuk The Forgotten Catacombs",
+      "👥 Mode party untuk main bersama teman menyusul. Panduan ada di /help › Game Hub"
+    ]
+  },
+  {
     "version": "3.49.0",
     "date": "2026-11-10",
     "title": "Anonymous Chat kini tersedia lewat Social Hub",
