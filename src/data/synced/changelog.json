@@ -1,5 +1,38 @@
 [
   {
+    "version": "3.51.1",
+    "date": "2026-11-16",
+    "title": "Vanillate Dungeon: perlengkapan awal, latihan lebih ramah, dan layar pertarungan lebih jelas",
+    "highlights": [
+      "🎒 Pemain baru kini langsung mendapat perlengkapan awal sesuai kelas, jadi tidak lagi bertarung tanpa apa pun",
+      "🎓 Latihan di Gerbang Katakombe dibuat jauh lebih ramah untuk pemain baru",
+      "📖 Layar pertarungan lebih ringkas: tombol Info Skill menjelaskan arti dan angka tiap skill",
+      "💥 Ringkasan ronde kini menyebut siapa melukai siapa dan berapa, lengkap dengan nama status seperti racun dan terbakar",
+      "💡 Petunjuk singkat muncul saat HP rendah atau saat musuh bersiap melepas serangan besar"
+    ]
+  },
+  {
+    "version": "3.51.0",
+    "date": "2026-11-16",
+    "title": "Vanillate Story kini punya gambar",
+    "highlights": [
+      "🖼️ Vanillate Story kini bergambar: setiap adegan cerita punya ilustrasi sendiri",
+      "🧑‍🎨 Potret warga muncul saat kamu ngobrol dan saat mereka berbicara di adegan cerita",
+      "🌇 Dasbor menampilkan suasana lokasi tempatmu berada, lengkap dengan banner dan halaman pembuka yang baru",
+      "🗺️ Peta kota dan banner Story ikut diperbarui"
+    ]
+  },
+  {
+    "version": "3.50.1",
+    "date": "2026-11-16",
+    "title": "Vanillate Dungeon: pengenalan bertahap untuk pemain baru",
+    "highlights": [
+      "🎓 Pemain baru kini disambut layar pengenalan: pilih kelas dulu, lalu mulai latihan di Gerbang Katakombe",
+      "🔓 Inventori, Talenta, dan dungeon sungguhan terbuka bertahap setelah latihan selesai, tidak lagi semuanya sekaligus",
+      "🎭 Setiap kelas dijelaskan singkat di layar pemilihan supaya pilihan pertama lebih mudah"
+    ]
+  },
+  {
     "version": "3.50.0",
     "date": "2026-11-15",
     "title": "Vanillate Dungeon hadir di Game Hub",
