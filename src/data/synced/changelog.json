@@ -1,5 +1,25 @@
 [
   {
+    "version": "3.53.0",
+    "date": "2026-11-17",
+    "title": "Vanillate Dashboard: pulihkan pengaturan dan salin antar server",
+    "highlights": [
+      "⏪ Admin server bisa memulihkan pengaturan ke salah satu dari 20 perubahan terakhir lewat Riwayat di vanillate.id/dashboard",
+      "📋 Pengaturan bisa disalin dari server lain yang kamu kelola sebagai titik awal",
+      "💾 Perubahan yang belum disimpan tidak hilang saat halaman dashboard dimuat ulang"
+    ]
+  },
+  {
+    "version": "3.52.2",
+    "date": "2026-11-17",
+    "title": "Vanillate Dashboard lebih ringan dan lebih rapi",
+    "highlights": [
+      "⚡ Halaman pengaturan server di vanillate.id/dashboard kini memuat data jauh lebih hemat saat dibiarkan terbuka",
+      "🧭 Menu Server Hub dikelompokkan dan lebih nyaman dipakai di HP",
+      "🛠️ Admin server bisa meninjau perubahan sebelum menyimpan dan mengembalikan perubahan dari Riwayat"
+    ]
+  },
+  {
     "version": "3.52.1",
     "date": "2026-11-16",
     "title": "Bot lebih responsif: tombol game tidak lagi sering gagal ditekan",
