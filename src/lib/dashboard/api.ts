@@ -65,6 +65,8 @@ function parseDetail(raw: unknown): Record<string, unknown> | null {
 function fromPostgrest(error: { message?: string; details?: string; code?: string } | null): DashboardError {
   const message = error?.message ?? '';
   if (/^[A-Z_]{3,40}$/.test(message)) return new DashboardError(message, parseDetail(error?.details));
+  // Fungsi atau susunan argumennya belum ada di database (migration belum diterapkan).
+  if (error?.code === 'PGRST202') return new DashboardError('RPC_NOT_FOUND');
   if (/fetch|network/i.test(message)) return new DashboardError('NETWORK');
   if (error?.code === 'PGRST301' || /JWT/i.test(message)) return new DashboardError('NOT_AUTHENTICATED');
   return new DashboardError('DATABASE_ERROR');
@@ -204,8 +206,85 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   }
 }
 
-export function getGuild(guildId: string): Promise<GuildData> {
+// ─── guild_dashboard_get: mode hemat (migration 0029 di repo bot) ────────────
+// Overload empat argumen mengembalikan `version` dan `registry_version`:
+//   • registry (sekitar 47 KB) tidak dikirim ulang bila versinya sama;
+//   • p_fields 'status' hanya mengembalikan penanda perubahan (sekitar 150 byte).
+// Database yang belum punya overload itu menjawab PGRST202; klien lalu memakai
+// fungsi dua argumen seperti dulu dan mengingatnya selama LIGHT_RETRY_MS.
+
+const LIGHT_KEY = 'vn-dash-light-off';
+const LIGHT_RETRY_MS = 6 * 60 * 60 * 1000;
+
+type LightGuildData = Omit<GuildData, 'registry'> & { registry: GuildData['registry'] | null; version?: string; registry_version?: string };
+
+function lightDisabled(): boolean {
+  try {
+    return Date.now() - Number(sessionStorage.getItem(LIGHT_KEY) ?? 0) < LIGHT_RETRY_MS;
+  } catch {
+    return false;
+  }
+}
+
+function disableLight(): void {
+  lightOff = true;
+  try {
+    sessionStorage.setItem(LIGHT_KEY, String(Date.now()));
+  } catch {
+    /* penyimpanan diblokir: hanya berlaku sampai halaman ditutup */
+  }
+}
+
+let lightOff: boolean | null = null;
+const guildCache = new Map<string, { registry: GuildData['registry']; registryVersion: string; version: string }>();
+
+/** Hasil penuh. Registry diambil dari memori halaman bila versinya masih sama. */
+export async function getGuild(guildId: string): Promise<GuildData> {
+  lightOff ??= lightDisabled();
+  if (!lightOff) {
+    const known = guildCache.get(guildId);
+    try {
+      const r = await rpc<LightGuildData>('guild_dashboard_get', {
+        p_guild_id: guildId,
+        p_bot_slug: BOT_SLUG,
+        p_registry_version: known?.registryVersion ?? null,
+        p_fields: 'full',
+      });
+      const registry = r.registry ?? known?.registry;
+      if (registry && r.version && r.registry_version) {
+        guildCache.set(guildId, { registry, registryVersion: r.registry_version, version: r.version });
+        return { ...r, registry };
+      }
+      // Bentuk tak terduga (mis. registry null tanpa salinan lokal): pakai cara lama.
+      guildCache.delete(guildId);
+    } catch (err) {
+      if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
+      disableLight();
+    }
+  }
   return rpc<GuildData>('guild_dashboard_get', { p_guild_id: guildId, p_bot_slug: BOT_SLUG });
+}
+
+/**
+ * Untuk poll: null bila tidak ada yang berubah sejak hasil penuh terakhir
+ * (hanya penanda kecil yang diunduh), selain itu hasil penuh terbaru.
+ */
+export async function getGuildIfChanged(guildId: string): Promise<GuildData | null> {
+  const known = guildCache.get(guildId);
+  if (lightOff || !known) return getGuild(guildId);
+  try {
+    const s = await rpc<{ version?: string }>('guild_dashboard_get', {
+      p_guild_id: guildId,
+      p_bot_slug: BOT_SLUG,
+      p_registry_version: known.registryVersion,
+      p_fields: 'status',
+    });
+    if (s.version && s.version === known.version) return null;
+  } catch (err) {
+    if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
+    disableLight();
+  }
+  return getGuild(guildId);
 }
 
 export interface SaveResult {
