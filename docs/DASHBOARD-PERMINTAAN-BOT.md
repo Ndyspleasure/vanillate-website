@@ -7,7 +7,7 @@ butir memuat alasan dan perkiraan biaya supaya bisa dinilai sebelum dikerjakan.
 
 Status: **P1 dan P2 sudah dikerjakan** (repo bot `migrations/0029_dashboard_light_poll.sql`,
 website `src/lib/dashboard/api.ts`), berlaku setelah bot di-Update dan Restart.
-P3 sampai P5 belum dikerjakan. Dashboard berjalan dengan atau tanpa butir ini.
+P3 dan P4 juga sudah dikerjakan (`migrations/0030_dashboard_audit_state.sql`). P5 masih catatan. Dashboard berjalan dengan atau tanpa butir ini.
 
 Angka ukuran di bawah diukur 2026-11-17 dari Database Bot (hanya `octet_length`
 agregat, tanpa membaca isi): `guild_feature_registry` 17 baris, total sekitar
@@ -65,7 +65,7 @@ banyak channel), jadi kerjakan P1 lebih dulu.
 > server_time }` (sekitar 150 byte). Poll mengunduh hasil penuh hanya bila `version`
 > berubah. Fixture: sejam diam 172.650 B menjadi 13.583 B.
 
-## P3. Isi revisi lengkap untuk "Kembalikan ke revisi" (prioritas rendah)
+## P3. Isi revisi lengkap untuk "Pulihkan ke revisi ini" (SELESAI, migration 0030)
 
 **Keadaan sekarang.** Tombol "Kembalikan ke sebelum ini" di Riwayat memuat nilai
 lama dari **satu** catatan (`changed_fields[].from`) ke draft. Itu cukup untuk
@@ -83,7 +83,12 @@ tertentu bila sudah ada beberapa perubahan sesudahnya.
 20 revisi terakhir per server. Dibaca hanya saat admin menekan tombol.
 Karena ada biaya simpan, ini perlu keputusan pemilik.
 
-## P4. Saring Riwayat di server (prioritas rendah)
+> Yang dibangun: kolom `guild_config_audit.state_after` diisi trigger untuk catatan
+> `config.*`, hanya 20 terbaru per server (yang lebih lama dikosongkan lagi).
+> Dibaca lewat overload `guild_config_audit_list(..., p_action_prefix, p_state_id)`,
+> satu permintaan saat tombol ditekan. Catatan sebelum migration tidak punya isi revisi.
+
+## P4. Saring Riwayat di server (SELESAI, migration 0030)
 
 **Keadaan sekarang.** Saring dan cari Riwayat bekerja pada catatan yang sudah
 dimuat di browser (20 per halaman). Untuk server dengan riwayat panjang, admin

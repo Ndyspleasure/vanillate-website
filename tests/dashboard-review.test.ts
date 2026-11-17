@@ -7,6 +7,9 @@ import {
   describeChange,
   filterAudit,
   formatSettingValue,
+  copyFromServer,
+  recoverDraft,
+  restoreState,
   revertChanges,
   revertible,
   setupSteps,
@@ -164,7 +167,7 @@ test('setupSteps: langkah awal dari data yang sudah dimuat', () => {
 });
 
 test('navigasi: hash lama tetap berlaku dan setiap tab punya tempat', () => {
-  for (const h of ['overview', 'game-hub', 'social-hub', 'verification', 'leveling', 'share-server', 'channels', 'audit-log', 'autorole', 'welcome', 'security']) {
+  for (const h of ['overview', 'game-hub', 'social-hub', 'verification', 'leveling', 'share-server', 'channels', 'audit-log', 'autorole', 'welcome', 'security', 'copy']) {
     assert.equal(parseTabHash(`#${h}`, 'verification'), h);
   }
   assert.equal(parseTabHash('#server-hub', 'leveling'), 'leveling');
@@ -176,4 +179,59 @@ test('navigasi: hash lama tetap berlaku dan setiap tab punya tempat', () => {
   assert.equal(SERVER_TABS.length, SERVER_GROUPS.reduce((n, g) => n + g.tabs.length, 0));
   assert.equal(tabOfFeature({ section: 'security' }), 'security');
   assert.equal(tabOfFeature({ section: 'baru' }), 'game-hub');
+});
+
+test('restoreState: memulihkan isi revisi utuh, fitur yang tidak ada di revisi itu dibiarkan', () => {
+  const draft = base();
+  draft.SOC.enabled = true;
+  const stored = { GAME: { enabled: false, settings: {}, channels: { main: CH_B } }, VER: { enabled: true, settings: { steps: 3, mode: 'a' }, channels: {} }, HILANG: { enabled: true, settings: {}, channels: {} } };
+  const r = restoreState(draft, stored as never, registry);
+  assert.equal(r.draft.GAME.enabled, false);
+  assert.equal(r.draft.GAME.channels.main, CH_B);
+  assert.deepEqual(r.draft.VER.settings, { steps: 3, mode: 'a' });
+  assert.equal(r.draft.SOC.enabled, true, 'fitur yang tidak ada di revisi tidak disentuh');
+  assert.equal('HILANG' in r.draft, false);
+  assert.equal(r.applied, 4);
+  assert.equal(draft.GAME.enabled, true, 'draft asal tidak disentuh');
+  assert.equal(restoreState(draft, null, registry).applied, 0);
+  assert.equal(restoreState(r.draft, stored as never, registry).applied, 0);
+});
+
+test('copyFromServer: menyalin status dan setelan umum, bukan channel atau role', () => {
+  const draft = base();
+  const source = {
+    GAME: { enabled: false, settings: {}, channels: { main: '999999999999999999' } },
+    SOC: { enabled: false, settings: { not_used: true }, channels: {} },
+    VER: { enabled: true, settings: { steps: 8, mode: 'b', text: 'Halo', verified_role: '888888888888888888', roles: ['777777777777777777'] }, channels: {} },
+  };
+  const r = copyFromServer(draft, source as never, registry);
+  assert.equal(r.draft.GAME.enabled, false);
+  assert.equal(r.draft.GAME.channels.main, CH_A, 'channel server ini dipertahankan');
+  assert.equal(r.draft.SOC.settings.not_used, true);
+  assert.deepEqual(r.draft.VER.settings, { steps: 8, mode: 'b', text: 'Halo' });
+  assert.equal(r.skipped, 3); // satu channel, satu role, satu daftar role
+  assert.equal(r.applied, 5);
+  assert.equal(copyFromServer(draft, undefined, registry).applied, 0);
+});
+
+test('copyFromServer: fitur yang seluruhnya terkunci tidak diaktifkan', () => {
+  const locked: Feature[] = [{ key: 'AR', section: 'autorole', name: 'Auto Role', sort: 1, default_enabled: false, purposes: [], settings_schema: { properties: { roles: { type: 'role_list', title: 'Role', available: false } } } }];
+  const draft = normalizeState({}, locked);
+  const r = copyFromServer(draft, { AR: { enabled: true, settings: {}, channels: {} } }, locked);
+  assert.equal(r.draft.AR.enabled, false);
+  assert.equal(r.applied, 0);
+});
+
+test('recoverDraft: hanya bila revisinya sama dan memang ada perubahan', () => {
+  const b = base();
+  const edited = cloneState(b);
+  edited.GAME.enabled = false;
+  assert.equal(recoverDraft({ rev: 5, draft: edited }, b, 5, registry)!.GAME.enabled, false);
+  assert.equal(recoverDraft({ rev: 4, draft: edited }, b, 5, registry), null, 'revisi berubah: simpanan dibuang');
+  assert.equal(recoverDraft({ rev: 5, draft: b }, b, 5, registry), null, 'tidak ada perubahan');
+  assert.equal(recoverDraft(null, b, 5, registry), null);
+  assert.equal(recoverDraft({ rev: 5, draft: 'rusak' }, b, 5, registry), null);
+  // Fitur baru di registry yang belum ada di simpanan memakai nilai server.
+  const partial = { rev: 5, draft: { GAME: edited.GAME } };
+  assert.deepEqual(recoverDraft(partial, b, 5, registry)!.VER, b.VER);
 });

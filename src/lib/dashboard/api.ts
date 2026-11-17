@@ -236,27 +236,30 @@ function disableLight(): void {
 }
 
 let lightOff: boolean | null = null;
-const guildCache = new Map<string, { registry: GuildData['registry']; registryVersion: string; version: string }>();
+// Registry sama untuk semua server, jadi disimpan sekali; `version` per server.
+let registryCache: { version: string; registry: GuildData['registry'] } | null = null;
+const guildVersion = new Map<string, string>();
 
 /** Hasil penuh. Registry diambil dari memori halaman bila versinya masih sama. */
 export async function getGuild(guildId: string): Promise<GuildData> {
   lightOff ??= lightDisabled();
   if (!lightOff) {
-    const known = guildCache.get(guildId);
     try {
       const r = await rpc<LightGuildData>('guild_dashboard_get', {
         p_guild_id: guildId,
         p_bot_slug: BOT_SLUG,
-        p_registry_version: known?.registryVersion ?? null,
+        p_registry_version: registryCache?.version ?? null,
         p_fields: 'full',
       });
-      const registry = r.registry ?? known?.registry;
+      const registry = r.registry ?? (registryCache && registryCache.version === r.registry_version ? registryCache.registry : null);
       if (registry && r.version && r.registry_version) {
-        guildCache.set(guildId, { registry, registryVersion: r.registry_version, version: r.version });
+        registryCache = { version: r.registry_version, registry };
+        guildVersion.set(guildId, r.version);
         return { ...r, registry };
       }
       // Bentuk tak terduga (mis. registry null tanpa salinan lokal): pakai cara lama.
-      guildCache.delete(guildId);
+      registryCache = null;
+      guildVersion.delete(guildId);
     } catch (err) {
       if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
       disableLight();
@@ -270,16 +273,16 @@ export async function getGuild(guildId: string): Promise<GuildData> {
  * (hanya penanda kecil yang diunduh), selain itu hasil penuh terbaru.
  */
 export async function getGuildIfChanged(guildId: string): Promise<GuildData | null> {
-  const known = guildCache.get(guildId);
-  if (lightOff || !known) return getGuild(guildId);
+  const known = guildVersion.get(guildId);
+  if (lightOff || !known || !registryCache) return getGuild(guildId);
   try {
     const s = await rpc<{ version?: string }>('guild_dashboard_get', {
       p_guild_id: guildId,
       p_bot_slug: BOT_SLUG,
-      p_registry_version: known.registryVersion,
+      p_registry_version: registryCache.version,
       p_fields: 'status',
     });
-    if (s.version && s.version === known.version) return null;
+    if (s.version && s.version === known) return null;
   } catch (err) {
     if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
     disableLight();
@@ -317,12 +320,49 @@ export function requestDiscordRefresh(guildId: string): Promise<{ ok: boolean; b
   return rpc('guild_dashboard_request_refresh', { p_guild_id: guildId, p_bot_slug: BOT_SLUG });
 }
 
-export function auditList(guildId: string, beforeId: number | null = null, limit = 20): Promise<AuditRow[]> {
+// Riwayat (migration 0030 di repo bot): overload enam argumen menyaring jenis
+// aksi di server dan menandai catatan yang menyimpan isi revisi (`has_state`).
+// Database lama menjawab PGRST202; klien lalu memakai fungsi empat argumen.
+let auditV2: boolean | null = null;
+
+/** Saringan jenis dan "Pulihkan ke revisi ini" tersedia? null = belum diketahui. */
+export const auditV2Supported = (): boolean | null => auditV2;
+
+export async function auditList(guildId: string, beforeId: number | null = null, limit = 20, prefix: 'config.' | 'sync.' | null = null): Promise<AuditRow[]> {
+  if (auditV2 !== false) {
+    try {
+      const rows = await rpc<AuditRow[]>('guild_config_audit_list', {
+        p_guild_id: guildId,
+        p_bot_slug: BOT_SLUG,
+        p_limit: limit,
+        p_before_id: beforeId,
+        p_action_prefix: prefix,
+        p_state_id: null,
+      });
+      auditV2 = true;
+      return rows;
+    } catch (err) {
+      if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
+      auditV2 = false;
+    }
+  }
   return rpc<AuditRow[]>('guild_config_audit_list', {
     p_guild_id: guildId,
     p_bot_slug: BOT_SLUG,
     p_limit: limit,
     p_before_id: beforeId,
+  });
+}
+
+/** Isi pengaturan sesudah satu catatan Riwayat (null bila tidak disimpan lagi). */
+export async function auditState(guildId: string, auditId: number): Promise<{ revision: number; state: GuildData['state'] | null } | null> {
+  return rpc('guild_config_audit_list', {
+    p_guild_id: guildId,
+    p_bot_slug: BOT_SLUG,
+    p_limit: 1,
+    p_before_id: null,
+    p_action_prefix: null,
+    p_state_id: auditId,
   });
 }
 

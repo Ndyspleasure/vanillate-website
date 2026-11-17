@@ -38,12 +38,13 @@ import {
 } from './model';
 import { rememberNextAndGoToLogin } from './login-redirect';
 import { createPoller, FAST_MS, nextDelay } from './polling';
-import { describeChange } from './review-model';
+import { describeChange, recoverDraft } from './review-model';
 import { HUBS, hubOf, parseTabHash, SECTION_OF_TAB, SERVER_GROUPS, type Hub, type PageCtx, type Tab } from './server-shared';
 import { isStatsStale, parseStatsSummary } from './stats-model';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
 import type { ShareController } from './share-server';
 import type { AuditController } from './tab-audit';
+import type { CopyController } from './tab-copy';
 
 const SYNC_TIMEOUT_MS = 60000;
 const REFRESH_TIMEOUT_MS = 30000;
@@ -64,12 +65,13 @@ const ATTENTION_SHOWN = 2;
 /** Urutan status di bantuan "Arti status" (sama dengan alur simpan). */
 const STATUS_HELP: SyncStatus[] = ['DRAFT', 'SAVED', 'SYNCING', 'ACTIVE', 'NEEDS_ATTENTION', 'BOT_OFFLINE', 'NOT_INSTALLED'];
 
-type ModuleKey = 'features' | 'overview' | 'channels' | 'audit' | 'share';
+type ModuleKey = 'features' | 'overview' | 'channels' | 'audit' | 'share' | 'copy';
 
 function moduleOf(tab: Tab): ModuleKey {
   if (tab === 'overview') return 'overview';
   if (tab === 'channels') return 'channels';
   if (tab === 'audit-log') return 'audit';
+  if (tab === 'copy') return 'copy';
   if (tab === 'share-server') return 'share';
   return 'features';
 }
@@ -127,6 +129,7 @@ export function mountServerPage(cfg: PageConfig): void {
     overview?: typeof import('./tab-overview');
     channels?: typeof import('./tab-channels');
     audit?: AuditController;
+    copy?: CopyController;
     share?: ShareController;
   } = {};
   const pending = new Map<ModuleKey, Promise<void>>();
@@ -141,6 +144,7 @@ export function mountServerPage(cfg: PageConfig): void {
         else if (key === 'overview') mods.overview = await import('./tab-overview');
         else if (key === 'channels') mods.channels = await import('./tab-channels');
         else if (key === 'audit') mods.audit = (await import('./tab-audit')).createAuditController(guildId, root);
+        else if (key === 'copy') mods.copy = (await import('./tab-copy')).createCopyController(guildId);
         // 📣 Share Server punya data dan antreannya sendiri (bukan revisi dashboard).
         else mods.share = (await import('./share-server')).createShareController(guildId, () => renderAll(), root);
         moduleError = false;
@@ -332,9 +336,44 @@ export function mountServerPage(cfg: PageConfig): void {
     return null;
   }
 
+  // Draft yang belum disimpan dititipkan di sessionStorage (per tab browser) supaya
+  // muat ulang halaman yang tidak sengaja tidak menghapusnya. Tanpa jaringan.
+  const DRAFT_KEY = `vn-draft-${guildId}`;
+  let draftStored = false;
+  function persistDraft(): void {
+    try {
+      if (data && editable() && dirty()) {
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ rev: baseRevision, draft }));
+        draftStored = true;
+      } else if (draftStored) {
+        sessionStorage.removeItem(DRAFT_KEY);
+        draftStored = false;
+      }
+    } catch {
+      /* penyimpanan penuh atau diblokir: draft hanya hidup di halaman ini */
+    }
+  }
+
+  /** Sekali saat halaman dibuka: pakai lagi draft titipan bila revisinya masih sama. */
+  function restoreStoredDraft(): void {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw || !data) return;
+      const recovered = recoverDraft(JSON.parse(raw), base, baseRevision, data.registry);
+      if (recovered) {
+        draft = recovered;
+        draftStored = true;
+        toast('Perubahan yang belum disimpan dari sebelumnya dipulihkan. Tinjau lalu simpan, atau tekan Batalkan.', 'info', 7000);
+      } else sessionStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* simpanan rusak atau diblokir: abaikan */
+    }
+  }
+
   function renderAll(): void {
     deferredRender = false;
     if (!data) return renderError();
+    persistDraft();
     const focusSel = focusSelector(document.activeElement as HTMLElement | null);
     // Posisi gulir daftar pilihan (role/channel) ikut dipulihkan.
     const scrolls = [...root.querySelectorAll<HTMLElement>('[data-scroll-keep]')].map((el) => [el.dataset.scrollKeep!, el.scrollTop] as const);
@@ -570,6 +609,7 @@ export function mountServerPage(cfg: PageConfig): void {
     if (key === 'overview') return mods.overview!.panelHtml(c, { clientId: cfg.clientId, permissions: cfg.permissions, setupDismissed });
     if (key === 'channels') return mods.channels!.panelHtml(c);
     if (key === 'audit') return mods.audit!.html(c, auditSignature(data!.config));
+    if (key === 'copy') return mods.copy!.html(c);
     if (key === 'share') return mods.share!.html(data!.snapshot ?? null);
     return mods.features!.panelHtml(c, tab);
   }
@@ -750,6 +790,7 @@ export function mountServerPage(cfg: PageConfig): void {
 
     if (mods.features?.onClick(pageCtx(), target)) return;
     if (tab === 'audit-log' && mods.audit?.onClick(pageCtx(), target)) return;
+    if (tab === 'copy' && mods.copy?.onClick(pageCtx(), target)) return;
 
     const shareBtn = target.closest<HTMLButtonElement>('[data-share-action]');
     if (shareBtn && !shareBtn.disabled && mods.share?.onClick(shareBtn)) return;
@@ -836,6 +877,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const shareField = target.closest<HTMLElement>('[data-share-field]');
     if (shareField) return void mods.share?.onInput(shareField);
     if (tab === 'audit-log' && mods.audit?.onChange(pageCtx(), target)) return;
+    if (tab === 'copy' && mods.copy?.onChange(pageCtx(), target)) return;
     mods.features?.onChange(pageCtx(), target);
   });
 
@@ -869,6 +911,7 @@ export function mountServerPage(cfg: PageConfig): void {
   });
 
   window.addEventListener('beforeunload', (e) => {
+    persistDraft(); // isian teks terakhir yang belum memicu gambar ulang
     if (dirty()) {
       e.preventDefault();
       e.returnValue = '';
@@ -896,6 +939,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const loaded = current();
     if (!loaded) return renderError();
     await tabReady;
+    if (loaded.bot.installed) restoreStoredDraft();
     renderAll();
     poller.start();
 
