@@ -43,6 +43,8 @@ export function mountServersPage(cfg: PageConfig): void {
   const { root } = cfg;
   let data: ServersResponse | null = null;
   let query = '';
+  // Saring di browser dari daftar yang sudah dimuat (tanpa permintaan baru).
+  let filter: 'all' | 'attention' | 'nobot' = 'all';
 
   const redirectTo = () => `${location.origin}/dashboard/`;
 
@@ -124,7 +126,13 @@ export function mountServersPage(cfg: PageConfig): void {
     if (!data) return;
     const { user } = data;
     const q = query.trim().toLowerCase();
-    const list = data.servers.filter((s) => !q || s.name.toLowerCase().includes(q) || s.guildId.includes(q));
+    const list = data.servers.filter(
+      (s) =>
+        (!q || s.name.toLowerCase().includes(q) || s.guildId.includes(q)) &&
+        (filter === 'all' || (filter === 'attention' ? s.botInstalled && s.syncStatus === 'NEEDS_ATTENTION' : !s.botInstalled)),
+    );
+    const nAttention = data.servers.filter((s) => s.botInstalled && s.syncStatus === 'NEEDS_ATTENTION').length;
+    const nNoBot = data.servers.filter((s) => !s.botInstalled).length;
 
     const cards = list
       .map((s) => {
@@ -180,11 +188,19 @@ export function mountServersPage(cfg: PageConfig): void {
       </p>
       ${
         data.servers.length > 6
-          ? `<label class="mt-5 flex min-h-[44px] max-w-sm items-center gap-2 rounded-full border border-ink-900/10 bg-white/60 px-4 py-2 dark:border-cream-100/10 dark:bg-ink-900/40">
-              ${icon('search', 'h-4 w-4 text-ink-400')}
-              <span class="sr-only">Cari server</span>
-              <input data-el="search" type="search" value="${esc(query)}" placeholder="Cari nama atau ID server…" class="min-h-[40px] w-full bg-transparent text-sm outline-none" />
-            </label>`
+          ? `<div class="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label class="flex min-h-[44px] w-full max-w-sm items-center gap-2 rounded-full border border-ink-900/10 bg-white/60 px-4 py-2 dark:border-cream-100/10 dark:bg-ink-900/40">
+                ${icon('search', 'h-4 w-4 text-ink-400')}
+                <span class="sr-only">Cari server</span>
+                <input data-el="search" type="search" value="${esc(query)}" placeholder="Cari nama atau ID server…" class="min-h-[40px] w-full bg-transparent text-sm outline-none" />
+              </label>
+              <label class="sm:w-60"><span class="sr-only">Saring server</span>
+                <select data-el="filter" class="min-h-[44px] w-full rounded-full border border-ink-900/10 bg-white/60 px-4 py-2 text-sm outline-none dark:border-cream-100/10 dark:bg-ink-900/40">
+                  <option value="all" ${filter === 'all' ? 'selected' : ''}>Semua server (${data.servers.length})</option>
+                  <option value="attention" ${filter === 'attention' ? 'selected' : ''}>Perlu perhatian (${nAttention})</option>
+                  <option value="nobot" ${filter === 'nobot' ? 'selected' : ''}>Bot belum terpasang (${nNoBot})</option>
+                </select></label>
+            </div>`
           : ''
       }
       ${
@@ -194,7 +210,7 @@ export function mountServersPage(cfg: PageConfig): void {
                Sudah punya? Tekan <strong>Segarkan</strong>. Jika ada kendala, silakan ${supportLink}.
              </div>`
           : list.length === 0
-            ? `<p class="mt-8 text-sm text-ink-500">Tidak ada server yang cocok dengan “${esc(query)}”.</p>`
+            ? `<p class="mt-8 text-sm text-ink-500 dark:text-cream-300/70">${query.trim() ? `Tidak ada server yang cocok dengan “${esc(query)}”.` : 'Tidak ada server di saringan ini.'}</p>`
             : `<ul class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">${cards}</ul>`
       }
       <p class="mt-8 text-xs text-ink-500 dark:text-cream-300/60">
@@ -202,6 +218,12 @@ export function mountServersPage(cfg: PageConfig): void {
         Bot belum ada di server? Tekan <strong>Undang Bot</strong>, lalu kembali ke sini.
       </p>`;
     wireAvatars(root);
+    const filterSel = root.querySelector<HTMLSelectElement>('[data-el="filter"]');
+    filterSel?.addEventListener('change', () => {
+      filter = filterSel.value === 'attention' || filterSel.value === 'nobot' ? filterSel.value : 'all';
+      renderServers();
+      root.querySelector<HTMLSelectElement>('[data-el="filter"]')?.focus();
+    });
     const search = root.querySelector<HTMLInputElement>('[data-el="search"]');
     search?.addEventListener('input', () => {
       query = search.value;

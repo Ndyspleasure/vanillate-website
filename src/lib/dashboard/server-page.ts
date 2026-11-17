@@ -10,7 +10,7 @@
 //   • Polling lewat polling.ts: berhenti total saat tab browser tersembunyi,
 //     cepat hanya selama ada aksi yang menunggu bot, lalu mundur bertahap.
 
-import { DashboardError, getGuild, getSession, isDashboardConfigured, requestDiscordRefresh, requestResync, saveConfig } from './api';
+import { DashboardError, getGuild, getGuildIfChanged, getSession, isDashboardConfigured, requestDiscordRefresh, requestResync, saveConfig } from './api';
 import {
   buildSavePayload,
   channelById,
@@ -209,11 +209,12 @@ export function mountServerPage(cfg: PageConfig): void {
     if (next.config && next.config.revision <= next.config.applied_revision) justSaved = false;
   }
 
-  async function load(keepDraft = false): Promise<void> {
+  /** `ifChanged` (poll): hanya penanda kecil yang diunduh bila tidak ada yang berubah. */
+  async function load(keepDraft = false, ifChanged = false): Promise<void> {
     try {
-      const next = await getGuild(guildId);
+      const next = ifChanged ? await getGuildIfChanged(guildId) : await getGuild(guildId);
       pageError = null;
-      applyData(next, { keepDraft });
+      if (next) applyData(next, { keepDraft });
     } catch (err) {
       pageError = err instanceof DashboardError ? { code: err.code, detail: err.detail } : { code: 'NETWORK', detail: null };
       if (pageError.code === 'NOT_AUTHENTICATED') return rememberNextAndGoToLogin(location.pathname + location.search + location.hash);
@@ -276,7 +277,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const beforeSig = renderSignature();
     const watching = refreshWatch;
     const wasRemote = remoteChanged;
-    await load(true);
+    await load(true, true);
     if (!data) return false;
 
     if (refreshWatch) {

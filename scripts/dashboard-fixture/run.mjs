@@ -14,6 +14,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import crypto from 'node:crypto';
 import { auditRows, GUILD_ID, guildData, serversResponse, shareDashboard } from './fixture.mjs';
 
 const require = createRequire(import.meta.url);
@@ -60,7 +61,29 @@ async function mockApi(context, state, sim) {
     let body = {};
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
       const now = Date.now() + sim.offset;
-      if (name === 'guild_dashboard_get') body = state.guild(now);
+      if (name === 'guild_dashboard_get') {
+        const args = req.postDataJSON() ?? {};
+        body = state.guild(now);
+        if ('p_fields' in args) {
+          // Mode hemat (migration 0029 repo bot). LIGHT=0 meniru database lama.
+          if (process.env.LIGHT === '0') {
+            sim.inflight -= 1;
+            log.push({ name: 'guild_dashboard_get (ditolak, database lama)', bytes: 0, at: now });
+            return route.fulfill({ status: 404, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ code: 'PGRST202', message: 'Could not find the function' }) });
+          }
+          const md5 = (v) => crypto.createHash('md5').update(JSON.stringify(v)).digest('hex');
+          const registry_version = md5(body.registry);
+          const stable = { ...body, server_time: null, registry: null, bot: { ...body.bot, last_heartbeat_at: null }, config: body.config && { ...body.config, health_checked_at: null }, viewer: { ...body.viewer, access_verified_at: null } };
+          const version = md5([stable, registry_version]);
+          if (args.p_fields === 'status') body = { version, registry_version, server_time: body.server_time };
+          else body = { ...body, registry: args.p_registry_version === registry_version ? null : body.registry, version, registry_version };
+          const text = JSON.stringify(body);
+          log.push({ name: `guild_dashboard_get (${args.p_fields}${body.registry === null ? ', tanpa registry' : ''})`, bytes: Buffer.byteLength(text), at: now });
+          await route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: text });
+          sim.inflight -= 1;
+          return;
+        }
+      }
       else if (name === 'guild_config_audit_list') body = auditRows(now);
       else if (name === 'share_dashboard_get') body = shareDashboard(now);
       else if (name === 'guild_config_save') body = state.save(now);
@@ -172,7 +195,7 @@ async function measure(browser, origin) {
     await page.click('[data-toggle="GAME_UNO"]');
     await page.click('[data-action="save"]');
     await advance(600_000);
-    const r = { requests: counts(log.slice(before)), total: log.length - before };
+    const r = { requests: counts(log.slice(before)), total: log.length - before, bytes: log.slice(before).reduce((a, x) => a + x.bytes, 0) };
     await context.close();
     return r;
   });

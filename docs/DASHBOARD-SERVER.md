@@ -411,6 +411,16 @@ biaya utama dashboard**.
 - **Jangan menambah `setInterval` atau timer poll baru.** Kebutuhan baru memakai
   `createPoller`, dengan tes di `tests/dashboard-polling.test.ts`.
 
+### 7a-2. Poll ringan (migration 0029 repo bot)
+
+`getGuildIfChanged` (dipakai poll) memanggil `guild_dashboard_get` dengan
+`p_fields = 'status'`: jawabannya hanya `version` (md5 isi yang ditampilkan).
+Hasil penuh diunduh hanya bila `version` berubah, dan registry (sekitar 47 KB)
+tidak dikirim ulang selama `registry_version` sama. Database yang belum
+menerapkan migration 0029 menjawab `PGRST202`; klien lalu memakai fungsi dua
+argumen seperti dulu dan mencoba lagi setelah 6 jam (`sessionStorage`).
+Fixture: sejam diam 172.650 B menjadi 13.583 B dengan jumlah permintaan sama.
+
 ### 7b. Muat malas per tab
 
 Data: Riwayat (`guild_config_audit_list`) dan Share Server (`share_dashboard_get`)

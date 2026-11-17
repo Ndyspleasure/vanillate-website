@@ -5,14 +5,16 @@ dikerjakan dari repo website**, karena skema dan RPC proyek Database Bot dimilik
 repo bot (`migrations/`). Website hanya memanggil 7 RPC yang sudah ada. Setiap
 butir memuat alasan dan perkiraan biaya supaya bisa dinilai sebelum dikerjakan.
 
-Status semua butir: **belum dikerjakan**. Dashboard sudah berjalan tanpa butir ini.
+Status: **P1 dan P2 sudah dikerjakan** (repo bot `migrations/0029_dashboard_light_poll.sql`,
+website `src/lib/dashboard/api.ts`), berlaku setelah bot di-Update dan Restart.
+P3 sampai P5 belum dikerjakan. Dashboard berjalan dengan atau tanpa butir ini.
 
 Angka ukuran di bawah diukur 2026-11-17 dari Database Bot (hanya `octet_length`
 agregat, tanpa membaca isi): `guild_feature_registry` 17 baris, total sekitar
 47 KB sebagai JSON. `guild_discord_snapshot` 902 baris, median 3,6 KB, rata-rata
 6,2 KB, terbesar 59,6 KB.
 
-## P1. Registry tidak dikirim ulang di setiap `guild_dashboard_get` (prioritas tinggi)
+## P1. Registry tidak dikirim ulang di setiap `guild_dashboard_get` (SELESAI, migration 0029)
 
 **Masalah.** `guild_dashboard_get` mengembalikan seluruh registry (sekitar 47 KB)
 di setiap panggilan, padahal registry hanya berubah saat bot dirilis. Registry
@@ -39,7 +41,12 @@ jam saat halaman terbuka dan diam) itu sekitar 0,7 MB per jam per tab terbuka.
 di memori halaman, kirim versinya di poll berikutnya. Perubahan kecil di
 `src/lib/dashboard/api.ts` dan `server-page.ts`.
 
-## P2. Respons ringan untuk poll status (prioritas sedang)
+> Yang dibangun: overload `guild_dashboard_get(p_guild_id, p_bot_slug, p_registry_version, p_fields default 'full')`.
+> Fungsi dua argumen tidak disentuh. Hasil memuat `registry_version` dan `version`
+> (md5 isi yang ditampilkan). Website yang bertemu database lama (PGRST202) memakai
+> fungsi lama dan mencoba lagi setelah 6 jam.
+
+## P2. Respons ringan untuk poll status (SELESAI, migration 0029)
 
 **Masalah.** Saat menunggu bot menerapkan revisi, dashboard hanya butuh `config`
 dan `bot`, tetapi tetap menerima `snapshot` (channel, role, statistik) dan `state`.
@@ -53,6 +60,10 @@ Website memuat ulang versi `full` hanya bila `config.revision`,
 **Biaya.** Tanpa tabel baru. Respons poll turun ke kira-kira 1 KB. Bila P1 sudah
 ada, P2 menghemat sisa 4 sampai 6 KB per poll (lebih besar untuk server dengan
 banyak channel), jadi kerjakan P1 lebih dulu.
+
+> Yang dibangun: `p_fields = 'status'` mengembalikan `{ version, registry_version,
+> server_time }` (sekitar 150 byte). Poll mengunduh hasil penuh hanya bila `version`
+> berubah. Fixture: sejam diam 172.650 B menjadi 13.583 B.
 
 ## P3. Isi revisi lengkap untuk "Kembalikan ke revisi" (prioritas rendah)
 
