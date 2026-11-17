@@ -28,13 +28,19 @@ import {
   type ShareState,
   type ShowcaseAction,
 } from './share-model';
+import { createPoller } from './polling';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, icon, pill, spinner, toast } from './ui';
 
+// Polling hemat (polling.ts): cepat hanya selama ada permintaan yang ditunggu
+// atau Pesan Uji berjalan, selain itu mundur bertahap. Tab browser tersembunyi
+// atau tab Share Server ditutup = nol permintaan.
 const FAST_MS = 3000;
-const SLOW_MS = 20000;
+const SLOW_STEPS_MS = [20_000, 40_000, 80_000, 160_000, 300_000];
+/** Membuka ulang tab ini dalam rentang ini memakai data yang sudah ada. */
+const REOPEN_TTL_MS = 20_000;
 
 const SELECT =
-  'mt-1 w-full rounded-xl border border-ink-900/15 bg-white px-3 py-2 text-sm dark:border-cream-100/15 dark:bg-ink-900';
+  'mt-1 min-h-[44px] w-full rounded-xl border border-ink-900/15 bg-white px-3 py-2 text-sm dark:border-cream-100/15 dark:bg-ink-900';
 
 function fmtTime(ms: number | string | null | undefined): string {
   const t = typeof ms === 'string' ? Date.parse(ms) : Number(ms);
@@ -58,7 +64,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
   let error: string | null = null;
   let loading = false;
   let active = false;
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  let loadedAt = 0;
   let draft: ShareDraft = {};
   let busy = false;
   let lastSig = '';
@@ -89,6 +95,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
     loading = true;
     try {
       dash = await getShare(guildId);
+      loadedAt = Date.now();
       error = null;
       const w = watched !== null ? dash.requests.find((r) => r.id === watched) : null;
       if (w && (w.status === 'done' || w.status === 'error')) {
@@ -105,12 +112,16 @@ export function createShareController(guildId: string, rerender: () => void, roo
     maybeRender();
   }
 
-  function schedule(): void {
-    if (timer) clearTimeout(timer);
-    if (!active) return;
-    const fast = Boolean(pendingRequest(dash?.requests) || st()?.test);
-    timer = setTimeout(async () => { await load(); schedule(); }, fast ? FAST_MS : SLOW_MS);
-  }
+  const waitingResult = () => Boolean(pendingRequest(dash?.requests) || st()?.test);
+  const poller = createPoller({
+    run: async () => {
+      const before = sig();
+      await load();
+      return sig() !== before;
+    },
+    mode: () => (waitingResult() ? 'fast' : 'slow'),
+    delay: (quiet) => (waitingResult() ? FAST_MS : SLOW_STEPS_MS[Math.min(quiet, SLOW_STEPS_MS.length - 1)]),
+  });
 
   async function send(type: string, payload: Record<string, unknown> = {}): Promise<void> {
     if (busy) return;
@@ -129,7 +140,7 @@ export function createShareController(guildId: string, rerender: () => void, roo
     } finally {
       busy = false;
       rerender();
-      schedule();
+      poller.kick(FAST_MS);
     }
   }
 
@@ -338,11 +349,13 @@ export function createShareController(guildId: string, rerender: () => void, roo
     activate() {
       if (active) return;
       active = true;
-      void load().then(schedule);
+      // Bolak-balik tab dalam waktu singkat memakai data yang sudah dimuat.
+      if (Date.now() - loadedAt > REOPEN_TTL_MS) void load();
+      poller.start();
     },
     deactivate() {
       active = false;
-      if (timer) clearTimeout(timer);
+      poller.stop();
     },
     onClick(btn) {
       const a = btn.dataset.shareAction;

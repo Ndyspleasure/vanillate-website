@@ -26,8 +26,8 @@ import {
   toast,
   wireAvatars,
 } from './ui';
+import { NEXT_KEY } from './login-redirect';
 
-const NEXT_KEY = 'vanillate-dashboard-next';
 
 interface PageConfig {
   root: HTMLElement;
@@ -48,7 +48,7 @@ export function mountServersPage(cfg: PageConfig): void {
 
   /** Tautan balik ke halaman produk — satu-satunya pintu masuk dashboard selain footer. */
   const productLink = () => `
-    <a href="${esc(cfg.productUrl)}" class="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900 dark:text-cream-300 dark:hover:text-cream-50">
+    <a href="${esc(cfg.productUrl)}" class="inline-flex min-h-[44px] items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900 dark:text-cream-300 dark:hover:text-cream-50">
       ${icon('arrow-left')} ${esc(cfg.productName)}
     </a>`;
   const supportLink = `<a href="/support#hubungi-support" class="font-medium text-amber-700 underline dark:text-amber-300">hubungi support kami</a>`;
@@ -137,8 +137,8 @@ export function mountServersPage(cfg: PageConfig): void {
                 : '';
             })();
         return `
-        <li class="${CARD} flex flex-col gap-4 p-5">
-          <div class="flex items-center gap-3">
+        <li class="${CARD} flex min-w-0 flex-col gap-4 p-5">
+          <div class="flex min-w-0 items-center gap-3">
             ${guildAvatar(s.iconUrl, guildInitials(s.name))}
             <div class="min-w-0">
               <p class="truncate font-display text-lg font-semibold" title="${esc(s.name)}">${esc(s.name)}</p>
@@ -180,10 +180,10 @@ export function mountServersPage(cfg: PageConfig): void {
       </p>
       ${
         data.servers.length > 6
-          ? `<label class="mt-5 flex max-w-sm items-center gap-2 rounded-full border border-ink-900/10 bg-white/60 px-4 py-2 dark:border-cream-100/10 dark:bg-ink-900/40">
+          ? `<label class="mt-5 flex min-h-[44px] max-w-sm items-center gap-2 rounded-full border border-ink-900/10 bg-white/60 px-4 py-2 dark:border-cream-100/10 dark:bg-ink-900/40">
               ${icon('search', 'h-4 w-4 text-ink-400')}
               <span class="sr-only">Cari server</span>
-              <input data-el="search" type="search" value="${esc(query)}" placeholder="Cari nama atau ID server…" class="w-full bg-transparent text-sm outline-none" />
+              <input data-el="search" type="search" value="${esc(query)}" placeholder="Cari nama atau ID server…" class="min-h-[40px] w-full bg-transparent text-sm outline-none" />
             </label>`
           : ''
       }
@@ -195,7 +195,7 @@ export function mountServersPage(cfg: PageConfig): void {
              </div>`
           : list.length === 0
             ? `<p class="mt-8 text-sm text-ink-500">Tidak ada server yang cocok dengan “${esc(query)}”.</p>`
-            : `<ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">${cards}</ul>`
+            : `<ul class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">${cards}</ul>`
       }
       <p class="mt-8 text-xs text-ink-500 dark:text-cream-300/60">
         Daftar diverifikasi ke Discord ${esc(relativeTime(data.synced_at))}${data.cached ? ' (tersimpan sementara)' : ''}.
@@ -328,14 +328,4 @@ export function mountServersPage(cfg: PageConfig): void {
   });
 
   void start();
-}
-
-/** Dipakai halaman server: simpan tujuan lalu arahkan ke login. */
-export function rememberNextAndGoToLogin(next: string): void {
-  try {
-    sessionStorage.setItem(NEXT_KEY, next);
-  } catch {
-    /* mode privat: abaikan */
-  }
-  location.replace('/dashboard/');
 }
