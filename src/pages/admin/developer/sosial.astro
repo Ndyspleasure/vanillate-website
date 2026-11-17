@@ -30,6 +30,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
@@ -54,8 +55,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const role = (e as CustomEvent).detail?.role;
     bolehEdit = role === 'owner' || role === 'admin';
-    void muat();
-    setInterval(() => void muat(), 60_000);
+    startAdminPolling(muat, 60_000);
   });
 
   async function muat() {

@@ -7,3 +7,6 @@ dist/
 .env.*
 !.env.example
 .vscode/
+
+# Supabase CLI local cache
+supabase/.temp/

@@ -25,6 +25,7 @@ import { url } from '@utils/url';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot, kirimPerintah } from '@/lib/dev-panel/client';
@@ -38,8 +39,7 @@ import { url } from '@utils/url';
   document.addEventListener('admin:ready', (e) => {
     const role = (e as CustomEvent).detail?.role;
     bolehEdit = role === 'owner' || role === 'admin';
-    void muat();
-    setInterval(() => void muat(), 30_000);
+    startAdminPolling(muat, 30_000);
     document.getElementById('poll-body')!.addEventListener('click', onKlik);
   });
 

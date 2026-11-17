@@ -65,6 +65,7 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
@@ -74,7 +75,10 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
   const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
   let bolehEdit = false;
-  let timerDetail: ReturnType<typeof setInterval> | null = null;
+  let timerDetail: ReturnType<typeof startAdminPolling> | null = null;
+  const RECIPIENT_PAGE = 100;
+  let recipientPage = 0;
+  let detailBusy = false;
 
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
@@ -86,9 +90,7 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
     if (id) {
       el('tampil-daftar').classList.add('hidden');
       el('tampil-detail').classList.remove('hidden');
-      void muatDetail(id);
-      // Campaign yang sedang jalan berubah terus → segarkan berkala.
-      timerDetail = setInterval(() => void muatDetail(id, true), 8000);
+      timerDetail = startAdminPolling(() => muatDetail(id, true), 30_000);
     } else {
       void muatDaftar();
       let t: ReturnType<typeof setTimeout>;
@@ -172,27 +174,32 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
   async function muatDetail(broadcastId: string, sunyi = false) {
     const body = el('detail-body');
     const supabase = getSupabase();
-    if (!supabase) return;
+    if (!supabase || detailBusy) return;
+    detailBusy = true;
+    try {
     if (!sunyi) body.innerHTML = stateBlock('loading', '');
 
     const { data: c, error } = await supabase
       .from('partnership_campaigns')
-      .select('*')
+      .select('id, broadcast_id, name, category, channel, status, target_total, sent_count, success_count, failed_count, skipped_count, valid_count, invalid_count, cancel_requested, buttons, logs, message, error, created_at, started_at, completed_at')
       .eq('broadcast_id', broadcastId)
       .maybeSingle();
 
     if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
     if (!c) { body.innerHTML = stateBlock('empty', `Campaign ${broadcastId} tidak ditemukan.`); return; }
 
-    const { data: rec } = await supabase
+    const { data: recipientRows, error: recipientError } = await supabase
       .from('partnership_recipients')
       .select('user_id, status, error, sent_at')
       .eq('campaign_id', c.id)
       .order('id', { ascending: true })
-      .limit(1000);
+      .range(recipientPage * RECIPIENT_PAGE, (recipientPage + 1) * RECIPIENT_PAGE);
+    if (recipientError) { body.innerHTML = stateBlock('error', pesanError(recipientError)); return; }
+    const hasNextRecipients = (recipientRows?.length ?? 0) > RECIPIENT_PAGE;
+    const rec = (recipientRows ?? []).slice(0, RECIPIENT_PAGE);
 
     // Berhenti menyegarkan begitu campaign selesai — tidak ada gunanya lagi.
-    if (timerDetail && !bisaDibatalkan(c.status)) { clearInterval(timerDetail); timerDetail = null; }
+    if (timerDetail && !bisaDibatalkan(c.status)) { timerDetail.stop(); timerDetail = null; }
 
     const buttons = Array.isArray(c.buttons) ? c.buttons : [];
     const logs = Array.isArray(c.logs) ? c.logs : [];
@@ -285,7 +292,11 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
                  </table>
                </div>`}
         </div>
-        ${(rec ?? []).length >= 1000 ? '<p class="text-xs text-ink-500 dark:text-cream-300/60">Menampilkan 1000 penerima pertama.</p>' : ''}
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <button type="button" id="rec-prev" class="min-h-11 rounded-lg border px-3 disabled:opacity-40" ${recipientPage === 0 ? 'disabled' : ''}>Sebelumnya</button>
+          <span>Halaman ${recipientPage + 1} · maksimal ${RECIPIENT_PAGE} penerima</span>
+          <button type="button" id="rec-next" class="min-h-11 rounded-lg border px-3 disabled:opacity-40" ${!hasNextRecipients ? 'disabled' : ''}>Berikutnya</button>
+        </div>
       </section>
 
       ${logs.length ? `
@@ -302,6 +313,9 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
       </section>` : ''}`;
 
     document.getElementById('btn-batal')?.addEventListener('click', () => void batalkan(c.id, c.broadcast_id));
+    document.getElementById('rec-prev')?.addEventListener('click', () => { recipientPage--; void muatDetail(broadcastId, true); });
+    document.getElementById('rec-next')?.addEventListener('click', () => { recipientPage++; void muatDetail(broadcastId, true); });
+    } finally { detailBusy = false; }
   }
 
   async function batalkan(id: number, broadcastId: string) {

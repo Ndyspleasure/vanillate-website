@@ -25,6 +25,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { esc } from '@/lib/admin-ui';
   import { fmtWaktu, fmtAngka } from '@/lib/admin-auth';
   import { bacaSnapshot, bacaPerintah, kirimPerintah, riwayatPerintah } from '@/lib/dev-panel/client';
@@ -42,8 +43,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     audiences = snap?.audiences ?? [];
     delayMs = snap?.dmDelayMs ?? 1200;
     render();
-    void muatRiwayat();
-    setInterval(() => void muatRiwayat(), 15_000);
+    startAdminPolling(muatRiwayat, 30_000);
   });
 
   const aud = (key: string) => audiences.find((a) => a.key === key);

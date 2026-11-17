@@ -26,6 +26,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { bacaSnapshot, kirimPerintah, muatUlangDariBot } from '@/lib/dev-panel/client';
   import { fmtJam, freshness, notice, pill, section, tabSection, stat, table, KELAS, type Tone } from '@/lib/dev-panel/ui';
@@ -43,8 +44,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   document.addEventListener('admin:ready', (e) => {
     role = (e as CustomEvent).detail?.role ?? 'viewer';
-    void muat();
-    setInterval(() => void muat(), 20_000);
+    startAdminPolling(muat, 30_000);
     document.getElementById('ah-refresh')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement;
       b.disabled = true;

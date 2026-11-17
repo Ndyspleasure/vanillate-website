@@ -40,7 +40,7 @@ const defaultJson = JSON.stringify(pageDefaults[skema.key] ?? {});
     <div class="mb-6 rounded-2xl border border-ink-900/10 dark:border-cream-100/10 px-5 py-4">
       <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
         Perubahan tersimpan ke database saat menekan Simpan, lalu tampil di situs setelah
-        build berikutnya (Actions → <strong>Sync konten dari Supabase</strong>, ±2–3 menit).
+        build berikutnya (Actions → <strong>Sync konten dari Supabase</strong>, jadwal setiap 15 menit, dapat tertunda).
         Placeholder abu-abu pada tiap kolom adalah teks bawaan yang dipakai bila kolom dikosongkan.
       </p>
     </div>
@@ -67,6 +67,7 @@ const defaultJson = JSON.stringify(pageDefaults[skema.key] ?? {});
 
 <script>
   import { getSupabase } from '@/lib/supabase';
+  import { saveVersioned, protectDraft } from '@/lib/editor-save';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
 
   const INPUT = 'w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors';
@@ -77,6 +78,8 @@ const defaultJson = JSON.stringify(pageDefaults[skema.key] ?? {});
   const s: Skema = JSON.parse(document.getElementById('data-skema')!.textContent || '{}');
   const def: Record<string, any> = JSON.parse(document.getElementById('data-default')!.textContent || '{}');
 
+  let version: string | undefined;
+  let draft: ReturnType<typeof protectDraft> | undefined;
   let bolehEdit = false;
   const aktif = s.key;
   let konten: Record<string, Record<string, any>> = {};
@@ -96,12 +99,14 @@ const defaultJson = JSON.stringify(pageDefaults[skema.key] ?? {});
     const supabase = getSupabase();
     if (!supabase) { body.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
 
-    const { data, error } = await supabase.from('page_content').select('key, content').order('sort', { ascending: true });
+    const { data, error } = await supabase.from('page_content').select('key, content, updated_at').eq('key', aktif).limit(1);
     if (error) { body.innerHTML = stateBlock('error', pesanError(error)); return; }
 
     konten = {};
     for (const row of data ?? []) konten[row.key] = (row.content ?? {}) as Record<string, any>;
+    version = data?.[0]?.updated_at;
     render();
+    draft = protectDraft(() => JSON.stringify(kumpulkan()));
   }
 
   /** Ubah nilai tersimpan menjadi teks yang enak diedit di textarea. */
@@ -191,10 +196,9 @@ const defaultJson = JSON.stringify(pageDefaults[skema.key] ?? {});
     btn.textContent = 'Menyimpan…';
 
     const { data: sesi } = await supabase.auth.getSession();
-    const { error } = await supabase
-      .from('page_content')
-      .update({ content: isi, updated_at: new Date().toISOString(), updated_by: sesi.session?.user.id ?? null })
-      .eq('key', aktif);
+    const result = await saveVersioned(supabase, 'page_content', 'key', aktif,
+      { content: isi, updated_at: new Date().toISOString(), updated_by: sesi.session?.user.id ?? null }, version);
+    const { error } = result;
 
     btn.disabled = false;
     btn.textContent = 'Simpan perubahan';
@@ -202,11 +206,14 @@ const defaultJson = JSON.stringify(pageDefaults[skema.key] ?? {});
     if (error) {
       pesan.textContent = pesanError(error);
       pesan.className = 'text-sm text-red-600 dark:text-red-400';
-      return;
+      return false;
     }
+    version = result.version;
     konten[aktif] = isi;
+    draft?.reset();
     pesan.textContent = 'Tersimpan. Tampil di situs setelah build berikutnya.';
     pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
+    return true;
   }
 
   async function onSimpan(e: Event) {
@@ -217,7 +224,6 @@ const defaultJson = JSON.stringify(pageDefaults[skema.key] ?? {});
   async function onReset() {
     if (!bolehEdit) return;
     if (!window.confirm('Kosongkan seluruh isi halaman ini? Situs akan kembali memakai teks bawaan.')) return;
-    await simpan({});
-    render();
+    if (await simpan({})) { render(); draft?.reset(); }
   }
 </script>

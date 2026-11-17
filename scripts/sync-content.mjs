@@ -27,8 +27,8 @@
 // website atau ikut ter-bundle ke browser.
 //
 // PENTING: skrip ini TIDAK BOLEH menggagalkan build. Setiap keluaran dijaga
-// sendiri-sendiri: bila satu gagal ditarik, file lamanya dipertahankan dan
-// keluaran lain tetap diproses. Selalu exit 0.
+// sendiri-sendiri. SYNC_STRICT=1 menahan seluruh penulisan dan gagal bila
+// keluaran wajib tidak lengkap; default lokal mempertahankan perilaku lama.
 // ════════════════════════════════════════════════════════════════════════════
 
 import fs from 'node:fs';
@@ -67,15 +67,33 @@ const KOSONG_TEAM = { members: [] };
 
 // ─── Util berkas ────────────────────────────────────────────────────────────
 
+const pendingWrites = new Map();
+const failures = new Set();
+const strict = process.env.SYNC_STRICT === '1';
+function finish() {
+  const failed = failures.size > 0;
+  if (!strict || !failed) {
+    for (const [file, contents] of pendingWrites) {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, contents, 'utf8');
+    }
+  }
+  const status = failed ? 'GAGAL / konten lama dipertahankan' : 'BERHASIL';
+  const summary = `Sinkronisasi CMS: ${status}. Keluaran gagal: ${[...failures].join(', ') || 'tidak ada'}.`;
+  console.log(summary);
+  if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + '\n');
+  if (failed && strict) console.error('::error::Sinkronisasi CMS tidak lengkap; commit dan deploy dihentikan.');
+  process.exit(failed && strict ? 1 : 0);
+}
 function tulis(file, data) {
   // Serialisasi deterministik: bila isinya sama, file-nya identik, jadi tidak
   // ada diff palsu yang memicu deploy sia-sia.
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n', 'utf8');
+  pendingWrites.set(file, JSON.stringify(data, null, 2) + '\n');
 }
 
 /** Pertahankan file lama bila ada — lebih baik konten basi daripada hilang. */
 function pertahankanYangLama(file, kosong, alasan) {
+  failures.add(path.basename(file));
   console.error(`✗ ${alasan}`);
   if (fs.existsSync(file)) {
     console.error(`  → mempertahankan ${path.basename(file)} yang sudah ada.`);
@@ -620,7 +638,7 @@ if (!URL_SUPABASE || !SERVICE_KEY) {
   pertahankanYangLama(FILE_PAGES, KOSONG_PAGES, alasan);
   pertahankanYangLama(FILE_FAQ, KOSONG_FAQ, alasan);
   pertahankanYangLama(FILE_TEAM, KOSONG_TEAM, alasan);
-  process.exit(0);
+  finish();
 }
 
 // Dijalankan berurutan supaya log-nya mudah dibaca; masing-masing sudah
@@ -633,4 +651,4 @@ await syncProducts();
 await syncPages();
 await syncFaq();
 await syncTeam();
-process.exit(0);
+finish();

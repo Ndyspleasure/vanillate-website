@@ -34,11 +34,11 @@ import { url } from '@utils/url';
         <div>
         <form id="login-form" class="space-y-4" novalidate>
           <div>
-            <label for="identifier" class="block text-sm font-medium mb-1.5">Username atau email</label>
+            <label for="identifier" class="block text-sm font-medium mb-1.5">Email akun admin</label>
             <input
               id="identifier"
               name="identifier"
-              type="text"
+              type="email"
               autocomplete="username"
               required
               class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors"
@@ -89,8 +89,8 @@ import { url } from '@utils/url';
 
           <form id="otp-step-kirim" class="space-y-4" novalidate>
             <div>
-              <label for="otp-identifier" class="block text-sm font-medium mb-1.5">Username atau email</label>
-              <input id="otp-identifier" type="text" autocomplete="username" required class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors" />
+              <label for="otp-identifier" class="block text-sm font-medium mb-1.5">Email akun admin</label>
+              <input id="otp-identifier" type="email" autocomplete="username" required class="w-full rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition-colors" />
             </div>
             <button type="submit" id="otp-kirim" class="w-full rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">Kirim kode</button>
           </form>
@@ -262,7 +262,7 @@ import { url } from '@utils/url';
     $('otp-title').textContent = TEKS[m].judul;
     $('otp-desc').textContent = TEKS[m].desc;
     $('otp-verifikasi').textContent = TEKS[m].tombol;
-    // Bawa isian username dari form password supaya tidak mengetik ulang.
+    // Bawa isian email dari form password supaya tidak mengetik ulang.
     const idAwal = (document.getElementById('identifier') as HTMLInputElement | null)?.value ?? '';
     const idOtp = $<HTMLInputElement>('otp-identifier');
     if (!idOtp.value) idOtp.value = idAwal;

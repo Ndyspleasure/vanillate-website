@@ -32,6 +32,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
@@ -53,8 +54,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
-    void muat();
-    setInterval(() => void muat(), 30_000);
+    startAdminPolling(muat, 30_000);
     document.getElementById('promo-refresh')?.addEventListener('click', () => void muat());
     document.getElementById('promo-body')?.addEventListener('click', onAksi);
     renderForm();
