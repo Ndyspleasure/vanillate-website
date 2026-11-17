@@ -143,11 +143,22 @@ dashboard (Social Monitor CMS, channel dihapus) tetap tercatat sebagai revisi
 baru (sumber "Discord") — dashboard & bot selalu sama.
 
 **Navigasi.** Kategori utama di atas: **Ringkasan · Game Hub · Social Hub ·
-Server Hub**. Server Hub punya sidebar kiri (di HP: baris submenu yang bisa
-digeser) berisi **Verification · Leveling · Auto Role · Welcome · Share Server · Channel · Riwayat**.
-Hash URL tetap id tab (`#overview`, `#game-hub`, `#social-hub`,
-`#verification`, `#leveling`, `#share-server`, `#channels`, `#audit-log`);
-`#server-hub` membuka submenu Server Hub terakhir (bawaan Verification).
+Server Hub**. Server Hub punya menu berkelompok (sidebar kiri di layar lebar, satu
+menu pilih di HP supaya tidak perlu digeser menyamping):
+
+| Kelompok | Isi |
+|---|---|
+| Member baru | Verification · Auto Role · Welcome |
+| Aktivitas dan keamanan | Leveling · Security Center |
+| Promosi | Share Server |
+| Alat | Peta Channel · Riwayat |
+
+Hash URL tetap id tab (`#overview`, `#game-hub`, `#social-hub`, `#verification`,
+`#leveling`, `#autorole`, `#welcome`, `#security`, `#share-server`, `#channels`,
+`#audit-log`); `#server-hub` membuka submenu Server Hub terakhir (bawaan
+Verification). Daftar dan pemetaan hash ada di `src/lib/dashboard/nav-model.ts`
+dan dijaga `tests/dashboard-review.test.ts`, jadi tautan lama dan tautan dari
+`/pengaturan` di Discord tidak boleh rusak.
 
 **🚫 Tidak dipakai (fitur sosial).** Bot menerbitkan setelan `not_used` di
 `settings_schema` fitur sosial. Saat fitur OFF, kartu menampilkan centang
@@ -299,7 +310,7 @@ sisi bot: `docs/dashboard-sync.md` §5a di repo `sambung-kata-bot`.
 |---|---|
 | `src/lib/dashboard/stats-model.ts` | Tipe, `parseStatsSummary` (defensif: bentuk salah → `null`, angka dipaksa bilangan bulat >= 0), `isStatsStale`, `growthOf`, `percentOf`, format angka. Tes: `tests/stats-model.test.ts` |
 | `src/lib/dashboard/overview.ts` | HTML kartu statistik (Aktivitas member, Pertumbuhan member, Keamanan dan verifikasi, Komunitas) |
-| `src/lib/dashboard/server-page.ts` | `overviewHtml()` merakit kartu status, "Perlu perhatian" (dari `featureIssues`, tanpa data bot tambahan), dan kartu statistik |
+| `src/lib/dashboard/tab-overview.ts` | Merakit kartu status, Langkah awal, "Perlu perhatian" (dari `featureIssues`, tanpa data bot tambahan), dan kartu statistik |
 
 Aturan:
 
@@ -346,7 +357,12 @@ Workflow `.github/workflows/test.yml` menjalankan keduanya + build di setiap PR.
 | `supabase/functions/dashboard-discord/` | Edge Function (`logic.ts` murni & teruji) |
 | `src/lib/dashboard/model.ts` | Draft/diff, validasi klien, status, pesan error, format WIB |
 | `src/lib/dashboard/api.ts` | Klien Supabase dashboard (sesi terpisah dari /admin & /chat) |
-| `src/lib/dashboard/servers-page.ts`, `server-page.ts` | UI daftar server & halaman konfigurasi |
+| `src/lib/dashboard/servers-page.ts` | UI daftar server |
+| `src/lib/dashboard/server-page.ts` | Inti halaman server: data, polling, kepala halaman, navigasi, bar simpan |
+| `src/lib/dashboard/tab-*.ts`, `share-server.ts` | Isi tiap tab, diunduh saat tab dibuka (bagian 7) |
+| `src/lib/dashboard/polling.ts` | Penjadwal poll hemat (tes `tests/dashboard-polling.test.ts`) |
+| `src/lib/dashboard/review-model.ts`, `nav-model.ts` | Model murni tinjau, Riwayat, langkah awal, navigasi (tes `tests/dashboard-review.test.ts`) |
+| `scripts/dashboard-fixture/` | Uji manual dan pengukuran dengan data fixture (bagian 7) |
 | `src/pages/dashboard/` | Kerangka halaman (`/dashboard`, `/dashboard/server/?id=`) |
 
 Deploy ulang Edge Function setelah mengubahnya (MCP Supabase atau
@@ -366,3 +382,87 @@ berisi teks/warna bawaan bot. `src/lib/dashboard/message-preview.ts` menggambar
 tampilan Components V2); tes `tests/message-preview.test.ts`. Batas ukuran
 `settings` di `guild_config_validate` naik ke 20000 karakter
 (`supabase/guild-dashboard-schema.sql`, harus diterapkan ke proyek CMS).
+
+## 7. Hemat sumber daya (aturan mengikat)
+
+Kuota Database Bot (egress, jumlah query) adalah batas keras (CLAUDE.md). Satu
+`guild_dashboard_get` di produksi berukuran kira-kira 50 KB (registry sekitar
+47 KB, snapshot median 3,6 KB; diukur 2026-11-17), jadi **jumlah poll adalah
+biaya utama dashboard**.
+
+### 7a. Polling (`src/lib/dashboard/polling.ts`)
+
+| Keadaan | Jeda |
+|---|---|
+| Ada aksi yang ditunggu dari bot (Simpan, Retry Sync, Refresh Discord Data) | 2,5 dtk selama 20 dtk pertama, lalu 5 dtk, paling lama 60 dtk (30 dtk untuk Refresh) |
+| Revisi belum diterapkan tetapi jendela cepat sudah lewat (mis. bot offline) | 15 → 30 → 60 → 120 → 300 dtk |
+| Tidak ada yang ditunggu | 30 → 60 → 120 → 300 dtk |
+| Tab browser tersembunyi | Tidak ada permintaan dan tidak ada timer |
+| Kembali ke tab browser | Muat ulang hanya bila data lebih tua dari 15 dtk |
+
+- Jeda kembali ke langkah pertama saat isi respons berubah atau ragam berganti.
+  Stempel yang berubah sendiri dan tidak ditampilkan (`server_time`, heartbeat
+  bot, `health_checked_at`, `access_verified_at`) tidak dihitung sebagai perubahan.
+- Permintaan tidak pernah tumpang tindih. Gagal jaringan ikut memundurkan jeda.
+- Share Server memakai penjadwal yang sama: 3 dtk hanya selama ada permintaan
+  atau Pesan Uji yang berjalan, selain itu 20 → 40 → 80 → 160 → 300 dtk, dan
+  berhenti saat tab Share Server ditutup atau tab browser tersembunyi. Membuka
+  ulang tab dalam 20 dtk memakai data yang sudah dimuat.
+- **Jangan menambah `setInterval` atau timer poll baru.** Kebutuhan baru memakai
+  `createPoller`, dengan tes di `tests/dashboard-polling.test.ts`.
+
+### 7b. Muat malas per tab
+
+Data: Riwayat (`guild_config_audit_list`) dan Share Server (`share_dashboard_get`)
+hanya diminta saat tabnya dibuka. Tab lain memakai data `guild_dashboard_get`
+yang sudah ada, tanpa permintaan tambahan.
+
+Kode: `server-page.ts` hanya memuat inti. Isi tab diunduh saat dibuka
+(`tab-overview.ts`, `tab-features.ts`, `tab-channels.ts`, `tab-audit.ts`,
+`share-server.ts`), bersamaan dengan data awal. Tab baru = modul `tab-*.ts`
+baru yang didaftarkan di `ensureModule`, bukan tambahan di inti.
+
+### 7c. Angka terukur (fixture, `scripts/dashboard-fixture/run.mjs measure`)
+
+| Skenario | Sebelum | Sesudah |
+|---|---|---|
+| Buka Ringkasan, diam 1 jam, tab terlihat | 120 permintaan | 15 |
+| Tab Share Server terbuka, tab browser tersembunyi 1 jam | 180 | 0 |
+| Share Server terbuka dan diam 1 jam | 300 | 31 |
+| Simpan, bot menerapkan dalam 8 dtk, lalu diam 10 menit | 24 | 9 |
+| Keliling semua tab sekali | 4 | 3 |
+| JS awal halaman server (sebelum tab) | 369.915 B (gzip 108.024) | 300.350 B (gzip 87.884), tab dibuka 1,8 sampai 31 KB |
+
+Dari JS awal itu 216.852 B adalah `@supabase/supabase-js` (dipakai bersama
+`/admin`), tidak berubah. Angka permintaan berasal dari backend tiruan dengan jam
+tiruan, bukan dari produksi: egress nyata bergantung pada berapa lama admin
+membiarkan halaman terbuka dan seberapa sering data server berubah.
+
+### 7d. Uji manual dengan fixture
+
+```bash
+BLOG_FIXTURE=tests/fixtures/blog.json BLOG_ALLOW_EMPTY=1 \
+PUBLIC_BOT_SUPABASE_URL=https://fixture.supabase.test PUBLIC_BOT_SUPABASE_ANON_KEY=anon-fixture \
+npx astro build
+node scripts/dashboard-fixture/run.mjs measure        # jumlah permintaan per skenario
+node scripts/dashboard-fixture/run.mjs check          # overflow dan target sentuh 360/390/768/1440
+node scripts/dashboard-fixture/run.mjs shots <folder> # tangkapan layar terang dan gelap
+```
+
+Butuh Playwright dan Chromium di mesin (bukan dependensi repo). Data di
+`scripts/dashboard-fixture/fixture.mjs` karangan untuk pengujian, bukan data produksi.
+
+## 8. Alat bantu admin (semuanya tanpa RPC baru)
+
+| Fitur | Tempat | Cara kerja | Biaya |
+|---|---|---|---|
+| **Tinjau perubahan** | Bar simpan, tombol Tinjau | Daftar "fitur, setelan, dari, menjadi" dari `diffStates(base, draft)` (`describeChange`) | Nol permintaan |
+| **Kembalikan ke sebelum ini** | Riwayat, pada catatan perubahan pengaturan | `revertChanges` menyalin nilai lama (`changed_fields[].from`) ke **draft**. Tidak ada yang disimpan sampai admin menekan Simpan, jadi revisi, `STALE_REVISION`, validasi RPC, dan validasi bot tetap berlaku seperti biasa | Nol permintaan |
+| **Cari, saring, ekspor CSV** | Riwayat | `filterAudit`, `auditToCsv` atas catatan yang sudah dimuat. Sel CSV yang berawalan `=`, `+`, `-`, `@` dinetralkan | Nol permintaan |
+| **Langkah awal** | Ringkasan, selama ada yang belum selesai | `setupSteps`: bot terpasang, data Discord dimuat, fitur sosial diputuskan, bot sudah menerapkan. Bisa disembunyikan per browser (`localStorage`) | Nol permintaan |
+| **Arti status dan tombol** | Kepala halaman | Teks dari `STATUS_META` | Nol |
+| **Peta Channel** | Server Hub, Alat | Kartu di HP, baris di layar lebar, dengan jumlah tujuan yang perlu diperiksa | Nol permintaan |
+
+Hal yang butuh data atau RPC baru dari bot dicatat di
+`docs/DASHBOARD-PERMINTAAN-BOT.md`, tidak dibangun diam-diam di website.
+
