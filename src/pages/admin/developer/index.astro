@@ -27,6 +27,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { fmtAngka } from '@/lib/admin-auth';
   import { url } from '@/utils/url';
@@ -40,8 +41,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
-    void muat();
-    setInterval(() => void muat(), 30_000);
+    startAdminPolling(muat, 30_000);
     document.getElementById('sys-refresh')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement;
       b.disabled = true; b.textContent = 'Meminta bot…';

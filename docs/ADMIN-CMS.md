@@ -137,7 +137,7 @@ on conflict (id) do update
       role = excluded.role;
 ```
 
-Sekarang buka `/admin` dan login dengan username `andi` + password tadi.
+Sekarang buka `/admin` dan login dengan email akun Supabase + password tadi.
 
 > **Kenapa dua langkah?** Supabase Auth hanya mengenal email. Baris di
 > `admin_users` yang menambahkan username dan peran. Akun auth **tanpa** baris
@@ -149,8 +149,8 @@ Sekarang buka `/admin` dan login dengan username `andi` + password tadi.
 Di form login ada dua tautan: **Kirimi saya kode sekali pakai** (masuk tanpa
 password) dan **Lupa password?** (kode lalu buat password baru). Keduanya
 memakai kode angka di email, bukan link, jadi tidak butuh halaman reset atau
-Redirect URL. Username tetap bisa dipakai (ditukar lewat `resolve_admin_login`),
-akun tetap wajib punya baris di `admin_users`, dan pesannya selalu "bila akun
+Redirect URL. Semua metode masuk memakai email akun admin; username hanya untuk
+nama profil. Akun tetap wajib punya baris di `admin_users`, dan pesannya selalu "bila akun
 terdaftar, kode sudah dikirim" supaya tidak bisa dipakai menebak akun. Kode
 login dikirim dengan `shouldCreateUser: false`, jadi email asing tidak bisa
 membuat akun.
@@ -382,8 +382,8 @@ Halaman **Pemain** menampilkan data orang lain. Beberapa hal yang perlu dijaga:
 
 ## 9. Troubleshooting
 
-**"Username atau password salah" padahal yakin benar**
-Cek baris di `admin_users` sudah ada dan `username`-nya cocok:
+**"Email atau password salah" padahal yakin benar**
+Cek email di Supabase Auth dan pastikan baris `admin_users` sudah ada:
 ```sql
 select a.username, a.role, u.email
 from public.admin_users a join auth.users u on u.id = a.id;

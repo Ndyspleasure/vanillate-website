@@ -50,32 +50,38 @@ test('semua halaman lama tetap ada dengan href yang sama', () => {
   for (const [key, h] of Object.entries(lama)) assert.equal(href.get(key), h, key);
 });
 
-test('jejak memberi jalur bertingkat sampai halaman aktif', () => {
-  assert.deepEqual(jejak(adminMenu, 'kata').map((n) => n.label),
-    ['Discord Bot', 'Game Hub', 'Konfigurasi', 'Word Collection']);
-  assert.deepEqual(jejak(adminMenu, 'dev-server').map((n) => n.label),
-    ['Discord Bot', 'Server Hub', 'Konfigurasi', 'Kontrol Server']);
-  assert.deepEqual(jejak(adminMenu, 'dev-tutorial').map((n) => n.label),
-    ['Discord Bot', 'Pemain & Promosi', 'Tutorial']);
-  assert.deepEqual(jejak(adminMenu, 'kontrol').map((n) => n.label),
-    ['Discord Bot', 'Ringkasan & Kontrol', 'Kontrol Bot']);
-  // Semua game setara di Game Hub, tanpa kategori utama atau sampingan.
-  const hub = adminMenu.find((n) => n.key === 'grup-bot')!.items!.find((n) => n.key === 'bot-game-hub')!;
-  assert.deepEqual(hub.items!.filter((n) => n.href || n.page).map((n) => n.key),
-    ['games', 'lagu', 'dev-tahu', 'dev-story']);
-  assert.deepEqual(hub.items!.find((n) => n.key === 'bot-game-konfigurasi')!.items!.map((n) => n.key), ['kata', 'dev-event']);
-  assert.deepEqual(jejak(adminMenu, 'dev-event').map((n) => n.label),
-    ['Discord Bot', 'Game Hub', 'Konfigurasi', 'Event System']);
-  assert.deepEqual(jejak(adminMenu, 'ringkasan').map((n) => n.label), ['Ringkasan']);
+test('jejak konsisten: bot per produk, komunikasi terpusat, konten di satu grup', () => {
+  assert.deepEqual(jejak(adminMenu, 'kata').map((n) => n.label), ['Bot', 'Vanillate.ID', 'Kamus Sambung Kata']);
+  assert.deepEqual(jejak(adminMenu, 'dev-server').map((n) => n.label), ['Bot', 'Vanillate.ID', 'Kontrol Server']);
+  assert.deepEqual(jejak(adminMenu, 'kontrol').map((n) => n.label), ['Bot', 'Vanillate.ID', 'Konfigurasi Bot']);
+  assert.deepEqual(jejak(adminMenu, 'ringkasan').map((n) => n.label), ['Dashboard']);
   assert.deepEqual(jejak(adminMenu, 'partnership-orders').map((n) => n.key), ['grup-partnership', 'partnership-orders']);
+  assert.equal(jejak(adminMenu, 'dev-broadcast')[0].key, 'grup-komunikasi');
+  assert.equal(jejak(adminMenu, 'partnership-broadcast')[0].key, 'grup-komunikasi');
+  assert.equal(jejak(adminMenu, 'produk')[0].key, 'grup-konten');
   assert.deepEqual(jejak(adminMenu, 'tidak-ada'), []);
   assert.deepEqual(jejak(adminMenu, undefined), []);
+});
+
+test('satu halaman hanya punya satu kategori dan navigasi maksimum empat tingkat termasuk tab', () => {
+  const urls: string[] = [];
+  const walk = (nodes: typeof adminMenu, depth = 1) => {
+    assert.ok(depth <= 4, `kedalaman menu ${depth}`);
+    for (const n of nodes) {
+      if (n.page || (n.href && !n.tab)) urls.push(n.page ?? n.href!);
+      if (n.items) walk(n.items, depth + 1);
+    }
+  };
+  walk(adminMenu);
+  assert.equal(new Set(urls).size, urls.length);
+  assert.ok(urls.includes('/admin/bots'));
+  assert.equal(adminMenu.length, 8);
 });
 
 test('simpulAktif menandai seluruh leluhur', () => {
   const bot = adminMenu.find((n) => n.key === 'grup-bot')!;
   assert.ok(simpulAktif(bot, 'lagu'));
-  assert.ok(simpulAktif(bot.items!.find((n) => n.key === 'bot-game-hub')!, 'lagu'));
+  assert.ok(simpulAktif(bot.items!.find((n) => n.key === 'bot-vanillate')!, 'lagu'));
   assert.ok(!simpulAktif(bot.items![0], 'lagu'));
 });
 
@@ -85,15 +91,15 @@ test('pencarian: indeks memuat semua halaman dengan jalur lengkap', async () => 
   const kategoriTab = (d: typeof adminMenu): number => d.reduce((n, x) => n + (x.page ? 1 : 0) + kategoriTab(x.items ?? []), 0);
   assert.equal(indeks.length, semuaHalaman(adminMenu).length + kategoriTab(adminMenu));
   const lagu = indeks.find((e) => e.node.key === 'lagu')!;
-  assert.deepEqual(lagu.jalur, ['Discord Bot', 'Game Hub', 'Tebak Lagu']);
+  assert.deepEqual(lagu.jalur, ['Bot', 'Vanillate.ID', 'Tebak Lagu']);
 });
 
 test('pencarian: semua kata harus cocok, urutan bebas, tanpa beda huruf besar', async () => {
   const { indeksPencarian, cocokPencarian } = await import('../src/lib/admin-menu.ts');
   const cari = (q: string) => indeksPencarian(adminMenu).filter((e) => cocokPencarian(e.teks, q)).map((e) => e.node.key);
   assert.ok(cari('TEBAK').includes('lagu'));
-  assert.ok(cari('game tebak').includes('lagu'));
-  assert.ok(cari('tebak game').includes('lagu'));
+  assert.ok(cari('bot tebak').includes('lagu'));
+  assert.ok(cari('tebak bot').includes('lagu'));
   assert.ok(cari('workspace tugas').includes('ws-tasks'));
   assert.ok(cari('/admin/pemain').includes('pemain'));
   assert.deepEqual(cari('zzzxxx'), []);

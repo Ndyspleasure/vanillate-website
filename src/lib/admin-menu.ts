@@ -39,260 +39,227 @@ function tabHalaman(key: string, label: string, page: string, tabs: [id: string,
   };
 }
 
+// Tiap halaman punya satu kategori; tab tetap memakai URL lama agar deep link
+// dan bookmark tetap bekerja. Data lokal ini tidak memicu query tambahan.
 export const adminMenu: MenuNode[] = [
+  { key: "ringkasan", label: "Dashboard", href: "/admin/dashboard", icon: "<rect x=\"3\" y=\"3\" width=\"7\" height=\"9\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\" rx=\"1\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\" rx=\"1\"/>" },
   {
-    key: 'ringkasan', label: 'Ringkasan', href: '/admin/dashboard',
-    icon: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
-  },
-  {
-    key: 'grup-konten', label: 'Konten',
-    icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/>',
+    key: "grup-bot", label: "Bot",
+    icon: "<path d=\"M20 7h-9\"/><path d=\"M14 17H5\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/>",
     items: [
+      { key: "bot-registry", label: "Semua Bot & Konfigurasi", href: "/admin/bots" },
       {
-        // Satu sub-menu per halaman publik (sumber: pageSchemas di src/data/pages.ts).
-        key: 'grup-halaman', label: 'Konten Halaman',
+        key: "bot-vanillate", label: "Vanillate.ID",
         items: [
-          { key: 'halaman-home', label: 'Beranda', href: '/admin/halaman/home' },
-          { key: 'halaman-products', label: 'Game & Bot', href: '/admin/halaman/products' },
-          { key: 'halaman-about', label: 'Tentang', href: '/admin/halaman/about' },
-          { key: 'halaman-support', label: 'Bantuan', href: '/admin/halaman/support' },
-          { key: 'halaman-global', label: 'Global', href: '/admin/halaman/global' },
-        ],
-      },
-      { key: 'konten', label: 'Pengumuman', href: '/admin/konten' },
-    ],
-  },
-  {
-    // Blog /blog: penulis menulis lewat portal /blog/masuk, tim meninjau di sini;
-    // tulisan terbit disimpan di Sanity (docs/BLOG.md, docs/BLOG-PENULIS.md).
-    key: 'grup-blog', label: 'Blog',
-    icon: '<path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="M5 12v6"/><path d="M2 19h7"/>',
-    items: [
-      { key: 'blog', label: 'Semua Artikel', href: '/admin/blog' },
-      tabHalaman('blog-review', 'Peninjauan Tulisan', '/admin/blog/peninjauan', [
-          ['antrean', 'Antrean'], ['ditolak', 'Ditolak'], ['riwayat', 'Riwayat'], ['penulis', 'Penulis'],
-        ]),
-      tabHalaman('blog-pengaturan', 'Kategori & Penulis', '/admin/blog/pengaturan', [
-          ['kategori', 'Kategori'], ['penulis', 'Penulis'],
-        ]),
-    ],
-  },
-  {
-    key: 'team', label: 'Team Management', href: '/admin/team',
-    icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-  },
-  {
-    key: 'grup-faq', label: 'FAQ & Panduan',
-    icon: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
-    items: [
-      { key: 'faq', label: 'Pertanyaan', href: '/admin/faq' },
-      { key: 'faq-kategori', label: 'Kategori', href: '/admin/faq/categories' },
-      { key: 'faq-bot', label: 'FAQ Bot Discord', href: '/admin/faq/bot' },
-    ],
-  },
-  {
-    key: 'grup-produk', label: 'Produk',
-    icon: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
-    items: [
-      { key: 'produk', label: 'Katalog Produk', href: '/admin/produk' },
-    ],
-  },
-  {
-    // Bot Discord Vanillate.ID (dulu "Vanillate Sambung Kata"). Satu grup untuk
-    // pengaturan bot (bot_settings) dan Panel Developer pengganti slash command
-    // /developer (V3): aksi lewat bot_commands, keadaan dari bot_panel_snapshots.
-    key: 'grup-bot', label: 'Discord Bot',
-    icon: '<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
-    items: [
-      {
-        key: 'bot-kontrol', label: 'Ringkasan & Kontrol',
-        items: [
-          tabHalaman('dev-home', 'Ringkasan & Sistem', '/admin/developer', [
-          ['ringkasan', 'Ringkasan'], ['kesehatan-proses', 'Kesehatan proses'], ['status', 'Status'], ['versi-changelog', 'Versi & changelog'], ['database-ekonomi', 'Database & ekonomi'],
-        ]),
-          { key: 'kontrol', label: 'Kontrol Bot', href: '/admin/kontrol', dinamis: true },
-          tabHalaman('operasi', 'Operasi & Riwayat', '/admin/operasi', [
-            ['pemain', 'Pemain'], ['progression', 'Progression'], ['boost', 'Boost'], ['promo', 'Promo'],
-            ['quest', 'Quest'], ['tutorial', 'Tutorial'], ['dm-campaign', 'DM Campaign'],
-            ['database', 'Database'], ['riwayat', 'Riwayat perintah'],
+          tabHalaman("dev-home", "Info, Status & Versi", "/admin/developer", [
+            ["ringkasan","Ringkasan"],
+            ["kesehatan-proses","Kesehatan proses"],
+            ["status","Status"],
+            ["versi-changelog","Versi & changelog"],
+            ["database-ekonomi","Database & ekonomi"]
           ]),
+          { key: "kontrol", label: "Konfigurasi Bot", href: "/admin/kontrol", dinamis: true },
+          { key: "games", label: "Monitor Game", href: "/admin/games" },
+          tabHalaman("kata", "Kamus Sambung Kata", "/admin/kata", [
+            ["statistik","Statistik"],
+            ["antrean-pending","Antrean pending"],
+            ["cari-kata","Cari kata"],
+            ["review-ulang-antrean-cepat","Review ulang"],
+            ["export-daftar-kata","Export daftar kata"],
+            ["review-massal","Review massal"]
+          ]),
+          { key: "lagu", label: "Tebak Lagu", href: "/admin/lagu" },
+          tabHalaman("dev-tahu", "Tahu Bulat", "/admin/developer/tahu-bulat", [
+            ["ringkasan","Ringkasan"],
+            ["kolam-donasi","Kolam donasi"],
+            ["10-besar-total-coin-dihasilkan","10 besar coin"],
+            ["aktivitas-terbaru","Aktivitas terbaru"],
+            ["alat-bantu","Alat bantu"]
+          ]),
+          tabHalaman("dev-story", "Vanillate Story", "/admin/developer/story", [
+            ["ringkasan","Ringkasan"],
+            ["aktivitas-terbaru","Aktivitas terbaru"],
+            ["tingkat-kekalahan-per-minggu","Tingkat kekalahan"],
+            ["aturan-kesulitan","Aturan kesulitan"],
+            ["alat-bantu","Alat bantu"]
+          ]),
+          tabHalaman("dev-event", "Aturan Event", "/admin/developer/event", [
+            ["peluang-pemicu","Peluang & pemicu"],
+            ["penjajah-target","Penjajah target"],
+            ["pengaturan","Pengaturan"]
+          ]),
+          { key: "dev-tutorial", label: "Tutorial", href: "/admin/developer/tutorial" },
+          { key: "dev-sosial", label: "Monitor Sosial", href: "/admin/developer/sosial" },
+          { key: "dev-share", label: "Berbagi Server", href: "/admin/developer/share-server" },
+          tabHalaman("hub-server", "Fitur Server", "/admin/server-hub", [
+            ["perlu-diperhatikan","Perlu diperhatikan"],
+            ["verification","Verification"],
+            ["leveling","Leveling"],
+            ["auto-role","Auto Role"],
+            ["welcome-dan-goodbye","Welcome dan Goodbye"],
+            ["security-center","Security Center"]
+          ]),
+          tabHalaman("dev-server", "Kontrol Server", "/admin/developer/kontrol-server", [
+            ["bot","Kontrol Bot"],
+            ["command","Slash Command"],
+            ["backup","Backup & Log"],
+            ["konsol","Konsol"]
+          ]),
+          { key: "showcase", label: "Showcase Server", href: "/admin/showcase" }
         ],
       },
       {
-        // Semua game setara di hub /game: tidak ada game utama atau sampingan.
-        // Halaman tiap game memuat fitur sekaligus konfigurasinya, jadi langsung
-        // di bawah Game Hub. Konfigurasi terpisah untuk yang murni pengaturan
-        // (kamus kata dan aturan event).
-        key: 'bot-game-hub', label: 'Game Hub',
+        key: "grup-workspace", label: "Vanillate Workspace",
         items: [
-          { key: 'games', label: 'Monitor Game', href: '/admin/games' },
-          { key: 'lagu', label: 'Tebak Lagu', href: '/admin/lagu' },
-          tabHalaman('dev-tahu', 'Tahu Bulat', '/admin/developer/tahu-bulat', [
-          ['ringkasan', 'Ringkasan'], ['kolam-donasi', 'Kolam donasi'], ['10-besar-total-coin-dihasilkan', '10 besar coin'], ['aktivitas-terbaru', 'Aktivitas terbaru'], ['alat-bantu', 'Alat bantu'],
-        ]),
-          tabHalaman('dev-story', 'Vanillate Story', '/admin/developer/story', [
-          ['ringkasan', 'Ringkasan'], ['aktivitas-terbaru', 'Aktivitas terbaru'], ['tingkat-kekalahan-per-minggu', 'Tingkat kekalahan'], ['aturan-kesulitan', 'Aturan kesulitan'], ['alat-bantu', 'Alat bantu'],
-        ]),
-          {
-            key: 'bot-game-konfigurasi', label: 'Konfigurasi',
-            items: [
-              tabHalaman('kata', 'Word Collection', '/admin/kata', [
-                ['statistik', 'Statistik'], ['antrean-pending', 'Antrean pending'],
-                ['cari-kata', 'Cari kata'], ['review-ulang-antrean-cepat', 'Review ulang'],
-                ['export-daftar-kata', 'Export daftar kata'], ['review-massal', 'Review massal'],
-              ]),
-              tabHalaman('dev-event', 'Event System', '/admin/developer/event', [
-          ['peluang-pemicu', 'Peluang & pemicu'], ['penjajah-target', 'Penjajah target'], ['pengaturan', 'Pengaturan'],
-        ]),
-            ],
-          },
+          { key: "ws-home", label: "Ringkasan", href: "/admin/workspace" },
+          { key: "ws-status", label: "Status Sistem", href: "/admin/workspace/status" },
+          { key: "ws-tasks", label: "Tugas", href: "/admin/workspace/tasks" },
+          { key: "ws-routines", label: "Tugas Berulang", href: "/admin/workspace/routines" },
+          tabHalaman("ws-okr", "Target & OKR", "/admin/workspace/okr", [
+            ["buat","Buat OKR"],
+            ["daftar","Daftar OKR"],
+            ["berulang","OKR berulang"],
+            ["riwayat","Riwayat perintah"]
+          ]),
+          { key: "ws-automation", label: "Otomatisasi", href: "/admin/workspace/automation" },
+          { key: "ws-teams", label: "Tim Workspace", href: "/admin/workspace/teams" },
+          { key: "ws-roles", label: "Peran & Izin", href: "/admin/workspace/roles" },
+          { key: "ws-schedules", label: "Jadwal Kerja", href: "/admin/workspace/schedules" },
+          { key: "ws-welcome", label: "Penyambutan Anggota", href: "/admin/workspace/welcome" },
+          { key: "ws-features", label: "Sakelar Fitur", href: "/admin/workspace/features" },
+          { key: "ws-settings", label: "Konfigurasi Sistem", href: "/admin/workspace/settings" }
         ],
       },
-      {
-        key: 'bot-sosial-hub', label: 'Sosial Hub',
-        items: [
-          {
-            key: 'bot-sosial-fitur', label: 'Fitur',
-            items: [
-              { key: 'dev-sosial', label: 'Social Monitor', href: '/admin/developer/sosial' },
-              { key: 'dev-share', label: 'Share Server', href: '/admin/developer/share-server' },
-            ],
-          },
-        ],
-      },
-      {
-        key: 'bot-server-hub', label: 'Server Hub',
-        items: [
-          {
-            key: 'bot-server-fitur', label: 'Fitur',
-            items: [
-              tabHalaman('hub-server', 'Ringkasan Server Hub', '/admin/server-hub', [
-          ['perlu-diperhatikan', 'Perlu diperhatikan'], ['verification', 'Verification'], ['leveling', 'Leveling'], ['auto-role', 'Auto Role'], ['welcome-dan-goodbye', 'Welcome dan Goodbye'], ['security-center', 'Security Center'],
-        ]),
-              { key: 'showcase', label: 'Showcase Server', href: '/admin/showcase' },
-            ],
-          },
-          {
-            key: 'bot-server-konfigurasi', label: 'Konfigurasi',
-            items: [
-              tabHalaman('dev-server', 'Kontrol Server', '/admin/developer/kontrol-server', [
-          ['bot', 'Kontrol Bot'], ['command', 'Slash Command'], ['backup', 'Backup & Log'], ['konsol', 'Konsol'],
-        ]),
-            ],
-          },
-        ],
-      },
-      {
-        key: 'bot-pemain', label: 'Pemain & Promosi',
-        items: [
-          tabHalaman('pemain', 'Pemain', '/admin/pemain', [
-          ['cermin', 'Cermin website'], ['kelola', 'Kelola pemain'], ['ranking', 'Ranking live'], ['banned', 'Banned'],
-        ]),
-          { key: 'promo', label: 'Promo', href: '/admin/promo' },
-          { key: 'dev-tutorial', label: 'Tutorial', href: '/admin/developer/tutorial' },
-        ],
-      },
-      {
-        key: 'bot-komunikasi', label: 'Komunikasi',
-        items: [
-          { key: 'dev-broadcast', label: 'Broadcast DM', href: '/admin/developer/broadcast' },
-          { key: 'dev-polling', label: 'Polling', href: '/admin/developer/polling' },
-          { key: 'dev-campaign', label: 'DM Campaign', href: '/admin/developer/campaign' },
-        ],
-      },
-      {
-        key: 'bot-perawatan', label: 'Perawatan',
-        items: [
-          tabHalaman('dev-error', 'Error KB', '/admin/developer/error', [
-          ['ringkasan', 'Ringkasan'], ['error-terbaru', 'Error terbaru'], ['fingerprint-teratas', 'Fingerprint teratas'], ['auto-recovery-per-metode', 'Auto-recovery'],
-        ]),
-          tabHalaman('dev-autoheal', 'Auto-Heal', '/admin/developer/autoheal', [
-          ['status', 'Status'], ['permintaan-izin', 'Permintaan izin'], ['kontrol', 'Kontrol'], ['incident-terbaru', 'Incident terbaru'], ['izin-aktif', 'Izin aktif'],
-        ]),
-        ],
-      },
+      { key: "after-dark", label: "After Dark (18+)", href: "/admin/after-dark", icon: "<path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\"/>" }
     ],
   },
   {
-    // Produk kedua: konfigurasi bot Vanillate Workspace (tabel workspace_*).
-    // Sengaja terpisah dari bot Vanillate.ID (bot_*) supaya setting antar-produk
-    // tidak pernah tercampur.
-    key: 'grup-workspace', label: 'Vanillate Workspace',
-    icon: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 4v16"/>',
+    key: "grup-konten", label: "Konten Website",
+    icon: "<path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"/><path d=\"M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z\"/>",
     items: [
       {
-        key: 'ws-grup-ringkasan', label: 'Ringkasan',
+        key: "grup-halaman", label: "Halaman Publik",
         items: [
-          { key: 'ws-home', label: 'Ringkasan', href: '/admin/workspace' },
-          { key: 'ws-status', label: 'Status Sistem', href: '/admin/workspace/status' },
+          { key: "halaman-home", label: "Beranda", href: "/admin/halaman/home" },
+          { key: "halaman-products", label: "Game & Bot", href: "/admin/halaman/products" },
+          { key: "halaman-about", label: "Tentang", href: "/admin/halaman/about" },
+          { key: "halaman-support", label: "Bantuan", href: "/admin/halaman/support" },
+          { key: "halaman-global", label: "Global", href: "/admin/halaman/global" }
+        ],
+      },
+      { key: "produk", label: "Katalog Produk", href: "/admin/produk" },
+      { key: "konten", label: "Pengumuman Website", href: "/admin/konten" },
+      {
+        key: "grup-blog", label: "Blog",
+        items: [
+          { key: "blog", label: "Semua Artikel", href: "/admin/blog" },
+          tabHalaman("blog-review", "Peninjauan Tulisan", "/admin/blog/peninjauan", [
+            ["antrean","Antrean"],
+            ["ditolak","Ditolak"],
+            ["riwayat","Riwayat"],
+            ["penulis","Penulis"]
+          ]),
+          tabHalaman("blog-pengaturan", "Kategori & Penulis", "/admin/blog/pengaturan", [
+            ["kategori","Kategori"],
+            ["penulis","Penulis"]
+          ])
         ],
       },
       {
-        key: 'ws-grup-pekerjaan', label: 'Pekerjaan',
+        key: "grup-faq", label: "FAQ & Panduan",
         items: [
-          { key: 'ws-tasks', label: 'Tugas', href: '/admin/workspace/tasks' },
-          { key: 'ws-routines', label: 'Tugas Berulang', href: '/admin/workspace/routines' },
-          tabHalaman('ws-okr', 'Target / OKR', '/admin/workspace/okr', [
-          ['buat', 'Buat OKR'], ['daftar', 'Daftar OKR'], ['berulang', 'OKR berulang'], ['riwayat', 'Riwayat perintah'],
-        ]),
-          { key: 'ws-automation', label: 'Automation', href: '/admin/workspace/automation' },
+          { key: "faq", label: "Panduan Website", href: "/admin/faq" },
+          { key: "faq-kategori", label: "Kategori Panduan", href: "/admin/faq/categories" },
+          { key: "faq-bot", label: "FAQ Bot Discord", href: "/admin/faq/bot" }
         ],
-      },
-      {
-        key: 'ws-grup-tim', label: 'Tim',
-        items: [
-          { key: 'ws-teams', label: 'Tim', href: '/admin/workspace/teams' },
-          { key: 'ws-roles', label: 'Role & Izin', href: '/admin/workspace/roles' },
-          { key: 'ws-schedules', label: 'Jadwal Kerja', href: '/admin/workspace/schedules' },
-          { key: 'ws-welcome', label: 'Welcome & Onboarding', href: '/admin/workspace/welcome' },
-        ],
-      },
-      {
-        key: 'ws-grup-sistem', label: 'Sistem',
-        items: [
-          { key: 'ws-features', label: 'Feature Toggle', href: '/admin/workspace/features' },
-          { key: 'ws-settings', label: 'Konfigurasi Sistem', href: '/admin/workspace/settings' },
-        ],
-      },
+      }
     ],
   },
   {
-    // Game 18+ After Dark (repo terpisah). Tantangannya dikelola di sini,
-    // game hanya membaca yang sudah terbit (tabel after_dark_challenges).
-    key: 'after-dark', label: 'After Dark (18+)', href: '/admin/after-dark',
-    icon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
-  },
-  {
-    // Satu sub-menu per halaman Partnership (dulu tab PartnershipTabs di tiap halaman).
-    key: 'grup-partnership', label: 'Partnership',
-    icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 11 2 2 4-4"/>',
+    key: "grup-pengguna", label: "Pengguna & Tim",
+    icon: "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/>",
     items: [
-      { key: 'partnership-overview', label: 'Overview', href: '/admin/partnership' },
-      { key: 'partnership-broadcast', label: 'Broadcast DM', href: '/admin/partnership/broadcast' },
-      { key: 'partnership-active-players', label: 'Active Players', href: '/admin/partnership/active-players' },
-      { key: 'partnership-history', label: 'Campaign History', href: '/admin/partnership/history' },
-      { key: 'partnership-products', label: 'Paket Campaign', href: '/admin/partnership/products' },
-      { key: 'partnership-jasa', label: 'Halaman Jasa', href: '/admin/partnership/jasa' },
-      { key: 'partnership-layanan', label: 'Layanan & Masa Aktif', href: '/admin/partnership/layanan' },
-      { key: 'partnership-orders', label: 'Pesanan Partner', href: '/admin/partnership/orders' },
-      { key: 'partnership-partners', label: 'Akun Partner', href: '/admin/partnership/partners' },
-      { key: 'partnership-categories', label: 'Kategori', href: '/admin/partnership/categories' },
-      { key: 'partnership-lobby', label: 'Lobby Bot', href: '/admin/partnership/lobby' },
-      { key: 'partnership-templates', label: 'Templates', href: '/admin/partnership/templates' },
-      tabHalaman('partnership-settings', 'Settings', '/admin/partnership/settings', [
-        ['url', 'URL'], ['custom-links', 'Custom Links'], ['konten', 'Konten halaman publik'],
+      tabHalaman("pemain", "Pemain", "/admin/pemain", [
+        ["cermin","Cermin website"],
+        ["kelola","Kelola pemain"],
+        ["ranking","Ranking live"],
+        ["banned","Banned"]
       ]),
+      { key: "server", label: "Server Discord", href: "/admin/server" },
+      { key: "team", label: "Tim Studio", href: "/admin/team", icon: "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/>" }
     ],
   },
   {
-    key: 'grup-data', label: 'Data & Laporan',
-    icon: '<path d="M3 3v18h18"/><path d="m7 15 3-4 3 3 5-7"/>',
+    key: "grup-komunikasi", label: "Komunikasi",
+    icon: "<path d=\"m21 3-6.5 18-4-7.5L3 9.5 21 3Z\"/><path d=\"m21 3-10.5 10.5\"/>",
     items: [
-      { key: 'statistik', label: 'Statistik', href: '/admin/statistik' },
-      { key: 'logs', label: 'Log Aktivitas', href: '/admin/logs' },
-      { key: 'server', label: 'Server', href: '/admin/server' },
+      { key: "dev-broadcast", label: "Pesan Massal Bot", href: "/admin/developer/broadcast" },
+      { key: "dev-campaign", label: "Kampanye Bot", href: "/admin/developer/campaign" },
+      { key: "dev-polling", label: "Jajak Pendapat", href: "/admin/developer/polling" },
+      { key: "promo", label: "Promo", href: "/admin/promo" },
+      { key: "partnership-broadcast", label: "Kampanye Partner", href: "/admin/partnership/broadcast" },
+      { key: "partnership-templates", label: "Template Partner", href: "/admin/partnership/templates" },
+      { key: "partnership-history", label: "Riwayat Kampanye Partner", href: "/admin/partnership/history" }
     ],
   },
+  {
+    key: "grup-partnership", label: "Partnership",
+    icon: "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"m17 11 2 2 4-4\"/>",
+    items: [
+      { key: "partnership-overview", label: "Ringkasan", href: "/admin/partnership" },
+      { key: "partnership-orders", label: "Pesanan", href: "/admin/partnership/orders" },
+      { key: "partnership-layanan", label: "Layanan & Masa Aktif", href: "/admin/partnership/layanan" },
+      { key: "partnership-partners", label: "Akun Partner", href: "/admin/partnership/partners" },
+      { key: "partnership-active-players", label: "Audiens Pemain Aktif", href: "/admin/partnership/active-players" },
+      { key: "partnership-products", label: "Paket Kampanye", href: "/admin/partnership/products" },
+      { key: "partnership-jasa", label: "Halaman Jasa", href: "/admin/partnership/jasa" },
+      { key: "partnership-categories", label: "Kategori", href: "/admin/partnership/categories" },
+      { key: "partnership-lobby", label: "Lobby Bot", href: "/admin/partnership/lobby" },
+      tabHalaman("partnership-settings", "Pengaturan", "/admin/partnership/settings", [
+        ["url","URL"],
+        ["custom-links","Custom Links"],
+        ["konten","Konten halaman publik"]
+      ])
+    ],
+  },
+  {
+    key: "grup-sistem", label: "Sistem & Operasi",
+    icon: "<path d=\"M12 8v4l3 3\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/>",
+    items: [
+      tabHalaman("operasi", "Operasi & Riwayat Perintah", "/admin/operasi", [
+        ["pemain","Pemain"],
+        ["progression","Progression"],
+        ["boost","Boost"],
+        ["promo","Promo"],
+        ["quest","Quest"],
+        ["tutorial","Tutorial"],
+        ["dm-campaign","DM Campaign"],
+        ["database","Database"],
+        ["riwayat","Riwayat perintah"]
+      ]),
+      tabHalaman("dev-autoheal", "Pemulihan Otomatis", "/admin/developer/autoheal", [
+        ["status","Status"],
+        ["permintaan-izin","Permintaan izin"],
+        ["kontrol","Kontrol"],
+        ["incident-terbaru","Incident terbaru"],
+        ["izin-aktif","Izin aktif"]
+      ])
+    ],
+  },
+  {
+    key: "grup-data", label: "Log & Statistik",
+    icon: "<path d=\"M3 3v18h18\"/><path d=\"m7 15 3-4 3 3 5-7\"/>",
+    items: [
+      { key: "logs", label: "Log Aktivitas", href: "/admin/logs" },
+      tabHalaman("dev-error", "Diagnosis Error", "/admin/developer/error", [
+        ["ringkasan","Ringkasan"],
+        ["error-terbaru","Error terbaru"],
+        ["fingerprint-teratas","Fingerprint teratas"],
+        ["auto-recovery-per-metode","Auto-recovery"]
+      ]),
+      { key: "statistik", label: "Statistik", href: "/admin/statistik" }
+    ],
+  }
 ];
 
 /** Simpul dianggap aktif bila dirinya atau salah satu turunannya sedang dibuka. */

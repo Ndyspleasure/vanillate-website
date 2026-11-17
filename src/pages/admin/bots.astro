@@ -1,0 +1,31 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import { botRegistry } from '@/data/bot-registry';
+---
+<AdminLayout title="Inventaris Bot" active="bot-registry">
+  <AdminPageHeader eyebrow="Operasional" title="Inventaris Bot" description="Metadata dari repo yang diaudit. Nilai TODO belum dikonfirmasi; kesehatan runtime diperiksa melalui panel masing-masing bot." />
+  <div class="px-4 lg:px-8 py-6 space-y-4">
+    <label class="block">Cari bot atau fitur<input id="registry-search" type="search" class="block w-full rounded-lg border p-3 bg-transparent mt-2" /></label>
+    {botRegistry.map(bot => <article data-bot data-search={`${bot.name} ${bot.slug} ${bot.aliases.join(' ')}`.toLowerCase()} class="rounded-xl border border-current/20 p-4 min-w-0">
+      <h2 class="text-xl font-semibold">{bot.name}</h2>
+      <p>{bot.identity.description}</p>
+      <p class="text-sm my-3">{bot.kind === 'feature' ? 'Fitur dari ' + bot.parentSlug : 'Bot'} · Versi {bot.identity.version ?? 'TODO'} · Status {bot.identity.status ?? 'TODO'}</p>
+      <a href={bot.links.admin} class="inline-flex min-h-11 items-center underline">Buka panel operasional</a>
+      <details class="mt-3"><summary class="min-h-11 cursor-pointer">Konfigurasi, perintah, dan sumber</summary><pre class="overflow-auto max-h-96 p-3 text-xs">{JSON.stringify(bot, null, 2)}</pre></details>
+      <details><summary class="min-h-11 cursor-pointer">TODO ({bot.todos.length})</summary><ul class="list-disc pl-5">{bot.todos.map(todo => <li>{todo}</li>)}</ul></details>
+    </article>)}
+    <p id="registry-empty" hidden>Tidak ada bot yang cocok.</p>
+  </div>
+</AdminLayout>
+<script>
+  const input = document.querySelector<HTMLInputElement>('#registry-search');
+  input?.addEventListener('input', () => {
+    let visible = 0;
+    document.querySelectorAll<HTMLElement>('[data-bot]').forEach(el => {
+      el.hidden = !(el.dataset.search ?? '').includes(input.value.trim().toLowerCase());
+      if (!el.hidden) visible++;
+    });
+    document.getElementById('registry-empty')!.hidden = visible > 0;
+  });
+</script>

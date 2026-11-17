@@ -46,6 +46,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
@@ -69,10 +70,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
-    void muat();
-    void muatStatistik();
-    setInterval(() => { void muat(); void muatStatistik(); }, 30_000);
-    document.getElementById('kata-refresh')?.addEventListener('click', () => { void muat(); void muatStatistik(); });
+    const polling = startAdminPolling(async () => { await Promise.all([muat(), muatStatistik()]); }, 30_000);
+    document.getElementById('kata-refresh')?.addEventListener('click', () => void polling.refresh());
     document.getElementById('kata-body')?.addEventListener('click', onAksi);
     renderAlat();
   });

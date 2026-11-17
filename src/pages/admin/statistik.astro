@@ -100,11 +100,13 @@ const rentang = [
 
 <script>
   import { getSupabase } from '@/lib/supabase';
+  import { BOT_SLUGS_READ } from '@/lib/bot-slug';
   import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { gambarGrafik, type TitikData } from '@/lib/admin-chart';
 
   let riwayat: any[] = [];
+  let historyRequest = 0;
 
   document.addEventListener('admin:ready', () => {
     void muatSnapshot();
@@ -128,7 +130,7 @@ const rentang = [
 
     const { data, error } = await supabase
       .from('bot_stats')
-      .select('*')
+      .select('captured_at, guild_count, active_players, games_played, commands_run, member_reach, latency_ms, meta').in('bot_slug', [...BOT_SLUGS_READ])
       .order('captured_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -146,15 +148,19 @@ const rentang = [
       return;
     }
 
-    for (const key of ['guild_count', 'active_players', 'games_played', 'commands_run']) {
-      const el = document.querySelector(`[data-stat="${key}"]`);
-      if (el) el.textContent = fmtAngka(data[key]);
-    }
+    document.querySelectorAll<HTMLElement>('[data-stat]').forEach(el => {
+      const key = el.dataset.stat!;
+      const value = key.startsWith('meta.') ? data.meta?.[key.slice(5)] : data[key];
+      el.textContent = fmtAngka(value);
+    });
     const waktu = document.getElementById('stat-waktu');
     if (waktu) waktu.textContent = fmtWaktu(data.captured_at);
   }
 
   async function muatRiwayat() {
+    const request = ++historyRequest;
+    riwayat = [];
+    isiTabel([], 'Nilai');
     const wadah = document.getElementById('grafik')!;
     wadah.innerHTML = stateBlock('loading', '');
 
@@ -162,40 +168,16 @@ const rentang = [
     if (!supabase) return;
 
     const hari = Number((document.getElementById('pilih-rentang') as HTMLSelectElement).value);
-    const sejak = new Date(Date.now() - hari * 24 * 60 * 60 * 1000).toISOString();
 
-    // Snapshot masuk tiap 5 menit (~288/hari), jadi satu kueri dengan limit
-    // kecil memotong data terbaru. Ambil per halaman sampai seluruh rentang
-    // terbaca, lalu ringkas di sisi browser supaya grafik tetap ringan.
-    const UKURAN_HALAMAN = 1000;
-    const MAKS_HALAMAN = 12;
-    const MAKS_TITIK = 400;
-    const semua: any[] = [];
 
-    for (let h = 0; h < MAKS_HALAMAN; h++) {
-      const { data, error } = await supabase
-        .from('bot_stats')
-        .select('captured_at, guild_count, active_players, games_played, commands_run, member_reach, latency_ms, meta')
-        .gte('captured_at', sejak)
-        .order('captured_at', { ascending: true })
-        .range(h * UKURAN_HALAMAN, (h + 1) * UKURAN_HALAMAN - 1);
-
-      if (error) {
-        wadah.innerHTML = stateBlock('error', pesanError(error));
-        return;
-      }
-      semua.push(...(data ?? []));
-      if ((data?.length ?? 0) < UKURAN_HALAMAN) break;
+    const { data, error } = await supabase.rpc('admin_stats_series', { p_days: hari })
+      .select('captured_at, guild_count, active_players, games_played, commands_run, member_reach, latency_ms, meta');
+    if (request !== historyRequest) return;
+    if (error) {
+      wadah.innerHTML = stateBlock('error', 'Statistik belum tersedia. Pastikan migrasi CMS terbaru sudah diterapkan.');
+      return;
     }
-
-    if (semua.length > MAKS_TITIK) {
-      const langkah = semua.length / MAKS_TITIK;
-      const ringkas = Array.from({ length: MAKS_TITIK }, (_, i) => semua[Math.floor(i * langkah)]);
-      ringkas[ringkas.length - 1] = semua[semua.length - 1]; // titik terbaru selalu ikut
-      riwayat = ringkas;
-    } else {
-      riwayat = semua;
-    }
+    riwayat = data ?? [];
     gambarUlang();
   }
 

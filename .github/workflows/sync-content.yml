@@ -63,6 +63,7 @@ jobs:
       - name: Tarik konten dari Supabase
         run: node scripts/sync-content.mjs
         env:
+          SYNC_STRICT: '1'
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 

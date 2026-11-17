@@ -79,3 +79,10 @@ export function bacaHashAuth(hash: string): HashAuth | null {
   if (!accessToken || !refreshToken) return null;
   return { kind: 'sesi', type: p.get('type') ?? '', accessToken, refreshToken };
 }
+
+/** Validasi bentuk email saja; tidak menanyakan keberadaan akun ke database. */
+export function normalisasiEmailAdmin(input: string): string | null {
+  const email = (input ?? '').trim();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
+}

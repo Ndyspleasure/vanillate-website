@@ -28,6 +28,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
 <script>
   import { getSupabase } from '@/lib/supabase';
+  import { searchPattern, saveVersioned } from '@/lib/editor-save';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtWaktu } from '@/lib/admin-auth';
   import { renderMarkdown } from '@utils/markdown';
@@ -56,6 +57,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   let current: Faq | null = null;
   let filterKategori = '';
   let filterCari = '';
+  let page = 0;
+  let hasNext = false;
+  let loadingId = 0;
 
   const $ = (id: string) => document.getElementById(id)!;
   const listView = () => $('list-view');
@@ -91,6 +95,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   // ─── Daftar ────────────────────────────────────────────────────────────────
   async function muatDaftar() {
+    const requestId = ++loadingId;
     current = null;
     editorView().classList.add('hidden');
     const box = listView();
@@ -100,16 +105,22 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const supabase = getSupabase();
     if (!supabase) { box.innerHTML = stateBlock('error', 'Koneksi ke Supabase belum dikonfigurasi.'); return; }
 
+    let query = supabase.from('faqs').select('id, category_id, question, slug, enabled, sort, updated_at')
+      .order('sort', { ascending: true }).order('id', { ascending: true });
+    if (filterKategori) query = query.eq('category_id', filterKategori);
+    if (filterCari.trim()) query = query.ilike('question', searchPattern(filterCari));
     const [kat, faq] = await Promise.all([
-      supabase.from('faq_categories').select('id, name, slug, enabled, sort').order('sort', { ascending: true }),
-      supabase.from('faqs').select('id, category_id, question, slug, answer, enabled, sort, updated_at').order('sort', { ascending: true }),
+      kategori.length ? Promise.resolve({ data: kategori, error: null }) : supabase.from('faq_categories').select('id, name, slug, enabled, sort').order('sort', { ascending: true }),
+      query.range(page * 25, page * 25 + 25),
     ]);
+    if (requestId !== loadingId) return;
+    hasNext = (faq.data?.length ?? 0) > 25;
 
     if (kat.error) { box.innerHTML = stateBlock('error', pesanError(kat.error)); return; }
     if (faq.error) { box.innerHTML = stateBlock('error', pesanError(faq.error)); return; }
 
     kategori = (kat.data ?? []) as Kategori[];
-    semua = (faq.data ?? []) as Faq[];
+    semua = (faq.data ?? []).slice(0, 25) as Faq[];
     renderDaftar();
   }
 
@@ -124,12 +135,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       return;
     }
 
-    const cari = filterCari.trim().toLowerCase();
-    const baris = semua.filter((f) => {
-      if (filterKategori && f.category_id !== filterKategori) return false;
-      if (!cari) return true;
-      return `${f.question} ${f.slug} ${f.answer} ${namaKategori(f.category_id)}`.toLowerCase().includes(cari);
-    });
+    const baris = semua;
 
     const kartu = (f: Faq) => {
       const aktif = f.enabled !== false;
@@ -155,12 +161,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     box.innerHTML = `
       <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm text-ink-600 dark:text-cream-200/80">${semua.length} FAQ dalam ${kategori.length} kategori.</p>
+        <p class="text-sm text-ink-600 dark:text-cream-200/80">${semua.length} FAQ di halaman ${page + 1}, dalam ${kategori.length} kategori.</p>
         ${bolehEdit ? `<button type="button" class="${BTN}" data-action="tambah">+ Tambah FAQ</button>` : '<p class="text-sm text-ink-500 dark:text-cream-300/60">Peran kamu hanya bisa melihat.</p>'}
       </div>
 
       <div class="mb-5 grid gap-3 sm:grid-cols-[1fr_16rem]">
-        <input id="f-cari" type="search" value="${esc(filterCari)}" placeholder="Cari pertanyaan, slug, atau isi jawaban…" class="${INPUT}" />
+        <input id="f-cari" type="search" value="${esc(filterCari)}" placeholder="Cari pertanyaan (tekan Enter)…" class="${INPUT}" />
         <select id="f-kategori" class="${INPUT}">${opsi}</select>
       </div>
 
@@ -168,13 +174,15 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${baris.length
           ? baris.map(kartu).join('')
           : stateBlock('empty', semua.length ? 'Tidak ada FAQ yang cocok dengan filter ini.' : 'Belum ada FAQ. Tambahkan pertanyaan pertama.')}
-      </div>`;
+      </div>
+      <div class="flex gap-3 mt-4"><button class="${BTN2}" data-action="prev" ${page === 0 ? 'disabled' : ''}>Sebelumnya</button><button class="${BTN2}" data-action="next" ${!hasNext ? 'disabled' : ''}>Berikutnya</button></div>`;
   }
 
   // ─── Editor ────────────────────────────────────────────────────────────────
-  function bukaEditor(id: string | null) {
+  async function bukaEditor(id: string | null) {
     if (id) {
-      const f = semua.find((x) => x.id === id);
+      const { data: f, error } = await getSupabase()!.from('faqs').select('id, category_id, question, slug, answer, enabled, sort, updated_at').eq('id', id).maybeSingle();
+      if (error) { toast(pesanError(error), false); return; }
       if (!f) { toast('FAQ tidak ditemukan. Muat ulang halaman.', false); return; }
       current = { ...f };
     } else {
@@ -359,7 +367,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     };
 
     if (data.id) {
-      const { error } = await supabase.from('faqs').update(isi).eq('id', data.id);
+      const { error } = await saveVersioned(supabase, 'faqs', 'id', data.id, isi, current?.updated_at);
       if (error) { toast(pesanDuplikat(error), false); return; }
       toast('Tersimpan.');
     } else {
@@ -396,6 +404,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (el.dataset.bungkus) { bungkus(el.dataset.bungkus); return; }
 
     switch (el.dataset.action) {
+      case 'prev': if (page > 0) { page--; void muatDaftar(); } break;
+      case 'next': if (hasNext) { page++; void muatDaftar(); } break;
       case 'tambah': bukaEditor(null); break;
       case 'edit': bukaEditor(el.dataset.id ?? null); break;
       case 'kembali': void muatDaftar(); break;
@@ -403,6 +413,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       case 'hapus': void hapus(); break;
     }
   }
+
+  document.addEventListener('keydown', (e) => { if ((e.target as HTMLElement)?.id === 'f-cari' && e.key === 'Enter') { e.preventDefault(); page = 0; void muatDaftar(); } });
 
   function onInput(e: Event) {
     const el = e.target as HTMLElement;
@@ -419,12 +431,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       }
       return;
     }
-    if (el.id === 'f-cari') { filterCari = (el as HTMLInputElement).value; renderDaftar(); }
+    if (el.id === 'f-cari') { filterCari = (el as HTMLInputElement).value; }
   }
 
   function onChange(e: Event) {
     const el = e.target as HTMLElement;
-    if (el.id === 'f-kategori') { filterKategori = (el as HTMLSelectElement).value; renderDaftar(); return; }
+    if (el.id === 'f-kategori') { filterKategori = (el as HTMLSelectElement).value; page = 0; void muatDaftar(); return; }
     if (el.id === 'e-category') { perbaruiUrl(); return; }
     if (el.id === 'e-slug') { (el as HTMLInputElement).dataset.disentuh = '1'; perbaruiUrl(); }
   }

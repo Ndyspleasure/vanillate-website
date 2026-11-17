@@ -2,7 +2,7 @@
 // (dipanggil dari <script> halaman admin), bukan saat build.
 //
 // Alur singkat:
-//   1. login() menukar username/email + password ke Supabase Auth -> dapat JWT.
+//   1. login() menukar email + password ke Supabase Auth -> dapat JWT.
 //      Alternatif: kirimKodeLogin() + masukDenganKode() (kode sekali pakai di
 //      email), atau kirimKodeReset() + verifikasiKodeReset() + gantiPassword()
 //      untuk lupa password. Semua berakhir di cek admin_users yang sama.
@@ -13,7 +13,7 @@
 
 import { getSupabase } from './supabase';
 import { pesanError } from './admin-ui';
-import { bacaHashAuth, normalisasiKode, pesanKirimKode, validasiPasswordBaru } from './admin-auth-model';
+import { bacaHashAuth, normalisasiEmailAdmin, normalisasiKode, pesanKirimKode, validasiPasswordBaru } from './admin-auth-model';
 
 export interface AdminProfile {
   id: string;
@@ -29,13 +29,7 @@ export interface LoginResult {
   error?: string;
 }
 
-/**
- * Login dengan username ATAU email.
- *
- * Supabase Auth sendiri hanya mengenal email. Supaya admin tetap bisa memakai
- * username seperti yang diminta, identifier tanpa "@" ditukar dulu jadi email
- * lewat RPC `resolve_admin_login` (SECURITY DEFINER) di database.
- */
+/** Login email langsung: tidak ada lookup email admin yang terbuka untuk publik. */
 export async function login(identifier: string, password: string): Promise<LoginResult> {
   const supabase = getSupabase();
   if (!supabase) {
@@ -43,37 +37,22 @@ export async function login(identifier: string, password: string): Promise<Login
   }
 
   if (!identifier.trim() || !password) {
-    return { ok: false, error: 'Username dan password wajib diisi.' };
+    return { ok: false, error: 'Email dan password wajib diisi.' };
   }
 
-  const email = await resolveEmail(identifier);
+  const email = normalisasiEmailAdmin(identifier);
   if (!email) {
     // Sengaja pakai pesan yang sama dengan password salah, supaya tidak
-    // bisa dipakai menebak username mana yang terdaftar.
-    return { ok: false, error: 'Username atau password salah.' };
+    // bisa dipakai menebak akun mana yang terdaftar.
+    return { ok: false, error: 'Email atau password salah.' };
   }
 
   const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
   if (signInError) {
-    return { ok: false, error: 'Username atau password salah.' };
+    return { ok: false, error: 'Email atau password salah.' };
   }
 
   return selesaikanLogin();
-}
-
-/**
- * Ubah username/email jadi email. Supabase Auth sendiri hanya mengenal email,
- * jadi identifier tanpa "@" ditukar lewat RPC `resolve_admin_login`
- * (SECURITY DEFINER). Null bila username tidak dikenal.
- */
-async function resolveEmail(identifier: string): Promise<string | null> {
-  const supabase = getSupabase();
-  const id = identifier.trim();
-  if (!supabase || !id) return null;
-  if (id.includes('@')) return id;
-  const { data, error } = await supabase.rpc('resolve_admin_login', { p_username: id });
-  if (error || !data) return null;
-  return data as string;
 }
 
 /**
@@ -92,11 +71,7 @@ async function selesaikanLogin(): Promise<LoginResult> {
 }
 
 export interface KirimKodeResult extends LoginResult {
-  /**
-   * Email tujuan untuk langkah verifikasi. Tidak pernah ditampilkan; untuk
-   * username yang tidak dikenal berisi identifier apa adanya supaya alurnya
-   * tetap terlihat sama (verifikasi nanti gagal dengan pesan umum).
-   */
+  /** Email yang dimasukkan pengguna, untuk verifikasi kode berikutnya. */
   email?: string;
 }
 
@@ -151,11 +126,8 @@ async function kirimKode(
   const supabase = getSupabase();
   if (!supabase) return { ok: false, error: 'Koneksi ke Supabase belum dikonfigurasi.' };
   const id = identifier.trim();
-  if (!id) return { ok: false, error: 'Isi username atau email dulu.' };
-
-  const email = await resolveEmail(id);
-  // Username tak dikenal tetap dianggap "terkirim" (lihat pesanKirimKode).
-  if (!email) return { ok: true, email: id };
+  const email = normalisasiEmailAdmin(id);
+  if (!email) return { ok: false, error: 'Isi alamat email akun admin yang valid.' };
 
   const hasil = pesanKirimKode((await kirim(email)).error);
   return hasil.ok ? { ok: true, email } : hasil;
@@ -178,7 +150,7 @@ async function verifikasiKode(email: string, kodeInput: string, type: 'email' | 
   const supabase = getSupabase();
   if (!supabase) return { ok: false, error: 'Koneksi ke Supabase belum dikonfigurasi.' };
   const token = normalisasiKode(kodeInput);
-  if (!token) return { ok: false, error: 'Kode berupa 6 digit angka dari email.' };
+  if (!token) return { ok: false, error: 'Kode berupa 6–10 digit angka dari email.' };
 
   const { error } = await supabase.auth.verifyOtp({ email, token, type });
   if (error) return { ok: false, error: 'Kode salah atau sudah kedaluwarsa. Minta kode baru bila perlu.' };

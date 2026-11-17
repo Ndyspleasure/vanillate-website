@@ -30,6 +30,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { bacaSnapshot, muatUlangDariBot } from '@/lib/dev-panel/client';
   import { GAME_ACTIONS, SPAWN_EVENTS, fmtDuration, modeGroup, modeLabel, toEpoch } from '@/lib/dev-panel/model';
@@ -45,8 +46,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
-    void muat();
-    setInterval(() => void muat(), 10_000);
+    startAdminPolling(muat, 30_000);
     document.getElementById('games-refresh')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement;
       b.disabled = true; b.textContent = 'Meminta bot…';

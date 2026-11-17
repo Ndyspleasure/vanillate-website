@@ -22,6 +22,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 </AdminLayout>
 
 <script>
+  import { startAdminPolling } from '@/lib/admin-polling';
   import { getSupabase } from '@/lib/supabase';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
 
@@ -104,9 +105,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   }
 
   document.addEventListener('admin:ready', () => {
-    void muat();
-    const timer = setInterval(() => void muat(), 10_000);
-    window.addEventListener('beforeunload', () => clearInterval(timer));
+    startAdminPolling(muat, 30_000);
   });
   document.getElementById('btn-refresh')?.addEventListener('click', () => void muat());
 </script>
