@@ -21,9 +21,12 @@ import {
   formatWib,
   isNotUsed,
   isSnowflake,
+  normalizeState,
   NOT_USED,
   roleLabel,
   supportsNotUsed,
+  diffStates,
+  featureLock,
   typedSettings,
   type AuditRow,
   type Change,
@@ -162,6 +165,82 @@ export function revertChanges(
     else applied += 1;
   }
   return { draft: next, applied, skipped };
+}
+
+/**
+ * Pulihkan draft ke isi pengaturan utuh sebuah revisi (dari Riwayat, migration
+ * 0030 bot). Hanya fitur yang ada di revisi itu DAN masih terdaftar yang diganti;
+ * fitur baru sesudah revisi itu dibiarkan. Hasilnya draft, belum disimpan.
+ */
+export function restoreState(
+  draft: ConfigState,
+  stored: ConfigState | null | undefined,
+  registry: Feature[],
+): { draft: ConfigState; applied: number } {
+  const next = cloneState(draft);
+  if (!stored || typeof stored !== 'object') return { draft: next, applied: 0 };
+  const known = registry.filter((f) => stored[f.key] && next[f.key]);
+  const clean = normalizeState(stored, known);
+  for (const f of known) next[f.key] = clean[f.key];
+  return { draft: next, applied: diffStates(draft, next, registry).length };
+}
+
+// ─── Salin pengaturan dari server lain ───────────────────────────────────────
+
+/** Jenis setelan yang nilainya berlaku di server mana pun (bukan ID channel atau role). */
+const PORTABLE = new Set(['boolean', 'integer', 'string', 'enum', 'color']);
+
+/**
+ * Salin pengaturan server lain ke draft: status aktif tiap fitur dan setelan yang
+ * tidak merujuk channel atau role. Channel, role, daftar role atau channel, reward,
+ * dan panduan channel TIDAK disalin karena ID-nya hanya berlaku di server asal.
+ * Fitur yang seluruhnya terkunci tidak diaktifkan. Hasilnya draft, belum disimpan.
+ */
+export function copyFromServer(
+  draft: ConfigState,
+  source: ConfigState | null | undefined,
+  registry: Feature[],
+): { draft: ConfigState; applied: number; skipped: number } {
+  const next = cloneState(draft);
+  let skipped = 0;
+  if (!source || typeof source !== 'object') return { draft: next, applied: 0, skipped };
+  for (const f of registry) {
+    const from = source[f.key];
+    const to = next[f.key];
+    if (!from || !to) continue;
+    if (typeof from.enabled === 'boolean' && !(from.enabled && featureLock(f).full)) to.enabled = from.enabled;
+    const settings = from.settings && typeof from.settings === 'object' ? from.settings : {};
+    for (const p of typedSettings(f)) {
+      const has = settings[p.key] !== undefined && settings[p.key] !== null;
+      if (!PORTABLE.has(p.type)) {
+        if (has) skipped += 1;
+        continue;
+      }
+      if (has) to.settings[p.key] = JSON.parse(JSON.stringify(settings[p.key]));
+      else delete to.settings[p.key];
+    }
+    if (supportsNotUsed(f)) {
+      if (!to.enabled && settings[NOT_USED] === true) to.settings[NOT_USED] = true;
+      else if (to.settings[NOT_USED] === true) to.settings[NOT_USED] = false;
+    }
+    skipped += Object.keys(from.channels ?? {}).length;
+  }
+  return { draft: next, applied: diffStates(draft, next, registry).length, skipped };
+}
+
+/** Draft tersimpan sementara di browser hanya dipakai lagi bila revisinya masih sama. */
+export function recoverDraft(
+  stored: unknown,
+  base: ConfigState,
+  baseRevision: number,
+  registry: Feature[],
+): ConfigState | null {
+  const s = stored as { rev?: unknown; draft?: unknown } | null;
+  if (!s || s.rev !== baseRevision || !s.draft || typeof s.draft !== 'object') return null;
+  const draft = normalizeState(s.draft as ConfigState, registry);
+  // Fitur yang tidak ada di simpanan memakai nilai tersimpan di server.
+  for (const f of registry) if (!(s.draft as ConfigState)[f.key]) draft[f.key] = cloneState({ [f.key]: base[f.key] })[f.key];
+  return diffStates(base, draft, registry).length ? draft : null;
 }
 
 // ─── Saring, cari, ekspor Riwayat ────────────────────────────────────────────

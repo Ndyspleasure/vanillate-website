@@ -84,7 +84,25 @@ async function mockApi(context, state, sim) {
           return;
         }
       }
-      else if (name === 'guild_config_audit_list') body = auditRows(now);
+      else if (name === 'guild_config_audit_list') {
+        const args = req.postDataJSON() ?? {};
+        body = auditRows(now);
+        if ('p_action_prefix' in args) {
+          // Riwayat versi baru (migration 0030 repo bot). LIGHT=0 meniru database lama.
+          if (process.env.LIGHT === '0') {
+            sim.inflight -= 1;
+            log.push({ name: 'guild_config_audit_list (ditolak, database lama)', bytes: 0, at: now });
+            return route.fulfill({ status: 404, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ code: 'PGRST202', message: 'Could not find the function' }) });
+          }
+          if (args.p_state_id != null) {
+            const g = state.guild(now);
+            g.state.GAME_TEBAKLAGU.enabled = true; // keadaan lama: Tebak Lagu masih aktif
+            body = { id: args.p_state_id, revision: 11, action: 'config.save', created_at: g.server_time, state: g.state };
+          } else {
+            body = body.filter((r) => !args.p_action_prefix || r.action.startsWith(args.p_action_prefix)).map((r) => ({ ...r, has_state: r.action.startsWith('config.') }));
+          }
+        }
+      }
       else if (name === 'share_dashboard_get') body = shareDashboard(now);
       else if (name === 'guild_config_save') body = state.save(now);
       else if (name === 'guild_dashboard_request_refresh' || name === 'guild_config_request_resync') body = state.request?.(name, now) ?? { ok: true, bot_online: true };
@@ -213,7 +231,7 @@ async function measure(browser, origin) {
 // ─── check & shots ───────────────────────────────────────────────────────────
 
 const VIEWPORTS = [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }];
-const TABS = ['overview', 'game-hub', 'social-hub', 'verification', 'leveling', 'autorole', 'welcome', 'security', 'share-server', 'channels', 'audit-log'];
+const TABS = ['overview', 'game-hub', 'social-hub', 'verification', 'leveling', 'autorole', 'welcome', 'security', 'share-server', 'channels', 'audit-log', 'copy'];
 
 async function inspect(page) {
   return page.evaluate(() => {

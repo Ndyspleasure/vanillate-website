@@ -17,7 +17,8 @@ export type Tab =
   | 'security'
   | 'share-server'
   | 'channels'
-  | 'audit-log';
+  | 'audit-log'
+  | 'copy';
 export type Hub = 'overview' | 'game-hub' | 'social-hub' | 'server-hub';
 
 // Navigasi dua tingkat: kategori utama di atas, submenu Server Hub di sidebar.
@@ -62,6 +63,7 @@ export const SERVER_GROUPS: { label: string; tabs: ServerTab[] }[] = [
     tabs: [
       { id: 'channels', label: 'Peta Channel', ic: 'hash' },
       { id: 'audit-log', label: 'Riwayat', ic: 'history' },
+      { id: 'copy', label: 'Salin Pengaturan', ic: 'copy' },
     ],
   },
 ];

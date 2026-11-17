@@ -4,9 +4,9 @@
 // halaman, RPC guild_config_audit_list). Saring, cari, ekspor, dan "Kembalikan"
 // bekerja pada baris yang SUDAH dimuat, tanpa permintaan tambahan.
 
-import { auditList, DashboardError } from './api';
+import { auditList, auditState, auditV2Supported, DashboardError } from './api';
 import { AUDIT_ACTION, describeError, formatAuditChange, formatWib, type AuditRow, type Tone } from './model';
-import { AUDIT_KIND_LABEL, auditSourceLabel, auditToCsv, filterAudit, revertChanges, revertible, type AuditKind } from './review-model';
+import { AUDIT_KIND_LABEL, auditSourceLabel, auditToCsv, filterAudit, restoreState, revertChanges, revertible, type AuditKind } from './review-model';
 import type { PageCtx } from './server-shared';
 import { BTN_SECONDARY, CARD, esc, icon, loadingBlock, pill, toast } from './ui';
 
@@ -31,13 +31,15 @@ export function createAuditController(guildId: string, root: HTMLElement): Audit
   let error = false;
   let kind: AuditKind = 'all';
   let query = '';
+  let restoring = false;
 
   async function load(c: PageCtx, version: string, more = false): Promise<void> {
     if (loading) return;
     loading = true;
     try {
       const before = more && rows?.length ? rows[rows.length - 1].id : null;
-      const page = await auditList(guildId, before, PAGE);
+      // Saringan jenis dijalankan di server bila database mendukung (migration 0030 bot).
+      const page = await auditList(guildId, before, PAGE, kind === 'config' ? 'config.' : kind === 'sync' ? 'sync.' : null);
       rows = more && rows ? [...rows, ...page] : page;
       done = page.length < PAGE;
       error = false;
@@ -80,6 +82,14 @@ export function createAuditController(guildId: string, root: HTMLElement): Audit
             }
             <div class="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <p class="text-xs text-ink-500 dark:text-cream-300/60">${esc(formatWib(a.created_at))}</p>
+              <div class="flex flex-wrap items-center gap-x-4">
+              ${
+                c.editable && a.has_state
+                  ? `<button type="button" data-audit-restore="${a.id}" data-focus="audit-restore-${a.id}" ${c.saving || restoring ? 'disabled' : ''}
+                      class="inline-flex min-h-[44px] items-center gap-1.5 text-xs font-medium text-amber-700 hover:underline disabled:opacity-50 sm:min-h-0 dark:text-amber-300"
+                      title="Memuat seluruh pengaturan seperti pada revisi ini ke draft. Belum disimpan sampai kamu menekan Simpan Perubahan.">${icon('refresh-cw', 'h-3.5 w-3.5')} Pulihkan ke revisi ini</button>`
+                  : ''
+              }
               ${
                 c.editable && revertible(a)
                   ? `<button type="button" data-audit-revert="${a.id}" data-focus="audit-revert-${a.id}" ${c.saving ? 'disabled' : ''}
@@ -87,6 +97,7 @@ export function createAuditController(guildId: string, root: HTMLElement): Audit
                       title="Memuat nilai sebelum perubahan ini ke draft. Belum disimpan sampai kamu menekan Simpan Perubahan.">${icon('history', 'h-3.5 w-3.5')} Kembalikan ke sebelum ini</button>`
                   : ''
               }
+              </div>
             </div>
           </li>`;
         })
@@ -107,7 +118,7 @@ export function createAuditController(guildId: string, root: HTMLElement): Audit
       if (!loading) void load(c, version);
       return loadingBlock('Memuat riwayat…');
     }
-    if (!rows.length) {
+    if (!rows.length && kind === 'all') {
       return `${INTRO}<div class="${CARD} mt-4 p-5 text-sm text-ink-600 dark:text-cream-300">
         <p class="font-medium">Belum ada riwayat perubahan untuk server ini.</p>
         <p class="mt-1 text-ink-500 dark:text-cream-300/70">Catatan pertama muncul setelah ada pengaturan yang disimpan dari dashboard ini.</p></div>`;
@@ -122,9 +133,37 @@ export function createAuditController(guildId: string, root: HTMLElement): Audit
           </select></label>
         <button type="button" data-audit-action="export" class="${BTN_SECONDARY} min-h-[44px]" title="Unduh catatan yang tampil sebagai berkas CSV">Ekspor CSV</button>
       </div>
-      <p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">Pencarian dan ekspor memakai ${rows.length} catatan yang sudah dimuat${done ? ' (semua catatan)' : ''}.</p>
+      <p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">Pencarian dan ekspor memakai ${rows.length} catatan yang sudah dimuat${done ? ' (semua catatan)' : ''}.${auditV2Supported() ? ' Isi revisi disimpan untuk 20 perubahan pengaturan terakhir.' : ''}</p>
       <div data-audit-list>${listHtml(c)}</div>
       ${done ? '' : `<div class="mt-4 text-center"><button type="button" data-audit-action="more" data-focus="audit-more" class="${BTN_SECONDARY} min-h-[44px]" ${loading ? 'disabled' : ''}>Muat lebih banyak</button></div>`}`;
+  }
+
+  /** Satu permintaan baca: isi pengaturan pada revisi itu, lalu dimuat ke draft. */
+  async function restoreRevision(c: PageCtx, id: number): Promise<void> {
+    restoring = true;
+    c.render();
+    try {
+      const r = await auditState(guildId, id);
+      if (!r?.state) {
+        toast('Isi revisi ini sudah tidak disimpan. Hanya 20 perubahan pengaturan terakhir yang bisa dipulihkan utuh.', 'warning', 7000);
+        return;
+      }
+      const res = restoreState(c.draft, r.state, c.data.registry);
+      if (!res.applied) {
+        toast(`Pengaturan sekarang sudah sama dengan revisi ${r.revision}.`, 'info', 6000);
+        return;
+      }
+      restoring = false;
+      c.replaceDraft(res.draft);
+      toast(`Pengaturan revisi ${r.revision} dimuat ke draft (${res.applied} perubahan). Periksa lewat Tinjau, lalu tekan Simpan Perubahan.`, 'success', 7000);
+    } catch (err) {
+      toast(describeError(err instanceof DashboardError ? err.code : 'NETWORK'), 'danger');
+    } finally {
+      if (restoring) {
+        restoring = false;
+        c.render();
+      }
+    }
   }
 
   function download(c: PageCtx): void {
@@ -159,6 +198,11 @@ export function createAuditController(guildId: string, root: HTMLElement): Audit
         toast(`${r.applied} perubahan dimuat ke draft${r.skipped ? `, ${r.skipped} dilewati` : ''}. Periksa lewat Tinjau, lalu tekan Simpan Perubahan.`, 'success', 7000);
         return true;
       }
+      const restore = target.closest<HTMLButtonElement>('[data-audit-restore]');
+      if (restore && !restore.disabled) {
+        void restoreRevision(c, Number(restore.dataset.auditRestore));
+        return true;
+      }
       const btn = target.closest<HTMLButtonElement>('[data-audit-action]');
       if (!btn || btn.disabled) return false;
       const action = btn.dataset.auditAction;
@@ -182,6 +226,11 @@ export function createAuditController(guildId: string, root: HTMLElement): Audit
       const sel = target.closest<HTMLSelectElement>('[data-audit-kind]');
       if (!sel) return false;
       kind = (sel.value in AUDIT_KIND_LABEL ? sel.value : 'all') as AuditKind;
+      // Didukung server: muat ulang halaman pertama dengan saringan (satu permintaan).
+      if (auditV2Supported()) {
+        rows = null;
+        done = false;
+      }
       c.render();
       return true;
     },

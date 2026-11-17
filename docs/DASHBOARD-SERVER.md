@@ -151,11 +151,11 @@ menu pilih di HP supaya tidak perlu digeser menyamping):
 | Member baru | Verification · Auto Role · Welcome |
 | Aktivitas dan keamanan | Leveling · Security Center |
 | Promosi | Share Server |
-| Alat | Peta Channel · Riwayat |
+| Alat | Peta Channel · Riwayat · Salin Pengaturan |
 
 Hash URL tetap id tab (`#overview`, `#game-hub`, `#social-hub`, `#verification`,
 `#leveling`, `#autorole`, `#welcome`, `#security`, `#share-server`, `#channels`,
-`#audit-log`); `#server-hub` membuka submenu Server Hub terakhir (bawaan
+`#audit-log`, `#copy`); `#server-hub` membuka submenu Server Hub terakhir (bawaan
 Verification). Daftar dan pemetaan hash ada di `src/lib/dashboard/nav-model.ts`
 dan dijaga `tests/dashboard-review.test.ts`, jadi tautan lama dan tautan dari
 `/pengaturan` di Discord tidak boleh rusak.
@@ -468,7 +468,10 @@ Butuh Playwright dan Chromium di mesin (bukan dependensi repo). Data di
 |---|---|---|---|
 | **Tinjau perubahan** | Bar simpan, tombol Tinjau | Daftar "fitur, setelan, dari, menjadi" dari `diffStates(base, draft)` (`describeChange`) | Nol permintaan |
 | **Kembalikan ke sebelum ini** | Riwayat, pada catatan perubahan pengaturan | `revertChanges` menyalin nilai lama (`changed_fields[].from`) ke **draft**. Tidak ada yang disimpan sampai admin menekan Simpan, jadi revisi, `STALE_REVISION`, validasi RPC, dan validasi bot tetap berlaku seperti biasa | Nol permintaan |
-| **Cari, saring, ekspor CSV** | Riwayat | `filterAudit`, `auditToCsv` atas catatan yang sudah dimuat. Sel CSV yang berawalan `=`, `+`, `-`, `@` dinetralkan | Nol permintaan |
+| **Pulihkan ke revisi ini** | Riwayat, pada 20 perubahan pengaturan terakhir | Satu permintaan `guild_config_audit_list` (isi revisi), lalu `restoreState` memuatnya ke **draft**. Butuh migration 0030 bot; tanpa itu tombolnya tidak tampil | Satu permintaan baca saat ditekan |
+| **Salin Pengaturan** | Server Hub, Alat (`#copy`) | Daftar server dari `dashboard-discord` saat tab dibuka, lalu satu `guild_dashboard_get` server sumber. `copyFromServer` menyalin status fitur dan setelan umum ke **draft**; channel dan role tidak disalin | Satu panggilan daftar saat tab dibuka, satu baca saat ditekan |
+| **Draft tidak hilang saat muat ulang** | Semua tab | Draft dititipkan di `sessionStorage` dan dipakai lagi hanya bila revisinya masih sama (`recoverDraft`) | Nol permintaan |
+| **Cari, saring, ekspor CSV** | Riwayat | `filterAudit`, `auditToCsv` atas catatan yang sudah dimuat. Saringan jenis dijalankan di server bila migration 0030 bot ada (satu permintaan per ganti saringan). Sel CSV yang berawalan `=`, `+`, `-`, `@` dinetralkan | Nol permintaan |
 | **Langkah awal** | Ringkasan, selama ada yang belum selesai | `setupSteps`: bot terpasang, data Discord dimuat, fitur sosial diputuskan, bot sudah menerapkan. Bisa disembunyikan per browser (`localStorage`) | Nol permintaan |
 | **Arti status dan tombol** | Kepala halaman | Teks dari `STATUS_META` | Nol |
 | **Peta Channel** | Server Hub, Alat | Kartu di HP, baris di layar lebar, dengan jumlah tujuan yang perlu diperiksa | Nol permintaan |

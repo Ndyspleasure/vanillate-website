@@ -975,6 +975,8 @@ export interface AuditRow {
   action: string;
   changed_fields: unknown;
   created_at: string;
+  /** Isi revisi tersimpan dan bisa dipulihkan utuh (bot dengan migration 0030). */
+  has_state?: boolean;
 }
 
 export const AUDIT_ACTION: Record<string, string> = {
