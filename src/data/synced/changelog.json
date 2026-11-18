@@ -1,5 +1,26 @@
 [
   {
+    "version": "3.54.1",
+    "date": "2026-11-18",
+    "title": "Asisten Support di DM lebih pintar dan lebih sering bisa menjawab",
+    "highlights": [
+      "🤖 Asisten Support di DM kini tahu jauh lebih banyak: game, Sosial Hub, pengaturan server, tutorial, klaim harian, dan promo code",
+      "💬 Jawaban singkat seperti ucapan terima kasih tidak lagi dianggap belum tahu, dan pertanyaan berimbuhan atau bahasa sehari-hari lebih mudah dipahami",
+      "🛟 Untuk urusan akun atau coin, asisten menjelaskan langkah umum dulu lalu mengarahkan ke Tim Support"
+    ]
+  },
+  {
+    "version": "3.54.0",
+    "date": "2026-11-18",
+    "title": "Vani, teman ngobrol AI di satu channel khusus",
+    "highlights": [
+      "💬 Vani hadir sebagai teman ngobrol: admin server memilih satu channel di Vanillate Dashboard, lalu semua pesan member di channel itu dijawab otomatis",
+      "🔒 Pesan di channel lain tidak pernah dibaca, dan percakapan tidak disimpan permanen",
+      "🗳️ Vote di Top.gg menambah jatah balasan harian Vani",
+      "🧪 Fitur ini dibuka bertahap oleh tim Vanillate, jadi belum tampil di semua server"
+    ]
+  },
+  {
     "version": "3.53.0",
     "date": "2026-11-17",
     "title": "Vanillate Dashboard: pulihkan pengaturan dan salin antar server",
