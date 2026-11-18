@@ -101,6 +101,13 @@ done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/social-kata-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL retensi Pemantau Kata-Kata lulus."
 
+# Suite Vani (Social AI): dua baris setelan di bot_settings (aditif, idempoten).
+for f in supabase/social-ai.sql supabase/social-ai.sql; do
+  PGOPTIONS="-c client_min_messages=warning" run "${PSQL[@]}" -f "$ROOT/$f" >/dev/null
+done
+(cd "$ROOT" && run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/social-ai.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /")
+echo "✓ Tes SQL sakelar Vani lulus."
+
 # Suite retensi statistik: ringkasan bot_stats per jam (prasyarat tabel →
 # migrasi dua kali → tes). Tanpa pg_cron jadwal dilewati.
 for f in supabase/tests/bot-stats-rollup-prereq.sql supabase/bot-stats-rollup.sql supabase/bot-stats-rollup.sql; do

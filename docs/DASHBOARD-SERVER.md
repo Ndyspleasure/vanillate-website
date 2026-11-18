@@ -479,3 +479,7 @@ Butuh Playwright dan Chromium di mesin (bukan dependensi repo). Data di
 Hal yang butuh data atau RPC baru dari bot dicatat di
 `docs/DASHBOARD-PERMINTAAN-BOT.md`, tidak dibangun diam-diam di website.
 
+
+## Vani (Social AI) di Sosial Hub
+
+Opsi `SOCIAL_AI_CHAT` (satu channel AI per server) diterbitkan bot sebagai fitur Sosial Hub tersembunyi. Selama sakelar CMS `social_ai_enabled` mati (bawaan, `supabase/social-ai.sql`), opsi tampil terkunci memakai `locked_note` dari bot, jadi tidak ada teks buatan website. Biaya sumber daya website nol: tidak ada polling atau tabel baru, hanya dua baris `bot_settings`. Rancangan lengkap ada di `docs/social-ai.md` repo bot. Kebijakan privasi (`/privacy`, bagian 04) menyebut penyedia AI.
