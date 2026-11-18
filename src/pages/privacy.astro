@@ -165,6 +165,12 @@ const toc = [
         <p class="mb-4">
           Message content is processed exclusively to provide requested commands, gameplay interactions, moderation features, or other Service-related functionality.
         </p>
+        <p class="mb-4">
+          <strong>Vani (AI chat).</strong> If a server administrator turns on Vani and selects a dedicated channel, the bot reads text messages posted in that one channel only (never other channels, direct messages, or messages from bots) and replies to them automatically. Each message, and a short window of recent messages from the same member in that channel, is sent to Cloudflare Workers AI, a third-party AI service operated by Cloudflare, Inc., to generate the reply. Using the channel after the pinned notice is read counts as agreeing to this processing; if you do not want it, simply do not write in that channel. We do not send your username, Discord ID, or server name to the AI service.
+        </p>
+        <p class="mb-4">
+          Vani conversation memory is kept only in the bot's memory (never in a database or log), separately for each member and channel, and is deleted after 30 minutes without activity, when the source message is deleted, when the feature is turned off or the channel is changed, when the bot leaves the server, or when the bot restarts. We keep only aggregate usage counters (for example, the daily quota used), never message content. Cloudflare processes requests under its own terms and data processing agreement.
+        </p>
         <p>We do not sell, share, or use message content for advertising or profiling purposes.</p>
       </section>
 
