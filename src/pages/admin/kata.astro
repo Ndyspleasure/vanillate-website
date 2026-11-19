@@ -70,7 +70,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
-    const polling = startAdminPolling(async () => { await Promise.all([muat(), muatStatistik()]); }, 30_000);
+    const polling = startAdminPolling(async () => { await Promise.all([muat(), muatStatistik()]); }, 60_000);
     document.getElementById('kata-refresh')?.addEventListener('click', () => void polling.refresh());
     document.getElementById('kata-body')?.addEventListener('click', onAksi);
     renderAlat();

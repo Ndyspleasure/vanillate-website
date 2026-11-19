@@ -44,7 +44,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   document.addEventListener('admin:ready', (e) => {
     role = (e as CustomEvent).detail?.role ?? 'viewer';
-    startAdminPolling(muat, 30_000);
+    startAdminPolling(muat, 60_000);
     document.getElementById('ah-refresh')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement;
       b.disabled = true;

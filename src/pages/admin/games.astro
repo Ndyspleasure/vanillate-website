@@ -46,7 +46,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
-    startAdminPolling(muat, 30_000);
+    startAdminPolling(muat, 30_000, { idleMs: 0 });
     document.getElementById('games-refresh')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement;
       b.disabled = true; b.textContent = 'Meminta bot…';

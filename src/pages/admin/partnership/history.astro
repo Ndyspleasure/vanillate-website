@@ -90,7 +90,7 @@ const kontrol = 'rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg
     if (id) {
       el('tampil-daftar').classList.add('hidden');
       el('tampil-detail').classList.remove('hidden');
-      timerDetail = startAdminPolling(() => muatDetail(id, true), 30_000);
+      timerDetail = startAdminPolling(() => muatDetail(id, true), 60_000);
     } else {
       void muatDaftar();
       let t: ReturnType<typeof setTimeout>;

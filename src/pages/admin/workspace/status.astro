@@ -105,7 +105,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   }
 
   document.addEventListener('admin:ready', () => {
-    startAdminPolling(muat, 30_000);
+    startAdminPolling(muat, 60_000);
   });
   document.getElementById('btn-refresh')?.addEventListener('click', () => void muat());
 </script>

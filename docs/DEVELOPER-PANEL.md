@@ -69,6 +69,42 @@ Semua halaman: status loading → menunggu bot → hasil/error dari bot, peringa
 "bot mungkin offline" bila snapshot > 2 menit, dan perintah yang belum dijawab
 tetap di antrean (bisa dicek di riwayat).
 
+### 3a. Polling, batas idle, dan biaya baca
+
+Semua halaman memakai `startAdminPolling` (`src/lib/admin-polling.ts`): polling
+berhenti saat tab tersembunyi, tidak pernah tumpang tindih, dan refresh sekali
+saat tab kembali tampak.
+
+| Interval | Halaman |
+|---|---|
+| 30 dtk | `/admin/developer` (Ringkasan & Sistem), `/admin/games` (pemantauan langsung; keduanya `idleMs: 0`, tidak berhenti sendiri) |
+| 60 dtk | `/admin/developer/polling`, `autoheal`, `broadcast` (riwayat), `error`, `sosial`, `share-server`, `/admin/operasi`, `/admin/kata`, `/admin/promo`, `/admin/workspace/status`, `/admin/partnership/history` (detail) |
+
+- **Batas idle 30 menit** (opsi `idleMs`, bawaan 30 menit): bila tidak ada
+  interaksi (pointerdown, keydown, wheel/scroll, touchstart) selama itu, polling
+  berhenti. Interaksi berikutnya melanjutkan polling dan langsung refresh
+  sekali. `idleMs: 0` = tidak pernah berhenti; dipakai Games dan Kesehatan
+  Sistem karena dipakai sebagai layar pantau.
+- `kirimPerintah` menunggu hasil dengan membaca satu baris `bot_commands`;
+  jeda awal 2 dtk, naik 250 ms per putaran sampai 3 dtk (timeout tidak berubah).
+- Perintah baca-saja (`quiet` di `src/cms/registry.js` repo bot) tidak
+  mempercepat snapshot dan hanya menjaga polling perintah cepat 60 detik
+  (bukan 3 menit), jadi pembacaan satu kali tidak menaikkan beban. Ini perilaku
+  di sisi bot; angka kuota sesungguhnya tidak diukur di sini.
+
+Snapshot `system` juga memuat `activity` (objek baru dari bot):
+`supportAi` {chats, maxChats, pending, maxQueue, usersToday, enabled},
+`leveling` {cachedMembers, pendingDelta, voiceSessions}, `verification`
+{sessions, cooldowns}, `streakHolds`, dan `remoteConfigLoaded`. Semuanya hanya
+hitungan di memori bot (hilang saat restart, tanpa isi pesan atau identitas
+pemain) dan ditampilkan di tab "Aktivitas di memori bot". Bot lama tidak
+mengirimnya, halaman menampilkan keterangan "belum dikirim" tanpa error;
+`remoteConfigLoaded === false` memunculkan peringatan pengaturan CMS belum
+termuat. Halaman yang sama juga menampilkan `intents.guildMembers`,
+`health.disk`, `health.loopLag`, `control.busy`, dan `db.conn` (termasuk 5 query
+teratas) yang sudah dikirim bot; semuanya dari snapshot yang sama, tanpa query
+baru.
+
 ## 4. Kode
 
 | Berkas | Peran |
