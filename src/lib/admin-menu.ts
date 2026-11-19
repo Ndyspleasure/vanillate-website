@@ -68,7 +68,6 @@ export const adminMenu: MenuNode[] = [
             ["export-daftar-kata","Export daftar kata"],
             ["review-massal","Review massal"]
           ]),
-          { key: "lagu", label: "Tebak Lagu", href: "/admin/lagu" },
           tabHalaman("dev-tahu", "Tahu Bulat", "/admin/developer/tahu-bulat", [
             ["ringkasan","Ringkasan"],
             ["kolam-donasi","Kolam donasi"],

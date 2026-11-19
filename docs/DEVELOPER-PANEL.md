@@ -7,7 +7,7 @@ lama → baru, cara menambah aksi).
 
 > **Nama & menu:** bot "Vanillate Sambung Kata" kini bernama **Vanillate.ID**
 > (Sambung Kata tetap nama game/mode-nya). Di sidebar CMS, pengaturan bot
-> (Kontrol Bot, Promo, Tebak Lagu) dan Panel Developer digabung dalam satu grup
+> (Kontrol Bot, Promo) dan Panel Developer digabung dalam satu grup
 > **Discord Bot** (`grup-bot` di `src/layouts/AdminLayout.astro`). Nama tabel
 > (`bot_*`) dan kunci `bot_slug = 'sambung-kata'` tidak berubah. Slug halaman
 > produk kini `vanillateID` (`/products/vanillateID/`) dan kategori FAQ
