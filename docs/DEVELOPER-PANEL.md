@@ -19,7 +19,7 @@ lama → baru, cara menambah aksi).
 | Arah | Tabel | Siapa menulis | Siapa membaca |
 |---|---|---|---|
 | website → bot | `bot_commands` (antrean perintah) | admin login (INSERT `pending`) | bot (service_role): klaim, eksekusi, tulis `status`/`result`/`error`/`progress`/`heartbeat_at` |
-| bot → website | `bot_panel_snapshots` (11 key: `system`, `games`, `polls`, `broadcast`, `events`, `errors`, `tutorial`, `campaign`, `social`, `autoheal`, `words`) | bot (service_role) | admin login |
+| bot → website | `bot_panel_snapshots` (14 key: `system`, `games`, `polls`, `broadcast`, `events`, `errors`, `tutorial`, `campaign`, `social`, `autoheal`, `words`, `share`, `tahu`, `story`). Snapshot hanya dikirim bot bila isinya berubah, jadi isinya harus data yang jarang berubah; angka yang berubah terus dibaca sesuai permintaan lewat perintah | bot (service_role) | admin login |
 | bot → website | storage `bot-backups` (privat) | bot | **owner** saja (signed URL ±10 menit) |
 | state | `bot_settings` (sudah ada) | admin di `/admin/kontrol` | bot (`remoteConfig`) |
 
@@ -57,7 +57,7 @@ pembuat dari `admin_users` → validasi payload per handler. Konfirmasi ketik di
 | `/admin/developer/error` | Error terbaru, detail Error ID, ubah status, fingerprint, recovery, tandai semua kejadian satu kode fixed (`error.setStatusByCode`) |
 | `/admin/developer/tutorial` | Status tutorial seluruh pemain, sesi berjalan, aksi per pemain, reset massal (owner) |
 | `/admin/developer/campaign` | Statistik DM campaign + kirim paksa ke satu pemain |
-| `/admin/developer/sosial` | Social Monitor: server pemakai SocialHub, detail, atur/matikan channel fitur, ✍️ Pemantau Kata-Kata (🗑️ hapus tulisan yang belum terkirim: `social.kata.remove`; salinan daftar di `bot_commands.result` dikosongkan setelah 60 menit oleh `supabase/social-kata-retention.sql`) |
+| `/admin/developer/sosial` | Social Monitor: kartu 🤖 Vani (Chat AI: sakelar, server pemasang channel dari snapshot `social.vani`; pemakaian kuota Neurons, pemutus sirkuit, antrean, dan sesi dibaca sesuai permintaan lewat perintah `social.vani` dari memori bot, hanya agregat), server pemakai SocialHub, detail, atur/matikan channel fitur, ✍️ Pemantau Kata-Kata (🗑️ hapus tulisan yang belum terkirim: `social.kata.remove`; salinan daftar di `bot_commands.result` dikosongkan setelah 60 menit oleh `supabase/social-kata-retention.sql`) |
 | `/admin/developer/share-server` | 📣 Share Server: statistik jaringan & vote, antrean, broadcast, laporan iklan 🚩 (abaikan / tahan server), detail server, 🔓 Cabut Terhambat, aturan (`sys.share.rules`, owner). Snapshot `share`; perintah `share.*` |
 | `/admin/developer/tahu-bulat` | 🥟 Tahu Bulat (game idle di hub `/game`, pengganti `/developer` bot Tahu Bulat lama): ringkasan pemain, kolam donasi, 10 besar, aktivitas terbaru; detail, export User ID aktif, reset progres satu pemain (ketik `RESET`). Snapshot `tahu`; perintah `tahu.detail`, `tahu.reset`, `tahu.exportIds`. Data pemain di database game bot (tabel `tahu_*`), bukan proyek CMS |
 | `/admin/developer/story` | 🌇 Vanillate Story (game di hub `/game`): ringkasan pemain (total, aktif 30 hari, baru hari ini, utang lunas, hari tertinggi) dan aktivitas terbaru; detail, export User ID aktif, reset progres satu pemain (ketik `RESET`). Juga kartu tingkat kekalahan per minggu (`outcomes`) dan aturan kesulitan (`rules`, edit khusus owner lewat `sys.story.rules`, berlaku seketika). Snapshot `story`; perintah `story.detail`, `story.reset`, `story.exportIds`, `sys.story.rules`. Data pemain di database game bot, bukan proyek CMS |
