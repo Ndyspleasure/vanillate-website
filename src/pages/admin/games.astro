@@ -46,7 +46,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
-    startAdminPolling(muat, 30_000);
+    startAdminPolling(muat, 30_000, { idleMs: 0 });
     document.getElementById('games-refresh')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement;
       b.disabled = true; b.textContent = 'Meminta bot…';
@@ -83,6 +83,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   function renderRingkasan() {
     const rooms: any[] = snap?.rooms ?? [];
+    const gates = snap?.gates ?? null; // sakelar CMS game bawaan mati (dari snapshot, tanpa query tambahan)
     const inti = rooms.filter((r) => modeGroup(r.mode) === 'sambung');
     const sampingan = rooms.filter((r) => modeGroup(r.mode) === 'sampingan');
     const pemain = rooms.reduce((n, r) => n + jumlahPemain(r), 0);
@@ -92,6 +93,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       stat('Pemain in-game', pemain),
       stat('Mengantre Global', snap?.waitingPlayers ?? 0, snap?.queue?.label ?? ''),
       stat('Terlama berjalan', tertua ? durasi(tertua) : '—', tertua ? tertua.gameId : 'tidak ada game berjalan'),
+      stat('Vanillate Dungeon', gates ? (gates.vdungeon ? 'Terbuka' : 'Tertutup') : '—', gates ? (gates.vdungeon ? `Party: ${gates.vdungeonParty ? 'terbuka' : 'tertutup'}` : 'sakelar di Kontrol Bot › Mode & Game') : 'bot belum melaporkan'),
     ].join('');
   }
 

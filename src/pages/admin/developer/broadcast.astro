@@ -43,7 +43,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     audiences = snap?.audiences ?? [];
     delayMs = snap?.dmDelayMs ?? 1200;
     render();
-    startAdminPolling(muatRiwayat, 30_000);
+    startAdminPolling(muatRiwayat, 60_000);
   });
 
   const aud = (key: string) => audiences.find((a) => a.key === key);

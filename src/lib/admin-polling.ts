@@ -9,7 +9,14 @@ export interface PollEnvironment {
   onVisibility(fn: () => void): () => void;
   onPageHide(fn: () => void): () => void;
   onPageShow(fn: () => void): () => void;
+  /** Interaksi pengguna (pointerdown, keydown, wheel/scroll, touchstart). Opsional agar pemanggil lama tetap jalan. */
+  onInteraction?(fn: () => void): () => void;
+  /** Waktu sekarang dalam ms (disuntik untuk tes). Bawaan Date.now. */
+  now?(): number;
 }
+
+/** Batas diam bawaan: tanpa interaksi sekian lama, polling berhenti sampai ada interaksi lagi. */
+export const DEFAULT_IDLE_MS = 30 * 60 * 1000;
 
 function browserEnvironment(): PollEnvironment {
   const listen = (target: EventTarget, event: string, fn: () => void) => {
@@ -23,13 +30,25 @@ function browserEnvironment(): PollEnvironment {
     onVisibility: (fn) => listen(document, 'visibilitychange', fn),
     onPageHide: (fn) => listen(window, 'pagehide', fn),
     onPageShow: (fn) => listen(window, 'pageshow', fn),
+    onInteraction: (fn) => {
+      const events = ['pointerdown', 'keydown', 'wheel', 'scroll', 'touchstart'];
+      events.forEach((e) => window.addEventListener(e, fn, { passive: true, capture: true }));
+      return () => events.forEach((e) => window.removeEventListener(e, fn, { capture: true }));
+    },
+    now: () => Date.now(),
   };
 }
 
 export function startAdminPolling(
   task: () => Promise<unknown>,
   intervalMs = 30_000,
-  options: { immediate?: boolean; environment?: PollEnvironment; onError?: (error: unknown) => void } = {},
+  options: {
+    immediate?: boolean;
+    environment?: PollEnvironment;
+    onError?: (error: unknown) => void;
+    /** Berhenti bila tak ada interaksi selama sekian ms (bawaan 30 menit, 0 = tidak pernah berhenti). */
+    idleMs?: number;
+  } = {},
 ) {
   const env = options.environment ?? browserEnvironment();
   const interval = Math.max(1000, intervalMs);
@@ -39,7 +58,15 @@ export function startAdminPolling(
   let suspended = false;
   let failures = 0;
   const clear = () => { if (timer !== null) env.clearTimer(timer); timer = null; };
-  const active = () => !stopped && !suspended && !env.isHidden();
+  const idleMs = options.idleMs ?? DEFAULT_IDLE_MS;
+  const now = () => (env.now ? env.now() : Date.now());
+  let lastActivity = now();
+  let idle = false;
+  const isIdle = () => {
+    if (idleMs > 0 && !idle && now() - lastActivity >= idleMs) idle = true;
+    return idle;
+  };
+  const active = () => !stopped && !suspended && !env.isHidden() && !isIdle();
   const schedule = () => {
     clear();
     if (active()) timer = env.setTimer(() => { timer = null; void refresh(); }, interval * Math.min(4, 2 ** failures));
@@ -59,6 +86,12 @@ export function startAdminPolling(
     env.onPageHide(() => { suspended = true; clear(); }),
     env.onPageShow(() => { suspended = false; if (active()) void refresh(); }),
   ];
+  if (idleMs > 0 && env.onInteraction) {
+    remove.push(env.onInteraction(() => {
+      lastActivity = now();
+      if (idle) { idle = false; void refresh(); }
+    }));
+  }
   if (options.immediate === false) schedule(); else void refresh();
   return {
     refresh,

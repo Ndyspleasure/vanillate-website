@@ -54,7 +54,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
-    startAdminPolling(muat, 30_000);
+    startAdminPolling(muat, 60_000);
     document.getElementById('promo-refresh')?.addEventListener('click', () => void muat());
     document.getElementById('promo-body')?.addEventListener('click', onAksi);
     renderForm();
