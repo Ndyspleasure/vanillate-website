@@ -26,7 +26,7 @@ test('semua halaman lama tetap ada dengan href yang sama', () => {
   const lama: Record<string, string> = {
     'dev-home': '/admin/developer', kontrol: '/admin/kontrol',
     'dev-server': '/admin/developer/kontrol-server', games: '/admin/games',
-    pemain: '/admin/pemain', kata: '/admin/kata', lagu: '/admin/lagu',
+    pemain: '/admin/pemain', kata: '/admin/kata',
     promo: '/admin/promo', 'dev-broadcast': '/admin/developer/broadcast',
     'dev-polling': '/admin/developer/polling', 'dev-event': '/admin/developer/event',
     'dev-tutorial': '/admin/developer/tutorial', 'dev-campaign': '/admin/developer/campaign',
@@ -80,9 +80,9 @@ test('satu halaman hanya punya satu kategori dan navigasi maksimum empat tingkat
 
 test('simpulAktif menandai seluruh leluhur', () => {
   const bot = adminMenu.find((n) => n.key === 'grup-bot')!;
-  assert.ok(simpulAktif(bot, 'lagu'));
-  assert.ok(simpulAktif(bot.items!.find((n) => n.key === 'bot-vanillate')!, 'lagu'));
-  assert.ok(!simpulAktif(bot.items![0], 'lagu'));
+  assert.ok(simpulAktif(bot, 'kata'));
+  assert.ok(simpulAktif(bot.items!.find((n) => n.key === 'bot-vanillate')!, 'kata'));
+  assert.ok(!simpulAktif(bot.items![0], 'kata'));
 });
 
 test('pencarian: indeks memuat semua halaman dengan jalur lengkap', async () => {
@@ -90,16 +90,16 @@ test('pencarian: indeks memuat semua halaman dengan jalur lengkap', async () => 
   const indeks = indeksPencarian(adminMenu);
   const kategoriTab = (d: typeof adminMenu): number => d.reduce((n, x) => n + (x.page ? 1 : 0) + kategoriTab(x.items ?? []), 0);
   assert.equal(indeks.length, semuaHalaman(adminMenu).length + kategoriTab(adminMenu));
-  const lagu = indeks.find((e) => e.node.key === 'lagu')!;
-  assert.deepEqual(lagu.jalur, ['Bot', 'Vanillate.ID', 'Tebak Lagu']);
+  const kata = indeks.find((e) => e.node.key === 'kata')!;
+  assert.deepEqual(kata.jalur, ['Bot', 'Vanillate.ID', 'Kamus Sambung Kata']);
 });
 
 test('pencarian: semua kata harus cocok, urutan bebas, tanpa beda huruf besar', async () => {
   const { indeksPencarian, cocokPencarian } = await import('../src/lib/admin-menu.ts');
   const cari = (q: string) => indeksPencarian(adminMenu).filter((e) => cocokPencarian(e.teks, q)).map((e) => e.node.key);
-  assert.ok(cari('TEBAK').includes('lagu'));
-  assert.ok(cari('bot tebak').includes('lagu'));
-  assert.ok(cari('tebak bot').includes('lagu'));
+  assert.ok(cari('KAMUS').includes('kata'));
+  assert.ok(cari('bot kamus').includes('kata'));
+  assert.ok(cari('kamus bot').includes('kata'));
   assert.ok(cari('workspace tugas').includes('ws-tasks'));
   assert.ok(cari('/admin/pemain').includes('pemain'));
   assert.deepEqual(cari('zzzxxx'), []);
