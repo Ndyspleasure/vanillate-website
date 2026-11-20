@@ -1,5 +1,44 @@
 [
   {
+    "version": "3.55.3",
+    "date": "2026-11-20",
+    "title": "Tebak Lagu lebih tahan saat server audio bermasalah",
+    "highlights": [
+      "🛠️ Bot kini memutus server audio yang tidak stabil dan memberi pesan jelas, bukan terus mencoba tanpa henti",
+      "🔊 Server audio sendiri di VPS disiapkan untuk suara yang lebih stabil di Tebak Lagu"
+    ]
+  },
+  {
+    "version": "3.55.2",
+    "date": "2026-11-20",
+    "title": "Tebak Lagu: musik dan waktu menjawab 1 menit",
+    "highlights": [
+      "⏱️ Setiap ronde Tebak Lagu kini 1 menit penuh: musik diputar 60 detik sambil kamu menjawab",
+      "🔁 Cuplikan lagu 30 detik diputar dua kali supaya musik tidak berhenti di tengah ronde",
+      "🏆 Skor tetap makin besar bila makin cepat, kini berlaku sampai detik ke-60"
+    ]
+  },
+  {
+    "version": "3.55.1",
+    "date": "2026-11-20",
+    "title": "Bot pindah ke server baru yang lebih cepat dan stabil",
+    "highlights": [
+      "⚡ Vanillate kini berjalan di server khusus di Jakarta, respons perintah dan tombol jadi lebih cepat",
+      "🛡️ Bot lebih stabil dan jarang terputus karena tidak lagi bergantung pada komputer rumah"
+    ]
+  },
+  {
+    "version": "3.55.0",
+    "date": "2026-11-20",
+    "title": "Tebak Lagu versi baru: lagu populer, pilihan ganda, dan kategori",
+    "highlights": [
+      "🎵 Tebak Lagu kini memutar cuplikan lagu populer Indonesia dan internasional langsung di voice channel",
+      "🗂️ Pilih kategori di lobi: Pop Indonesia, Hip Hop Indonesia, Hits Indonesia 2026, atau Internasional",
+      "🔘 Jawab dengan pilihan ganda A sampai D, makin cepat benar makin besar skornya",
+      "🎧 Semua pemain perlu berada di voice channel yang sama dengan host agar bisa mendengar lagunya"
+    ]
+  },
+  {
     "version": "3.54.3",
     "date": "2026-11-20",
     "title": "Bot lebih ringan membaca data panel developer",
