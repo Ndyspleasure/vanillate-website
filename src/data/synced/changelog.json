@@ -1,5 +1,23 @@
 [
   {
+    "version": "3.54.3",
+    "date": "2026-11-20",
+    "title": "Bot lebih ringan membaca data panel developer",
+    "highlights": [
+      "⚡ Bot lebih hemat sumber daya database saat menyiapkan data panel developer",
+      "🛠️ Fitur permainan dan sosial berjalan seperti biasa"
+    ]
+  },
+  {
+    "version": "3.54.2",
+    "date": "2026-11-20",
+    "title": "Bot lebih hemat sumber daya database",
+    "highlights": [
+      "⚡ Bot membaca data pengaturan server jauh lebih jarang sehingga lebih ringan dan stabil",
+      "🛠️ Pengiriman broadcast dan fitur sosial tetap berjalan seperti biasa dengan beban database lebih kecil"
+    ]
+  },
+  {
     "version": "3.54.1",
     "date": "2026-11-18",
     "title": "Asisten Support di DM lebih pintar dan lebih sering bisa menjawab",
