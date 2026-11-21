@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.58.1",
+    "date": "2026-11-21",
+    "title": "Persiapan penyimpanan data di server sendiri",
+    "highlights": [
+      "🛠️ Persiapan infrastruktur penyimpanan data agar bot lebih cepat dan stabil ke depannya",
+      "📦 Backup data otomatis ke penyimpanan terpisah disiapkan (belum ada perubahan yang terlihat di server Anda)"
+    ]
+  },
+  {
     "version": "3.58.0",
     "date": "2026-11-21",
     "title": "Vanillate menyapa di voice yang ramai, Tebak Lagu bisa dimainkan di banyak server sekaligus",
