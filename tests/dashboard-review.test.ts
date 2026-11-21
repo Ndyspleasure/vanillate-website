@@ -167,7 +167,7 @@ test('setupSteps: langkah awal dari data yang sudah dimuat', () => {
 });
 
 test('navigasi: hash lama tetap berlaku dan setiap tab punya tempat', () => {
-  for (const h of ['overview', 'game-hub', 'social-hub', 'verification', 'leveling', 'share-server', 'channels', 'audit-log', 'autorole', 'welcome', 'security', 'copy']) {
+  for (const h of ['overview', 'game-hub', 'social-hub', 'verification', 'leveling', 'share-server', 'channels', 'audit-log', 'autorole', 'welcome', 'security', 'voice-sapa', 'copy']) {
     assert.equal(parseTabHash(`#${h}`, 'verification'), h);
   }
   assert.equal(parseTabHash('#server-hub', 'leveling'), 'leveling');
@@ -178,6 +178,8 @@ test('navigasi: hash lama tetap berlaku dan setiap tab punya tempat', () => {
   assert.equal(new Set(TAB_IDS).size, TAB_IDS.length);
   assert.equal(SERVER_TABS.length, SERVER_GROUPS.reduce((n, g) => n + g.tabs.length, 0));
   assert.equal(tabOfFeature({ section: 'security' }), 'security');
+  assert.equal(tabOfFeature({ section: 'voice_sapa' }), 'voice-sapa');
+  assert.equal(hubOf('voice-sapa'), 'server-hub');
   assert.equal(tabOfFeature({ section: 'baru' }), 'game-hub');
 });
 

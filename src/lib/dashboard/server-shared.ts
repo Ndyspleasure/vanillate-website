@@ -39,6 +39,7 @@ const FEATURE_ICON: Record<string, IconName> = {
   autorole: 'tag',
   welcome: 'handshake',
   security: 'shield',
+  voice_sapa: 'message-circle',
 };
 const SECTION_ICON: Record<string, IconName> = {
   game: 'gamepad-2',
@@ -48,6 +49,7 @@ const SECTION_ICON: Record<string, IconName> = {
   autorole: 'tag',
   welcome: 'handshake',
   security: 'shield',
+  voice_sapa: 'message-circle',
 };
 
 export function featureIcon(f: Feature): IconName {

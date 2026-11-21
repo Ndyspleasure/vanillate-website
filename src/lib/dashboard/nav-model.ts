@@ -15,6 +15,7 @@ export type Tab =
   | 'autorole'
   | 'welcome'
   | 'security'
+  | 'voice-sapa'
   | 'share-server'
   | 'channels'
   | 'audit-log'
@@ -52,6 +53,7 @@ export const SERVER_GROUPS: { label: string; tabs: ServerTab[] }[] = [
     tabs: [
       { id: 'leveling', label: 'Leveling', ic: 'trending-up' },
       { id: 'security', label: 'Security Center', ic: 'shield' },
+      { id: 'voice-sapa', label: 'Sapa Voice', ic: 'message-circle' },
     ],
   },
   {
@@ -90,6 +92,7 @@ export const SECTION_OF_TAB: Partial<Record<Tab, string>> = {
   autorole: 'autorole',
   welcome: 'welcome',
   security: 'security',
+  'voice-sapa': 'voice_sapa',
 };
 
 /** Tab tempat sebuah fitur diatur (bagian tak dikenal jatuh ke Game Hub). */

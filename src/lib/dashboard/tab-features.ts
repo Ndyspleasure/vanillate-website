@@ -51,7 +51,9 @@ export function panelHtml(c: PageCtx, tab: Tab): string {
                 ? 'Kosongkan channel untuk mematikan salah satu pesan: welcome saat member masuk, goodbye saat member keluar. Akun bot tidak disambut. Syarat: bot butuh izin mengirim pesan di channel yang dipilih.'
                 : section === 'security'
                   ? 'Syarat: bot butuh izin View Audit Log di server, serta View Channel dan Send Messages di channel log. Pilih minimal satu role admin atau moderator. Kategori alasan dipilih lewat tombol tanpa input teks bebas, dan catatan hanya tersimpan di server ini.'
-                  : 'Kegiatan harian yang bikin member rajin mampir ke server. Setiap fitur berjalan di channel khusus pilihanmu; fitur yang belum diberi channel tidak aktif, dan satu channel hanya untuk satu fitur sosial.';
+                  : section === 'voice_sapa'
+                    ? 'Bot mampir 10 detik di voice channel yang berisi minimal 2 orang terus-menerus selama 1 jam, lalu menyapa di chat teks voice itu dan mengajak mencoba game. Maksimal sekali sehari per server dan tidak memutar suara. Syarat: bot butuh izin Lihat Channel, Sambung, dan Kirim Pesan di voice channel itu.'
+                    : 'Kegiatan harian yang bikin member rajin mampir ke server. Setiap fitur berjalan di channel khusus pilihanmu; fitur yang belum diberi channel tidak aktif, dan satu channel hanya untuk satu fitur sosial.';
     if (!feats.length) {
       return `<div class="${CARD} p-5 text-sm text-ink-600 dark:text-cream-300">
         <p class="font-medium">Belum ada fitur di bagian ini.</p>
