@@ -550,7 +550,7 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 |---|---|
 | `bot_setting_categories` | Metadata kategori (label/deskripsi/ikon/urutan) — hierarki **Kategori → Item** yang data-driven di `/admin/kontrol` (bagian 9). |
 | `bot_settings_audit` | Riwayat perubahan setting (trigger otomatis: key, old→new, kapan). Tampil di `/admin/kontrol`. |
-| `bot_games` | ~~Snapshot game aktif~~ — **tidak dipakai lagi sejak V3** (Game Monitor membaca snapshot `games` di `bot_panel_snapshots`). Tabel dibiarkan (migrasi V3 aditif). |
+| `bot_games` | ~~Snapshot game aktif~~ — **tidak dipakai lagi sejak V3** (Game Monitor membaca snapshot `games` di `bot_panel_snapshots`). Tabel dibiarkan (migrasi V3 aditif); `supabase/cleanup-dashboard-share-cms.sql` menghapusnya bersama sisa dashboard dan Share Server lama, hanya setelah backup dan konfirmasi owner. |
 | `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
 | `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
 | `partnership_slots` | Partner yang tampil di **Dashboard Partnership** pada lobby bot → `/admin/partnership/lobby` (bagian 11). |
