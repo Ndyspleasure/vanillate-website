@@ -149,12 +149,12 @@ menu pilih di HP supaya tidak perlu digeser menyamping):
 | Kelompok | Isi |
 |---|---|
 | Member baru | Verification · Auto Role · Welcome |
-| Aktivitas dan keamanan | Leveling · Security Center |
+| Aktivitas dan keamanan | Leveling · Security Center · Sapa Voice |
 | Promosi | Share Server |
 | Alat | Peta Channel · Riwayat · Salin Pengaturan |
 
 Hash URL tetap id tab (`#overview`, `#game-hub`, `#social-hub`, `#verification`,
-`#leveling`, `#autorole`, `#welcome`, `#security`, `#share-server`, `#channels`,
+`#leveling`, `#autorole`, `#welcome`, `#security`, `#voice-sapa`, `#share-server`, `#channels`,
 `#audit-log`, `#copy`); `#server-hub` membuka submenu Server Hub terakhir (bawaan
 Verification). Daftar dan pemetaan hash ada di `src/lib/dashboard/nav-model.ts`
 dan dijaga `tests/dashboard-review.test.ts`, jadi tautan lama dan tautan dari
