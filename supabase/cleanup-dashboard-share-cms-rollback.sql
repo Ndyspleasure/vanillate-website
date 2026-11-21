@@ -1,5 +1,12 @@
--- Rollback pembersihan CMS: data yang sudah dihapus TIDAK bisa dikembalikan dari sini.
--- Pulihkan dari backup yang dibuat sebelum cleanup-dashboard-share-cms.sql.
--- Bila hanya skema yang dibutuhkan, ambil dari riwayat git:
---   git log --diff-filter=D -- supabase/guild-dashboard-schema.sql supabase/share-server.sql
-select 'Tidak ada rollback otomatis: pulihkan dari backup' as catatan;
+-- Rollback pembersihan CMS: pulihkan DATA dari skema cadangan yang dibuat
+-- cleanup-dashboard-share-cms.sql (cleanup_backup_20261121), sesudah struktur
+-- tabel/fungsi dibuat ulang dari riwayat git:
+--   supabase/guild-dashboard-schema.sql dan supabase/share-server.sql
+--   (git log --diff-filter=D -- <berkas> bila sudah dihapus), skema `bot_games`
+--   dari supabase/schema.sql.
+-- Lalu per tabel, mis.:
+--   insert into public.guild_config select * from cleanup_backup_20261121.guild_config;
+-- Urutan: guild_config, guild_feature_registry, guild_feature_config, guild_channel_config,
+-- guild_config_audit, guild_discord_snapshot, guild_dashboard_access, guild_dashboard_tokens,
+-- guild_dashboard_bot_state, share_*.
+select 'Pulihkan struktur dari git lalu salin data dari cleanup_backup_20261121' as catatan;
