@@ -9,7 +9,7 @@
 --  (mis. game_werewolf_enabled, game_pengacara_enabled) tidak pernah ditimpa.
 --  Bawaan 'true' = game menyala, jadi memasang ini tidak mengubah perilaku bot.
 --  Pengecualian: game yang belum dibuka untuk umum (TOGGLES `defaultEnabled: false`, kini
---  game_vdungeon_enabled) dan fitur turunannya (SUBSWITCHES, kini game_vdungeon_party_enabled
+--  game_vdungeon_enabled, game_tebakgambar_enabled, dan game_tebakkata_enabled) dan fitur turunannya (SUBSWITCHES, kini game_vdungeon_party_enabled
 --  untuk mode party) diisi 'false'. Bot memperlakukan baris yang belum ada sebagai MATI untuk
 --  keduanya (fail-closed), jadi game dan mode party terbuka hanya saat pemilik menyalakan
 --  sakelarnya di /admin/kontrol › Mode & Game (berlaku 1 sampai 2 menit, tanpa restart
@@ -19,6 +19,8 @@
 --  Game baru: tambahkan entri di TOGGLES lalu jalankan ulang file ini dengan baris baru.
 --  Pemulihan: delete from public.bot_settings where key in (...kunci game_*_enabled baru...);
 --             (Vanillate Dungeon saja: delete from public.bot_settings where key in ('game_vdungeon_enabled', 'game_vdungeon_party_enabled');)
+--             (Tebak Gambar saja: delete from public.bot_settings where key = 'game_tebakgambar_enabled';)
+--             (Tebak Kata saja: delete from public.bot_settings where key = 'game_tebakkata_enabled';)
 -- ════════════════════════════════════════════════════════════════════════════
 
 insert into public.bot_settings (key, label, value, kind, category, help, min_value, max_value, sort) values
@@ -31,5 +33,7 @@ insert into public.bot_settings (key, label, value, kind, category, help, min_va
   ('game_tahu_enabled', 'Game Tahu Bulat', 'true', 'boolean', 'mode', 'Progres pemain tetap tersimpan, hanya tidak bisa dimainkan. Dashboard lama yang masih terbuka juga ditolak.', null, null, 75),
   ('game_story_enabled', 'Game Vanillate Story', 'true', 'boolean', 'mode', 'Progres pemain tetap tersimpan, hanya tidak bisa dimainkan. Dashboard lama yang masih terbuka juga ditolak.', null, null, 80),
   ('game_vdungeon_enabled', 'Game Vanillate Dungeon', 'false', 'boolean', 'mode', 'RPG dungeon satu pemain. Bawaan MATI: nyalakan sakelar ini untuk membuka game bagi semua server sekaligus (berlaku 1 sampai 2 menit, tanpa restart). Mematikannya lagi menyembunyikan game dari Game Hub tanpa menghapus progres pemain. Run yang sedang berjalan ditolak di klik berikutnya dan bisa dilanjutkan setelah game menyala lagi.', null, null, 85),
-  ('game_vdungeon_party_enabled', 'Vanillate Dungeon: mode party', 'false', 'boolean', 'mode', 'Mode party (2 sampai 4 pemain, thread khusus) di dalam Vanillate Dungeon. Bawaan MATI supaya mode solo bisa dibuka lebih dulu. Menyala hanya bila Game Vanillate Dungeon juga menyala. Mematikannya tidak menghentikan party yang sedang berjalan (selesai alami), tetapi lobby dan party baru tidak bisa dibuka.', null, null, 86)
+  ('game_vdungeon_party_enabled', 'Vanillate Dungeon: mode party', 'false', 'boolean', 'mode', 'Mode party (2 sampai 4 pemain, thread khusus) di dalam Vanillate Dungeon. Bawaan MATI supaya mode solo bisa dibuka lebih dulu. Menyala hanya bila Game Vanillate Dungeon juga menyala. Mematikannya tidak menghentikan party yang sedang berjalan (selesai alami), tetapi lobby dan party baru tidak bisa dibuka.', null, null, 86),
+  ('game_tebakgambar_enabled', 'Game Tebak Gambar', 'false', 'boolean', 'mode', 'Game sampingan tebak gambar buram yang makin jelas. Bawaan MATI: nyalakan sakelar ini untuk membuka game bagi semua server sekaligus (berlaku 1 sampai 2 menit, tanpa restart). Mematikannya lagi menyembunyikan game dari Game Hub dan menghentikan game yang sedang berjalan sebelum soal berikutnya. Tidak ada data pemain yang tersimpan.', null, null, 90),
+  ('game_tebakkata_enabled', 'Game Tebak Kata', 'false', 'boolean', 'mode', 'Game sampingan teka-teki kata dari gambar, potongan huruf, dan tanda (satu gambar, tanpa petunjuk, 60 detik per soal). Bawaan MATI: nyalakan sakelar ini untuk membuka game bagi semua server sekaligus (berlaku 1 sampai 2 menit, tanpa restart). Mematikannya lagi menyembunyikan game dari Game Hub dan menghentikan game yang sedang berjalan sebelum soal berikutnya. Tidak ada data pemain yang tersimpan.', null, null, 95)
 on conflict (key) do nothing;
