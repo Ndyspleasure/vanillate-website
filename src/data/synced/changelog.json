@@ -1,5 +1,34 @@
 [
   {
+    "version": "3.56.0",
+    "date": "2026-11-21",
+    "title": "Tebak Gambar disiapkan di Game Hub",
+    "highlights": [
+      "🖼️ Game baru Tebak Gambar sedang disiapkan di Game Hub: gambar buram yang makin jelas, tebak secepat mungkin",
+      "⏱️ Makin cepat kamu menebak, makin besar skormu, dan soal naik bertahap dari mudah sampai sulit",
+      "🚪 Game akan dibuka untuk semua pemain setelah gambar soalnya siap"
+    ]
+  },
+  {
+    "version": "3.55.5",
+    "date": "2026-11-21",
+    "title": "Perbaikan stabilitas bot dan bantuan Vanillate Story",
+    "highlights": [
+      "🛠️ Panel vote Share Server dan Confession tidak lagi terkirim dobel saat dua pembaruan datang bersamaan",
+      "🛡️ Riwayat kata-kata Streak Harian tidak hilang bila arsip sempat terhambat",
+      "⚡ Pekerjaan berkala bot digeser supaya tidak menumpuk di menit yang sama",
+      "📚 Pusat Bantuan menyebut Vanillate Story bersama Tahu Bulat"
+    ]
+  },
+  {
+    "version": "3.55.4",
+    "date": "2026-11-20",
+    "title": "Pesan galat suara Tebak Lagu kini menyebut penyebabnya",
+    "highlights": [
+      "🔊 Bila server audio tidak bisa dihubungi, pesan di Tebak Lagu kini menyebut alasannya sehingga lebih mudah diperbaiki"
+    ]
+  },
+  {
     "version": "3.55.3",
     "date": "2026-11-20",
     "title": "Tebak Lagu lebih tahan saat server audio bermasalah",
