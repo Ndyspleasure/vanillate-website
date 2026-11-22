@@ -67,7 +67,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
     render();
     // Auto-refresh riwayat supaya perubahan status dari bot terlihat.
-    startAdminPolling(muatRiwayat, 30_000);
+    startAdminPolling(muatRiwayat, 60_000);
   });
 
   const idForm = (a: Aksi) => `aksi-${a.type.replace(/\./g, '-')}`;

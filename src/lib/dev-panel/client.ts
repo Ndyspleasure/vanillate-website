@@ -70,7 +70,7 @@ export async function kirimPerintah<T = any>(
   if (!wait) return { id, ok: true, status: 'pending', result: null, error: null, progress: null, timedOut: false };
 
   const batas = Date.now() + timeoutMs;
-  let jeda = 1000;
+  let jeda = 2000;
   let terakhir = '';
   let progresTerakhir: Progress | null = null;
   while (Date.now() < batas) {

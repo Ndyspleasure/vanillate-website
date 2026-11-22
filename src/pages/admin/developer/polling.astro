@@ -39,7 +39,7 @@ import { url } from '@utils/url';
   document.addEventListener('admin:ready', (e) => {
     const role = (e as CustomEvent).detail?.role;
     bolehEdit = role === 'owner' || role === 'admin';
-    startAdminPolling(muat, 30_000);
+    startAdminPolling(muat, 60_000);
     document.getElementById('poll-body')!.addEventListener('click', onKlik);
   });
 

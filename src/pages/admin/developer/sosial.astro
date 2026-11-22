@@ -23,6 +23,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   <div class="px-6 lg:px-10 py-8 space-y-10">
     <p id="soc-fresh"></p>
     <div id="soc-summary"></div>
+    <div id="soc-vani"></div>
     <div id="soc-detail"></div>
     <div id="soc-list"></div>
     <div id="soc-kata"></div>
@@ -64,6 +65,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (!s.data) { document.getElementById('soc-summary')!.innerHTML = stateBlock('error', s.error ?? 'Belum ada data.'); return; }
     snap = s.data;
     renderRingkasan();
+    renderVani();
     renderDaftar();
     renderKataOverview();
   }
@@ -83,6 +85,50 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       ${(snap.features ?? []).map((f: any) => pill(`${f.emoji} ${f.name} aktif di ${fmtAngka(sm.perFeature?.[f.key] ?? 0)} server`, 'info')).join('')}
       ${saklar(sw.reminder, '🔔 Pengingat Streak')}${saklar(sw.ajakan, `🌅 Ajakan Harian${sw.ajakanLabel ? ` (${sw.ajakanLabel})` : ''}`)}${saklar(sw.tukarKata, '💌 Tukar Kata-Kata')}
     </div>`);
+  }
+
+  // 🤖 Vani (chat AI): daftar server dari snapshot (jarang berubah); pemakaian kuota dibaca
+  // SESUAI PERMINTAAN lewat `social.vani` (angkanya berubah tiap balasan, tidak masuk snapshot).
+  let vaniPakai: any = null;
+  const MODE_VANI: Record<string, string> = { READY: 'siap', SAFE: 'mode aman (tanpa panggilan AI)', UNINITIALIZED: 'belum ada baseline', UNLOADED: 'belum dimuat' };
+
+  function renderVani() {
+    const el = document.getElementById('soc-vani')!;
+    const v = snap?.vani;
+    if (!v) { el.innerHTML = section('🤖 Vani (Chat AI)', notice('info', 'Bot belum melaporkan data Vani. Perbarui bot ke versi terbaru.')); return; }
+    const u = vaniPakai;
+    const pakai = u ? `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Kuota hari ini', u.quota ? `${fmtAngka(u.quota.used)} / ${fmtAngka(u.quota.budget)}` : '—', u.quota ? `sisa ${fmtAngka(u.quota.remaining)} Neurons · jam ini ${fmtAngka(u.quota.hourUsed)}` : (MODE_VANI[u.mode] ?? u.reason ?? 'belum siap'))}
+        ${stat('Pemutus sirkuit', u.breaker?.open ? `terbuka (${u.breaker.kind ?? '?'})` : 'tertutup', u.breaker?.open ? 'AI dijeda sementara' : 'normal')}
+        ${stat('Antrean', `${fmtAngka(u.queue?.waiting)} menunggu`, `${fmtAngka(u.queue?.running)} berjalan`)}
+        ${stat('Sesi aktif', fmtAngka(u.sessions), 'percakapan di memori bot')}
+      </div>
+      ${u.top?.length ? table(['Server teratas (Neurons hari ini)', 'Terpakai'], u.top.map((t: any) => [esc(t.name ?? t.guildId), esc(fmtAngka(t.neurons))]), '') : ''}` : '';
+    const rows = (v.guilds ?? []).map((g: any) => [
+      `${esc(g.name ?? `Server ${g.guildId}`)}<br><code class="text-xs ${KELAS.muted}">${esc(g.guildId)}</code>`,
+      namaCh(g.channelId, g.channelName),
+      g.noticed ? pill('pemberitahuan terpasang', 'ok') : pill('AI belum aktif (menunggu pemberitahuan)', 'warn'),
+    ]);
+    el.innerHTML = section('🤖 Vani (Chat AI)', `
+      <div class="flex flex-wrap items-center gap-2">
+        ${v.enabled ? pill('sakelar menyala', 'ok') : pill('sakelar mati (Kontrol Bot › Sosial)', 'muted')}
+        ${pill(`${fmtAngka(v.total)} server memasang channel`, 'info')} ${pill(`${fmtAngka(v.noticed)} sudah siap`, 'info')}
+        <button type="button" id="vani-muat" class="${KELAS.tombolNetral}">${u ? 'Muat ulang pemakaian' : 'Muat pemakaian'}</button>
+        <span id="vani-st" class="text-xs ${KELAS.muted}"></span>
+      </div>
+      ${pakai}
+      ${table(['Server', 'Channel', 'Status'], rows, 'Belum ada server yang memasang channel Vani.')}
+      ${v.total > (v.guilds ?? []).length ? `<p class="text-xs ${KELAS.muted}">Menampilkan ${fmtAngka((v.guilds ?? []).length)} dari ${fmtAngka(v.total)} server.</p>` : ''}
+      <p class="text-xs ${KELAS.muted}">Hanya agregat: isi pesan dan identitas anggota tidak pernah dikirim ke panel. Pemakaian dibaca dari memori bot saat tombol ditekan (tanpa polling).</p>`);
+    document.getElementById('vani-muat')?.addEventListener('click', async (e) => {
+      const b = e.currentTarget as HTMLButtonElement;
+      const st = document.getElementById('vani-st')!;
+      b.disabled = true; st.textContent = 'Memuat…';
+      const o = await kirimPerintah('social.vani', {});
+      if (!o.ok) { b.disabled = false; st.textContent = o.error ?? 'Gagal.'; return; }
+      vaniPakai = o.result;
+      renderVani();
+    });
   }
 
   const namaServer = (g: any) => g.name || `Server ${g.guildId}`;

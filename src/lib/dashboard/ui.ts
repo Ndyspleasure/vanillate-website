@@ -35,14 +35,15 @@ export function pill(label: string, tone: Tone, extra = ''): string {
     <span class="h-1.5 w-1.5 rounded-full ${TONE_DOT[tone]}" aria-hidden="true"></span>${esc(label)}</span>`;
 }
 
+// Tombol minimal 44px tinggi (target sentuh di HP).
 export const CARD =
   'rounded-2xl border border-ink-900/10 bg-white/70 shadow-sm backdrop-blur dark:border-cream-100/10 dark:bg-ink-900/60';
 
 export const BTN_PRIMARY =
-  'inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-ink-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50';
 
 export const BTN_SECONDARY =
-  'inline-flex items-center justify-center gap-2 rounded-full border border-ink-900/15 px-4 py-2 text-sm font-medium text-ink-800 transition hover:bg-ink-900/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-cream-100/15 dark:text-cream-100 dark:hover:bg-cream-100/5';
+  'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink-900/15 px-4 py-2 text-sm font-medium text-ink-800 transition hover:bg-ink-900/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-cream-100/15 dark:text-cream-100 dark:hover:bg-cream-100/5';
 
 export const BTN_DISCORD =
   'inline-flex items-center justify-center gap-2.5 rounded-full bg-[#5865F2] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4752C4] disabled:cursor-not-allowed disabled:opacity-50';

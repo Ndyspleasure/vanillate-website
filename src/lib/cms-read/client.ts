@@ -1,51 +1,40 @@
-// ════════════════════════════════════════════════════════════════════════════
-//  Klien browser untuk Edge Function `cms-read` (proyek Database Bot).
+// ═════════════════════════════════════════════════
+//  Klien browser untuk tampilan CMS yang dibaca SESUAI PERMINTAAN dari bot.
 //
-//  Halaman CMS membaca data hub SESUAI PERMINTAAN (saat dibuka), bukan dari
-//  snapshot yang didorong bot terus-menerus. Yang dikirim hanya JWT sesi admin
-//  CMS; fungsi memeriksanya di sisi server. URL proyek Database Bot adalah nilai
-//  publik yang sama dengan Vanillate Dashboard. `service_role` tidak ada di sini.
+//  Sejak HO-037 data game ada di PostgreSQL di VPS bot, bukan lagi di Supabase. Halaman
+//  CMS meminta ringkasannya lewat antrean `bot_commands` (tipe `read.*`, baca-saja,
+//  agregat), dan bot menjawabnya di kolom `result`. Tidak ada snapshot dorong dan tidak
+//  ada polling terus-menerus: permintaan hanya dikirim saat halaman dibuka, hasil yang
+//  masih segar (60 detik, sama dengan cache bot) dipakai ulang tanpa permintaan baru.
+//  Viewer boleh meminta tipe `read.*` saja (policy RLS supabase/bot-commands-viewer-read.sql).
 //  Acuan: docs/CMS-BACA-DATABASE-BOT.md.
-// ════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════
 
-import { getSupabase } from '../supabase';
+import { kirimPerintah, riwayatPerintah } from '../dev-panel/client';
+import { READ_TYPE, bersihkanHasil, hasilSegar, type CmsView } from './reuse';
 
-const BOT_URL = (import.meta.env.PUBLIC_BOT_SUPABASE_URL as string | undefined)?.replace(/\/+$/, '');
-
-export type CmsView = 'serverhub';
+export type { CmsView } from './reuse';
 
 export type CmsReadResult<T> =
   | { ok: true; data: T; cached: boolean }
   | { ok: false; error: string };
 
-const PESAN: Record<string, string> = {
-  NOT_AUTHENTICATED: 'Sesi admin tidak ditemukan. Masuk ulang lalu coba lagi.',
-  FORBIDDEN: 'Akun ini tidak punya izin membaca data ini.',
-  UPSTREAM_ERROR: 'Database Bot tidak menjawab. Coba lagi sebentar lagi.',
-  BAD_REQUEST: 'Permintaan tidak dikenali.',
-};
+/** Batas tunggu jawaban bot (ms). Bot memeriksa antrean tiap beberapa detik saat sepi. */
+const TIMEOUT_MS = 40_000;
 
 export async function bacaCms<T = unknown>(view: CmsView): Promise<CmsReadResult<T>> {
-  if (!BOT_URL) return { ok: false, error: 'Alamat Database Bot belum dikonfigurasi.' };
-  const supabase = getSupabase();
-  if (!supabase) return { ok: false, error: 'Supabase belum dikonfigurasi.' };
-  const { data: sesi } = await supabase.auth.getSession();
-  const token = sesi.session?.access_token;
-  if (!token) return { ok: false, error: PESAN.NOT_AUTHENTICATED };
+  const type = READ_TYPE[view];
+  if (!type) return { ok: false, error: 'Permintaan tidak dikenali.' };
 
-  let res: Response;
-  try {
-    res = await fetch(`${BOT_URL}/functions/v1/cms-read`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ view }),
-    });
-  } catch {
-    return { ok: false, error: 'Tidak bisa menghubungi Database Bot. Periksa koneksi lalu coba lagi.' };
+  // 1) Hasil segar yang sudah ada dipakai ulang (hemat: nol tulis, nol pekerjaan bot).
+  const { rows } = await riwayatPerintah([type], 5);
+  const segar = hasilSegar(rows, Date.now());
+  if (segar) return { ok: true, data: bersihkanHasil(segar) as T, cached: true };
+
+  // 2) Minta ke bot dan tunggu jawabannya.
+  const r = await kirimPerintah(type, {}, { wait: true, timeoutMs: TIMEOUT_MS });
+  if (!r.ok || !r.result || typeof r.result !== 'object') {
+    return { ok: false, error: r.error ?? 'Bot belum menjawab. Coba lagi sebentar lagi.' };
   }
-  const body = (await res.json().catch(() => null)) as { ok?: boolean; data?: T; cached?: boolean; error?: string } | null;
-  if (!res.ok || !body?.ok) {
-    return { ok: false, error: PESAN[body?.error ?? ''] ?? 'Gagal membaca data. Coba lagi.' };
-  }
-  return { ok: true, data: body.data as T, cached: Boolean(body.cached) };
+  return { ok: true, data: bersihkanHasil(r.result as Record<string, unknown>) as T, cached: Boolean((r.result as { cached?: unknown }).cached) };
 }

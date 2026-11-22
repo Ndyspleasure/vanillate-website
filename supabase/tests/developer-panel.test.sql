@@ -75,6 +75,9 @@ select tests_dev.ok((select count(*) from public.bot_settings
 select tests_dev.ok((select value is null and kind = 'boolean' and category = 'fitur'
     from public.bot_settings where key = 'guild_members_intent'),
   'setting intent Server Members tersedia & mulai NULL (bot mengadopsi nilai lokal = mati)');
+select tests_dev.ok((select value is null and kind = 'boolean' and category = 'fitur'
+    from public.bot_settings where key = 'voice_sapa_enabled'),
+  'setting Sapa Voice tersedia & mulai NULL (bot mengadopsi nilai lokal = nyala)');
 select tests_dev.ok((select public = false from storage.buckets where id = 'bot-backups'),
   'bucket bot-backups privat');
 

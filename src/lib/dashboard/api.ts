@@ -13,6 +13,7 @@
 
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import type { AuditRow, GuildData } from './model';
+import { withoutRemoved } from './nav-model';
 import { BOT_SLUG_WRITE } from '../bot-slug';
 
 // Sejak PLAN-001 /dashboard memakai proyek Supabase "Database Bot" (login
@@ -65,6 +66,8 @@ function parseDetail(raw: unknown): Record<string, unknown> | null {
 function fromPostgrest(error: { message?: string; details?: string; code?: string } | null): DashboardError {
   const message = error?.message ?? '';
   if (/^[A-Z_]{3,40}$/.test(message)) return new DashboardError(message, parseDetail(error?.details));
+  // Fungsi atau susunan argumennya belum ada di database (migration belum diterapkan).
+  if (error?.code === 'PGRST202') return new DashboardError('RPC_NOT_FOUND');
   if (/fetch|network/i.test(message)) return new DashboardError('NETWORK');
   if (error?.code === 'PGRST301' || /JWT/i.test(message)) return new DashboardError('NOT_AUTHENTICATED');
   return new DashboardError('DATABASE_ERROR');
@@ -204,8 +207,102 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   }
 }
 
-export function getGuild(guildId: string): Promise<GuildData> {
+// ─── guild_dashboard_get: mode hemat (migration 0029 di repo bot) ────────────
+// Overload empat argumen mengembalikan `version` dan `registry_version`:
+//   • registry (sekitar 47 KB) tidak dikirim ulang bila versinya sama;
+//   • p_fields 'status' hanya mengembalikan penanda perubahan (sekitar 150 byte).
+// Database yang belum punya overload itu menjawab PGRST202; klien lalu memakai
+// fungsi dua argumen seperti dulu dan mengingatnya selama LIGHT_RETRY_MS.
+
+const LIGHT_KEY = 'vn-dash-light-off';
+const LIGHT_RETRY_MS = 6 * 60 * 60 * 1000;
+
+type LightGuildData = Omit<GuildData, 'registry'> & { registry: GuildData['registry'] | null; version?: string; registry_version?: string };
+
+function lightDisabled(): boolean {
+  try {
+    return Date.now() - Number(sessionStorage.getItem(LIGHT_KEY) ?? 0) < LIGHT_RETRY_MS;
+  } catch {
+    return false;
+  }
+}
+
+function disableLight(): void {
+  lightOff = true;
+  try {
+    sessionStorage.setItem(LIGHT_KEY, String(Date.now()));
+  } catch {
+    /* penyimpanan diblokir: hanya berlaku sampai halaman ditutup */
+  }
+}
+
+let lightOff: boolean | null = null;
+// Registry sama untuk semua server, jadi disimpan sekali; `version` per server.
+let registryCache: { version: string; registry: GuildData['registry'] } | null = null;
+const guildVersion = new Map<string, string>();
+
+/** Hasil penuh. Registry diambil dari memori halaman bila versinya masih sama. */
+export async function getGuild(guildId: string): Promise<GuildData> {
+  return bersihkan(await getGuildMentah(guildId));
+}
+
+/** Buang bagian registry yang sudah dicabut dari dashboard (lihat REMOVED_SECTIONS). */
+function bersihkan(g: GuildData): GuildData {
+  return Array.isArray(g.registry) ? { ...g, registry: withoutRemoved(g.registry) } : g;
+}
+
+async function getGuildMentah(guildId: string): Promise<GuildData> {
+  lightOff ??= lightDisabled();
+  if (!lightOff) {
+    try {
+      const r = await rpc<LightGuildData>('guild_dashboard_get', {
+        p_guild_id: guildId,
+        p_bot_slug: BOT_SLUG,
+        p_registry_version: registryCache?.version ?? null,
+        p_fields: 'full',
+      });
+      const registry = r.registry ?? (registryCache && registryCache.version === r.registry_version ? registryCache.registry : null);
+      if (registry && r.version && r.registry_version) {
+        registryCache = { version: r.registry_version, registry };
+        guildVersion.set(guildId, r.version);
+        return { ...r, registry };
+      }
+      // Bentuk tak terduga (mis. registry null tanpa salinan lokal): pakai cara lama.
+      registryCache = null;
+      guildVersion.delete(guildId);
+    } catch (err) {
+      if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
+      disableLight();
+    }
+  }
   return rpc<GuildData>('guild_dashboard_get', { p_guild_id: guildId, p_bot_slug: BOT_SLUG });
+}
+
+/**
+ * Untuk poll: null bila tidak ada yang berubah sejak hasil penuh terakhir
+ * (hanya penanda kecil yang diunduh), selain itu hasil penuh terbaru.
+ */
+export async function getGuildIfChanged(guildId: string): Promise<GuildData | null> {
+  const g = await getGuildIfChangedMentah(guildId);
+  return g ? bersihkan(g) : null;
+}
+
+async function getGuildIfChangedMentah(guildId: string): Promise<GuildData | null> {
+  const known = guildVersion.get(guildId);
+  if (lightOff || !known || !registryCache) return getGuildMentah(guildId);
+  try {
+    const s = await rpc<{ version?: string }>('guild_dashboard_get', {
+      p_guild_id: guildId,
+      p_bot_slug: BOT_SLUG,
+      p_registry_version: registryCache.version,
+      p_fields: 'status',
+    });
+    if (s.version && s.version === known) return null;
+  } catch (err) {
+    if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
+    disableLight();
+  }
+  return getGuildMentah(guildId);
 }
 
 export interface SaveResult {
@@ -238,12 +335,49 @@ export function requestDiscordRefresh(guildId: string): Promise<{ ok: boolean; b
   return rpc('guild_dashboard_request_refresh', { p_guild_id: guildId, p_bot_slug: BOT_SLUG });
 }
 
-export function auditList(guildId: string, beforeId: number | null = null, limit = 20): Promise<AuditRow[]> {
+// Riwayat (migration 0030 di repo bot): overload enam argumen menyaring jenis
+// aksi di server dan menandai catatan yang menyimpan isi revisi (`has_state`).
+// Database lama menjawab PGRST202; klien lalu memakai fungsi empat argumen.
+let auditV2: boolean | null = null;
+
+/** Saringan jenis dan "Pulihkan ke revisi ini" tersedia? null = belum diketahui. */
+export const auditV2Supported = (): boolean | null => auditV2;
+
+export async function auditList(guildId: string, beforeId: number | null = null, limit = 20, prefix: 'config.' | 'sync.' | null = null): Promise<AuditRow[]> {
+  if (auditV2 !== false) {
+    try {
+      const rows = await rpc<AuditRow[]>('guild_config_audit_list', {
+        p_guild_id: guildId,
+        p_bot_slug: BOT_SLUG,
+        p_limit: limit,
+        p_before_id: beforeId,
+        p_action_prefix: prefix,
+        p_state_id: null,
+      });
+      auditV2 = true;
+      return rows;
+    } catch (err) {
+      if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
+      auditV2 = false;
+    }
+  }
   return rpc<AuditRow[]>('guild_config_audit_list', {
     p_guild_id: guildId,
     p_bot_slug: BOT_SLUG,
     p_limit: limit,
     p_before_id: beforeId,
+  });
+}
+
+/** Isi pengaturan sesudah satu catatan Riwayat (null bila tidak disimpan lagi). */
+export async function auditState(guildId: string, auditId: number): Promise<{ revision: number; state: GuildData['state'] | null } | null> {
+  return rpc('guild_config_audit_list', {
+    p_guild_id: guildId,
+    p_bot_slug: BOT_SLUG,
+    p_limit: 1,
+    p_before_id: null,
+    p_action_prefix: null,
+    p_state_id: auditId,
   });
 }
 

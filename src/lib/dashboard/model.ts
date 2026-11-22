@@ -975,6 +975,8 @@ export interface AuditRow {
   action: string;
   changed_fields: unknown;
   created_at: string;
+  /** Isi revisi tersimpan dan bisa dipulihkan utuh (bot dengan migration 0030). */
+  has_state?: boolean;
 }
 
 export const AUDIT_ACTION: Record<string, string> = {
@@ -1012,5 +1014,7 @@ export function formatAuditChange(change: unknown, ctx: TextContext): string {
   if (field === 'settings' && sub === NOT_USED) {
     return `${name} · Tidak dipakai: ${c.to === true ? 'ya' : 'tidak'}`;
   }
-  return `${name} · ${sub ?? field}: ${show(c.from, false, ctx)} → ${show(c.to, false, ctx)}`;
+  // Judul setelan dari registry bot (bukan kunci mentah) bila masih terdaftar.
+  const title = (field === 'settings' && f && typedSettings(f).find((p) => p.key === sub)?.title) || sub || field;
+  return `${name} · ${title}: ${show(c.from, false, ctx)} → ${show(c.to, false, ctx)}`;
 }

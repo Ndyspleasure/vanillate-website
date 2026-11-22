@@ -453,7 +453,6 @@ pemeriksaan jalan ada di tab Actions.
 | `src/pages/admin/developer/*.astro` | **Panel Developer** (pengganti `/developer`): ringkasan & log, kontrol server (owner), broadcast, polling, event, error, tutorial, campaign, sosial, Auto-Heal — lihat `docs/DEVELOPER-PANEL.md` |
 | `src/lib/dev-panel/*.ts` | Klien antrean perintah & snapshot, model murni (teruji), komponen tampilan, registry aksi |
 | `supabase/developer-panel-*.sql` | Skema Panel Developer (aditif) + setting baru + rollback |
-| `src/pages/admin/lagu.astro` | **Tebak Lagu** — kelola katalog lagu (upload audio + kunci jawaban) |
 | `src/pages/admin/faq/index.astro` | **FAQ** — tulis & kelola seluruh panduan |
 | `src/pages/admin/faq/categories.astro` | **Kategori FAQ** — struktur panduan |
 | `src/pages/admin/faq/bot.astro` | **FAQ Bot Discord** — menu FAQ Pusat Bantuan bot Sambung Kata (tabel `bot_faqs`, terpisah dari FAQ website; logika `src/lib/bot-faq.ts`) |
@@ -551,7 +550,7 @@ Selain dua tabel inti, `supabase/schema.sql` bagian 8 menambahkan:
 |---|---|
 | `bot_setting_categories` | Metadata kategori (label/deskripsi/ikon/urutan) — hierarki **Kategori → Item** yang data-driven di `/admin/kontrol` (bagian 9). |
 | `bot_settings_audit` | Riwayat perubahan setting (trigger otomatis: key, old→new, kapan). Tampil di `/admin/kontrol`. |
-| `bot_games` | ~~Snapshot game aktif~~ — **tidak dipakai lagi sejak V3** (Game Monitor membaca snapshot `games` di `bot_panel_snapshots`). Tabel dibiarkan (migrasi V3 aditif). |
+| `bot_games` | ~~Snapshot game aktif~~ — **tidak dipakai lagi sejak V3** (Game Monitor membaca snapshot `games` di `bot_panel_snapshots`). Tabel dibiarkan (migrasi V3 aditif); `supabase/cleanup-dashboard-share-cms.sql` menghapusnya bersama sisa dashboard dan Share Server lama, hanya setelah backup dan konfirmasi owner. |
 | `bot_promos` | Cermin daftar promo untuk baca cepat → `/admin/promo`. |
 | `bot_word_queue` | Antrean kata menunggu moderasi → `/admin/kata`. |
 | `partnership_slots` | Partner yang tampil di **Dashboard Partnership** pada lobby bot → `/admin/partnership/lobby` (bagian 11). |
@@ -1098,50 +1097,6 @@ menolak di database). Setiap perubahan mencatat `updated_by` dan `updated_at`,
 sama seperti tabel konten lainnya.
 
 ---
-
-## 17. Tebak Lagu — katalog lagu game sampingan
-
-Halaman **`/admin/lagu`** mengelola daftar lagu untuk game sampingan **Tebak
-Lagu** di bot (`/game`). Arah datanya sama seperti bagian 11 (**website → bot**):
-admin menaruh lagu di sini, bot menariknya **live** lewat service_role
-(`src/services/songLibrary.js` di repo `sambung-kata-bot`). Ini **konten
-read-only** untuk bot — skor & ronde game tetap in-memory (tidak menyentuh DB).
-
-### Tabel & Storage (schema bagian 17)
-
-| Objek | Peran |
-|---|---|
-| `bot_songs` | Metadata lagu: `title` (jawaban utama), `accepted_answers[]` (alias), `artist`, `storage_path`, `duration_seconds`, `min/max_start_seconds`, `difficulty`, `active`. |
-| Bucket `tebak-lagu-audio` | **PRIVAT** — menyimpan file audio. Bukan publik seperti `product-media`/`team-media`. |
-
-> ⚠️ **Anti-contek.** `title` & `accepted_answers` adalah **kunci jawaban**, dan
-> file audionya bisa jadi bocoran judul. Karena itu RLS `bot_songs` hanya
-> mengizinkan admin login membaca, dan bucket audionya **privat** (tak ada URL
-> publik). Bot mengambil audio lewat service_role sebagai **signed URL**
-> berumur pendek; admin memutar preview juga lewat signed URL.
-
-### Alur admin
-
-1. Buka **/admin/lagu → + Tambah lagu**.
-2. Isi judul, (opsional) artis, jawaban lain yang diterima, tingkat kesulitan,
-   dan batas offset acak (opsional).
-3. Unggah file audio (MP3/M4A/OGG/WAV, ≤20 MB). Durasi terdeteksi otomatis.
-4. Simpan. Lagu **aktif** langsung masuk pool bot pada tarikan berikutnya
-   (± 5 menit, tanpa restart bot).
-
-### Izin
-
-Sama seperti modul CMS lain: **owner/admin** boleh tambah/ubah/hapus + upload;
-**viewer** hanya melihat (RLS menolak tulis di database). Setiap baris mencatat
-`created_by` & `updated_at`.
-
-### Sisi bot (repo `sambung-kata-bot`)
-
-Aktif otomatis begitu `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` terisi (env
-yang sama dengan Website Sync). Selain itu bot butuh **stack voice**
-(`@discordjs/voice`, `ffmpeg`, `libsodium-wrappers`) untuk masuk voice channel &
-memutar cuplikan. Tanpa keduanya, game menolak start dengan pesan jelas (tidak
-crash). Detail modul ada di `docs/tebak-lagu.md` pada repo bot.
 
 ## 18. After Dark (18+) — tantangan game
 

@@ -73,6 +73,11 @@ done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/developer-panel.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL Panel Developer lulus."
 
+# Policy viewer read.* (HO-037): menjalankan supabase/bot-commands-viewer-read.sql dua
+# kali (idempoten), memakai fixture suite Panel Developer, lalu rollback dan pasang lagi.
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-commands-viewer-read.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ //" | sed -E 's/^NOTICE:  //'
+echo "✓ Tes SQL viewer read.* lulus."
+
 # Suite ketiga: retensi log bot (bot_logs > 30 hari dihapus). Migrasi dijalankan
 # dua kali untuk membuktikan idempoten (tanpa pg_cron → jadwal dilewati).
 for f in supabase/tests/bot-logs-retention-prereq.sql supabase/bot-logs-retention.sql supabase/bot-logs-retention.sql; do
@@ -100,6 +105,13 @@ for f in supabase/social-kata-retention.sql supabase/social-kata-retention.sql; 
 done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/social-kata-retention.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL retensi Pemantau Kata-Kata lulus."
+
+# Suite Vani (Social AI): dua baris setelan di bot_settings (aditif, idempoten).
+for f in supabase/social-ai.sql supabase/social-ai.sql; do
+  PGOPTIONS="-c client_min_messages=warning" run "${PSQL[@]}" -f "$ROOT/$f" >/dev/null
+done
+(cd "$ROOT" && run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/social-ai.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /")
+echo "✓ Tes SQL sakelar Vani lulus."
 
 # Suite retensi statistik: ringkasan bot_stats per jam (prasyarat tabel →
 # migrasi dua kali → tes). Tanpa pg_cron jadwal dilewati.
