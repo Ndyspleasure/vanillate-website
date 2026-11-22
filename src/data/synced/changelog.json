@@ -1,5 +1,40 @@
 [
   {
+    "version": "3.58.8",
+    "date": "2026-11-22",
+    "title": "Perbaikan kecil alat pengelolaan tim",
+    "highlights": [
+      "🛠️ Perbaikan kecil pada alat pengelolaan tim Vanillate di balik layar"
+    ]
+  },
+  {
+    "version": "3.58.7",
+    "date": "2026-11-22",
+    "title": "Peningkatan alat pengelolaan tim",
+    "highlights": [
+      "🛠️ Peningkatan alat pengelolaan untuk tim Vanillate di balik layar",
+      "🔒 Pencatatan aksi tim yang lebih rapi dan aman"
+    ]
+  },
+  {
+    "version": "3.58.6",
+    "date": "2026-11-22",
+    "title": "Peningkatan stabilitas dan keamanan data",
+    "highlights": [
+      "🛠️ Perbaikan dan peningkatan stabilitas di balik layar",
+      "🔒 Penguatan keamanan data untuk fitur mendatang"
+    ]
+  },
+  {
+    "version": "3.58.5",
+    "date": "2026-11-22",
+    "title": "Persiapan fondasi Vanillate Wallet (belum aktif)",
+    "highlights": [
+      "🛠️ Fondasi penyimpanan Vanillate Wallet disiapkan di balik layar. Fitur ini belum dibuka dan belum memberi poin apa pun",
+      "🔒 Pengamanan data saldo dan pemulihan backup diperkuat untuk fitur mendatang"
+    ]
+  },
+  {
     "version": "3.58.4",
     "date": "2026-11-22",
     "title": "Perbaikan alat pemulihan data untuk server baru",
