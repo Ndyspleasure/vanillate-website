@@ -1,0 +1,54 @@
+---
+// 💜 Vanillate Wallet › Riwayat moderasi (khusus owner, `sys.wallet.audit`).
+// Semua aksi Admin tercatat di tabel append-only wallet_audit (repo bot).
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Riwayat Moderasi Wallet" active="wallet-audit">
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Riwayat moderasi" description="Hadiah dari Admin, penyesuaian, perubahan konfigurasi, dan akun uji. Tidak bisa diubah atau dihapus. Khusus owner." />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-4">
+    <div id="wa-body"></div>
+    <button id="wa-more" type="button" class="hidden rounded-full border px-4 py-1.5 text-sm">Lebih lama</button>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { kirimPerintah } from '@/lib/dev-panel/client';
+  import { table } from '@/lib/dev-panel/ui';
+
+  const AKSI: Record<string, string> = { gift: 'Hadiah dari Admin', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji' };
+  let role = 'viewer';
+  let rows: any[] = [];
+
+  function detail(x: any): string {
+    const d = x.detail ?? {};
+    if (x.action === 'gift') return `+${fmtAngka(d.amount)} VP`;
+    if (x.action === 'adjust') return `${d.delta > 0 ? '+' : ''}${fmtAngka(d.delta)} VP`;
+    if (x.action === 'config') return `versi ${esc(d.version)}`;
+    if (x.action === 'testers') return `${(d.after ?? []).length} akun uji`;
+    return '';
+  }
+
+  async function muat(beforeId = 0) {
+    const body = document.getElementById('wa-body')!;
+    if (role !== 'owner') { body.innerHTML = stateBlock('empty', 'Halaman ini khusus owner.'); return; }
+    if (!beforeId) { rows = []; body.innerHTML = stateBlock('loading', 'Meminta riwayat dari bot...'); }
+    const o = await kirimPerintah('sys.wallet.audit', beforeId ? { beforeId } : {});
+    if (!o.ok || !o.result) { body.innerHTML = stateBlock('error', o.error ?? 'Riwayat tidak tersedia.'); return; }
+    const baru = o.result.rows ?? [];
+    rows = rows.concat(baru);
+    body.innerHTML = table(['Waktu', 'Aksi', 'Pemain', 'Detail', 'Oleh', 'Alasan'], rows.map((x) => [
+      `<span class="text-xs">${esc(fmtWaktu(x.createdAt))}</span>`, esc(AKSI[x.action] ?? x.action),
+      x.targetUser ? `<a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(x.targetUser)}"><code class="text-xs">${esc(x.targetUser)}</code></a>` : '',
+      detail(x), esc(x.actor), esc(x.reason ?? ''),
+    ]), 'Belum ada aksi Admin.');
+    const more = document.getElementById('wa-more')!;
+    more.classList.toggle('hidden', baru.length < 50);
+    more.onclick = () => void muat(rows[rows.length - 1]?.id ?? 0);
+  }
+
+  document.addEventListener('admin:ready', (e) => { role = (e as CustomEvent).detail?.role ?? 'viewer'; void muat(); });
+</script>
