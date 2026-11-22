@@ -1,0 +1,66 @@
+---
+// 💜 Vanillate Wallet › Konfigurasi (khusus owner).
+// Nilai VP (`sys.wallet.config.set`) dan daftar akun uji
+// (`sys.wallet.testers.set`). Sakelar publik SENGAJA tidak ada di sini:
+// pembukaan untuk umum menunggu gerbang aktivasi (docs/wallet-security-review.md §9.3).
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Konfigurasi Wallet" active="wallet-konfigurasi">
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Konfigurasi" description="Nilai Vani Poin dan akun uji. Perubahan nilai berlaku untuk transaksi berikutnya, transaksi lama tidak berubah. Khusus owner." />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-8" id="wk-body"></div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { kirimPerintah } from '@/lib/dev-panel/client';
+  import { section, formCard, pasangAksi, pill, KELAS } from '@/lib/dev-panel/ui';
+
+  const KUNCI: [string, string, string][] = [
+    ['vote_vp', 'VP per vote Top.gg', 'Bawaan 50'],
+    ['activity_vp', 'VP aktivitas harian', 'Bawaan 1, sekali sehari WIB'],
+    ['min_withdraw_vp', 'Minimum penarikan (VP)', 'Bawaan 1.000 (penarikan belum tersedia)'],
+    ['min_account_age_days', 'Umur akun Discord minimum (hari)', 'Bawaan 0'],
+    ['counting_required', 'Hitungan Counting benar per hari', 'Bawaan 10'],
+    ['vani_messages_required', 'Pesan Chat Vani per hari', 'Bawaan 5'],
+    ['transfer_min_vp', 'Minimum transfer (VP)', 'Bawaan 1 (transfer belum tersedia)'],
+    ['transfer_fee_vp', 'Biaya transfer (VP)', 'Bawaan 0'],
+    ['transfer_note_max', 'Panjang pesan transfer', 'Bawaan 100'],
+  ];
+  let role = 'viewer';
+
+  async function muat() {
+    const body = document.getElementById('wk-body')!;
+    if (role !== 'owner') { body.innerHTML = stateBlock('empty', 'Halaman ini khusus owner.'); return; }
+    body.innerHTML = stateBlock('loading', 'Meminta konfigurasi dari bot...');
+    const o = await kirimPerintah('read.wallet.summary');
+    if (!o.ok || !o.result) { body.innerHTML = stateBlock('error', o.error ?? 'Konfigurasi tidak tersedia.'); return; }
+    const s = o.result;
+    const v = s.config?.values ?? {};
+    body.innerHTML = [
+      section('Akses', `<p class="text-sm">${s.publicOpen ? pill('dibuka untuk publik', 'ok') : pill('tertutup untuk publik', 'warn')} · ${esc(s.testUsers)} akun uji</p>
+        <p class="mt-2 text-sm ${KELAS.muted}">Sakelar publik tidak tersedia di sini. Wallet baru dibuka setelah syarat hukum, keamanan, Terms, Privacy, dan kesiapan penarikan terpenuhi (gerbang aktivasi).</p>`),
+      section('Akun uji', formCard({ id: 'wk-testers', title: 'Daftar akun uji', submit: 'Simpan akun uji', ownerOnly: true,
+        desc: 'Discord ID yang boleh memakai Wallet selama tertutup, dipisah koma atau baris baru (maks. 20). Kosongkan untuk menutup semua. VP akun uji tercatat permanen di ledger.',
+        fields: [{ name: 'ids', label: 'Discord ID', type: 'textarea', placeholder: '1036585958553964574' }] })),
+      section('Nilai VP', formCard({ id: 'wk-config', title: `Versi konfigurasi ${esc(s.config?.version)}`, submit: 'Simpan nilai', ownerOnly: true,
+        desc: 'Kurs tetap 1 VP = Rp1. Nilai baru hanya berlaku untuk transaksi berikutnya.',
+        fields: KUNCI.map(([k, label, help]) => ({ name: k, label, help, type: 'number' as const, value: String(v[k] ?? ''), required: true })) })),
+    ].join('');
+    pasangAksi(document.getElementById('wk-testers') as HTMLFormElement, {
+      type: 'sys.wallet.testers.set',
+      confirm: 'Simpan daftar akun uji?',
+      success: (r) => `Tersimpan: ${(r.result?.testUsers ?? []).length} akun uji.`,
+      onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
+    });
+    pasangAksi(document.getElementById('wk-config') as HTMLFormElement, {
+      type: 'sys.wallet.config.set',
+      confirm: 'Simpan nilai VP? Berlaku untuk transaksi berikutnya.',
+      success: (r) => `Tersimpan sebagai versi ${r.result?.version}.`,
+      onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
+    });
+  }
+
+  document.addEventListener('admin:ready', (e) => { role = (e as CustomEvent).detail?.role ?? 'viewer'; void muat(); });
+</script>
