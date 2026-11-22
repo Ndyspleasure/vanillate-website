@@ -125,7 +125,8 @@ export async function riwayatPerintah(types: string[] = [], limit = 20) {
     .from('bot_commands')
     .select('id, type, payload, status, result, error, progress, created_at, processed_at')
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .in('bot_slug', [...BOT_SLUGS_READ])
+    .limit(Number.isFinite(limit) ? Math.min(100, Math.max(1, Math.trunc(limit))) : 20);
   if (types.length) q = q.in('type', types);
   const { data, error } = await q;
   return { rows: data ?? [], error: error ? 'Gagal memuat riwayat perintah.' : null };
@@ -141,6 +142,7 @@ export interface Snapshot<T = any> {
 /** Baca beberapa snapshot sekaligus. */
 export async function bacaSnapshots<T = any>(keys: string[]): Promise<Record<string, Snapshot<T>>> {
   const out: Record<string, Snapshot<T>> = {};
+  if (!keys.length) return out;
   for (const k of keys) out[k] = { key: k, data: null, updatedAt: null, error: null };
   const supabase = getSupabase();
   if (!supabase) {
@@ -151,7 +153,8 @@ export async function bacaSnapshots<T = any>(keys: string[]): Promise<Record<str
     .from('bot_panel_snapshots')
     .select('key, data, updated_at')
     .in('key', keys)
-    .in('bot_slug', [...BOT_SLUGS_READ]);
+    .in('bot_slug', [...BOT_SLUGS_READ])
+    .limit(new Set(keys).size * BOT_SLUGS_READ.length);
   if (error) {
     const pesan = /does not exist|42P01/.test(`${error.code} ${error.message}`)
       ? 'Tabel bot_panel_snapshots belum ada. Jalankan supabase/developer-panel-schema.sql.'

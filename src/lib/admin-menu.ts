@@ -249,6 +249,7 @@ export const adminMenu: MenuNode[] = [
     key: "grup-data", label: "Log & Statistik",
     icon: "<path d=\"M3 3v18h18\"/><path d=\"m7 15 3-4 3 3 5-7\"/>",
     items: [
+      { key: "bot-diagnostics", label: "Diagnostik Bot", href: "/admin/diagnostik" },
       { key: "logs", label: "Log Aktivitas", href: "/admin/logs" },
       tabHalaman("dev-error", "Diagnosis Error", "/admin/developer/error", [
         ["ringkasan","Ringkasan"],

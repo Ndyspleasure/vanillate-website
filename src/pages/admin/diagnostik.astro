@@ -1,0 +1,42 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+<AdminLayout title="Diagnostik Bot" active="bot-diagnostics">
+ <AdminPageHeader eyebrow="Operasional" title="Diagnostik Bot" description="Periksa keterkinian data dan antrean Vanillate.ID. Data lama adalah petunjuk pemeriksaan, bukan kepastian bot offline." />
+ <div class="p-4 lg:p-8 space-y-6">
+  <button id="diagnostic-refresh" class="min-h-11 rounded-xl border px-4">Perbarui metadata</button>
+  <p id="diagnostic-status" role="status" aria-live="polite"></p>
+  <section><h2 class="text-xl mb-3">Pemantauan & konfigurasi modul</h2><div id="diagnostic-modules" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div></section>
+  <section><h2 class="text-xl mb-3">Antrean terbaru</h2><p class="text-sm mb-3">Maksimal 20 perintah pending/processing. Lebih dari 10 menit tanpa pembaruan perlu diperiksa. Tidak ada pengiriman ulang otomatis.</p><div id="diagnostic-queue" class="space-y-3"></div><a class="inline-flex min-h-11 items-center underline" href="/admin/operasi#riwayat">Buka riwayat dan hasil perintah</a></section>
+ </div>
+</AdminLayout>
+<script>
+ import {getSupabase} from '@/lib/supabase';
+ import {BOT_SLUGS_READ,newestPerKey} from '@/lib/bot-slug';
+ import {diagnosticModules,snapshotLabel,queueConcern} from '@/lib/bot-diagnostics';
+ import {esc} from '@/lib/admin-ui';
+ import {fmtWaktu} from '@/lib/admin-auth';
+ const button=document.getElementById('diagnostic-refresh') as HTMLButtonElement;
+ let busy=false;
+ async function load(){
+  const client=getSupabase();if(!client||busy)return;
+  busy=true;button.disabled=true;
+  const status=document.getElementById('diagnostic-status')!;
+  status.textContent='Memuat metadata…';
+  try {
+   const [snapshots,queue]=await Promise.all([
+    client.from('bot_panel_snapshots').select('key, updated_at').in('bot_slug',[...BOT_SLUGS_READ]).in('key',diagnosticModules.map(m=>m[0])).limit(diagnosticModules.length*2),
+    client.from('bot_commands').select('id, type, status, created_at, heartbeat_at').in('bot_slug',[...BOT_SLUGS_READ]).in('status',['pending','processing']).order('created_at',{ascending:false}).limit(20),
+   ]);
+   const modules=document.getElementById('diagnostic-modules')!;
+   const recent=new Map(newestPerKey(snapshots.data??[]).map(row=>[row.key,row.updated_at]));
+   modules.innerHTML=snapshots.error ? '<p>Metadata gagal dimuat. Coba perbarui.</p>' : diagnosticModules.map(([key,label,href])=>`<article class="border rounded-xl p-4"><h3 class="font-semibold">${esc(label)}</h3><p class="text-sm">${esc(snapshotLabel(recent.get(key)))}</p><p class="text-xs">${esc(fmtWaktu(recent.get(key)))}</p><a class="inline-flex min-h-11 items-center underline" href="${href}">Buka monitor / konfigurasi</a></article>`).join('');
+   document.getElementById('diagnostic-queue')!.innerHTML=queue.error ? '<p>Antrean gagal dimuat. Coba perbarui.</p>' : queue.data?.length ? queue.data.map(row=>`<article class="border rounded-xl p-4 break-words"><strong>#${esc(row.id)} · ${esc(row.type)}</strong><p>${esc(row.status)} · ${esc(fmtWaktu(row.created_at))}</p>${queueConcern(row)?'<p class="text-amber-600">Perlu diperiksa: lama tanpa pembaruan.</p>':''}</article>`).join('') : '<p>Tidak ada perintah tertunda yang terlihat oleh akun ini.</p>';
+   status.textContent=snapshots.error||queue.error ? 'Sebagian data gagal dimuat.' : `Diperiksa ${fmtWaktu(new Date().toISOString())}. Tidak diperbarui otomatis.`;
+  } catch {status.textContent='Koneksi gagal. Coba perbarui metadata.';}
+  finally {busy=false;button.disabled=false;}
+ }
+ document.addEventListener('admin:ready',()=>{void load();});
+ button.addEventListener('click',()=>{void load();});
+</script>

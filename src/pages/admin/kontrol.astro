@@ -24,7 +24,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   <AdminPageHeader
     eyebrow="Control Panel"
     title="Kontrol Bot"
-    description="Atur bot langsung dari sini. Bot menerapkan perubahan otomatis dalam beberapa menit — tanpa mengubah kode atau restart."
+    description="Kelola pengaturan global Vanillate.ID. Perubahan yang tersimpan akan dibaca bot pada siklus sinkronisasi berikutnya."
   />
 
   <div class="px-6 lg:px-10 py-8 max-w-3xl space-y-8">
@@ -51,6 +51,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       </p>
     </div>
 
+    <div id="kontrol-cari" hidden class="space-y-2">
+      <label for="kontrol-query" class="block text-sm font-medium">Cari pengaturan</label>
+      <input id="kontrol-query" type="search" placeholder="Nama, kategori, atau kunci pengaturan" class="min-h-11 w-full rounded-xl border bg-transparent px-3 text-sm" />
+      <div id="kontrol-hasil" class="space-y-1"></div>
+    </div>
+    <p id="kontrol-ringkasan" class="text-sm" role="status"></p>
+
     <form id="form-kontrol" class="space-y-6">
       <div id="kontrol-body"></div>
 
@@ -69,6 +76,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     <!-- RIWAYAT PERUBAHAN (audit) -->
     <section class="space-y-4 pt-4">
       <h2 class="font-display text-lg font-semibold tracking-tightest">Riwayat perubahan</h2>
+      <button type="button" id="audit-load" class="min-h-11 rounded-xl border px-4 text-sm">Muat 20 perubahan terakhir</button>
       <div id="audit-body" class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 overflow-hidden"></div>
     </section>
   </div>
@@ -79,6 +87,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { esc, stateBlock, pesanError } from '@/lib/admin-ui';
   import { fmtWaktu, fmtAngka } from '@/lib/admin-auth';
   import { pasangTab } from '@/lib/admin-tabs';
+  import { BOT_SLUGS_READ } from '@/lib/bot-slug';
 
   // Registry ikon Lucide (NAMA → path SVG). Metadata kategori kini datang dari
   // tabel `bot_setting_categories` (data-driven); DB menyimpan nama ikon, bukan
@@ -97,13 +106,34 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   const ikonSvg = (nama: string | null | undefined) => IC[nama ?? ''] ?? IC.settings;
 
   let bolehEdit = false;
+  let saving = false;
+  const loaded = new Map<string, { updated_at: string; value: string | null }>();
+  const search = document.getElementById('kontrol-query') as HTMLInputElement;
+  const results = document.getElementById('kontrol-hasil')!;
+  type SettingField = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+  const fieldsInForm = () => Array.from(document.querySelectorAll<SettingField>('#kontrol-body [data-key]'));
+  const readValue = (el: SettingField) =>
+    el instanceof HTMLInputElement && el.type === 'checkbox' ? String(el.checked) : el.value;
+  const updateSummary = () => {
+    const pending = fieldsInForm().filter(el => el.dataset.dirty === '1').length;
+    document.getElementById('kontrol-ringkasan')!.textContent = pending ? `${pending} perubahan belum tersimpan.` : loaded.size ? `${loaded.size} pengaturan tersedia.` : '';
+  };
+  window.addEventListener('beforeunload', (event) => {
+    if (!saving && !document.querySelector('#kontrol-body [data-dirty="1"]')) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+  document.getElementById('audit-load')!.addEventListener('click', async (event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    button.disabled = true;
+    try { await muatAudit(); } finally { button.disabled = false; }
+  });
 
   document.addEventListener('admin:ready', (e) => {
     const profile = (e as CustomEvent).detail;
     bolehEdit = profile?.role === 'owner' || profile?.role === 'admin';
     void muatStatus();
     void muat();
-    void muatAudit();
   });
 
   // ─── Riwayat perubahan setting (audit) ───────────────────────────────────
@@ -151,6 +181,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const { data } = await supabase
       .from('bot_stats')
       .select('captured_at, guild_count, member_reach, active_players, games_played, commands_run, latency_ms, uptime_seconds, meta')
+      .in('bot_slug', [...BOT_SLUGS_READ])
       .order('captured_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -220,7 +251,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     // Kategori (metadata) + setting (item) diambil bersamaan.
     const [kat, set] = await Promise.all([
       supabase.from('bot_setting_categories').select('key, label, description, icon, sort').order('sort', { ascending: true }),
-      supabase.from('bot_settings').select('key, label, value, kind, category, help, min_value, max_value, sort').order('sort', { ascending: true }),
+      supabase.from('bot_settings').select('key, label, value, kind, category, help, min_value, max_value, sort, updated_at').order('sort', { ascending: true }),
     ]);
 
     if (set.error) {
@@ -229,9 +260,40 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     }
     const data = set.data ?? [];
     if (data.length === 0) {
-      wadah.innerHTML = stateBlock('empty', 'Belum ada setting. Jalankan supabase/schema.sql terbaru.');
+      wadah.innerHTML = stateBlock('empty', 'Akun ini belum menerima pengaturan. Periksa akses CMS dan apakah pengaturan bot sudah diisi di proyek yang terhubung.');
       return;
     }
+
+    for (const row of data) loaded.set(row.key, row);
+    document.getElementById('kontrol-cari')!.hidden = false;
+    const searchIndex = data.map(row => ({
+      key: row.key,
+      category: row.category || 'lainnya',
+      label: row.label,
+      text: [row.key, row.label, row.category, row.help, kat.data?.find(cat => cat.key === row.category)?.label].filter(Boolean).join(' ').toLocaleLowerCase('id'),
+    }));
+    search.oninput = () => {
+      const words = search.value.trim().toLocaleLowerCase('id').split(/\s+/).filter(Boolean);
+      const matches = words.length ? searchIndex.filter(row => words.every(word => row.text.includes(word))) : [];
+      results.replaceChildren();
+      for (const row of matches.slice(0, 12)) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'block min-h-11 rounded-lg px-3 text-left text-sm underline';
+        button.textContent = `${row.label} · ${row.category}`;
+        button.onclick = () => {
+          // The tab component also responds to hashchange on the current page.
+          history.replaceState(null, '', '#' + encodeURIComponent(row.category));
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+          const field = document.getElementById('f-' + row.key);
+          field?.scrollIntoView({ block: 'center' });
+          field?.focus({ preventScroll: true });
+        };
+        results.append(button);
+      }
+      if (words.length && !matches.length) results.textContent = 'Tidak ada pengaturan yang cocok.';
+    };
+    updateSummary();
 
     // Kelompokkan item per kategori (urutan item = sort dari query).
     const perKategori = new Map<string, any[]>();
@@ -258,14 +320,20 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       .join('');
     document.getElementById('kontrol-aksi')!.classList.remove('hidden');
     pasangTab(wadah);
-    const tandai = (e: Event) => { (e.target as HTMLElement).closest<HTMLElement>('[data-key]')?.setAttribute('data-dirty', '1'); };
+    const tandai = (e: Event) => {
+      const el = (e.target as HTMLElement).closest<SettingField>('[data-key]');
+      if (!el) return;
+      const original = loaded.get(el.dataset.key!)?.value;
+      const initial = el.dataset.kind === 'boolean' && original != null ? String(original === 'true' || original === '1') : original ?? '';
+      if (readValue(el) === initial) delete el.dataset.dirty;
+      else el.dataset.dirty = '1';
+      updateSummary();
+    };
     wadah.oninput = tandai;
     wadah.onchange = tandai;
 
     if (!bolehEdit) {
-      wadah.querySelectorAll('input, textarea').forEach((el) => {
-        (el as HTMLInputElement).disabled = true;
-      });
+      fieldsInForm().forEach(el => { el.disabled = true; });
       const btn = document.getElementById('btn-simpan') as HTMLButtonElement;
       btn.disabled = true;
       document.getElementById('kontrol-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
@@ -300,16 +368,29 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   function field(row: any): string {
     const id = `f-${row.key}`;
     const menunggu = row.value === null || row.value === undefined
-      ? `<p class="mt-1 text-xs text-amber-700 dark:text-amber-400">Menunggu sinkron dari bot — nilai aktif saat ini dipakai sampai bot mengirimnya. Ubah hanya bila ingin menimpanya.</p>`
+      ? `<p data-setting-waiting class="mt-1 text-xs text-amber-700 dark:text-amber-400">Menunggu sinkronisasi dari bot. Nilai aktif saat ini dipakai sampai bot mengirimnya. Ubah hanya bila ingin menimpanya.</p>`
       : '';
     const help = (row.help
       ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(row.help)}</p>`
       : '') + menunggu;
 
-    if (row.kind === 'boolean') {
-      const aktif = row.value === 'true';
+    if (row.kind === 'boolean' && row.value == null) {
       return `
-        <div class="${KARTU}">
+        <div data-setting-card class="${KARTU} px-4 py-3.5">
+          <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}</label>
+          <select id="${esc(id)}" data-key="${esc(row.key)}" data-kind="boolean" class="min-h-11 max-w-full ${INPUT}">
+            <option value="">Menunggu sinkronisasi</option>
+            <option value="true">Aktif</option>
+            <option value="false">Mati</option>
+          </select>
+          ${help}
+        </div>`;
+    }
+
+    if (row.kind === 'boolean') {
+      const aktif = row.value === 'true' || row.value === '1';
+      return `
+        <div data-setting-card class="${KARTU}">
           <label class="flex items-start justify-between gap-4 px-4 py-3.5 cursor-pointer">
             <span class="min-w-0">
               <span class="block text-sm font-medium">${esc(row.label)}</span>
@@ -328,7 +409,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         (row.min_value != null ? ` min="${esc(row.min_value)}"` : '') +
         (row.max_value != null ? ` max="${esc(row.max_value)}"` : '') + ' step="1"';
       return `
-        <div class="${KARTU} px-4 py-3.5">
+        <div data-setting-card class="${KARTU} px-4 py-3.5">
           <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}${batas}</label>
           <input type="number" id="${esc(id)}" data-key="${esc(row.key)}" data-kind="number"${attrs} value="${esc(row.value ?? '')}"
             class="w-40 ${INPUT}" />
@@ -338,7 +419,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     if (row.kind === 'markdown') {
       return `
-        <div class="${KARTU} px-4 py-3.5">
+        <div data-setting-card class="${KARTU} px-4 py-3.5">
           <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}</label>
           <textarea id="${esc(id)}" data-key="${esc(row.key)}" data-kind="markdown" rows="4"
             class="w-full ${INPUT}">${esc(row.value ?? '')}</textarea>
@@ -348,7 +429,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     const tipe = row.kind === 'url' ? 'url' : 'text';
     return `
-      <div class="${KARTU} px-4 py-3.5">
+      <div data-setting-card class="${KARTU} px-4 py-3.5">
         <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}</label>
         <input type="${tipe}" id="${esc(id)}" data-key="${esc(row.key)}" data-kind="${esc(row.kind)}" value="${esc(row.value ?? '')}"
           class="w-full ${INPUT}" />
@@ -358,7 +439,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   document.getElementById('form-kontrol')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!bolehEdit) return;
+    if (!bolehEdit || saving) return;
 
     const supabase = getSupabase();
     if (!supabase) return;
@@ -375,7 +456,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const uid = sesi.session?.user.id ?? null;
 
     const fields = Array.from(
-      document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-key]'),
+      document.querySelectorAll<SettingField>('[data-key]'),
     );
     const berubah = fields.filter((el) => el.dataset.dirty === '1');
     if (berubah.length === 0) {
@@ -400,29 +481,47 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       return;
     }
 
-    const hasil = await Promise.all(
-      berubah.map((el) => {
-        let nilai: string;
-        if (el.dataset.kind === 'boolean') nilai = String((el as HTMLInputElement).checked);
-        else nilai = el.value;
-        return supabase
-          .from('bot_settings')
-          .update({ value: nilai, updated_at: new Date().toISOString(), updated_by: uid })
-          .eq('key', el.dataset.key!);
-      }),
-    );
-
-    const gagal = hasil.find((r) => r.error);
-    if (gagal?.error) {
-      pesan.textContent = pesanError(gagal.error);
-      pesan.className = 'text-sm text-red-600 dark:text-red-400';
-    } else {
-      pesan.textContent = 'Tersimpan. Bot akan menerapkannya dalam ± 1 menit.';
-      pesan.className = 'text-sm text-teal-700 dark:text-teal-300';
-      berubah.forEach((el) => el.removeAttribute('data-dirty'));
-      void muat();
-      void muatAudit();
+    if (!uid) {
+      pesan.textContent = 'Sesi berakhir. Masuk kembali sebelum menyimpan.';
+      btn.disabled = false;
+      btn.textContent = 'Simpan perubahan';
+      return;
     }
+    saving = true;
+    // Satu RPC atomik: konflik versi atau nilai tidak sah membatalkan SELURUH batch.
+    const drafts = berubah.map(el => ({ el, key: el.dataset.key!, value: readValue(el) }));
+    const changes = drafts.map(({ key, value }) => ({ key, value, updated_at: loaded.get(key)?.updated_at ?? null }));
+    fields.forEach(el => { el.disabled = true; });
+    let galat = '';
+    let saved = 0;
+    try {
+      const { data, error } = await supabase.rpc('bot_settings_save_batch', { p_changes: changes });
+      if (error || !data) {
+        galat = 'Penyimpanan gagal dan tidak ada yang diubah. Coba lagi atau muat ulang halaman.';
+      } else if (!data.ok) {
+        const daftar = (data.errors as Array<{ key: string; code: string; message: string }>)
+          .map(e => `${e.key} (${e.code === 'konflik' ? 'versi berubah' : e.message})`).join(', ');
+        galat = `Tidak ada yang tersimpan. ${daftar}. Salin isian sebelum memuat ulang.`;
+      } else {
+        for (const row of data.rows as Array<{ key: string; value: string; updated_at: string }>) {
+          const el = drafts.find(d => d.key === row.key)?.el;
+          loaded.set(row.key, { ...(loaded.get(row.key) ?? {}), value: row.value, updated_at: row.updated_at });
+          if (el instanceof HTMLSelectElement) el.querySelector('option[value=""]')?.remove();
+          el?.closest('[data-setting-card]')?.querySelector('[data-setting-waiting]')?.remove();
+          if (el) delete el.dataset.dirty;
+          saved++;
+        }
+      }
+    } catch {
+      galat = 'Penyimpanan gagal dan tidak ada yang diubah. Periksa koneksi.';
+    } finally {
+      fields.forEach(el => { el.disabled = false; });
+      saving = false;
+      updateSummary();
+    }
+    pesan.textContent = galat
+      || `${saved} pengaturan tersimpan di CMS. Penerapan oleh bot belum dikonfirmasi di halaman ini; bot membaca perubahan pada siklus berikutnya.`;
+    pesan.className = galat ? 'text-sm text-red-600 dark:text-red-400' : 'text-sm text-teal-700 dark:text-teal-300';
 
     btn.disabled = false;
     btn.textContent = 'Simpan perubahan';
