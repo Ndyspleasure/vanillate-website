@@ -13,10 +13,11 @@ const toc = [
   { n: '06', id: 'data-retention', label: 'Data Retention' },
   { n: '07', id: 'data-security', label: 'Data Security' },
   { n: '08', id: 'third-party-services', label: 'Third-Party Services' },
-  { n: '09', id: 'childrens-privacy', label: "Children's Privacy" },
-  { n: '10', id: 'user-rights', label: 'User Rights' },
-  { n: '11', id: 'changes', label: 'Changes to this Policy' },
-  { n: '12', id: 'contact', label: 'Contact' },
+  { n: '09', id: 'wallet-data', label: 'Vanillate Wallet Data Processing' },
+  { n: '10', id: 'childrens-privacy', label: "Children's Privacy" },
+  { n: '11', id: 'user-rights', label: 'User Rights' },
+  { n: '12', id: 'changes', label: 'Changes to this Policy' },
+  { n: '13', id: 'contact', label: 'Contact' },
 ];
 ---
 
@@ -268,16 +269,52 @@ const toc = [
           If you sign up as a blog writer at vanillate.id/blog/masuk, we store your Google account email, your public author profile (display name, bio, links), your linked Discord ID and username (used only to verify writers), and the drafts and images you submit until they are published or deleted. The email is used only to notify you about the review of your articles. Published articles and your author profile are public.
         </p>
         <p class="mb-4">
-          When you register a payout account in Vanillate Wallet, we send only the bank or e-wallet code and the account or phone number to an independent account name check service, to show you the account holder name before you confirm it. This service is operated by a third party, not by a bank, and we do not send your name, Discord details, or balance to it. Withdrawals are sent from our ShopeePay account to the bank or e-wallet you registered, which receive the transfer details needed to complete the payment.
+          Vanillate Wallet uses additional third parties (an account name check service, payment providers, and Discord for staff records). They are described in section 09.
         </p>
         <p>
           Use of such services is governed by their respective privacy policies and terms.
         </p>
       </section>
 
-      <section id="childrens-privacy" class="legal-sec reveal scroll-mt-24">
+      <section id="wallet-data" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
           <span class="legal-badge">09</span>
+          <h2 class="legal-title">Vanillate Wallet Data Processing</h2>
+        </div>
+        <p class="mb-4">This section applies once Vanillate Wallet is made available. When you take part in Vanillate Wallet, we process the information reasonably necessary to provide rewards, transfers, payout account verification, withdrawals, fraud prevention, and support. The categories are listed in section 02.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Purposes and legal basis</h3>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Running the Wallet program you choose to join (granting VP, transfers, withdrawals, notifications): processing necessary to provide the program under our Terms of Service</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Checking the payout account name, preventing fraud, multi-account abuse, and unauthorized transactions, and keeping the Wallet secure: our legitimate interest in protecting users and the integrity of a feature with real monetary value</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Keeping payment and transaction records: accounting, dispute resolution, and compliance with legal obligations that apply to us</span></li>
+        </ul>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Who can access Wallet data</h3>
+        <p class="mb-4">Only team members authorized to process payments can see payout details, and the full payout number is shown to them only when needed to pay or investigate, with each access recorded. Payout details are never posted in public channels.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Where Wallet data is stored</h3>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Wallet records are stored in a PostgreSQL database on our own server (a virtual private server in Indonesia). Payout account numbers and holder names are encrypted, and PINs are stored only as one-way hashes. Backups of this database are kept in a private cloud storage bucket</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>When an authorized administrator opens a Wallet page in our admin panel, the requested details pass through our admin panel database provider (Supabase) and are kept there only as long as needed to display them. Copies may remain in the routine backups of that provider for a limited time</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Proof submitted for a payout account review and proof of transfers we make are posted to private, staff-only channels in our Discord server and kept there as payment records. These files are stored by Discord under the policies of Discord. We control who can see those channels and can delete our messages, but we cannot guarantee removal of every copy from the infrastructure of Discord</span></li>
+        </ul>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Third parties</h3>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Account name check: when you register or change a payout account, we send only the bank or e-wallet code and the account or phone number to an independent account name check service, to show you the holder name before you confirm it. This service is community operated, not a bank, and its result is treated only as a convenience check, not as proof that the account belongs to you. We do not send your name, Discord details, or balance to it</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Payment providers: withdrawals are sent from our ShopeePay account to the bank or e-wallet you registered, which receive the details needed to complete the payment</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Discord: delivers one-time codes and notifications by direct message and hosts the staff channels described above</span></li>
+        </ul>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Retention</h3>
+        <p class="mb-4">Wallet transaction records, withdrawal records, and records of actions taken by our team may need to be kept for accounting, fraud prevention, dispute resolution, security, or legal compliance, and may therefore be retained even after other data is deleted. A payout account you replace is deactivated, not reused. The specific retention period for each Wallet data category will be published in this section before Wallet withdrawals open. Where deletion is required or permitted, information will be deleted or de-identified in line with applicable law.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Your rights</h3>
+        <p class="mb-4">You may ask for information about your Wallet data, correction of inaccurate data, and deletion or restriction where it is not required to be kept for the reasons above, through our official support channel. We may need to verify that the request comes from the owner of the Discord account.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Security incidents</h3>
+        <p class="mb-4">If a personal data breach affects Wallet data, we will act to contain it and will notify affected users and the relevant authority as required by Indonesian personal data protection law.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Minors</h3>
+        <p class="mb-4">Vanillate Wallet involves payment account details. If you are a minor under the law that applies to you, use Wallet withdrawals only with the involvement of a parent or guardian, and register only a payment account you are lawfully permitted to use.</p>
+      </section>
+
+      <section id="childrens-privacy" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">10</span>
           <h2 class="legal-title">Children's Privacy</h2>
         </div>
         <p>
@@ -287,7 +324,7 @@ const toc = [
 
       <section id="user-rights" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">10</span>
+          <span class="legal-badge">11</span>
           <h2 class="legal-title">User Rights</h2>
         </div>
         <p class="mb-4">Users may request:</p>
@@ -302,7 +339,7 @@ const toc = [
 
       <section id="changes" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">11</span>
+          <span class="legal-badge">12</span>
           <h2 class="legal-title">Changes to this Privacy Policy</h2>
         </div>
         <p class="mb-4">We may update this Privacy Policy from time to time.</p>
@@ -313,7 +350,7 @@ const toc = [
 
       <section id="contact" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">12</span>
+          <span class="legal-badge">13</span>
           <h2 class="legal-title">Contact</h2>
         </div>
         <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 md:p-8">
