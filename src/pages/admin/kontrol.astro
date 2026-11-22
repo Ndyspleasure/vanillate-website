@@ -368,7 +368,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   function field(row: any): string {
     const id = `f-${row.key}`;
     const menunggu = row.value === null || row.value === undefined
-      ? `<p data-setting-waiting class="mt-1 text-xs text-amber-700 dark:text-amber-400">Menunggu sinkron dari bot — nilai aktif saat ini dipakai sampai bot mengirimnya. Ubah hanya bila ingin menimpanya.</p>`
+      ? `<p data-setting-waiting class="mt-1 text-xs text-amber-700 dark:text-amber-400">Menunggu sinkronisasi dari bot. Nilai aktif saat ini dipakai sampai bot mengirimnya. Ubah hanya bila ingin menimpanya.</p>`
       : '';
     const help = (row.help
       ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(row.help)}</p>`
@@ -488,39 +488,40 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       return;
     }
     saving = true;
-    const failed: string[] = [];
-    let saved = 0;
-    // Keep requests bounded and verify that the loaded row still has the same version.
+    // Satu RPC atomik: konflik versi atau nilai tidak sah membatalkan SELURUH batch.
     const drafts = berubah.map(el => ({ el, key: el.dataset.key!, value: readValue(el) }));
+    const changes = drafts.map(({ key, value }) => ({ key, value, updated_at: loaded.get(key)?.updated_at ?? null }));
     fields.forEach(el => { el.disabled = true; });
+    let galat = '';
+    let saved = 0;
     try {
-      for (const { el, key, value } of drafts) {
-        const previous = loaded.get(key);
-        if (!previous) { failed.push(key); continue; }
-        try {
-          const { data, error } = await supabase.from('bot_settings')
-            .update({ value, updated_at: new Date().toISOString(), updated_by: uid })
-            .eq('key', key).eq('updated_at', previous.updated_at)
-            .select('value, updated_at').maybeSingle();
-          if (error || !data) { failed.push(key); continue; }
-          loaded.set(key, data);
+      const { data, error } = await supabase.rpc('bot_settings_save_batch', { p_changes: changes });
+      if (error || !data) {
+        galat = 'Penyimpanan gagal dan tidak ada yang diubah. Coba lagi atau muat ulang halaman.';
+      } else if (!data.ok) {
+        const daftar = (data.errors as Array<{ key: string; code: string; message: string }>)
+          .map(e => `${e.key} (${e.code === 'konflik' ? 'versi berubah' : e.message})`).join(', ');
+        galat = `Tidak ada yang tersimpan. ${daftar}. Salin isian sebelum memuat ulang.`;
+      } else {
+        for (const row of data.rows as Array<{ key: string; value: string; updated_at: string }>) {
+          const el = drafts.find(d => d.key === row.key)?.el;
+          loaded.set(row.key, { ...(loaded.get(row.key) ?? {}), value: row.value, updated_at: row.updated_at });
           if (el instanceof HTMLSelectElement) el.querySelector('option[value=""]')?.remove();
-          el.closest('[data-setting-card]')?.querySelector('[data-setting-waiting]')?.remove();
-          delete el.dataset.dirty;
+          el?.closest('[data-setting-card]')?.querySelector('[data-setting-waiting]')?.remove();
+          if (el) delete el.dataset.dirty;
           saved++;
-        } catch {
-          failed.push(key);
         }
       }
+    } catch {
+      galat = 'Penyimpanan gagal dan tidak ada yang diubah. Periksa koneksi.';
     } finally {
       fields.forEach(el => { el.disabled = false; });
       saving = false;
       updateSummary();
     }
-    pesan.textContent = failed.length
-      ? `${saved} tersimpan. Gagal atau versi berubah: ${failed.join(', ')}. Salin isian yang gagal sebelum memuat ulang.`
-      : `${saved} pengaturan tersimpan di CMS. Bot membaca perubahan pada siklus berikutnya.`;
-    pesan.className = failed.length ? 'text-sm text-red-600 dark:text-red-400' : 'text-sm text-teal-700 dark:text-teal-300';
+    pesan.textContent = galat
+      || `${saved} pengaturan tersimpan di CMS. Penerapan oleh bot belum dikonfirmasi di halaman ini; bot membaca perubahan pada siklus berikutnya.`;
+    pesan.className = galat ? 'text-sm text-red-600 dark:text-red-400' : 'text-sm text-teal-700 dark:text-teal-300';
 
     btn.disabled = false;
     btn.textContent = 'Simpan perubahan';
