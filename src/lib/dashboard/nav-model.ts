@@ -15,7 +15,6 @@ export type Tab =
   | 'autorole'
   | 'welcome'
   | 'security'
-  | 'voice-sapa'
   | 'share-server'
   | 'channels'
   | 'audit-log'
@@ -53,7 +52,6 @@ export const SERVER_GROUPS: { label: string; tabs: ServerTab[] }[] = [
     tabs: [
       { id: 'leveling', label: 'Leveling', ic: 'trending-up' },
       { id: 'security', label: 'Security Center', ic: 'shield' },
-      { id: 'voice-sapa', label: 'Sapa Voice', ic: 'message-circle' },
     ],
   },
   {
@@ -92,8 +90,19 @@ export const SECTION_OF_TAB: Partial<Record<Tab, string>> = {
   autorole: 'autorole',
   welcome: 'welcome',
   security: 'security',
-  'voice-sapa': 'voice_sapa',
 };
+
+/**
+ * Bagian registry yang SUDAH DICABUT dari dashboard. Bot tidak lagi menerbitkannya, tetapi
+ * baris lama di database tetap ada (RPC publikasi tidak menghapus), dan bagian tak dikenal
+ * akan jatuh ke Game Hub. Karena itu disaring di satu pintu masuk data (`src/lib/dashboard/api.ts`).
+ * `voice_sapa`: Sapa Voice diatur pengembang lewat sakelar CMS, bukan setelan admin server.
+ */
+export const REMOVED_SECTIONS: readonly string[] = ['voice_sapa'];
+
+export function withoutRemoved<T extends Pick<Feature, 'section'>>(registry: T[]): T[] {
+  return registry.filter((f) => !REMOVED_SECTIONS.includes(f.section));
+}
 
 /** Tab tempat sebuah fitur diatur (bagian tak dikenal jatuh ke Game Hub). */
 export function tabOfFeature(f: Pick<Feature, 'section'>): Tab {
