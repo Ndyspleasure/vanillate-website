@@ -1,5 +1,32 @@
 [
   {
+    "version": "3.58.4",
+    "date": "2026-11-22",
+    "title": "Perbaikan alat pemulihan data untuk server baru",
+    "highlights": [
+      "🛠️ Perbaikan alat pemulihan data internal agar tidak membuat tabel yang tidak dibutuhkan",
+      "📊 Tidak ada perubahan yang terlihat di server Anda"
+    ]
+  },
+  {
+    "version": "3.58.3",
+    "date": "2026-11-22",
+    "title": "Sapa Voice kini diatur pengembang",
+    "highlights": [
+      "🔒 Sapa Voice adalah fitur bawaan Vanillate dan tidak lagi bisa diubah dari dashboard server",
+      "👋 Bot tetap hanya mampir di voice channel yang izinnya diberikan kepadanya"
+    ]
+  },
+  {
+    "version": "3.58.2",
+    "date": "2026-11-22",
+    "title": "Persiapan pemantauan server lewat panel admin",
+    "highlights": [
+      "🛠️ Panel admin Vanillate kini membaca ringkasan fitur server langsung dari bot agar lebih hemat dan stabil",
+      "📊 Tidak ada perubahan yang terlihat di server Anda"
+    ]
+  },
+  {
     "version": "3.58.1",
     "date": "2026-11-21",
     "title": "Persiapan penyimpanan data di server sendiri",
