@@ -5,7 +5,7 @@ hemat sumber daya database"). Halaman CMS admin membaca ringkasan Game Hub, Sosi
 dan Server Hub saat halaman dibuka, bukan dari snapshot yang didorong bot tiap 10 sampai
 30 detik. Item kerja: `claudereport.md` bot, PLAN-006 dan HO-037.
 
-## Arsitektur sekarang (HO-037, sejak data game pindah ke VPS)
+## Arsitektur sekarang (HO-037; data game di VPS sejak cutover 2026-11-22)
 
 ```
 browser admin (JWT sesi CMS)
@@ -61,9 +61,12 @@ Kode: klien `src/lib/cms-read/client.ts`, pemakaian ulang `src/lib/cms-read/reus
 Sebelum HO-037, data game ada di Supabase Database Bot dan halaman membaca lewat Edge
 Function `cms-read` (`supabase/functions/cms-read/`, `verify_jwt = false`) yang memanggil
 fungsi SQL `cms_read_serverhub()` dengan `service_role`. Klien sudah tidak memakainya.
-Fungsi dan kodenya dibiarkan sampai cutover database ke VPS stabil, lalu dihapus
-(Edge Function dan `drop function public.cms_read_serverhub()` di Database Bot),
-supaya rollback cutover tidak membutuhkan deploy ulang.
+Cutover database ke VPS sudah dilakukan (2026-11-22). Fungsi dan kodenya dibiarkan
+sampai stabil ≥ 7 hari (2026-11-29), lalu dihapus (Edge Function, folder
+`supabase/functions/cms-read/`, dan `drop function public.cms_read_serverhub()` di Database Bot;
+izin pemilik, tercatat di `claudereport.md` bot HO-037), supaya rollback cutover tidak
+membutuhkan deploy ulang. Perhatian: fungsi itu membaca tabel game di Supabase yang sejak
+cutover tidak lagi diperbarui, jadi datanya basi dan tidak boleh dipakai.
 
 ## Rollback
 

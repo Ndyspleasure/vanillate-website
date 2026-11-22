@@ -46,12 +46,15 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
   tipe dokumen Sanity sama persis antara `src/lib/blog/config.ts` dan
   `supabase/functions/blog-admin/logic.ts` (dites). Build produksi sengaja gagal
   bila Sanity tak terjangkau (`BLOG_ALLOW_EMPTY=1` hanya untuk dev/PR).
-- **Database game bot = proyek Supabase TERPISAH "Database Bot" (dulu "Vanillate Game")**
-  (`ggsshrnpgnfqvlhzxnoq`, acuan `docs/database-game.md` repo bot; data baru
-  untuk game/fitur sosial: `docs/database-fitur-baru.md`). Proyek Supabase di
-  repo ini (`lvfwopnvvqncopvathop`) tetap **khusus CMS & website** (admin,
-  Panel Developer, blog, FAQ, konten) — jangan memindahkan data pemain ke proyek
-  CMS.
+- **Database game bot = PostgreSQL 17 di VPS bot (sejak 2026-11-22, HO-037)**,
+  bukan lagi di Supabase. Proyek Supabase **"Database Bot"** (`ggsshrnpgnfqvlhzxnoq`)
+  tinggal untuk tabel dashboard, Share Server, dan Showcase. Acuan di repo bot:
+  `docs/database-game.md`, `docs/rencana-database-ke-vps.md`; data baru untuk
+  game/fitur sosial: `docs/database-fitur-baru.md`. Proyek Supabase di repo ini
+  (`lvfwopnvvqncopvathop`) tetap **khusus CMS & website** (admin, Panel Developer,
+  blog, FAQ, konten) — jangan memindahkan data pemain ke proyek CMS. Satu salinan
+  ringkas yang sudah ada, `bot_players` (didorong bot untuk halaman Pemain), masih
+  di proyek CMS; nasibnya menunggu keputusan pemilik (HO-037, `claudereport.md` bot).
 - **Satu pengecualian (PLAN-001, disetujui pemilik 2026-11-03): Vanillate
   Dashboard (`/dashboard`) memakai proyek Database Bot** untuk login Discord,
   RPC `guild_*` & `share_*`, serta Edge Function `dashboard-discord` &
@@ -78,7 +81,10 @@ dihapus. Repo bot: **`Ndyspleasure/sambung-kata-bot`** (instruksinya di
   ditampilkan kecuali halaman Pemain untuk dukungan; (4) **`service_role` dan
   `DATABASE_URL` tetap TIDAK PERNAH di browser atau kode website**, hanya boleh
   menjadi secret Edge Function di sisi server. Tulis rancangan dan perkiraan
-  biayanya di `docs/` sebelum membangun.
+  biayanya di `docs/` sebelum membangun. **Sejak HO-037 (2026-11-22)** data game
+  ada di VPS, jadi halaman CMS membaca Server Hub lewat antrean `bot_commands`
+  bertipe `read.*` (bukan lagi Edge Function `cms-read`, dipensiunkan);
+  `docs/CMS-BACA-DATABASE-BOT.md`.
 - Versi & changelog bot **read-only** di sini (SSoT `version.json` /
   `CHANGELOG.json` di repo bot).
 
