@@ -1,8 +1,8 @@
 ---
 // Server Hub (CMS): ringkasan pemakaian Verification, Leveling, Auto Role,
 // Welcome, dan Security Center di seluruh server. Dibaca SESUAI PERMINTAAN dari
-// Database Bot lewat Edge Function `cms-read` (tanpa snapshot dorong dari bot),
-// hanya angka agregat. Acuan: docs/CMS-BACA-DATABASE-BOT.md.
+// bot lewat antrean `bot_commands` (perintah `read.serverhub`, tanpa snapshot dorong
+// dari bot), hanya angka agregat. Acuan: docs/CMS-BACA-DATABASE-BOT.md.
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
@@ -126,7 +126,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     }
     const h = parseServerHub(r.data);
     if (!h) {
-      body.innerHTML = stateBlock('error', 'Data dari Database Bot tidak dikenali.');
+      body.innerHTML = stateBlock('error', 'Data dari bot tidak dikenali.');
       return;
     }
     body.innerHTML = render(h);
