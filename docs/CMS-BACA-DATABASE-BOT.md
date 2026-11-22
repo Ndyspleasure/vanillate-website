@@ -1,73 +1,73 @@
-# CMS membaca Database Bot sesuai permintaan
+# CMS membaca data bot sesuai permintaan
 
 Keputusan pemilik 2026-11-09 (CLAUDE.md, "Pengecualian kedua" dan "Tujuan utama:
-hemat sumber daya database"). Halaman CMS admin membaca data Game Hub, Sosial Hub,
-dan Server Hub langsung dari proyek **Database Bot** saat halaman dibuka, bukan dari
-snapshot yang didorong bot ke proyek CMS tiap 10 sampai 30 detik. Item kerja:
-`claudereport.md` bot, PLAN-006.
+hemat sumber daya database"). Halaman CMS admin membaca ringkasan Game Hub, Sosial Hub,
+dan Server Hub saat halaman dibuka, bukan dari snapshot yang didorong bot tiap 10 sampai
+30 detik. Item kerja: `claudereport.md` bot, PLAN-006 dan HO-037.
 
-## Arsitektur
+## Arsitektur sekarang (HO-037, sejak data game pindah ke VPS)
 
 ```
 browser admin (JWT sesi CMS)
-   │  POST { view }  (Authorization: Bearer <JWT CMS>)
+   │  1. riwayat read.<tampilan> terbaru masih segar (< 60 dtk)? pakai ulang, selesai
+   │  2. INSERT bot_commands { type: 'read.serverhub', payload: {} }   (RLS proyek CMS)
    ▼
-Edge Function `cms-read` (proyek Database Bot, verify_jwt = false)
-   1. peran admin: GET admin_users?id=eq.<sub> ke PostgREST CMS dengan JWT yang sama
-      (PostgREST CMS yang memverifikasi tanda tangan; peran owner/admin/viewer; cache 60 dtk)
-   2. cache hasil per tampilan 60 dtk (satu panggilan melayani semua admin)
-   3. RPC `cms_read_<view>()` dengan service_role (hanya di dalam fungsi)
+bot (PostgreSQL lokal di VPS)
+   verifikasi ulang peran pembuat dari admin_users, jalankan handler `read.serverhub`
+   (src/cms/handlers/read.js di repo bot): beberapa COUNT, cache 60 dtk di memori
+   │  3. hasil ditulis ke bot_commands.result
    ▼
-Postgres Database Bot: fungsi SECURITY DEFINER, hanya service_role boleh EXECUTE
+browser: kirimPerintah() menunggu hasilnya (src/lib/dev-panel/client.ts)
 ```
 
-Kode: `supabase/functions/cms-read/` (`logic.ts` murni dan dites di
-`tests/cms-read.test.ts`), klien `src/lib/cms-read/client.ts`, model tampilan
-`src/lib/cms-read/serverhub-model.ts`. Fungsi SQL: `migrations/0026_cms_read.sql`
-di repo bot (idempoten, tabel tidak diubah).
+Kode: klien `src/lib/cms-read/client.ts`, pemakaian ulang `src/lib/cms-read/reuse.ts`
+(dites di `tests/cms-read-reuse.test.ts`), model tampilan
+`src/lib/cms-read/serverhub-model.ts`. Sisi bot: `src/cms/handlers/read.js`, peran
+`viewer` untuk tipe `read.*` di `src/cms/registry.js`.
 
 ## Keamanan
 
-- Hanya baca dan hanya angka agregat. Aksi ke bot tetap lewat `bot_commands`.
-- `service_role` hanya ada di lingkungan Edge Function. Browser tidak pernah
-  memegangnya. `anon` dan `authenticated` dicabut dari fungsi baca.
-- Token palsu ditolak PostgREST CMS (403), token tanpa baris `admin_users` ditolak (403),
-  tanpa token 401, selain POST 405, tampilan di luar daftar 400. CORS hanya untuk
-  `vanillate.id`, `www.vanillate.id`, dan localhost dev.
-- `sub` dibaca dari JWT tanpa verifikasi hanya untuk menyaring baris; verifikasi
-  tanda tangan tetap di PostgREST CMS. Owner bisa melihat semua baris
-  `admin_users`, karena itu filter `id = sub` wajib.
-- Tidak ada Discord ID, nama pemain, atau isi pesan di hasil.
+- Hanya baca dan hanya angka agregat, tanpa Discord ID, nama pemain, atau isi pesan.
+  Aksi ke bot tetap lewat `bot_commands` dengan tipe biasa.
+- Tipe `read.*` berperan **viewer** (semua akun admin CMS boleh). Policy RLS
+  `viewer tambah bot_commands baca-saja` (`supabase/bot-commands-viewer-read.sql`,
+  rollback dan tes menyertai) mengizinkan INSERT hanya untuk: akun admin, atas nama
+  dirinya, status `pending`, tipe `^read\.[A-Za-z][A-Za-z0-9.]{0,63}$`, payload maksimal
+  2 KB. Perintah lain tetap hanya owner dan admin, `sys.*` tetap hanya owner.
+- Bot memverifikasi ulang peran pembuat dari `admin_users` dan wajib menjaga setiap
+  handler `read.*` baca-saja dan `quiet` (dijaga `test/cms.test.js` di repo bot).
+- `service_role` dan `DATABASE_URL` tidak ada di browser maupun kode website.
 
-## Biaya (perkiraan dan pengukuran 2026-11-09)
+## Biaya
 
-- Satu pemanggilan `cms_read_serverhub()` = sekitar 20 `COUNT` pada tabel kecil,
-  sekitar 83 ms pada pengukuran pertama.
-- Cache 60 detik di fungsi dan `Cache-Control: private, max-age=30` di respons:
-  paling banyak satu panggilan database per menit per tampilan, berapa pun jumlah
-  admin yang membuka halaman. Tanpa admin yang membuka, biayanya **nol**.
-- Pembanding: snapshot dorong menjalankan query hitung terus-menerus (satu keluarga
-  query campaign saja sekitar 590 detik waktu database dalam 11 hari, untuk data
-  268 byte). Lihat `docs/hemat-sumber-daya-database.md` di repo bot.
-- Pemeriksaan peran: satu GET ke CMS per token per menit (di-cache).
+- Tanpa admin yang membuka halaman: **nol**. Tidak ada polling dan tidak ada snapshot.
+- Satu pembukaan halaman: satu INSERT `bot_commands`, beberapa pembacaan status (jeda 2
+  sampai 3 detik) dan satu rangkaian ±12 `COUNT` di database lokal bot (sekitar 1 ms).
+  Hasil dipakai ulang 60 detik (di klien dan di bot): beberapa admin dalam semenit yang
+  sama tidak menambah pekerjaan. Egress Supabase database bot: nol (query berjalan di VPS).
+- Jawaban bisa tertunda sampai beberapa detik (bot memeriksa antrean tiap 15 detik saat
+  sepi), batas tunggu 40 detik.
 
 ## Menambah tampilan baru
 
-1. Migration di repo bot: `public.cms_read_<nama>()` (`security definer`, `stable`,
-   `set search_path = ''`, agregat saja), `revoke ... from public, anon, authenticated`,
-   `grant execute ... to service_role`. Terapkan lewat Supabase MCP `apply_migration`
-   ke Database Bot, ukur dengan `explain analyze`.
-2. `logic.ts`: tambah `RPC_BY_VIEW`, `CACHE_TTL_MS`; deploy ulang fungsi
-   (`verify_jwt = false`).
-3. Website: model murni + tes, halaman yang memanggil `bacaCms('<nama>')`, entri menu
-   di `src/lib/admin-menu.ts`.
-4. Catat perkiraan biaya di deskripsi PR.
+1. Bot: handler `read.<nama>` di `src/cms/handlers/read.js` (agregat saja, `quiet: true`,
+   cache 60 dtk) dan tes di `test/cms.test.js`.
+2. Website: tambah `READ_TYPE` di `src/lib/cms-read/reuse.ts` dan `CmsView`, model murni
+   + tes, halaman yang memanggil `bacaCms('<nama>')`, entri menu di `src/lib/admin-menu.ts`.
+3. Catat perkiraan biaya di deskripsi PR.
 
-## Deploy dan rollback
+## Riwayat: Edge Function `cms-read` (dipensiunkan)
 
-- Deploy: Supabase MCP `deploy_edge_function` ke proyek `ggsshrnpgnfqvlhzxnoq`,
-  nama `cms-read`, `verify_jwt = false`. URL: `<PUBLIC_BOT_SUPABASE_URL>/functions/v1/cms-read`.
-- URL dan kunci publishable CMS adalah bawaan di kode (nilai publik); env
-  `CMS_SUPABASE_URL`, `CMS_SUPABASE_ANON_KEY`, `CMS_READ_ALLOWED_ORIGINS` hanya untuk menimpa.
-- Rollback: hapus fungsi `cms-read` dan halaman; `drop function public.cms_read_serverhub()`
-  tidak mengubah data apa pun.
+Sebelum HO-037, data game ada di Supabase Database Bot dan halaman membaca lewat Edge
+Function `cms-read` (`supabase/functions/cms-read/`, `verify_jwt = false`) yang memanggil
+fungsi SQL `cms_read_serverhub()` dengan `service_role`. Klien sudah tidak memakainya.
+Fungsi dan kodenya dibiarkan sampai cutover database ke VPS stabil, lalu dihapus
+(Edge Function dan `drop function public.cms_read_serverhub()` di Database Bot),
+supaya rollback cutover tidak membutuhkan deploy ulang.
+
+## Rollback
+
+- Policy: `supabase/bot-commands-viewer-read-rollback.sql` (viewer kembali tidak bisa
+  mengantre apa pun). Tidak mengubah data.
+- Kembali ke Edge Function: kembalikan `src/lib/cms-read/client.ts` ke versi sebelum HO-037
+  (selama fungsi `cms-read` dan data game di Supabase masih ada).

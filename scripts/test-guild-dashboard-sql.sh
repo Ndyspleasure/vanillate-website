@@ -73,6 +73,11 @@ done
 run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/developer-panel.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +/  /"
 echo "✓ Tes SQL Panel Developer lulus."
 
+# Policy viewer read.* (HO-037): menjalankan supabase/bot-commands-viewer-read.sql dua
+# kali (idempoten), memakai fixture suite Panel Developer, lalu rollback dan pasang lagi.
+run "${PSQL[@]}" -t -f "$ROOT/supabase/tests/bot-commands-viewer-read.test.sql" 2>&1 | grep -E "NOTICE|ERROR|GAGAL|LULUS|CONTEXT" | sed -E "s/^psql:[^ ]+ //" | sed -E 's/^NOTICE:  //'
+echo "✓ Tes SQL viewer read.* lulus."
+
 # Suite ketiga: retensi log bot (bot_logs > 30 hari dihapus). Migrasi dijalankan
 # dua kali untuk membuktikan idempoten (tanpa pg_cron → jadwal dilewati).
 for f in supabase/tests/bot-logs-retention-prereq.sql supabase/bot-logs-retention.sql supabase/bot-logs-retention.sql; do
