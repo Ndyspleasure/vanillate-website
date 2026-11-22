@@ -149,12 +149,12 @@ menu pilih di HP supaya tidak perlu digeser menyamping):
 | Kelompok | Isi |
 |---|---|
 | Member baru | Verification · Auto Role · Welcome |
-| Aktivitas dan keamanan | Leveling · Security Center · Sapa Voice |
+| Aktivitas dan keamanan | Leveling · Security Center |
 | Promosi | Share Server |
 | Alat | Peta Channel · Riwayat · Salin Pengaturan |
 
 Hash URL tetap id tab (`#overview`, `#game-hub`, `#social-hub`, `#verification`,
-`#leveling`, `#autorole`, `#welcome`, `#security`, `#voice-sapa`, `#share-server`, `#channels`,
+`#leveling`, `#autorole`, `#welcome`, `#security`, `#share-server`, `#channels`,
 `#audit-log`, `#copy`); `#server-hub` membuka submenu Server Hub terakhir (bawaan
 Verification). Daftar dan pemetaan hash ada di `src/lib/dashboard/nav-model.ts`
 dan dijaga `tests/dashboard-review.test.ts`, jadi tautan lama dan tautan dari
@@ -483,3 +483,9 @@ Hal yang butuh data atau RPC baru dari bot dicatat di
 ## Vani (Social AI) di Sosial Hub
 
 Opsi `SOCIAL_AI_CHAT` (satu channel AI per server) diterbitkan bot sebagai fitur Sosial Hub tersembunyi. Selama sakelar CMS `social_ai_enabled` mati (bawaan, `supabase/social-ai.sql`), opsi tampil terkunci memakai `locked_note` dari bot, jadi tidak ada teks buatan website. Biaya sumber daya website nol: tidak ada polling atau tabel baru, hanya dua baris `bot_settings`. Rancangan lengkap ada di `docs/social-ai.md` repo bot. Kebijakan privasi (`/privacy`, bagian 04) menyebut penyedia AI.
+
+> **Sapa Voice dicabut dari dashboard (2026-11-22).** Fitur bawaan Vanillate ini diatur pengembang
+> lewat sakelar CMS `voice_sapa_enabled`, bukan setelan admin server. Tab `#voice-sapa` dihapus,
+> dan bagian registry `voice_sapa` disaring di `src/lib/dashboard/api.ts` (`REMOVED_SECTIONS` di
+> `nav-model.ts`) karena RPC publikasi registry tidak menghapus baris lama dan bagian tak dikenal
+> jatuh ke Game Hub. Tautan lama `#voice-sapa` jatuh ke Ringkasan.

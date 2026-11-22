@@ -13,6 +13,7 @@
 
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import type { AuditRow, GuildData } from './model';
+import { withoutRemoved } from './nav-model';
 import { BOT_SLUG_WRITE } from '../bot-slug';
 
 // Sejak PLAN-001 /dashboard memakai proyek Supabase "Database Bot" (login
@@ -242,6 +243,15 @@ const guildVersion = new Map<string, string>();
 
 /** Hasil penuh. Registry diambil dari memori halaman bila versinya masih sama. */
 export async function getGuild(guildId: string): Promise<GuildData> {
+  return bersihkan(await getGuildMentah(guildId));
+}
+
+/** Buang bagian registry yang sudah dicabut dari dashboard (lihat REMOVED_SECTIONS). */
+function bersihkan(g: GuildData): GuildData {
+  return Array.isArray(g.registry) ? { ...g, registry: withoutRemoved(g.registry) } : g;
+}
+
+async function getGuildMentah(guildId: string): Promise<GuildData> {
   lightOff ??= lightDisabled();
   if (!lightOff) {
     try {
@@ -273,8 +283,13 @@ export async function getGuild(guildId: string): Promise<GuildData> {
  * (hanya penanda kecil yang diunduh), selain itu hasil penuh terbaru.
  */
 export async function getGuildIfChanged(guildId: string): Promise<GuildData | null> {
+  const g = await getGuildIfChangedMentah(guildId);
+  return g ? bersihkan(g) : null;
+}
+
+async function getGuildIfChangedMentah(guildId: string): Promise<GuildData | null> {
   const known = guildVersion.get(guildId);
-  if (lightOff || !known || !registryCache) return getGuild(guildId);
+  if (lightOff || !known || !registryCache) return getGuildMentah(guildId);
   try {
     const s = await rpc<{ version?: string }>('guild_dashboard_get', {
       p_guild_id: guildId,
@@ -287,7 +302,7 @@ export async function getGuildIfChanged(guildId: string): Promise<GuildData | nu
     if (!(err instanceof DashboardError) || err.code !== 'RPC_NOT_FOUND') throw err;
     disableLight();
   }
-  return getGuild(guildId);
+  return getGuildMentah(guildId);
 }
 
 export interface SaveResult {

@@ -14,7 +14,7 @@ import {
   revertible,
   setupSteps,
 } from '../src/lib/dashboard/review-model.ts';
-import { hubOf, parseTabHash, SERVER_GROUPS, SERVER_TABS, TAB_IDS, tabOfFeature } from '../src/lib/dashboard/nav-model.ts';
+import { hubOf, parseTabHash, SERVER_GROUPS, SERVER_TABS, TAB_IDS, tabOfFeature, REMOVED_SECTIONS, withoutRemoved } from '../src/lib/dashboard/nav-model.ts';
 
 const CH_A = '910000000000000001';
 const CH_B = '910000000000000002';
@@ -167,7 +167,7 @@ test('setupSteps: langkah awal dari data yang sudah dimuat', () => {
 });
 
 test('navigasi: hash lama tetap berlaku dan setiap tab punya tempat', () => {
-  for (const h of ['overview', 'game-hub', 'social-hub', 'verification', 'leveling', 'share-server', 'channels', 'audit-log', 'autorole', 'welcome', 'security', 'voice-sapa', 'copy']) {
+  for (const h of ['overview', 'game-hub', 'social-hub', 'verification', 'leveling', 'share-server', 'channels', 'audit-log', 'autorole', 'welcome', 'security', 'copy']) {
     assert.equal(parseTabHash(`#${h}`, 'verification'), h);
   }
   assert.equal(parseTabHash('#server-hub', 'leveling'), 'leveling');
@@ -178,9 +178,18 @@ test('navigasi: hash lama tetap berlaku dan setiap tab punya tempat', () => {
   assert.equal(new Set(TAB_IDS).size, TAB_IDS.length);
   assert.equal(SERVER_TABS.length, SERVER_GROUPS.reduce((n, g) => n + g.tabs.length, 0));
   assert.equal(tabOfFeature({ section: 'security' }), 'security');
-  assert.equal(tabOfFeature({ section: 'voice_sapa' }), 'voice-sapa');
-  assert.equal(hubOf('voice-sapa'), 'server-hub');
   assert.equal(tabOfFeature({ section: 'baru' }), 'game-hub');
+});
+
+test('Sapa Voice dicabut dari dashboard: tab hilang dan baris registry lama disaring', () => {
+  assert.ok(!TAB_IDS.includes('voice-sapa' as never), 'tidak ada tab Sapa Voice');
+  assert.equal(parseTabHash('#voice-sapa', 'leveling'), 'overview', 'tautan lama jatuh ke ringkasan');
+  // Baris lama tetap ada di database (RPC publikasi tidak menghapus) dan bagian tak dikenal
+  // jatuh ke Game Hub: disaring supaya tidak pernah muncul di sana.
+  assert.equal(tabOfFeature({ section: 'voice_sapa' }), 'game-hub');
+  const registry = [{ section: 'game', key: 'GAME_X' }, { section: 'voice_sapa', key: 'VOICE_SAPA' }, { section: 'security', key: 'SECURITY' }];
+  assert.deepEqual(withoutRemoved(registry).map((f) => f.key), ['GAME_X', 'SECURITY']);
+  assert.ok(REMOVED_SECTIONS.includes('voice_sapa'));
 });
 
 test('restoreState: memulihkan isi revisi utuh, fitur yang tidak ada di revisi itu dibiarkan', () => {
