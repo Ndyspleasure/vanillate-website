@@ -110,9 +110,10 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   const loaded = new Map<string, { updated_at: string; value: string | null }>();
   const search = document.getElementById('kontrol-query') as HTMLInputElement;
   const results = document.getElementById('kontrol-hasil')!;
-  const fieldsInForm = () => Array.from(document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#kontrol-body [data-key]'));
-  const readValue = (el: HTMLInputElement | HTMLTextAreaElement) =>
-    el.dataset.kind === 'boolean' ? String((el as HTMLInputElement).checked) : el.value;
+  type SettingField = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+  const fieldsInForm = () => Array.from(document.querySelectorAll<SettingField>('#kontrol-body [data-key]'));
+  const readValue = (el: SettingField) =>
+    el instanceof HTMLInputElement && el.type === 'checkbox' ? String(el.checked) : el.value;
   const updateSummary = () => {
     const pending = fieldsInForm().filter(el => el.dataset.dirty === '1').length;
     document.getElementById('kontrol-ringkasan')!.textContent = pending ? `${pending} perubahan belum tersimpan.` : loaded.size ? `${loaded.size} pengaturan tersedia.` : '';
@@ -320,11 +321,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     document.getElementById('kontrol-aksi')!.classList.remove('hidden');
     pasangTab(wadah);
     const tandai = (e: Event) => {
-      const el = (e.target as HTMLElement).closest<HTMLInputElement | HTMLTextAreaElement>('[data-key]');
+      const el = (e.target as HTMLElement).closest<SettingField>('[data-key]');
       if (!el) return;
       const original = loaded.get(el.dataset.key!)?.value;
-      const initial = el.dataset.kind === 'boolean' ? String(original === 'true' || original === '1') : original ?? '';
-      if (readValue(el) === initial && original != null) delete el.dataset.dirty;
+      const initial = el.dataset.kind === 'boolean' && original != null ? String(original === 'true' || original === '1') : original ?? '';
+      if (readValue(el) === initial) delete el.dataset.dirty;
       else el.dataset.dirty = '1';
       updateSummary();
     };
@@ -332,9 +333,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     wadah.onchange = tandai;
 
     if (!bolehEdit) {
-      wadah.querySelectorAll('input, textarea').forEach((el) => {
-        (el as HTMLInputElement).disabled = true;
-      });
+      fieldsInForm().forEach(el => { el.disabled = true; });
       const btn = document.getElementById('btn-simpan') as HTMLButtonElement;
       btn.disabled = true;
       document.getElementById('kontrol-pesan')!.textContent = 'Peran kamu hanya bisa melihat.';
@@ -369,16 +368,29 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   function field(row: any): string {
     const id = `f-${row.key}`;
     const menunggu = row.value === null || row.value === undefined
-      ? `<p class="mt-1 text-xs text-amber-700 dark:text-amber-400">Menunggu sinkron dari bot — nilai aktif saat ini dipakai sampai bot mengirimnya. Ubah hanya bila ingin menimpanya.</p>`
+      ? `<p data-setting-waiting class="mt-1 text-xs text-amber-700 dark:text-amber-400">Menunggu sinkron dari bot — nilai aktif saat ini dipakai sampai bot mengirimnya. Ubah hanya bila ingin menimpanya.</p>`
       : '';
     const help = (row.help
       ? `<p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${esc(row.help)}</p>`
       : '') + menunggu;
 
+    if (row.kind === 'boolean' && row.value == null) {
+      return `
+        <div data-setting-card class="${KARTU} px-4 py-3.5">
+          <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}</label>
+          <select id="${esc(id)}" data-key="${esc(row.key)}" data-kind="boolean" class="min-h-11 max-w-full ${INPUT}">
+            <option value="">Menunggu sinkronisasi</option>
+            <option value="true">Aktif</option>
+            <option value="false">Mati</option>
+          </select>
+          ${help}
+        </div>`;
+    }
+
     if (row.kind === 'boolean') {
       const aktif = row.value === 'true' || row.value === '1';
       return `
-        <div class="${KARTU}">
+        <div data-setting-card class="${KARTU}">
           <label class="flex items-start justify-between gap-4 px-4 py-3.5 cursor-pointer">
             <span class="min-w-0">
               <span class="block text-sm font-medium">${esc(row.label)}</span>
@@ -397,7 +409,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         (row.min_value != null ? ` min="${esc(row.min_value)}"` : '') +
         (row.max_value != null ? ` max="${esc(row.max_value)}"` : '') + ' step="1"';
       return `
-        <div class="${KARTU} px-4 py-3.5">
+        <div data-setting-card class="${KARTU} px-4 py-3.5">
           <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}${batas}</label>
           <input type="number" id="${esc(id)}" data-key="${esc(row.key)}" data-kind="number"${attrs} value="${esc(row.value ?? '')}"
             class="w-40 ${INPUT}" />
@@ -407,7 +419,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     if (row.kind === 'markdown') {
       return `
-        <div class="${KARTU} px-4 py-3.5">
+        <div data-setting-card class="${KARTU} px-4 py-3.5">
           <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}</label>
           <textarea id="${esc(id)}" data-key="${esc(row.key)}" data-kind="markdown" rows="4"
             class="w-full ${INPUT}">${esc(row.value ?? '')}</textarea>
@@ -417,7 +429,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
     const tipe = row.kind === 'url' ? 'url' : 'text';
     return `
-      <div class="${KARTU} px-4 py-3.5">
+      <div data-setting-card class="${KARTU} px-4 py-3.5">
         <label for="${esc(id)}" class="block text-sm font-medium mb-1.5">${esc(row.label)}</label>
         <input type="${tipe}" id="${esc(id)}" data-key="${esc(row.key)}" data-kind="${esc(row.kind)}" value="${esc(row.value ?? '')}"
           class="w-full ${INPUT}" />
@@ -444,7 +456,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const uid = sesi.session?.user.id ?? null;
 
     const fields = Array.from(
-      document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-key]'),
+      document.querySelectorAll<SettingField>('[data-key]'),
     );
     const berubah = fields.filter((el) => el.dataset.dirty === '1');
     if (berubah.length === 0) {
@@ -492,6 +504,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
             .select('value, updated_at').maybeSingle();
           if (error || !data) { failed.push(key); continue; }
           loaded.set(key, data);
+          if (el instanceof HTMLSelectElement) el.querySelector('option[value=""]')?.remove();
+          el.closest('[data-setting-card]')?.querySelector('[data-setting-waiting]')?.remove();
           delete el.dataset.dirty;
           saved++;
         } catch {
