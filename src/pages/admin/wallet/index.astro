@@ -1,0 +1,66 @@
+---
+// 💜 Vanillate Wallet › Ringkasan (PLAN-017 Fase 3, docs/wallet.md §9 repo bot).
+// Agregat saja (tanpa baris pemain), dibaca SESUAI PERMINTAAN lewat perintah
+// `read.wallet.summary` (peran viewer, cache 60 dtk di bot). Tanpa snapshot.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Vanillate Wallet" active="wallet-ringkasan">
+  <AdminPageHeader
+    eyebrow="Discord Bot"
+    title="Vanillate Wallet"
+    description="Ringkasan Vani Poin (VP): total beredar, tertahan, dan aktivitas 30 hari terakhir. Dibaca dari bot saat halaman dibuka."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-8">
+    <div class="flex items-center gap-3">
+      <button id="wl-reload" type="button" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Muat ulang</button>
+      <p id="wl-fresh" class="text-xs text-ink-500 dark:text-cream-300/60"></p>
+    </div>
+    <div id="wl-body" class="space-y-8"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { kirimPerintah } from '@/lib/dev-panel/client';
+  import { section, stat, table, pill } from '@/lib/dev-panel/ui';
+
+  const LABEL: Record<string, string> = {
+    vote_reward: 'Vote Top.gg', activity_reward: 'Aktivitas harian', admin_gift: 'Hadiah dari Admin',
+    admin_adjust: 'Penyesuaian', transfer_in: 'Transfer masuk', transfer_out: 'Transfer keluar',
+    withdraw_hold: 'Penarikan diajukan', withdraw_refund: 'Penarikan dikembalikan', withdraw_paid: 'Penarikan selesai',
+  };
+
+  async function muat() {
+    const body = document.getElementById('wl-body')!;
+    body.innerHTML = stateBlock('loading', 'Meminta ringkasan dari bot...');
+    const o = await kirimPerintah('read.wallet.summary');
+    if (!o.ok || !o.result) { body.innerHTML = stateBlock('error', o.error ?? 'Ringkasan tidak tersedia.'); return; }
+    const s = o.result;
+    document.getElementById('wl-fresh')!.textContent = `Dibuat ${fmtWaktu(s.generatedAt)}${s.cached ? ' (cache)' : ''}`;
+    const status = s.publicOpen
+      ? pill('dibuka untuk publik', 'ok')
+      : pill(s.testUsers ? `tertutup, ${s.testUsers} akun uji` : 'tertutup', 'warn');
+    body.innerHTML = [
+      section('Status', `<p class="text-sm">${status}</p>
+        <p class="mt-2 text-sm text-ink-500 dark:text-cream-300/60">Selama gerbang aktivasi belum terpenuhi, hanya akun uji yang bisa memakai Wallet. Akun uji diatur di halaman Konfigurasi.</p>`),
+      section('Vani Poin', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${stat('Total VP beredar', fmtAngka(s.outstanding), 'tersedia + tertahan = kewajiban rupiah')}
+        ${stat('Tersedia', fmtAngka(s.available))}
+        ${stat('Tertahan', fmtAngka(s.held), 'penarikan berjalan')}
+        ${stat('Total diperoleh', fmtAngka(s.earned))}
+        ${stat('Total dicairkan', `Rp${fmtAngka(s.paid)}`)}
+        ${stat('Dompet', fmtAngka(s.accounts), `${fmtAngka(s.consents)} sudah setuju aturan, ${fmtAngka(s.frozen)} dibekukan`)}
+      </div>`),
+      section('30 hari terakhir', table(['Jenis', 'Jumlah transaksi', 'VP'], (s.last30 ?? []).map((r: any) => [
+        esc(LABEL[r.type] ?? r.type), fmtAngka(r.count), fmtAngka(r.vp),
+      ]), 'Belum ada transaksi.')),
+      section('Nilai yang berlaku', `<p class="text-sm">Versi konfigurasi <code>${esc(s.config?.version)}</code>: vote ${fmtAngka(s.config?.values?.vote_vp)} VP, aktivitas harian ${fmtAngka(s.config?.values?.activity_vp)} VP, minimum penarikan ${fmtAngka(s.config?.values?.min_withdraw_vp)} VP.</p>`),
+    ].join('');
+  }
+
+  document.addEventListener('admin:ready', () => { void muat(); });
+  document.getElementById('wl-reload')?.addEventListener('click', () => { void muat(); });
+</script>

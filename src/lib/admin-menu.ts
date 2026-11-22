@@ -75,6 +75,15 @@ export const adminMenu: MenuNode[] = [
             ["aktivitas-terbaru","Aktivitas terbaru"],
             ["alat-bantu","Alat bantu"]
           ]),
+          {
+            key: "wallet", label: "Vanillate Wallet",
+            items: [
+              { key: "wallet-ringkasan", label: "Ringkasan", href: "/admin/wallet" },
+              { key: "wallet-member", label: "Member", href: "/admin/wallet/member", match: "wallet-pemain" },
+              { key: "wallet-konfigurasi", label: "Konfigurasi", href: "/admin/wallet/konfigurasi" },
+              { key: "wallet-audit", label: "Riwayat moderasi", href: "/admin/wallet/audit" },
+            ],
+          },
           tabHalaman("dev-story", "Vanillate Story", "/admin/developer/story", [
             ["ringkasan","Ringkasan"],
             ["aktivitas-terbaru","Aktivitas terbaru"],

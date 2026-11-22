@@ -1,0 +1,86 @@
+---
+// 💜 Vanillate Wallet › Profil pemain (`/admin/wallet/pemain/?id=<discordId>`).
+// Khusus owner. Saldo, riwayat ledger, persetujuan, riwayat moderasi, serta
+// Hadiah dari Admin dan Penyesuaian (alasan wajib, tercatat). Bot mengirim
+// tautan halaman ini di kartu staff. Hasil perintah berisi data pemain
+// dikosongkan bot beberapa menit setelah dikirim (SEC-T01).
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Profil Wallet" active="wallet-pemain">
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Profil pemain" description="Saldo, riwayat, persetujuan, dan riwayat moderasi satu pemain. Khusus owner." />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-8">
+    <p><a href="/admin/wallet/member" class="text-sm underline">Kembali ke daftar member</a></p>
+    <div id="wp-body" class="space-y-8"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { kirimPerintah } from '@/lib/dev-panel/client';
+  import { section, stat, table, pill, formCard, pasangAksi, KELAS } from '@/lib/dev-panel/ui';
+
+  const LABEL: Record<string, string> = {
+    vote_reward: 'Vote Top.gg', activity_reward: 'Aktivitas harian', admin_gift: 'Hadiah dari Admin',
+    admin_adjust: 'Penyesuaian', transfer_in: 'Transfer masuk', transfer_out: 'Transfer keluar',
+    withdraw_hold: 'Penarikan diajukan', withdraw_refund: 'Penarikan dikembalikan', withdraw_paid: 'Penarikan selesai',
+  };
+  const AKSI: Record<string, string> = { gift: 'Hadiah dari Admin', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji' };
+  const userId = new URLSearchParams(location.search).get('id')?.trim() ?? '';
+  let role = 'viewer';
+
+  async function muat() {
+    const body = document.getElementById('wp-body')!;
+    if (role !== 'owner') { body.innerHTML = stateBlock('empty', 'Halaman ini khusus owner.'); return; }
+    if (!/^[0-9]{15,22}$/.test(userId)) { body.innerHTML = stateBlock('error', 'Buka halaman ini dari daftar member (butuh Discord ID di alamat).'); return; }
+    body.innerHTML = stateBlock('loading', 'Meminta profil dari bot...');
+    const o = await kirimPerintah('sys.wallet.member', { userId });
+    if (!o.ok || !o.result) { body.innerHTML = stateBlock('error', o.error ?? 'Profil tidak tersedia.'); return; }
+    const p = o.result;
+    const a = p.account;
+    const akses = p.canUse ? pill(p.isTester ? 'akun uji' : 'bisa memakai', 'ok') : pill('belum bisa memakai', 'muted');
+    body.innerHTML = [
+      section('Dompet', `<p class="mb-3 text-sm"><code>${esc(p.userId)}</code> ${akses} ${a?.frozen ? pill('dibekukan: ' + (a.frozenReason ?? ''), 'bad') : ''}</p>
+        ${a ? `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          ${stat('Tersedia', fmtAngka(a.available))}${stat('Tertahan', fmtAngka(a.held))}
+          ${stat('Total diperoleh', fmtAngka(a.totalEarned))}${stat('Total dicairkan', 'Rp' + fmtAngka(a.totalPaid))}
+        </div>` : stateBlock('empty', 'Pemain ini belum punya dompet.')}`),
+      section('Persetujuan aturan', table(['Versi', 'Waktu', 'Sumber'], (p.consent ?? []).map((c: any) => [
+        esc(c.version), esc(fmtWaktu(c.acceptedAt)), esc(c.source),
+      ]), 'Belum menyetujui aturan Wallet.')),
+      section('Riwayat VP (50 terbaru)', table(['Waktu', 'Jenis', 'Tersedia', 'Tertahan', 'Dibayar', 'Oleh', 'Alasan'], (p.history ?? []).map((e: any) => [
+        `<span class="text-xs">${esc(fmtWaktu(e.createdAt))}</span>`, esc(LABEL[e.type] ?? e.type),
+        fmtAngka(e.deltaAvailable), fmtAngka(e.deltaHeld), fmtAngka(e.deltaPaid), `<span class="text-xs">${esc(e.actor)}</span>`, esc(e.reason ?? ''),
+      ]), 'Belum ada transaksi.')),
+      section('Riwayat moderasi', table(['Waktu', 'Aksi', 'Oleh', 'Alasan'], (p.audit ?? []).map((x: any) => [
+        `<span class="text-xs">${esc(fmtWaktu(x.createdAt))}</span>`, esc(AKSI[x.action] ?? x.action), esc(x.actor), esc(x.reason ?? ''),
+      ]), 'Belum ada aksi Admin.')),
+      section('Aksi Admin', `<div class="grid gap-4 sm:grid-cols-2">
+        ${formCard({ id: 'wp-gift', title: 'Hadiah dari Admin', submit: 'Kirim hadiah', ownerOnly: true,
+          desc: 'VP masuk ke dompet pemain. Alasan terlihat oleh pemain di riwayat dan DM.',
+          fields: [{ name: 'amount', label: 'Jumlah VP', type: 'number', required: true }, { name: 'reason', label: 'Alasan (terlihat pemain)', required: true, placeholder: 'Hadiah giveaway November' }] })}
+        ${formCard({ id: 'wp-adjust', title: 'Penyesuaian', submit: 'Simpan penyesuaian', danger: true, ownerOnly: true,
+          desc: 'Koreksi saldo (positif atau negatif). Tidak bisa membuat saldo minus. Catatan lama tidak dihapus.',
+          fields: [{ name: 'delta', label: 'Perubahan VP (mis. -50)', type: 'number', required: true }, { name: 'reason', label: 'Alasan', required: true }] })}
+      </div><p class="${KELAS.muted} text-xs">Setiap aksi tercatat di riwayat moderasi dan Log Dompet.</p>`),
+    ].join('');
+
+    const isi = (f: HTMLFormElement) => ({ ...Object.fromEntries(new FormData(f) as any), userId });
+    pasangAksi(document.getElementById('wp-gift') as HTMLFormElement, {
+      type: 'sys.wallet.gift', payload: isi,
+      confirm: (x) => `Kirim ${x.amount} VP ke ${userId}?`,
+      success: (r) => `Hadiah terkirim. Saldo tersedia sekarang ${fmtAngka(r.result?.balance)} VP.`,
+      resetOnSuccess: true, onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
+    });
+    pasangAksi(document.getElementById('wp-adjust') as HTMLFormElement, {
+      type: 'sys.wallet.adjust', payload: isi,
+      confirm: (x) => `Ubah saldo ${userId} sebesar ${x.delta} VP?`,
+      success: (r) => `Penyesuaian tersimpan. Saldo tersedia sekarang ${fmtAngka(r.result?.balance)} VP.`,
+      resetOnSuccess: true, onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
+    });
+  }
+
+  document.addEventListener('admin:ready', (e) => { role = (e as CustomEvent).detail?.role ?? 'viewer'; void muat(); });
+</script>
