@@ -69,11 +69,11 @@ on conflict (key) do nothing;
 -- ───────────────────────────────────────────────────────────────────────────
 -- 👋 Sapa Voice (bot: src/voicesapa, PLAN-015)
 -- ───────────────────────────────────────────────────────────────────────────
--- Bawaan bot NYALA di semua server (admin server bisa mematikannya di dashboard).
+-- Bawaan bot NYALA di semua server. Sejak bot v3.58.3 tab dashboard dicabut: hanya pemilik yang mengatur.
 -- Setting ini sakelar global untuk pemilik: mati = tidak ada server yang disapa.
 -- Baris NULL diisi bot dengan nilai lokalnya (true), jadi memasang bagian ini tidak
 -- mengubah perilaku apa pun.
 insert into public.bot_settings (key, label, value, kind, category, help, min_value, max_value, sort) values
   ('voice_sapa_enabled', 'Sapa Voice', null, 'boolean', 'fitur',
-   'Bot mampir 10 detik di voice channel yang berisi minimal 2 orang selama 1 jam, lalu menyapa di chat teks voice itu. Maksimal sekali sehari per server, dilewati bila server sedang memakai voice. Bawaan NYALA. Matikan di sini untuk menutupnya di semua server; admin server juga bisa mematikannya sendiri di Vanillate Dashboard.', null, null, 20)
+   'Bot mampir 10 detik di voice channel yang berisi minimal 2 orang selama 1 jam, lalu menyapa di chat teks voice itu. Maksimal sekali sehari per server, dilewati bila server sedang memakai voice. Bawaan NYALA. Matikan di sini untuk menutupnya di semua server. Admin server tidak bisa mengubahnya.', null, null, 20)
 on conflict (key) do nothing;
