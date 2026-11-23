@@ -6,8 +6,10 @@
 //    x-topgg-signature: t=<unix detik>,v1=<HMAC-SHA256(secret, "<t>.<raw body>")>
 //  event `vote.create` { data: { id, created_at, expires_at, weight, query,
 //  user: { id, platform_id (= Discord ID) } } } dan `webhook.test`.
-//  Webhook lama (legacy) juga diterima: header Authorization = secret,
-//  body { bot, user, type: 'upvote'|'test', query }.
+//  Webhook lama (legacy: header Authorization = secret, body { bot, user,
+//  type: 'upvote'|'test', query }) DITUTUP sejak 2026-11-23 (keputusan pemilik
+//  K-10, SEC-T03): tanpa stempel waktu, permintaan yang diputar ulang di menit
+//  lain akan menjadi vote baru. Semua vote produksi sudah lewat v1.
 // ════════════════════════════════════════════════════════════════════════════
 
 export const TOLERANCE_SEC = 5 * 60;
@@ -66,6 +68,18 @@ export async function verifySignature(
 export function verifyLegacy(secret: string, authorization: string | null): boolean {
   if (!secret || !authorization) return false;
   return safeEqual(authorization.trim(), secret);
+}
+
+/** Webhook legacy ditolak (K-10). Mengaktifkan lagi butuh keputusan pemilik. */
+export const LEGACY_ENABLED = false;
+
+/** Autentikasi permintaan: hanya tanda tangan v1 yang diterima. */
+export async function authorize(
+  secret: string, signature: string | null, authorization: string | null, rawBody: string,
+  nowSec = Math.floor(Date.now() / 1000),
+): Promise<boolean> {
+  if (signature) return verifySignature(secret, signature, rawBody, nowSec);
+  return LEGACY_ENABLED && verifyLegacy(secret, authorization);
 }
 
 export type ParsedEvent =

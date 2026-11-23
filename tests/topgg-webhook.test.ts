@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import {
+  authorize,
+  LEGACY_ENABLED,
   parseEvent,
   parseSignatureHeader,
   safeEqual,
@@ -24,6 +26,16 @@ test('tanda tangan v1 yang benar diterima; body/secret/waktu salah ditolak', asy
   assert.equal(await verifySignature('', sign(now, body), body, now), false, 'tanpa secret = tolak');
   assert.equal(await verifySignature(SECRET, 't=abc,v1=00', body, now), false);
   assert.equal(await verifySignature(SECRET, null, body, now), false);
+});
+
+test('K-10: jalur legacy ditutup, hanya tanda tangan v1 yang lolos', async () => {
+  const body = JSON.stringify({ type: 'upvote', user: '300000000000000002' });
+  const now = 1_800_000_000;
+  assert.equal(LEGACY_ENABLED, false);
+  assert.equal(await authorize(SECRET, null, SECRET, body, now), false, 'Authorization = secret tetap ditolak');
+  assert.equal(await authorize(SECRET, null, null, body, now), false);
+  assert.equal(await authorize(SECRET, sign(now, body), null, body, now), true, 'v1 tetap diterima');
+  assert.equal(await authorize(SECRET, sign(now, body), SECRET, body + ' ', now), false, 'tanda tangan salah tidak ditolong secret legacy');
 });
 
 test('header tanda tangan & perbandingan aman', () => {
