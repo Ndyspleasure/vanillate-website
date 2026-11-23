@@ -19,7 +19,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { kirimPerintah } from '@/lib/dev-panel/client';
   import { table } from '@/lib/dev-panel/ui';
 
-  const AKSI: Record<string, string> = { gift: 'Hadiah dari Admin', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji' };
+  const AKSI: Record<string, string> = {
+    gift: 'Hadiah dari Admin', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji',
+    reveal: 'Buka nomor rekening', method_review_approve: 'Peninjauan rekening disetujui',
+    method_review_reject: 'Peninjauan rekening ditolak', methods_open: 'Tujuan penarikan',
+  };
   let role = 'viewer';
   let rows: any[] = [];
 

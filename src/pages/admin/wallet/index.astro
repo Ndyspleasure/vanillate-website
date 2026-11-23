@@ -54,6 +54,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${stat('Total dicairkan', `Rp${fmtAngka(s.paid)}`)}
         ${stat('Dompet', fmtAngka(s.accounts), `${fmtAngka(s.consents)} sudah setuju aturan, ${fmtAngka(s.frozen)} dibekukan`)}
       </div>`),
+      section('Rekening', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${stat('Rekening aktif', fmtAngka(s.methodsActive ?? 0))}
+        ${stat('Peninjauan menunggu', fmtAngka(s.reviewsPending ?? 0), 'diputuskan di profil pemain atau channel Peninjauan Rekening')}
+        ${stat('Kunci enkripsi', s.keysReady ? 'Siap' : 'Belum dipasang', s.keysReady ? '' : 'fitur Rekening terkunci sampai kunci .env dipasang di VPS')}
+      </div>`),
       section('30 hari terakhir', table(['Jenis', 'Jumlah transaksi', 'VP'], (s.last30 ?? []).map((r: any) => [
         esc(LABEL[r.type] ?? r.type), fmtAngka(r.count), fmtAngka(r.vp),
       ]), 'Belum ada transaksi.')),

@@ -1,14 +1,15 @@
 ---
 // 💜 Vanillate Wallet › Konfigurasi (khusus owner).
 // Nilai VP (`sys.wallet.config.set`) dan daftar akun uji
-// (`sys.wallet.testers.set`). Sakelar publik SENGAJA tidak ada di sini:
+// (`sys.wallet.testers.set`), tujuan penarikan yang dibuka
+// (`sys.wallet.methods.set`). Sakelar publik SENGAJA tidak ada di sini:
 // pembukaan untuk umum menunggu gerbang aktivasi (docs/wallet-security-review.md §9.3).
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
 
 <AdminLayout title="Konfigurasi Wallet" active="wallet-konfigurasi">
-  <AdminPageHeader eyebrow="Vanillate Wallet" title="Konfigurasi" description="Nilai Vani Poin dan akun uji. Perubahan nilai berlaku untuk transaksi berikutnya, transaksi lama tidak berubah. Khusus owner." />
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Konfigurasi" description="Nilai Vani Poin, akun uji, dan tujuan penarikan. Perubahan nilai berlaku untuk transaksi berikutnya, transaksi lama tidak berubah. Khusus owner." />
   <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-8" id="wk-body"></div>
 </AdminLayout>
 
@@ -28,6 +29,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     ['transfer_fee_vp', 'Biaya transfer (VP)', 'Bawaan 0'],
     ['transfer_note_max', 'Panjang pesan transfer', 'Bawaan 100'],
   ];
+  const TUJUAN: [string, string][] = [
+    ['bca', 'BCA'], ['bri', 'BRI'], ['bni', 'BNI'], ['mandiri', 'Mandiri'], ['seabank', 'SeaBank'], ['dana', 'DANA'], ['shopeepay', 'ShopeePay'],
+  ];
   let role = 'viewer';
 
   async function muat() {
@@ -44,6 +48,10 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       section('Akun uji', formCard({ id: 'wk-testers', title: 'Daftar akun uji', submit: 'Simpan akun uji', ownerOnly: true,
         desc: 'Discord ID yang boleh memakai Wallet selama tertutup, dipisah koma atau baris baru (maks. 20). Kosongkan untuk menutup semua. VP akun uji tercatat permanen di ledger.',
         fields: [{ name: 'ids', label: 'Discord ID', type: 'textarea', placeholder: '1036585958553964574' }] })),
+      section('Tujuan penarikan', `${s.keysReady ? '' : `<p class="mb-3 text-sm">${pill('kunci enkripsi belum dipasang', 'warn')} Pemain belum bisa mendaftarkan rekening sampai WALLET_ENC_KEY, WALLET_BIDX_KEY, dan WALLET_PIN_PEPPER dipasang di .env VPS.</p>`}
+        ${formCard({ id: 'wk-methods', title: 'Bank dan e-wallet yang dibuka', submit: 'Simpan tujuan', ownerOnly: true,
+          desc: 'Hanya tujuh tujuan yang disetujui pemilik. Tujuan yang ditutup tidak bisa dipilih untuk rekening baru; rekening yang sudah terdaftar tidak berubah.',
+          fields: TUJUAN.map(([k, label]) => ({ name: `p_${k}`, label, type: 'checkbox' as const, value: String((s.openProviders ?? []).includes(k)) })) })}`),
       section('Nilai VP', formCard({ id: 'wk-config', title: `Versi konfigurasi ${esc(s.config?.version)}`, submit: 'Simpan nilai', ownerOnly: true,
         desc: 'Kurs tetap 1 VP = Rp1. Nilai baru hanya berlaku untuk transaksi berikutnya.',
         fields: KUNCI.map(([k, label, help]) => ({ name: k, label, help, type: 'number' as const, value: String(v[k] ?? ''), required: true })) })),
@@ -52,6 +60,17 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       type: 'sys.wallet.testers.set',
       confirm: 'Simpan daftar akun uji?',
       success: (r) => `Tersimpan: ${(r.result?.testUsers ?? []).length} akun uji.`,
+      onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
+    });
+    pasangAksi(document.getElementById('wk-methods') as HTMLFormElement, {
+      type: 'sys.wallet.methods.set',
+      payload: (f) => {
+        const dipilih = TUJUAN.map(([k]) => k).filter((k) => (f.querySelector(`input[name="p_${k}"]`) as HTMLInputElement | null)?.checked);
+        if (!dipilih.length) { window.alert('Pilih minimal satu tujuan.'); return null; }
+        return { providers: dipilih.join(',') };
+      },
+      confirm: 'Simpan tujuan penarikan yang dibuka?',
+      success: (r) => `Tersimpan: ${(r.result?.openProviders ?? []).length} tujuan dibuka.`,
       onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
     });
     pasangAksi(document.getElementById('wk-config') as HTMLFormElement, {
