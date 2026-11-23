@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 
-const lastUpdated = '22 November 2026';
+const lastUpdated = '23 November 2026';
 
 // Daftar isi ringkas — sekaligus penanda nomor & judul tiap section.
 const toc = [
@@ -299,7 +299,7 @@ const toc = [
         </ul>
         <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Third parties</h3>
         <ul class="space-y-2 pl-0 list-none mb-4">
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Account name check: when you register or change a payout account, we send only the bank or e-wallet code and the account or phone number to an independent account name check service, to show you the holder name before you confirm it. This service is community operated, not a bank, and its result is treated only as a convenience check, not as proof that the account belongs to you. We do not send your name, Discord details, or balance to it</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Account name check: when you register or change a payout account at a supported bank, we send only the destination bank code and the account number to PT Bank Rakyat Indonesia (Persero) Tbk through its BRIAPI account inquiry service, to show you the holder name before you confirm it. The holder name returned by the bank is treated as a check, not as proof that the account belongs to you. We do not send your name, Discord details, or balance to it. E-wallet accounts are not sent to this service; their holder name is checked manually by an administrator when a withdrawal is paid</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Payment providers: withdrawals are sent from our ShopeePay account to the bank or e-wallet you registered, which receive the details needed to complete the payment</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Discord: delivers one-time codes and notifications by direct message and hosts the staff channels described above</span></li>
         </ul>
