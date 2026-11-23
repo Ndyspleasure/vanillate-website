@@ -61,6 +61,11 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${stat('Berhasil', fmtAngka(s.withdrawals?.completed ?? 0))}
       </div>
       <p class="mt-3 text-sm"><a class="underline" href="/admin/wallet/pencairan">Buka antrean pencairan</a> · ${s.withdrawals?.publicOpen ? pill('penarikan dibuka untuk publik', 'ok') : pill('penarikan hanya untuk akun uji', 'warn')}</p>`),
+      section('Transfer dan pembatasan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${stat('Transfer 30 hari', fmtAngka(s.transfers?.count ?? 0), `${fmtAngka(s.transfers?.vp ?? 0)} VP ke ${fmtAngka(s.transfers?.receivers ?? 0)} penerima`)}
+        ${stat('Akun dibatasi', fmtAngka(s.restrictions ?? 0), 'dipasang Admin dengan alasan')}
+        ${stat('Transfer', s.transfers?.publicOpen ? 'Dibuka' : 'Akun uji saja')}
+      </div><p class="mt-3 text-sm"><a class="underline" href="/admin/wallet/laporan">Laporan, ekspor, dan penanda risiko</a></p>`),
       section('Cek saldo (opname)', `<p class="text-sm text-ink-500 dark:text-cream-300/60">Mencocokkan saldo setiap dompet dengan catatan transaksi. Hanya laporan: dompet tidak dibekukan dari sini (pembekuan otomatis tetap lewat cek harian). Khusus owner, tercatat.</p>
         <div class="mt-3 flex items-center gap-3"><button id="wl-opname" type="button" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Jalankan cek saldo</button><span id="wl-opname-status" class="text-xs"></span></div>
         <div id="wl-opname-out" class="mt-3"></div>`),
