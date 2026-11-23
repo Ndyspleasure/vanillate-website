@@ -28,6 +28,7 @@ export default defineConfig({
       // begitu juga slug lama produk yang sudah diganti.
       filter: (page) =>
         !page.includes('/admin') &&
+        !page.includes('/oauth/consent') &&
         !page.includes('/dashboard') &&
         !page.includes('/partnership/masuk') &&
         !page.includes('/bots') &&

@@ -1,0 +1,123 @@
+---
+import '../../styles/global.css';
+import { url } from '@utils/url';
+---
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Izin akses Agent Hub · Vanillate Studio</title>
+</head>
+<body class="bg-cream-100 text-ink-900 min-h-screen grid place-items-center p-6">
+  <main class="w-full max-w-lg rounded-2xl border border-ink-900/15 bg-white p-8 space-y-5">
+    <p class="font-mono text-sm">Vanillate Studio</p>
+    <h1 class="font-display text-3xl font-semibold">Izin akses Agent Hub</h1>
+    <p id="status" role="status">Buka halaman ini melalui permintaan konektor di Claude.</p>
+    <div id="login" hidden>
+      <a class="underline" href={url('/admin/')} target="_blank" rel="noopener noreferrer">Masuk ke CMS di tab baru</a>
+      <button id="continue" class="block mt-4 underline">Saya sudah masuk, lanjutkan</button>
+    </div>
+    <section id="request" hidden>
+      <dl class="space-y-2">
+        <dt>Aplikasi</dt><dd id="client" class="font-semibold break-all"></dd>
+        <dt>Akun CMS</dt><dd id="account" class="break-all"></dd>
+        <dt>Izin OAuth yang diminta</dt><dd id="scope" class="font-mono"></dd>
+      </dl>
+      <p class="my-6">Konektor ini digunakan untuk membaca peta bot utama dan website melalui Agent Hub.</p>
+      <div class="flex gap-3">
+        <button id="allow" class="rounded-xl bg-amber-500 text-ink-950 px-5 py-3">Izinkan</button>
+        <button id="deny" class="rounded-xl border border-ink-900/30 px-5 py-3">Tolak</button>
+      </div>
+    </section>
+    <noscript>Aktifkan JavaScript untuk memeriksa permintaan.</noscript>
+  </main>
+</body>
+</html>
+<script>
+  import { getSupabase } from '@/lib/supabase';
+  import { getAdminProfile } from '@/lib/admin-auth';
+
+  const sb = getSupabase();
+  const id = new URL(location.href).searchParams.get('authorization_id');
+  const status = document.querySelector<HTMLElement>('#status')!;
+  const login = document.querySelector<HTMLElement>('#login')!;
+  const panel = document.querySelector<HTMLElement>('#request')!;
+  let accountId = '';
+  let busy = false;
+
+  function callback(raw: string) {
+    const target = new URL(raw);
+    if (!['https://claude.ai','https://claude.com'].includes(target.origin) ||
+        target.pathname !== '/api/mcp/auth_callback' || target.username || target.password) {
+      throw new Error('Tujuan callback tidak sesuai.');
+    }
+    return target.href;
+  }
+
+  async function load() {
+    if (busy || !id || window.top !== window.self) return;
+    busy = true;
+    panel.hidden = login.hidden = true;
+    status.textContent = 'Memeriksa permintaan…';
+    try {
+      if (!sb) throw new Error();
+      const {data: {session}, error} = await sb.auth.getSession();
+      if (error) throw error;
+      if (!session) {
+        status.textContent = 'Masuk dengan akun Founder, lalu kembali ke tab ini.';
+        login.hidden = false;
+        return;
+      }
+      const {profile} = await getAdminProfile();
+      if (profile?.role !== 'owner') {
+        status.textContent = 'Persetujuan memerlukan akun pemilik CMS.';
+        return;
+      }
+      const {data, error: requestError} = await sb.auth.oauth.getAuthorizationDetails(id);
+      if (requestError || !data) throw new Error();
+      if ('redirect_url' in data) {
+        location.replace(callback(data.redirect_url));
+        return;
+      }
+      callback(data.redirect_uri);
+      if (data.authorization_id !== id || data.user.id !== session.user.id) throw new Error();
+      accountId = session.user.id;
+      document.querySelector('#client')!.textContent = data.client.name;
+      document.querySelector('#account')!.textContent = data.user.email;
+      document.querySelector('#scope')!.textContent = data.scope;
+      status.textContent = 'Periksa permintaan sebelum memberi izin.';
+      panel.hidden = false;
+    } catch {
+      status.textContent = 'Permintaan tidak tersedia. Mulai ulang koneksi dari Claude.';
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function decide(allow: boolean) {
+    if (busy || panel.hidden || !id || !sb) return;
+    busy = true;
+    panel.hidden = true;
+    try {
+      const {profile} = await getAdminProfile();
+      if (profile?.id !== accountId || profile.role !== 'owner') throw new Error();
+      const options = {skipBrowserRedirect: true};
+      const {data, error} = allow
+        ? await sb.auth.oauth.approveAuthorization(id, options)
+        : await sb.auth.oauth.denyAuthorization(id, options);
+      if (error || !data) throw new Error();
+      location.replace(callback(data.redirect_url));
+    } catch {
+      status.textContent = 'Keputusan belum dapat dikonfirmasi. Mulai ulang koneksi dari Claude.';
+    } finally {
+      busy = false;
+    }
+  }
+  document.querySelector('#continue')!.addEventListener('click', load);
+  document.querySelector('#allow')!.addEventListener('click', () => decide(true));
+  document.querySelector('#deny')!.addEventListener('click', () => decide(false));
+  void load();
+</script>
