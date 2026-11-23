@@ -32,7 +32,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   const AKSI: Record<string, string> = {
     gift: 'Hadiah dari Admin', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji',
     reveal: 'Buka nomor rekening', method_review_approve: 'Peninjauan rekening disetujui',
-    method_review_reject: 'Peninjauan rekening ditolak', methods_open: 'Tujuan penarikan',
+    method_review_reject: 'Peninjauan rekening ditolak', methods_open: 'Tujuan penarikan', opname: 'Cek saldo (opname)',
   };
   const VERIF: Record<string, string> = { namecheck: 'nama terverifikasi (cek nama)', admin_review: 'disetujui lewat peninjauan', none: 'nama belum terverifikasi' };
   const ULASAN: Record<string, string> = { pending: 'menunggu', approved: 'disetujui', rejected: 'ditolak', cancelled: 'batal' };
@@ -80,6 +80,10 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
              <button type="button" data-review="${esc(r.id)}" data-decision="reject" class="${KELAS.tombolBahaya}">Tolak</button>`
           : '',
       ]), 'Belum ada formulir.'), 'Bukti profil akun ada di channel Discord Peninjauan Rekening. Setuju = rekening pemain diganti dan penarikan serta transfer terkunci 24 jam.'),
+      section('Penarikan', table(['No.', 'Diajukan', 'Jumlah', 'Tujuan', 'Status', 'Ref / alasan'], (p.withdrawals ?? []).map((w: any) => [
+        `<code>${esc(w.ref)}</code>`, `<span class="text-xs">${esc(fmtWaktu(w.createdAt))}</span>`, `Rp${fmtAngka(w.amountIdr)}`,
+        `${esc(w.label)} •••• ${esc(w.hint)}`, esc(w.status), esc(w.providerRef ?? w.reason ?? ''),
+      ]), 'Belum ada penarikan.'), 'Aksi penarikan ada di halaman Pencairan.'),
       section('Persetujuan aturan', table(['Versi', 'Waktu', 'Sumber'], (p.consent ?? []).map((c: any) => [
         esc(c.version), esc(fmtWaktu(c.acceptedAt)), esc(c.source),
       ]), 'Belum menyetujui aturan Wallet.')),

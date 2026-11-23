@@ -54,6 +54,16 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${stat('Total dicairkan', `Rp${fmtAngka(s.paid)}`)}
         ${stat('Dompet', fmtAngka(s.accounts), `${fmtAngka(s.consents)} sudah setuju aturan, ${fmtAngka(s.frozen)} dibekukan`)}
       </div>`),
+      section('Penarikan', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${stat('Berjalan', fmtAngka(s.withdrawals?.open ?? 0), 'menunggu sampai diproses')}
+        ${stat('Lewat batas', fmtAngka(s.withdrawals?.overdue ?? 0), '1×24 jam kerja')}
+        ${stat('Perlu dicek', fmtAngka(s.withdrawals?.attention ?? 0), 'gagal atau hasil belum pasti')}
+        ${stat('Berhasil', fmtAngka(s.withdrawals?.completed ?? 0))}
+      </div>
+      <p class="mt-3 text-sm"><a class="underline" href="/admin/wallet/pencairan">Buka antrean pencairan</a> · ${s.withdrawals?.publicOpen ? pill('penarikan dibuka untuk publik', 'ok') : pill('penarikan hanya untuk akun uji', 'warn')}</p>`),
+      section('Cek saldo (opname)', `<p class="text-sm text-ink-500 dark:text-cream-300/60">Mencocokkan saldo setiap dompet dengan catatan transaksi. Hanya laporan: dompet tidak dibekukan dari sini (pembekuan otomatis tetap lewat cek harian). Khusus owner, tercatat.</p>
+        <div class="mt-3 flex items-center gap-3"><button id="wl-opname" type="button" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Jalankan cek saldo</button><span id="wl-opname-status" class="text-xs"></span></div>
+        <div id="wl-opname-out" class="mt-3"></div>`),
       section('Rekening', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${stat('Rekening aktif', fmtAngka(s.methodsActive ?? 0))}
         ${stat('Peninjauan menunggu', fmtAngka(s.reviewsPending ?? 0), 'diputuskan di profil pemain atau channel Peninjauan Rekening')}
@@ -66,6 +76,23 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     ].join('');
   }
 
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    if (t?.id !== 'wl-opname') return;
+    const st = document.getElementById('wl-opname-status')!;
+    const out = document.getElementById('wl-opname-out')!;
+    (t as HTMLButtonElement).disabled = true;
+    st.textContent = 'Menunggu bot...';
+    const o = await kirimPerintah('sys.wallet.reconcile');
+    (t as HTMLButtonElement).disabled = false;
+    if (!o.ok || !o.result) { st.textContent = o.error ?? 'Gagal (khusus owner).'; return; }
+    const r = o.result;
+    st.textContent = `Dicek ${fmtWaktu(r.checkedAt)}`;
+    out.innerHTML = r.ok
+      ? `<p class="text-sm">${pill('cocok', 'ok')} Semua ${fmtAngka(r.totals.accounts)} dompet cocok dengan catatan transaksi. Total VP beredar ${fmtAngka(r.totals.outstanding)}, dicairkan Rp${fmtAngka(r.totals.paid)}.</p>`
+      : `<p class="text-sm">${pill(r.mismatches.length + ' dompet selisih', 'bad')} Periksa dompet berikut dan laporkan ke developer:</p>
+         <ul class="mt-2 text-sm list-disc pl-5">${r.mismatches.map((m: any) => `<li><a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(m.userId)}">${esc(m.userId)}</a></li>`).join('')}</ul>`;
+  });
   document.addEventListener('admin:ready', () => { void muat(); });
   document.getElementById('wl-reload')?.addEventListener('click', () => { void muat(); });
 </script>

@@ -1,0 +1,166 @@
+---
+// 💜 Vanillate Wallet › Pencairan (khusus owner). Antrean penarikan per status,
+// rinci (linimasa, percobaan pembayaran), dan aksi yang SAMA dengan tombol di
+// channel Discord Antrean Penarikan (`sys.wallet.withdrawal.action`, bot
+// memeriksa expected status). Nomor tujuan lengkap lewat
+// `sys.wallet.withdrawal.reveal` (tercatat, hilang dari layar setelah 60 detik).
+// Data dibaca saat halaman dibuka atau tombol Muat ulang, tanpa polling.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Pencairan Wallet" active="wallet-pencairan">
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Pencairan" description="Antrean penarikan VP ke rekening pemain. Aksi di sini sama dengan tombol di channel Antrean Penarikan. Khusus owner." />
+  <div class="px-6 lg:px-10 py-8 max-w-6xl space-y-6">
+    <div class="flex flex-wrap items-center gap-2" id="wc-filter">
+      <button type="button" data-status="open" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Berjalan</button>
+      <button type="button" data-status="completed" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Berhasil</button>
+      <button type="button" data-status="rejected" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Ditolak</button>
+      <button type="button" data-status="cancelled" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Dibatalkan</button>
+      <button type="button" data-status="all" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Semua</button>
+    </div>
+    <div id="wc-body" class="space-y-6"></div>
+    <div id="wc-detail"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { kirimPerintah } from '@/lib/dev-panel/client';
+  import { section, table, pill, KELAS } from '@/lib/dev-panel/ui';
+
+  const STATUS: Record<string, [string, 'ok' | 'warn' | 'bad' | 'muted']> = {
+    pending: ['Menunggu', 'warn'], approved: ['Disetujui', 'warn'], processing: ['Diproses', 'warn'],
+    payment_unknown: ['Belum pasti', 'bad'], failed: ['Gagal', 'bad'], completed: ['Berhasil', 'ok'],
+    rejected: ['Ditolak', 'muted'], cancelled: ['Dibatalkan', 'muted'],
+  };
+  const EVENT: Record<string, string> = {
+    requested: 'Diajukan pemain', approve: 'Disetujui', reject: 'Ditolak', process: 'Diproses', complete: 'Berhasil',
+    fail: 'Gagal', unknown: 'Belum pasti', hold: 'Ditahan', release: 'Penahanan dicabut', cancel_request: 'Pemain minta batal',
+    cancel_approve: 'Dibatalkan', cancel_reject: 'Permintaan batal ditolak',
+  };
+  // [aksi, label, butuh alasan, kelas tombol]
+  type Aksi = [string, string, boolean, 'tombol' | 'tombolBahaya'];
+  function aksiUntuk(w: any): Aksi[] {
+    if (!w.active) return [];
+    const held = !!w.holdUntil;
+    const list: Aksi[] = [];
+    if (w.status === 'pending') list.push(held ? ['release', 'Cabut tahan', false, 'tombol'] : ['approve', 'Setujui', false, 'tombol'], ['reject', 'Tolak', true, 'tombolBahaya']);
+    if (w.status === 'approved') list.push(held ? ['release', 'Cabut tahan', false, 'tombol'] : ['process', 'Proses', false, 'tombol'], ['reject', 'Tolak', true, 'tombolBahaya']);
+    if ((w.status === 'pending' || w.status === 'approved') && !held) list.push(['hold', 'Tahan', true, 'tombol']);
+    if (w.status === 'processing') list.push(['complete', 'Selesai', false, 'tombol'], ['fail', 'Gagal', true, 'tombolBahaya'], ['unknown', 'Belum pasti', false, 'tombol']);
+    if (w.status === 'payment_unknown') list.push(['complete', 'Selesai', false, 'tombol'], ['fail', 'Gagal', true, 'tombolBahaya']);
+    if (w.status === 'failed') list.push(['process', 'Proses ulang', true, 'tombol'], ['reject', 'Tolak', true, 'tombolBahaya']);
+    if (w.cancelRequested && (w.status === 'pending' || w.status === 'approved')) list.push(['cancel_approve', 'Setujui batal', false, 'tombol'], ['cancel_reject', 'Tolak batal', false, 'tombol']);
+    return list;
+  }
+
+  let role = 'viewer';
+  let filter = 'open';
+  let revealTimer: ReturnType<typeof setTimeout> | null = null;
+  const statusPill = (s: string) => pill(STATUS[s]?.[0] ?? s, STATUS[s]?.[1] ?? 'muted');
+
+  async function muat() {
+    const body = document.getElementById('wc-body')!;
+    if (role !== 'owner') { body.innerHTML = stateBlock('empty', 'Halaman ini khusus owner.'); return; }
+    document.querySelectorAll<HTMLButtonElement>('#wc-filter button').forEach((b) => { b.style.fontWeight = b.dataset.status === filter ? '700' : '400'; });
+    body.innerHTML = stateBlock('loading', 'Meminta antrean dari bot...');
+    const o = await kirimPerintah('sys.wallet.withdrawals', { status: filter });
+    if (!o.ok || !o.result) { body.innerHTML = stateBlock('error', o.error ?? 'Antrean tidak tersedia.'); return; }
+    const r = o.result;
+    const c = r.counts ?? {};
+    body.innerHTML = [
+      `<p class="text-sm">${['pending', 'approved', 'processing', 'payment_unknown', 'failed'].map((s) => `${statusPill(s)} ${fmtAngka(c[s] ?? 0)}`).join(' · ')}</p>`,
+      section('Penarikan', table(['No.', 'Diajukan', 'Pemain', 'Jumlah', 'Tujuan', 'Status', 'Batas', ''], (r.rows ?? []).map((w: any) => [
+        `<code>${esc(w.ref)}</code>`, `<span class="text-xs">${esc(fmtWaktu(w.createdAt))}</span>`,
+        `<a class="underline text-xs" href="/admin/wallet/pemain/?id=${encodeURIComponent(w.userId)}">${esc(w.userId)}</a>`,
+        `${fmtAngka(w.points)} VP<br><span class="text-xs">Rp${fmtAngka(w.amountIdr)}</span>`,
+        `${esc(w.label)} •••• ${esc(w.hint)}`,
+        `${statusPill(w.status)}${w.holdUntil ? ' ' + pill('ditahan', 'warn') : ''}${w.cancelRequested ? ' ' + pill('minta batal', 'warn') : ''}`,
+        w.active ? `<span class="text-xs">${esc(fmtWaktu(new Date(w.deadlineAt).toISOString()))}</span>${w.overdue ? ' ' + pill('lewat batas', 'bad') : ''}` : '',
+        `<button type="button" data-detail="${esc(w.id)}" class="text-sm underline">Buka</button>`,
+      ]), filter === 'open' ? 'Tidak ada penarikan yang berjalan.' : 'Belum ada data.')),
+    ].join('');
+    body.querySelectorAll<HTMLButtonElement>('button[data-detail]').forEach((b) => b.addEventListener('click', () => void rinci(Number(b.dataset.detail))));
+  }
+
+  async function rinci(id: number) {
+    const box = document.getElementById('wc-detail')!;
+    box.innerHTML = stateBlock('loading', 'Meminta rincian...');
+    const o = await kirimPerintah('sys.wallet.withdrawal', { id });
+    if (!o.ok || !o.result) { box.innerHTML = stateBlock('error', o.error ?? 'Rincian tidak tersedia.'); return; }
+    const w = o.result;
+    const aksi = aksiUntuk(w);
+    box.innerHTML = section(`Penarikan ${esc(w.ref)}`, `
+      <div class="space-y-2 text-sm">
+        <p>${statusPill(w.status)} ${w.overdue ? pill('lewat batas 1×24 jam kerja', 'bad') : ''} ${w.methodRecent ? pill('rekening berubah kurang dari 7 hari', 'warn') : ''}</p>
+        <p><strong>${fmtAngka(w.points)} VP · Rp${fmtAngka(w.amountIdr)}</strong> ke ${esc(w.label)} •••• ${esc(w.hint)} · pemain <a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(w.userId)}">${esc(w.userId)}</a></p>
+        ${w.holdUntil ? `<p>Ditahan sampai ${esc(fmtWaktu(new Date(w.holdUntil).toISOString()))}: ${esc(w.holdReason ?? '')}</p>` : ''}
+        ${w.providerRef ? `<p>Ref: <code>${esc(w.providerRef)}</code></p>` : ''}
+        ${w.reason ? `<p>Alasan: ${esc(w.reason)}</p>` : ''}
+        ${w.active ? `<p><button type="button" id="wc-reveal" class="${KELAS.tombol}">Tampilkan nomor tujuan</button></p><div id="wc-reveal-out"></div>` : ''}
+        ${aksi.length ? `<div class="flex flex-wrap gap-2 pt-2">${aksi.map(([a, label, , kelas]) => `<button type="button" data-aksi="${a}" class="${KELAS[kelas]}">${esc(label)}</button>`).join('')}</div>
+          <p class="${KELAS.muted} text-xs">Gagal hanya bila ShopeePay menyatakan transfer gagal. Ragu, pakai Belum pasti. Proses ulang atau tolak dari Gagal wajib setelah riwayat ShopeePay dicek.</p>` : ''}
+        <p id="wc-status" class="text-xs" role="status" aria-live="polite"></p>
+      </div>
+      <h3 class="mt-6 mb-2 text-sm font-semibold">Linimasa</h3>
+      ${table(['Waktu', 'Kejadian', 'Oleh', 'Catatan'], (w.timeline ?? []).map((e: any) => [
+        `<span class="text-xs">${esc(fmtWaktu(e.at))}</span>`, esc(EVENT[e.event] ?? e.event), `<span class="text-xs">${esc(e.actor)}</span>`, esc(e.note ?? ''),
+      ]))}
+      <h3 class="mt-6 mb-2 text-sm font-semibold">Percobaan pembayaran</h3>
+      ${table(['Ke', 'Oleh', 'Hasil', 'Ref', 'Catatan'], (w.attempts ?? []).map((a: any) => [
+        String(a.no), `<span class="text-xs">${esc(a.actor)}</span>`, esc(a.outcome), esc(a.providerRef ?? ''), esc(a.note ?? ''),
+      ]), 'Belum ada percobaan.')}`);
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    document.getElementById('wc-reveal')?.addEventListener('click', async () => {
+      if (!window.confirm('Tampilkan nomor tujuan lengkap? Aksi ini tercatat.')) return;
+      const out = document.getElementById('wc-reveal-out')!;
+      const r = await kirimPerintah('sys.wallet.withdrawal.reveal', { id });
+      if (!r.ok || !r.result) { out.innerHTML = stateBlock('error', r.error ?? 'Gagal.'); return; }
+      out.innerHTML = r.result.readable
+        ? `<div class="${KELAS.kartu}"><p><strong>${esc(r.result.label)}</strong> <code class="select-all">${esc(r.result.number)}</code> · Rp${fmtAngka(r.result.amountIdr)}</p>
+           <p class="${KELAS.muted} text-xs">Cocokkan nama penerima di ShopeePay sebelum transfer. Hilang dari layar dalam 60 detik.</p></div>`
+        : stateBlock('error', 'Nomor tidak bisa dibaca. Tolak dengan alasan dan minta pemain mendaftar ulang.');
+      if (revealTimer) clearTimeout(revealTimer);
+      revealTimer = setTimeout(() => { out.innerHTML = ''; }, 60_000);
+    });
+
+    box.querySelectorAll<HTMLButtonElement>('button[data-aksi]').forEach((b) => b.addEventListener('click', async () => {
+      const action = b.dataset.aksi!;
+      const spec = aksi.find((x) => x[0] === action)!;
+      const payload: Record<string, unknown> = { id, action, expected: w.status };
+      if (spec[2]) {
+        const tanya = action === 'reject' || action === 'hold' ? 'Alasan (terlihat pemain, minimal 3 karakter):' : 'Alasan (minimal 3 karakter):';
+        const reason = window.prompt(tanya)?.trim();
+        if (!reason || reason.length < 3) return;
+        payload.reason = reason;
+      }
+      if (w.status === 'failed' && (action === 'process' || action === 'reject')) {
+        if (window.prompt('Ketik SUDAH CEK bila riwayat ShopeePay sudah diperiksa dan tidak ada dana keluar:')?.trim().toUpperCase() !== 'SUDAH CEK') return;
+        payload.confirmNoFunds = true;
+      }
+      if (action === 'complete') {
+        const ref = window.prompt('Nomor referensi transfer ShopeePay:')?.trim();
+        if (!ref) return;
+        payload.providerRef = ref;
+      } else if (!spec[2] && !window.confirm(`${spec[1]} ${w.ref}?`)) return;
+      const st = document.getElementById('wc-status')!;
+      st.textContent = 'Menunggu bot...';
+      box.querySelectorAll<HTMLButtonElement>('button[data-aksi]').forEach((x) => { x.disabled = true; });
+      const r = await kirimPerintah('sys.wallet.withdrawal.action', payload);
+      if (!r.ok) { st.textContent = r.error ?? 'Gagal.'; box.querySelectorAll<HTMLButtonElement>('button[data-aksi]').forEach((x) => { x.disabled = false; }); return; }
+      st.textContent = action === 'complete' ? 'Selesai. Arsip dari CMS dikirim tanpa bukti transfer; pakai tombol Selesai di Discord bila ingin melampirkan bukti.' : 'Tersimpan.';
+      void muat();
+      setTimeout(() => void rinci(id), 600);
+    }));
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('#wc-filter button').forEach((b) => b.addEventListener('click', () => {
+    filter = b.dataset.status ?? 'open';
+    document.getElementById('wc-detail')!.innerHTML = '';
+    void muat();
+  }));
+  document.addEventListener('admin:ready', (e) => { role = (e as CustomEvent).detail?.role ?? 'viewer'; void muat(); });
+</script>
