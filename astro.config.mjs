@@ -29,6 +29,7 @@ export default defineConfig({
       filter: (page) =>
         !page.includes('/admin') &&
         !page.includes('/oauth/consent') &&
+        !page.includes('/izin/mcpagent') &&
         !page.includes('/dashboard') &&
         !page.includes('/partnership/masuk') &&
         !page.includes('/bots') &&
