@@ -6,8 +6,16 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
 
 <AdminLayout title="Riwayat Moderasi Wallet" active="wallet-audit">
-  <AdminPageHeader eyebrow="Vanillate Wallet" title="Riwayat moderasi" description="Hadiah dari Admin, penyesuaian, perubahan konfigurasi, dan akun uji. Tidak bisa diubah atau dihapus. Khusus owner." />
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Riwayat moderasi" description="Semua aksi Admin Wallet. Tidak bisa diubah atau dihapus. Khusus owner." />
   <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-4">
+    <form id="wa-filter" class="flex flex-wrap items-end gap-3">
+      <label class="text-xs">Pemain (Discord ID)<br><input name="targetUser" class="rounded-lg border px-3 py-1.5 text-sm bg-transparent" placeholder="1036585958553964574" /></label>
+      <label class="text-xs">Admin<br><input name="actor" class="rounded-lg border px-3 py-1.5 text-sm bg-transparent" placeholder="cms: atau discord:" /></label>
+      <label class="text-xs">Aksi<br><select name="action" id="wa-action" class="rounded-lg border px-3 py-1.5 text-sm bg-transparent"><option value="">Semua</option></select></label>
+      <label class="text-xs">Periode<br><select name="days" class="rounded-lg border px-3 py-1.5 text-sm bg-transparent">
+        <option value="">Semua</option><option value="7">7 hari</option><option value="30">30 hari</option><option value="90">90 hari</option><option value="365">1 tahun</option></select></label>
+      <button type="submit" class="rounded-full border px-4 py-1.5 text-sm">Saring</button>
+    </form>
     <div id="wa-body"></div>
     <button id="wa-more" type="button" class="hidden rounded-full border px-4 py-1.5 text-sm">Lebih lama</button>
   </div>
@@ -23,9 +31,19 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     gift: 'Hadiah dari Admin', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji',
     reveal: 'Buka nomor rekening', method_review_approve: 'Peninjauan rekening disetujui',
     method_review_reject: 'Peninjauan rekening ditolak', methods_open: 'Tujuan penarikan', opname: 'Cek saldo (opname)',
+    restriction: 'Akun dibatasi', restriction_end: 'Partisipasi dihentikan', restriction_review_done: 'Peninjauan selesai',
+    restriction_lift: 'Pembatasan dicabut', export: 'Ekspor CSV', method_name_match: 'Nama rekening cocok',
   };
   let role = 'viewer';
   let rows: any[] = [];
+  let saring: Record<string, string> = {};
+  const sel = document.getElementById('wa-action') as HTMLSelectElement;
+  for (const [k, v] of Object.entries(AKSI)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(k)}">${esc(v)}</option>`);
+  document.getElementById('wa-filter')!.addEventListener('submit', (e) => {
+    e.preventDefault();
+    saring = Object.fromEntries([...new FormData(e.target as HTMLFormElement).entries()].map(([k, v]) => [k, String(v).trim()]).filter(([, v]) => v));
+    void muat();
+  });
 
   function detail(x: any): string {
     const d = x.detail ?? {};
@@ -40,7 +58,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const body = document.getElementById('wa-body')!;
     if (role !== 'owner') { body.innerHTML = stateBlock('empty', 'Halaman ini khusus owner.'); return; }
     if (!beforeId) { rows = []; body.innerHTML = stateBlock('loading', 'Meminta riwayat dari bot...'); }
-    const o = await kirimPerintah('sys.wallet.audit', beforeId ? { beforeId } : {});
+    const o = await kirimPerintah('sys.wallet.audit', { ...saring, ...(beforeId ? { beforeId } : {}) });
     if (!o.ok || !o.result) { body.innerHTML = stateBlock('error', o.error ?? 'Riwayat tidak tersedia.'); return; }
     const baru = o.result.rows ?? [];
     rows = rows.concat(baru);

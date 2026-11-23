@@ -33,6 +33,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     gift: 'Hadiah dari Admin', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji',
     reveal: 'Buka nomor rekening', method_review_approve: 'Peninjauan rekening disetujui',
     method_review_reject: 'Peninjauan rekening ditolak', methods_open: 'Tujuan penarikan', opname: 'Cek saldo (opname)',
+    restriction: 'Akun dibatasi', restriction_end: 'Partisipasi dihentikan', restriction_review_done: 'Peninjauan selesai',
+    restriction_lift: 'Pembatasan dicabut', export: 'Ekspor CSV', method_name_match: 'Nama rekening cocok',
   };
   const VERIF: Record<string, string> = { namecheck: 'nama terverifikasi (cek nama)', admin_review: 'disetujui lewat peninjauan', none: 'nama belum terverifikasi' };
   const ULASAN: Record<string, string> = { pending: 'menunggu', approved: 'disetujui', rejected: 'ditolak', cancelled: 'batal' };
@@ -59,7 +61,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
           ${stat('Total diperoleh', fmtAngka(a.totalEarned))}${stat('Total dicairkan', 'Rp' + fmtAngka(a.totalPaid))}
         </div>` : stateBlock('empty', 'Pemain ini belum punya dompet.')}`),
       section('Rekening dan keamanan', `<div class="space-y-2 text-sm">
-          <p>${p.method ? `<strong>${esc(p.method.label)} •••• ${esc(p.method.hint)}</strong> ${pill(VERIF[p.method.verifySource] ?? p.method.verifySource, p.method.verifyStatus === 'verified' ? 'ok' : 'warn')}` : 'Belum ada rekening.'}</p>
+          <p>${p.method ? `<strong>${esc(p.method.label)} •••• ${esc(p.method.hint)}</strong> ${pill(VERIF[p.method.verifySource] ?? p.method.verifySource, p.method.verifyStatus === 'verified' ? 'ok' : 'warn')}
+            ${p.method.verifyStatus !== 'verified' ? `<button type="button" id="wp-namecheck" class="ml-2 text-xs underline">Tandai nama cocok</button>` : ''}` : 'Belum ada rekening.'}</p>
           <p>PIN: ${sec?.hasPin ? pill('aktif', 'ok') : pill('belum dibuat', 'muted')}
             ${sec?.pinLockedUntil ? pill('terkunci sampai ' + waktuMs(sec.pinLockedUntil), 'bad') : ''}
             ${sec?.sensitiveLockUntil ? pill('penarikan dan transfer terkunci sampai ' + waktuMs(sec.sensitiveLockUntil), 'warn') : ''}</p>
@@ -68,6 +71,21 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         ${p.method ? `<div class="mt-4">${formCard({ id: 'wp-reveal', title: 'Nomor lengkap', submit: 'Tampilkan nomor lengkap', ownerOnly: true,
           desc: 'Untuk transfer manual. Tercatat di riwayat moderasi dan Log Dompet. Nomor hilang dari layar setelah 60 detik dan dari hasil perintah setelah 5 menit.', fields: [] })}
           <div id="wp-reveal-out" class="mt-3"></div></div>` : ''}`),
+      section('Pembatasan dan penanda risiko', `<div class="space-y-3 text-sm">
+          <p>${p.restriction
+            ? `${pill(p.restriction.status === 'ended' ? 'partisipasi dihentikan' : 'dibatasi', 'bad')} ${esc(p.restriction.reason)} · peninjauan ${p.restriction.reviewDoneAt ? 'selesai' : 'paling lambat ' + esc(waktuMs(p.restriction.reviewUntil))}`
+            : pill('tidak dibatasi', 'ok')}</p>
+          ${(p.risk ?? []).length
+            ? `<ul class="list-disc pl-5">${p.risk.map((r: any) => `<li>${esc(r.label)}${r.detail ? ` (${esc(r.detail)})` : ''}</li>`).join('')}</ul><p class="${KELAS.muted} text-xs">Penanda hanya informasi. Tidak membekukan atau membatasi apa pun.</p>`
+            : `<p class="${KELAS.muted} text-xs">Tidak ada penanda risiko.</p>`}
+          <div class="flex flex-wrap gap-2">
+            ${p.restriction ? '' : `<button type="button" data-batas="restrict" class="${KELAS.tombolBahaya}">Batasi</button>`}
+            ${p.restriction && !p.restriction.reviewDoneAt ? `<button type="button" data-batas="review_done" class="${KELAS.tombol}">Peninjauan selesai</button>` : ''}
+            ${p.restriction?.status !== 'ended' ? `<button type="button" data-batas="end" class="${KELAS.tombolBahaya}">Hentikan permanen</button>` : ''}
+            ${p.restriction ? `<button type="button" data-batas="lift" class="${KELAS.tombol}">Cabut pembatasan</button>` : ''}
+          </div>
+          <p class="${KELAS.muted} text-xs">Batasi: VP baru dan transfer berhenti, penarikan saldo sah menunggu peninjauan (maks. 30 hari). Hentikan permanen: saldo sah dibayar sekali tanpa minimum, lalu dompet ditutup. Pemain diberi tahu alasannya lewat DM.</p>
+        </div>`),
       section('Riwayat rekening', table(['Didaftarkan', 'Tujuan', 'Status', 'Verifikasi'], (p.methods?.methods ?? []).map((m: any) => [
         `<span class="text-xs">${esc(fmtWaktu(m.createdAt))}</span>`, `${esc(m.label)} •••• ${esc(m.hint)}`,
         m.active ? pill('aktif', 'ok') : pill('diganti ' + fmtWaktu(m.deactivatedAt), 'muted'), esc(VERIF[m.verifySource] ?? m.verifySource),
@@ -121,6 +139,26 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         return 'Nomor ditampilkan dan tercatat.';
       },
     });
+    document.getElementById('wp-namecheck')?.addEventListener('click', async () => {
+      if (!window.confirm('Tandai rekening ini "nama cocok"? Lakukan hanya setelah nama penerima dicocokkan di ShopeePay. Aksi ini tercatat.')) return;
+      const o = await kirimPerintah('sys.wallet.method.verify', { userId });
+      if (!o.ok) { window.alert(o.error ?? 'Gagal.'); return; }
+      setTimeout(() => void muat(), 600);
+    });
+    document.querySelectorAll<HTMLButtonElement>('button[data-batas]').forEach((b) => b.addEventListener('click', async () => {
+      const action = b.dataset.batas!;
+      let reason: string | null = null;
+      if (action !== 'review_done') {
+        const tanya = { restrict: 'Alasan pembatasan (terlihat pemain, minimal 3 karakter):', end: 'Alasan menghentikan partisipasi permanen (terlihat pemain):', lift: 'Alasan mencabut pembatasan:' }[action] ?? 'Alasan:';
+        reason = window.prompt(tanya)?.trim() ?? null;
+        if (!reason || reason.length < 3) return;
+        if (action === 'end' && window.prompt('Ketik HENTIKAN untuk melanjutkan:')?.trim() !== 'HENTIKAN') return;
+      } else if (!window.confirm('Tandai peninjauan selesai? Pemain bisa menarik saldo sah lagi.')) return;
+      b.disabled = true;
+      const o = await kirimPerintah('sys.wallet.restrict', { userId, action, ...(reason ? { reason } : {}) });
+      if (!o.ok) { window.alert(o.error ?? 'Gagal.'); b.disabled = false; return; }
+      setTimeout(() => void muat(), 600);
+    }));
     document.querySelectorAll<HTMLButtonElement>('button[data-review]').forEach((b) => b.addEventListener('click', async () => {
       const reviewId = b.dataset.review!;
       const decision = b.dataset.decision!;
