@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 
-const lastUpdated = '5 November 2026';
+const lastUpdated = '22 November 2026';
 
 // Daftar isi ringkas — sekaligus penanda nomor & judul tiap section.
 const toc = [
@@ -13,10 +13,11 @@ const toc = [
   { n: '06', id: 'data-retention', label: 'Data Retention' },
   { n: '07', id: 'data-security', label: 'Data Security' },
   { n: '08', id: 'third-party-services', label: 'Third-Party Services' },
-  { n: '09', id: 'childrens-privacy', label: "Children's Privacy" },
-  { n: '10', id: 'user-rights', label: 'User Rights' },
-  { n: '11', id: 'changes', label: 'Changes to this Policy' },
-  { n: '12', id: 'contact', label: 'Contact' },
+  { n: '09', id: 'wallet-data', label: 'Vanillate Wallet Data Processing' },
+  { n: '10', id: 'childrens-privacy', label: "Children's Privacy" },
+  { n: '11', id: 'user-rights', label: 'User Rights' },
+  { n: '12', id: 'changes', label: 'Changes to this Policy' },
+  { n: '13', id: 'contact', label: 'Contact' },
 ];
 ---
 
@@ -111,6 +112,20 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Short-lived records of kick, ban, and unban events (the Discord User IDs involved, the type of action, and a reason category), for servers that enable security notifications</span></li>
         </ul>
 
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 text-ink-900 dark:text-cream-50">Vanillate Wallet (Vani Poin)</h3>
+        <p class="mb-3">
+          If you use Vanillate Wallet (the <span class="font-mono text-sm">/dompet</span> command in Vanillate.ID), we additionally process:
+        </p>
+        <ul class="space-y-2 pl-0 list-none mb-6">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Your Vani Poin (VP) balance and the full history of your Wallet: VP earned, rewards from our team and their reasons, transfers you send or receive (including the optional message), withdrawals and their status, and corrections with their reasons</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Daily activity signals used only to grant daily VP, such as that you finished a game round, recorded a streak, counted, or sent messages to Vani on a given day. Wallet does not store the content of your messages</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Your payout account: the bank or e-wallet, the account or phone number, and the account holder name returned by the name check. The number and name are stored encrypted</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Your Wallet PIN, stored only as a one-way hash that cannot be turned back into the PIN, and one-time codes sent to you by Discord direct message, kept in memory for a few minutes only</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Proof you submit for a manual payout account review (such as a screenshot of your bank or e-wallet profile), and proof of the transfers we make to you. These images are not stored in our database: they are forwarded to private, staff-only channels in our Discord server, where they are kept as payment records</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Records of every action our team takes on your Wallet, such as approving or declining a withdrawal, viewing your full payout number, or changing your payout account</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>A record of your acceptance of the Wallet terms: the version accepted, the time, and your Discord user ID</span></li>
+        </ul>
+
         <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 text-ink-900 dark:text-cream-50">Vanillate Dashboard (Website Login with Discord)</h3>
         <p class="mb-3">
           When you sign in to the Vanillate Dashboard at vanillate.id/dashboard to configure our bots for a Discord server, we additionally process:
@@ -131,7 +146,7 @@ const toc = [
         </ul>
 
         <p>
-          Apart from the email address tied to a website sign-in (Live Chat or the Vanillate Dashboard), we do not collect passwords, payment information, email addresses, direct messages unrelated to Service functionality, or other sensitive personal information. The Vanillate Dashboard cannot read your messages or act on your behalf in Discord.
+          Apart from the email address tied to a website sign-in (Live Chat or the Vanillate Dashboard) and the Vanillate Wallet payout account details described above, we do not collect passwords, payment information, email addresses, direct messages unrelated to Service functionality, or other sensitive personal information. The Vanillate Dashboard cannot read your messages or act on your behalf in Discord.
         </p>
       </section>
 
@@ -147,6 +162,7 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Maintaining leaderboards and rankings</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Managing game systems such as economy, quests, and progression</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Providing the server management features that a server enables, such as verification, leveling, and security notifications</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Running Vanillate Wallet: granting VP, verifying payout accounts, paying withdrawals, and notifying you by Discord direct message about your withdrawals and votes</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Preventing abuse, cheating, fraud, or malicious activity</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Troubleshooting errors and improving performance</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Developing and testing new features</span></li>
@@ -186,6 +202,7 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>To protect the security, integrity, or operation of the Services</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>To investigate abuse, fraud, or violations of our policies</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>When necessary to comply with Discord's policies and requirements</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>When you use Vanillate Wallet, to the account name check service and to the bank or e-wallet that receives your withdrawal, as described in Third-Party Services</span></li>
         </ul>
       </section>
 
@@ -211,8 +228,11 @@ const toc = [
         <p class="mb-4">
           Records of kick, ban, and unban events are kept for a short period only. Records that are revoked after an unban are removed within 7 days, other records are removed after at most 90 days, and all of a server's records are removed when the server removes the bot. Text you submit to community features such as daily streak messages or anonymous confessions is used only to deliver the feature and is removed from our database once it has been delivered.
         </p>
-        <p>
+        <p class="mb-4">
           Support conversations are kept only as long as needed to resolve your request.
+        </p>
+        <p>
+          Because Vanillate Wallet involves real payments, Wallet transaction records, withdrawal records, and records of our team's actions are kept so that every payment can be accounted for, and may be retained even after other data is deleted. A payout account you replace is deactivated, not reused.
         </p>
       </section>
 
@@ -223,6 +243,9 @@ const toc = [
         </div>
         <p class="mb-4">
           We implement reasonable technical and organizational measures to protect stored information from unauthorized access, disclosure, alteration, or destruction.
+        </p>
+        <p class="mb-4">
+          For Vanillate Wallet, payout account numbers and holder names are encrypted, PINs are stored only as one-way hashes, and payout details are visible only to the team members allowed to process payments. Payout details are never posted in public channels.
         </p>
         <p>
           However, no method of electronic transmission or storage can be guaranteed to be completely secure.
@@ -246,14 +269,53 @@ const toc = [
         <p class="mb-4">
           If you sign up as a blog writer at vanillate.id/blog/masuk, we store your Google account email, your public author profile (display name, bio, links), your linked Discord ID and username (used only to verify writers), and the drafts and images you submit until they are published or deleted. The email is used only to notify you about the review of your articles. Published articles and your author profile are public.
         </p>
+        <p class="mb-4">
+          Vanillate Wallet uses additional third parties (an account name check service, payment providers, and Discord for staff records). They are described in section 09.
+        </p>
         <p>
           Use of such services is governed by their respective privacy policies and terms.
         </p>
       </section>
 
-      <section id="childrens-privacy" class="legal-sec reveal scroll-mt-24">
+      <section id="wallet-data" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
           <span class="legal-badge">09</span>
+          <h2 class="legal-title">Vanillate Wallet Data Processing</h2>
+        </div>
+        <p class="mb-4">This section applies once Vanillate Wallet is made available. When you take part in Vanillate Wallet, we process the information reasonably necessary to provide rewards, transfers, payout account verification, withdrawals, fraud prevention, and support. The categories are listed in section 02.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Purposes and legal basis</h3>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Running the Wallet program you choose to join (granting VP, transfers, withdrawals, notifications): processing necessary to provide the program under our Terms of Service</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Checking the payout account name, preventing fraud, multi-account abuse, and unauthorized transactions, and keeping the Wallet secure: our legitimate interest in protecting users and the integrity of a feature with real monetary value</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Keeping payment and transaction records: accounting, dispute resolution, and compliance with legal obligations that apply to us</span></li>
+        </ul>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Who can access Wallet data</h3>
+        <p class="mb-4">Only team members authorized to process payments can see payout details, and the full payout number is shown to them only when needed to pay or investigate, with each access recorded. Payout details are never posted in public channels.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Where Wallet data is stored</h3>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Wallet records are stored in a PostgreSQL database on our own server (a virtual private server in Indonesia). Payout account numbers and holder names are encrypted, and PINs are stored only as one-way hashes. Backups of this database are kept in a private cloud storage bucket</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>When an authorized administrator opens a Wallet page in our admin panel, the requested details pass through our admin panel database provider (Supabase) and are kept there only as long as needed to display them. Copies may remain in the routine backups of that provider for a limited time</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Proof submitted for a payout account review and proof of transfers we make are posted to private, staff-only channels in our Discord server and kept there as payment records. These files are stored by Discord under the policies of Discord. We control who can see those channels and can delete our messages, but we cannot guarantee removal of every copy from the infrastructure of Discord</span></li>
+        </ul>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Third parties</h3>
+        <ul class="space-y-2 pl-0 list-none mb-4">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Account name check: when you register or change a payout account, we send only the bank or e-wallet code and the account or phone number to an independent account name check service, to show you the holder name before you confirm it. This service is community operated, not a bank, and its result is treated only as a convenience check, not as proof that the account belongs to you. We do not send your name, Discord details, or balance to it</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Payment providers: withdrawals are sent from our ShopeePay account to the bank or e-wallet you registered, which receive the details needed to complete the payment</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Discord: delivers one-time codes and notifications by direct message and hosts the staff channels described above</span></li>
+        </ul>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Retention</h3>
+        <p class="mb-4">Wallet transaction records, withdrawal records, and records of actions taken by our team may need to be kept for accounting, fraud prevention, dispute resolution, security, or legal compliance, and may therefore be retained even after other data is deleted. A payout account you replace is deactivated, not reused. Retention periods: Wallet transaction, withdrawal, transfer, consent, and team action records are kept for 10 years; the encrypted number and holder name of a payout account you replaced are deleted 1 year after it was replaced; your PIN hash is kept until your Wallet is closed; internal risk notes are kept for 2 years; one-time codes are kept in memory for a few minutes only; and messages in our private staff channels on Discord (including proof submitted for a payout account review and proof of transfers) are kept there as payment and moderation records and are not deleted automatically. Where deletion is required or permitted, information will be deleted or de-identified in line with applicable law.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Your rights</h3>
+        <p class="mb-4">You may ask for information about your Wallet data, correction of inaccurate data, and deletion or restriction where it is not required to be kept for the reasons above, through our official support channel. We may need to verify that the request comes from the owner of the Discord account.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Security incidents</h3>
+        <p class="mb-4">If a personal data breach affects Wallet data, we will act to contain it and will notify affected users and the relevant authority as required by Indonesian personal data protection law.</p>
+        <h3 class="font-display text-lg font-semibold tracking-tightest mb-3 mt-6 text-ink-900 dark:text-cream-50">Minors</h3>
+        <p class="mb-4">Vanillate Wallet involves payment account details. If you are a minor under the law that applies to you, use Wallet withdrawals only with the involvement of a parent or guardian, and register only a payment account you are lawfully permitted to use.</p>
+      </section>
+
+      <section id="childrens-privacy" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">10</span>
           <h2 class="legal-title">Children's Privacy</h2>
         </div>
         <p>
@@ -263,7 +325,7 @@ const toc = [
 
       <section id="user-rights" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">10</span>
+          <span class="legal-badge">11</span>
           <h2 class="legal-title">User Rights</h2>
         </div>
         <p class="mb-4">Users may request:</p>
@@ -278,7 +340,7 @@ const toc = [
 
       <section id="changes" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">11</span>
+          <span class="legal-badge">12</span>
           <h2 class="legal-title">Changes to this Privacy Policy</h2>
         </div>
         <p class="mb-4">We may update this Privacy Policy from time to time.</p>
@@ -289,7 +351,7 @@ const toc = [
 
       <section id="contact" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">12</span>
+          <span class="legal-badge">13</span>
           <h2 class="legal-title">Contact</h2>
         </div>
         <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 md:p-8">

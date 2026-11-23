@@ -2,7 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { url } from '@utils/url';
 
-const lastUpdated = '5 November 2026';
+const lastUpdated = '22 November 2026';
 
 // Daftar isi ringkas — sekaligus penanda nomor & judul tiap section.
 const toc = [
@@ -12,12 +12,13 @@ const toc = [
   { n: '04', id: 'user-responsibilities', label: 'User Responsibilities' },
   { n: '05', id: 'server-owner', label: 'Server Owner Responsibilities' },
   { n: '06', id: 'virtual-items', label: 'Virtual Items & In-Game Economy' },
-  { n: '07', id: 'data-privacy', label: 'Data Usage and Privacy' },
-  { n: '08', id: 'availability', label: 'Availability' },
-  { n: '09', id: 'suspension', label: 'Suspension and Termination' },
-  { n: '10', id: 'liability', label: 'Limitation of Liability' },
-  { n: '11', id: 'changes', label: 'Changes to Terms' },
-  { n: '12', id: 'contact', label: 'Contact' },
+  { n: '07', id: 'wallet', label: 'Vanillate Wallet & Vani Poin' },
+  { n: '08', id: 'data-privacy', label: 'Data Usage and Privacy' },
+  { n: '09', id: 'availability', label: 'Availability' },
+  { n: '10', id: 'suspension', label: 'Suspension and Termination' },
+  { n: '11', id: 'liability', label: 'Limitation of Liability' },
+  { n: '12', id: 'changes', label: 'Changes to Terms' },
+  { n: '13', id: 'contact', label: 'Contact' },
 ];
 ---
 
@@ -116,6 +117,7 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Virtual economy, item, boost, or reward systems</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Achievements, quests, and community engagement features</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Social features such as counting, daily streaks, anonymous confessions, and server promotion (Share Server)</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Vanillate Wallet, a community reward program in which Vani Poin (VP) can be withdrawn as real money</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Server management tools such as verification, automatic roles, welcome messages, leveling, and security notifications</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>The Vanillate Dashboard for configuring the bot in a server</span></li>
         </ul>
@@ -168,7 +170,7 @@ const toc = [
           Some Services include virtual currencies, items, boosts, or other in-game content ("Virtual Items"). Virtual Items:
         </p>
         <ul class="space-y-2 pl-0 list-none mb-4">
-          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Have no real-world monetary value and cannot be redeemed, exchanged, or sold for real money or anything of value outside the Services</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Have no real-world monetary value and cannot be redeemed, exchanged, or sold for real money or anything of value outside the Services. Vani Poin (VP), governed by section 07, is the only exception and is separate from every other in-game currency or item</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>May be adjusted, rebalanced, or reset when necessary for fairness, stability, or feature updates</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Remain part of the Services and are not owned by users</span></li>
         </ul>
@@ -177,16 +179,91 @@ const toc = [
         </p>
       </section>
 
-      <section id="data-privacy" class="legal-sec reveal scroll-mt-24">
+      <section id="wallet" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
           <span class="legal-badge">07</span>
+          <h2 class="legal-title">Vanillate Wallet and Vani Poin (VP)</h2>
+        </div>
+        <p class="mb-4">
+          This section applies once Vanillate Wallet is made available. Where it conflicts with another section of these Terms on a matter concerning VP, this section prevails. How Wallet data is handled is explained in our <a href={url('/privacy')} class="text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-300">Privacy Policy</a>.
+        </p>
+        <h3 class="legal-sub">7.1 Voluntary Participation and Acceptance of Wallet Terms</h3>
+        <p class="mb-3">Participation in Vanillate Wallet is voluntary. Before using Vanillate Wallet for the first time, you will be asked to expressly accept these Terms, including this section, and our Privacy Policy. By expressly accepting them and participating in the program, you agree to comply with these Terms, the Wallet program rules shown in Vanillate Wallet, and the other applicable policies made available on our official website. We record the version you accepted, the time of acceptance, and your Discord user ID.</p>
+        <p class="mb-3">Participation does not guarantee future rewards, income, or the permanent availability of any Wallet feature. If we make a material change to the Wallet rules, we may ask you to accept the updated rules before you earn new VP or use affected features. If you do not accept them, you may stop participating in new activities, and your legitimately earned balance and earlier transactions will still be handled under the rules that applied to them and mandatory legal requirements.</p>
+        <p class="mb-3">Accepting these Terms does not waive any right that cannot lawfully be waived.</p>
+        <h3 class="legal-sub">7.2 Nature of Vani Poin</h3>
+        <p class="mb-3">Vanillate Wallet is an optional community rewards feature of Vanillate.ID, opened with the <span class="font-mono text-sm">/dompet</span> command and operated by Vanillate Studio. Vani Poin ("VP") may be awarded to eligible users for qualifying activities, including verified votes for Vanillate.ID on Top.gg, genuine daily activity with the bot, and other activities expressly supported by the program.</p>
+        <p class="mb-3">VP is separate from ordinary in-game currencies, items, and virtual rewards, and cannot be exchanged for or from them. VP cannot be bought and does not expire.</p>
+        <p class="mb-3">Where the cash withdrawal feature is enabled, eligible VP may be withdrawn at the published rate of 1 VP to IDR 1, subject to the applicable eligibility requirements, withdrawal rules, security checks, and the availability of supported payment methods.</p>
+        <p class="mb-3">VP is not offered as a bank deposit, an investment product, an interest bearing account, or government issued currency, and it does not earn interest, dividends, or investment returns. Its legal classification remains subject to applicable law, and nothing in these Terms exempts Vanillate Studio from a regulatory requirement that applies to its actual activities.</p>
+        <h3 class="legal-sub">7.3 Rights of Vanillate Studio</h3>
+        <p class="mb-3">Vanillate Wallet is provided by Vanillate Studio on a voluntary basis. Subject to applicable law, Vanillate Studio may:</p>
+        <ul class="space-y-2 pl-0 list-none mb-3">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Set and change eligibility requirements for the program</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Decide reward amounts, the ways VP can be earned, and the features available, and change reward rates for future activity</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Open, close, or limit enrollment and participation in the program</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Take time to review reward claims, reject invalid claims, and ask for additional verification</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Temporarily suspend withdrawals or transfers where there is a security risk, a service disruption, suspected fraud, or a compliance reason that can be justified</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Review transaction history to prevent abuse, and correct system errors, duplicated VP, and unauthorized transactions through auditable records</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Restrict or end the participation of users who break these rules, in proportion to the violation and following its review procedure</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Suspend or discontinue optional Wallet features or the whole program for legitimate operational, financial, security, or legal reasons, following section 7.12</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Protect its operating funds and infrastructure, and refuse requests that conflict with the program rules or applicable law</span></li>
+        </ul>
+        <p class="mb-3">Vanillate Studio is not obligated to offer future VP for any particular activity, to keep specific reward rates indefinitely, or to operate optional reward features permanently. Taking part in Vanillate Wallet does not create an employment, agency, partnership, investment, or guaranteed income relationship between you and Vanillate Studio.</p>
+        <p class="mb-3">Operational decisions may be made by an authorized administrator. Each decision must have a clear basis, is recorded, and can be reviewed if it was made in error. These rights apply to future rewards and to the protection of the program. They do not authorize arbitrary cancellation of legitimately earned VP, disregard of accepted transactions, or removal of rights protected by applicable law.</p>
+        <h3 class="legal-sub">7.4 Your Obligations</h3>
+        <p class="mb-3">If you participate in Vanillate Wallet, you must:</p>
+        <ul class="space-y-2 pl-0 list-none mb-3">
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Comply with these Terms, our Privacy Policy, and the Wallet program rules</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Provide accurate information</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Keep your Discord account and your Wallet PIN secure</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not cheat, exploit vulnerabilities, or manipulate rewards or qualifying activities</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not use other accounts to obtain an unfair benefit</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not use Vanillate Wallet for any unlawful activity</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Use only a payment account that you own or are lawfully entitled to use</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Cooperate with verification and security checks</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Not claim rewards for activity that has not met the requirements or has not been verified</span></li>
+          <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Understand that rewards do not guarantee any income and that features may change under these rules</span></li>
+        </ul>
+        <p class="mb-3">Breaking these rules may lead to restricted features, a review of your transactions, cancellation of VP that is proven to be invalid, or the end of your participation, following the review procedure in section 7.9.</p>
+        <h3 class="legal-sub">7.5 Reward Eligibility and Verification</h3>
+        <p class="mb-3">VP is awarded only when the applicable eligibility conditions have been met and the qualifying activity has been validly verified. Duplicate, falsified, manipulated, or otherwise invalid reward claims may be rejected. A failed, interrupted, or unverified activity does not by itself create an entitlement to VP.</p>
+        <p class="mb-3">Where a valid reward was not credited because of a technical error, Vanillate Studio may investigate and correct it using its transaction records. Reward amounts and eligibility rules may change for the future only. Previously verified rewards will not be reduced solely because a reward rate changes.</p>
+        <h3 class="legal-sub">7.6 Withdrawals</h3>
+        <p class="mb-3">When withdrawals are available, eligible users may submit withdrawal requests under the rules displayed in Vanillate Wallet. The initial minimum withdrawal is 1,000 VP, subject to the published configuration. Withdrawals are paid manually by an authorized administrator through supported Indonesian bank or e-wallet transfers, and transfer fees are covered by Vanillate Studio.</p>
+        <p class="mb-3">The published processing target is 24 working hours, counting Monday to Friday in the Asia/Jakarta time zone. National holidays are counted as working days under the current program policy. This is an operational target, not a guarantee: processing may be delayed by payment provider availability, technical incidents, incorrect recipient details, verification requirements, security reviews, or other legitimate circumstances. Vanillate Studio will make reasonable efforts to tell you about material delays.</p>
+        <p class="mb-3">You may ask to cancel a withdrawal before it is processed, subject to approval. An accepted withdrawal will not be rejected arbitrarily. Any rejection, cancellation, or reversal follows the withdrawal rules and is recorded with a reason, and the VP of a rejected or cancelled withdrawal is returned to your Wallet. A payout whose outcome is uncertain is verified with the payment provider before any further payment attempt. A completed withdrawal is final and will not be paid again or treated as unpaid without investigation.</p>
+        <h3 class="legal-sub">7.7 Payment Account and Security</h3>
+        <p class="mb-3">Only one active payment account may be registered per Wallet, and each payment account may be registered to only one Discord account. Once registered, the payment account is locked to your Wallet: every withdrawal is sent to it automatically, and it can only be changed through the change procedure described here. Registering or changing it requires a one time code sent by Discord direct message and may be reviewed manually.</p>
+        <p class="mb-3">Withdrawals and transfers require your PIN. Vanillate Studio will never ask for your PIN. Changing your payment account or resetting your PIN pauses withdrawals and transfers for 24 hours. Vanillate Studio will take reasonable steps to check the intended recipient before completing a payout. Do not register payment details belonging to another person. Before your first withdrawal, you will be asked to confirm that you are at least 18 years old, or that you use the payment account with the consent of a parent or guardian.</p>
+        <h3 class="legal-sub">7.8 Transfers Between Users</h3>
+        <p class="mb-3">When enabled, VP may be transferred between eligible users through the official Wallet interface only, authorized with the required security steps. A valid completed transfer is generally final. Suspected fraud, unauthorized transactions, duplicate transfers, or technical errors may be investigated and corrected through an auditable process.</p>
+        <p class="mb-3">Transfers must not be used for fraud, unlawful activity, money laundering, unauthorized commercial transactions, or breaches of platform rules.</p>
+        <h3 class="legal-sub">7.9 Abuse, Fraud, and Security Reviews</h3>
+        <p class="mb-3">Vanillate Studio may review suspicious activity and the related transaction records, and may temporarily hold a specific withdrawal or transfer, or restrict affected Wallet functions, where reasonably necessary to investigate a specific security or legal concern, protect users, preserve system integrity, or comply with the law. Holds and restrictions are proportionate to the identified risk, recorded with a reason, and lifted when the review ends without a finding. A hold lasts at most 14 working days, after which a decision is made and you are told the outcome.</p>
+        <p class="mb-3">Verified erroneous credits and fraudulently obtained VP may be corrected through auditable transactions. Legitimately earned balances are not confiscated merely because an automated risk indicator exists, and you may request a review of a Wallet decision through our official support channel. If your participation is restricted, your legitimately earned VP can still be withdrawn once the review is finished, within at most 30 days. If your participation is ended permanently, your legitimate balance is paid out once, without the minimum withdrawal, and your Wallet is then closed.</p>
+        <h3 class="legal-sub">7.10 Technical Errors and Corrections</h3>
+        <p class="mb-3">Displayed balances, notifications, and summaries may be corrected when an objectively verifiable technical or accounting error occurs. Corrections are based on reliable transaction records and are not made arbitrarily. Corrections involving completed payouts are checked against the relevant payment provider records.</p>
+        <h3 class="legal-sub">7.11 Availability and Third Parties</h3>
+        <p class="mb-3">Vanillate Wallet depends in part on Discord, hosting and database providers, banks, e-wallet providers, and other third parties that Vanillate Studio does not control. Maintenance, provider outages, and security incidents may temporarily affect Wallet access or transaction processing. Vanillate Studio remains responsible for obligations that cannot lawfully be excluded, including those arising from its own acts or omissions.</p>
+        <h3 class="legal-sub">7.12 Program Changes and Discontinuation</h3>
+        <p class="mb-3">Material changes to the Wallet rules will be announced through official channels before they take effect. If Vanillate Studio decides to discontinue the Wallet program, it will announce the decision at least 30 days before new rewards stop. A settlement period of 90 days then follows, during which legitimate existing balances can be withdrawn without the minimum withdrawal and pending withdrawals are completed. After the settlement period, remaining legitimate balances can still be claimed through our official support channel, subject to applicable law. These Terms do not give Vanillate Studio an unrestricted right to extinguish valid existing balances without an appropriate legal basis.</p>
+        <h3 class="legal-sub">7.13 Liability for Wallet</h3>
+        <p class="mb-3">To the extent permitted by applicable law, Vanillate Studio does not guarantee any particular amount of future rewards or income from Vanillate Wallet and is not responsible for losses caused solely by circumstances outside its reasonable control. Nothing in these Terms excludes liability for fraud, willful misconduct, or any responsibility that cannot be excluded under applicable law, or removes your mandatory rights under applicable consumer protection or data protection laws.</p>
+        <h3 class="legal-sub">7.14 Disputes and Support</h3>
+        <p class="mb-3">You may report missing rewards, incorrect balances, unauthorized transactions, withdrawal delays, or payment disputes through our official support channel. We may ask for information reasonably necessary to verify a claim. Disputes are handled in good faith based on the available transaction records, the Wallet rules, and Indonesian law, and these Terms do not limit any dispute resolution or consumer protection right that cannot lawfully be waived.</p>
+      </section>
+
+      <section id="data-privacy" class="legal-sec reveal scroll-mt-24">
+        <div class="legal-head">
+          <span class="legal-badge">08</span>
           <h2 class="legal-title">Data Usage and Privacy</h2>
         </div>
         <p class="mb-4">
-          The Services may process and store limited Discord-related data necessary for functionality, including user IDs, server IDs, and gameplay-related data such as statistics, progression, and configuration settings.
+          The Services may process and store limited Discord-related data necessary for functionality, including user IDs, server IDs, and gameplay-related data such as statistics, progression, and configuration settings. Users of Vanillate Wallet also provide payout account details, which are used only to verify and pay withdrawals.
         </p>
         <p>
-          This data is used solely to operate gameplay systems, maintain leaderboards, improve features, and ensure fair usage. We do not sell or share user data with third parties for commercial purposes. For more details, please see our
+          This data is used solely to operate gameplay systems, maintain leaderboards, run Vanillate Wallet, improve features, and ensure fair usage. We do not sell or share user data with third parties for commercial purposes. For more details, please see our
           <a
             href={url('/privacy')}
             class="text-amber-600 dark:text-amber-500 underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-400"
@@ -196,28 +273,31 @@ const toc = [
 
       <section id="availability" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">08</span>
+          <span class="legal-badge">09</span>
           <h2 class="legal-title">Availability</h2>
         </div>
         <p class="mb-4">
           We aim to provide stable Services, but we do not guarantee uninterrupted or error-free availability. The Services may experience downtime due to maintenance, updates, or unexpected issues.
         </p>
-        <p>In some cases, data resets or adjustments may occur when required for system stability or feature updates.</p>
+        <p>In some cases, data resets or adjustments may occur when required for system stability or feature updates. This does not apply to Vani Poin: legitimate VP balances and Wallet transactions are not reset or deleted for stability or feature updates, and are corrected only as described in section 07.</p>
       </section>
 
       <section id="suspension" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">09</span>
+          <span class="legal-badge">10</span>
           <h2 class="legal-title">Suspension and Termination</h2>
         </div>
         <p>
           We reserve the right to restrict, suspend, or terminate access to any Service for users or servers that violate these Terms or engage in abusive behavior. We may also remove data associated with such violations where necessary.
         </p>
+        <p class="mt-4">
+          Restricting access to a Service does not by itself forfeit legitimately earned VP or cancel a withdrawal that has been accepted. VP obtained through the abuse that led to a restriction may be corrected as described in section 07, and Wallet transaction records are kept as described in our Privacy Policy.
+        </p>
       </section>
 
       <section id="liability" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">10</span>
+          <span class="legal-badge">11</span>
           <h2 class="legal-title">Limitation of Liability</h2>
         </div>
         <p class="mb-4">
@@ -230,21 +310,27 @@ const toc = [
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Damages resulting from use of the Services</span></li>
           <li class="flex gap-3"><span class="text-amber-600 dark:text-amber-500 font-mono text-sm mt-1.5 flex-none">→</span><span>Indirect, incidental, or consequential losses</span></li>
         </ul>
+        <p class="mt-4">
+          Nothing in these Terms excludes or limits liability for fraud, willful misconduct, or any responsibility that cannot be excluded or limited under applicable law, including Indonesian consumer protection and personal data protection law. Liability concerning Vanillate Wallet is also described in section 07.
+        </p>
       </section>
 
       <section id="changes" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">11</span>
+          <span class="legal-badge">12</span>
           <h2 class="legal-title">Changes to Terms</h2>
         </div>
         <p>
           We may update these Terms of Service at any time. Continued use of the Services after updates become effective constitutes acceptance of the revised Terms.
         </p>
+        <p class="mt-4">
+          Material changes affecting Vani Poin balances or withdrawals will be announced through official channels before they take effect. Changes apply to the future and do not reopen or alter Wallet transactions that have already been completed.
+        </p>
       </section>
 
       <section id="contact" class="legal-sec reveal scroll-mt-24">
         <div class="legal-head">
-          <span class="legal-badge">12</span>
+          <span class="legal-badge">13</span>
           <h2 class="legal-title">Contact</h2>
         </div>
         <div class="rounded-2xl border border-ink-900/10 dark:border-cream-100/10 bg-cream-100/40 dark:bg-ink-900/40 p-6 md:p-8">
@@ -310,6 +396,13 @@ const toc = [
   }
   :global(html.dark) .legal-badge {
     color: #F3C158;
+  }
+  .legal-sub {
+    font-family: '"Bricolage Grotesque"', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
   }
   .legal-title {
     font-family: '"Bricolage Grotesque"', ui-sans-serif, system-ui, sans-serif;
