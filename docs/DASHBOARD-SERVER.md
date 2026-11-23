@@ -221,8 +221,10 @@ Migrasi: `supabase/share-server.sql` (aditif & idempoten; rollback
 
 **Edge Function `topgg-webhook`** (`supabase/functions/topgg-webhook/`): deploy
 dengan **`verify_jwt = false`** (Top.gg tidak mengirim JWT). Autentikasinya tanda
-tangan HMAC-SHA256 `x-topgg-signature: t=…,v1=…` (jendela 5 menit), atau header
-`Authorization` = secret untuk webhook lama. Secret wajib di
+tangan HMAC-SHA256 `x-topgg-signature: t=…,v1=…` (jendela 5 menit). Webhook lama
+(header `Authorization` = secret) **ditolak sejak 2026-11-23** (keputusan pemilik
+K-10, `LEGACY_ENABLED = false` di `logic.ts`) karena tanpa stempel waktu bisa
+diputar ulang menjadi vote ganda. Secret wajib di
 `TOPGG_WEBHOOK_SECRET`. Tanpa secret, semua permintaan ditolak (503). Fungsi
 hanya menyimpan vote (`event_key` unik). Penghitungan, server tujuan, dan
 penyaring akun dilakukan bot. Tes: `tests/topgg-webhook.test.ts`.

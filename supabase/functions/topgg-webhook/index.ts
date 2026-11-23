@@ -10,13 +10,13 @@
 //
 //  Tanpa TOPGG_WEBHOOK_SECRET → semua permintaan ditolak (fail closed).
 //  Deploy dengan verify_jwt = false (Top.gg tidak mengirim JWT Supabase);
-//  autentikasinya tanda tangan HMAC x-topgg-signature (atau header
-//  Authorization = secret untuk webhook lama).
+//  autentikasinya HANYA tanda tangan HMAC x-topgg-signature. Webhook lama
+//  (header Authorization = secret) ditolak sejak 2026-11-23 (K-10).
 //  Env: TOPGG_WEBHOOK_SECRET (wajib), SUPABASE_URL & SUPABASE_SERVICE_ROLE_KEY
 //  (otomatis). Acuan: docs/DASHBOARD-SERVER.md › Share Server.
 // ════════════════════════════════════════════════════════════════════════════
 
-import { parseEvent, verifyLegacy, verifySignature } from './logic.ts';
+import { authorize, parseEvent } from './logic.ts';
 
 const SUPABASE_URL = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/+$/, '');
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -35,9 +35,7 @@ Deno.serve(async (req) => {
   if (raw.length > MAX_BODY) return json(413, { error: 'TOO_LARGE' });
 
   const signature = req.headers.get('x-topgg-signature');
-  const ok = signature
-    ? await verifySignature(SECRET, signature, raw)
-    : verifyLegacy(SECRET, req.headers.get('authorization'));
+  const ok = await authorize(SECRET, signature, req.headers.get('authorization'), raw);
   if (!ok) return json(401, { error: 'INVALID_SIGNATURE' });
 
   let body: unknown;
@@ -65,7 +63,7 @@ Deno.serve(async (req) => {
       voted_at: ev.votedAt,
       weight: ev.weight,
       query: ev.query,
-      source: signature ? 'webhook' : 'legacy',
+      source: 'webhook',
     }),
   });
   if (!res.ok) {
