@@ -84,6 +84,17 @@ const peekSrc = url('/mascot/vani/vani-peek.png');
     </a>
   </div>
 
+  <!-- Gelembung bantuan: muncul bila halaman mengirim event "vani:help"
+       (dashboard, setelah admin gagal mengatur berkali-kali). -->
+  <div class="vani-contact__bubble" data-vc-bubble role="status" aria-live="polite" hidden>
+    <button type="button" class="vani-contact__bubble-text" data-vc-bubble-open>
+      <span data-vc-bubble-msg>Ada kendala atau masalah? Hubungi tim kami, tim kami siap membantu!</span>
+    </button>
+    <button type="button" class="vani-contact__bubble-close" data-vc-bubble-close aria-label="Tutup pesan">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
   <!-- Tombol pemicu: Vani mengintip -->
   <button
     type="button"
@@ -258,6 +269,79 @@ const peekSrc = url('/mascot/vani/vani-peek.png');
   .vani-contact__go { flex: none; color: #a49b86; }
   .vani-contact__item:hover .vani-contact__go { color: #c99a2e; }
 
+  /* ── Gelembung bantuan ─────────────────────────────────────────────────── */
+  .vani-contact__bubble {
+    position: absolute;
+    bottom: calc(100% + 0.6rem);
+    left: 0.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: clamp(200px, 64vw, 248px);
+    padding: 0.7rem 0.45rem 0.7rem 0.85rem;
+    border-radius: 1rem;
+    background: #e8b84a;
+    color: #111015;
+    box-shadow: 0 16px 36px -16px rgba(11, 10, 14, 0.45);
+    transform-origin: bottom left;
+  }
+  .vani-contact__bubble[hidden] { display: none; }
+  /* Ekor gelembung mengarah ke Vani. */
+  .vani-contact__bubble::after {
+    content: '';
+    position: absolute;
+    left: 1.6rem;
+    bottom: -7px;
+    width: 14px;
+    height: 14px;
+    background: inherit;
+    transform: rotate(45deg);
+    border-radius: 2px;
+  }
+  .vani-contact__bubble-text {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+  }
+  .vani-contact__bubble-text:focus-visible,
+  .vani-contact__bubble-close:focus-visible {
+    outline: 2px solid #111015;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .vani-contact__bubble-close {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .vani-contact__bubble-close:hover { background: rgba(17, 16, 21, 0.12); }
+  @media (prefers-reduced-motion: no-preference) {
+    .vani-contact__bubble:not([hidden]) {
+      animation: vc-pop 0.32s cubic-bezier(0.16, 1, 0.3, 1) both, vc-nudge 2.4s ease-in-out 0.4s 2;
+    }
+  }
+  @keyframes vc-nudge {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
   @keyframes vc-bob {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-4px); }
@@ -302,7 +386,40 @@ const peekSrc = url('/mascot/vani/vani-peek.png');
         if (!root.contains(e.target as Node)) close();
       };
 
+      // Gelembung bantuan. Ditutup admin = tidak muncul lagi di tab ini.
+      const bubble = root.querySelector<HTMLElement>('[data-vc-bubble]');
+      const bubbleMsg = root.querySelector<HTMLElement>('[data-vc-bubble-msg]');
+      const DISMISS_KEY = 'vc-help-bubble-dismissed';
+      const dismissed = (): boolean => {
+        try {
+          return sessionStorage.getItem(DISMISS_KEY) === '1';
+        } catch {
+          return false;
+        }
+      };
+      const hideBubble = (remember: boolean) => {
+        if (bubble) bubble.hidden = true;
+        if (!remember) return;
+        try {
+          sessionStorage.setItem(DISMISS_KEY, '1');
+        } catch {
+          /* penyimpanan tidak tersedia: cukup sembunyikan */
+        }
+      };
+      window.addEventListener('vani:help', (e) => {
+        if (!bubble || dismissed() || !panel.hidden) return;
+        const text = (e as CustomEvent<{ text?: string }>).detail?.text;
+        if (bubbleMsg && typeof text === 'string' && text.trim()) bubbleMsg.textContent = text;
+        bubble.hidden = false;
+      });
+      root.querySelector('[data-vc-bubble-open]')?.addEventListener('click', () => {
+        hideBubble(true);
+        open();
+      });
+      root.querySelector('[data-vc-bubble-close]')?.addEventListener('click', () => hideBubble(true));
+
       btn.addEventListener('click', () => {
+        hideBubble(true);
         if (panel.hidden) open();
         else close();
       });

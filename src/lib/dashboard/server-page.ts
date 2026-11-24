@@ -38,6 +38,7 @@ import {
   type TextContext,
   type Tone,
 } from './model';
+import { failureTracker, showVaniHelp } from './help-nudge';
 import { rememberNextAndGoToLogin } from './login-redirect';
 import { createPoller, FAST_MS, nextDelay } from './polling';
 import { describeChange, recoverDraft } from './review-model';
@@ -118,6 +119,12 @@ export function mountServerPage(cfg: PageConfig): void {
 
   // Dibaca lewat fungsi: TypeScript tidak tahu load() mengubah `data`.
   const current = (): GuildData | null => data;
+  // Gagal berkali-kali mengatur server: arahkan ke tombol bantuan Vani.
+  const failures = failureTracker();
+  const noteFailure = (id: string) => {
+    if (failures.record(id)) showVaniHelp();
+  };
+  let localFailSeq = 0;
   const ctx = (): TextContext => ({ registry: data?.registry ?? [], snapshot: data?.snapshot ?? null, invitePermissions: cfg.permissions });
   const changes = () => (data ? diffStates(base, draft, data.registry) : []);
   const dirty = () => changes().length > 0;
@@ -376,6 +383,11 @@ export function mountServerPage(cfg: PageConfig): void {
   function renderAll(): void {
     deferredRender = false;
     if (!data) return renderError();
+    const cfgNow = data.config;
+    if (cfgNow?.last_error?.length && cfgNow.attempted_revision === cfgNow.revision && cfgNow.revision > cfgNow.applied_revision) {
+      noteFailure(`bot-${cfgNow.revision}`);
+    }
+    if (cfgNow && syncTimedOut()) noteFailure(`timeout-${cfgNow.revision}`);
     persistDraft();
     const focusSel = focusSelector(document.activeElement as HTMLElement | null);
     // Posisi gulir daftar pilihan (role/channel) ikut dipulihkan.
@@ -679,6 +691,7 @@ export function mountServerPage(cfg: PageConfig): void {
     const local = validateDraft(draft, base, data.registry, data.snapshot);
     if (local.length) {
       attemptIssues = local;
+      noteFailure(`local-${++localFailSeq}`);
       renderAll();
       toast('Ada pengaturan yang belum valid. Periksa pesan di setiap fitur.', 'danger');
       return;
@@ -702,6 +715,7 @@ export function mountServerPage(cfg: PageConfig): void {
     } catch (err) {
       saving = false;
       const e = err instanceof DashboardError ? err : new DashboardError('NETWORK');
+      if (e.code !== 'STALE_REVISION') noteFailure(`save-${++localFailSeq}`);
       if (e.code === 'VALIDATION_FAILED' && Array.isArray(e.detail?.issues)) {
         attemptIssues = e.detail!.issues as Issue[];
       } else {
