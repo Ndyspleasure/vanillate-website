@@ -4,7 +4,7 @@
 import { inviteUrl, parseSecuritySummary, relativeTime } from './model';
 import { overviewStatsHtml } from './overview';
 import { setupSteps } from './review-model';
-import { featureIssues, tabOfFeature, type PageCtx } from './server-shared';
+import { featureIssues, reinviteLinkHtml, tabOfFeature, type PageCtx } from './server-shared';
 import { parseStatsSummary } from './stats-model';
 import { BTN_SECONDARY, CARD, esc, icon } from './ui';
 
@@ -77,6 +77,10 @@ export function panelHtml(c: PageCtx, o: OverviewOptions): string {
     const tabId = tabOfFeature(f);
     return r.messages.map((m) => ({ f, m, tabId }));
   });
+  const reinvite = c.inviteUrl && feats.some((f) => {
+    const r = featureIssues(c, f);
+    return (r.level === 'warn' || r.level === 'error') && r.reinvite;
+  });
   const attentionHtml = attention.length
     ? `<section aria-labelledby="ov-perhatian" class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 sm:p-5">
         <h2 id="ov-perhatian" class="font-display text-base font-semibold text-amber-800 dark:text-amber-300">Perlu perhatian</h2>
@@ -89,6 +93,14 @@ export function panelHtml(c: PageCtx, o: OverviewOptions): string {
             )
             .join('')}
         </ul>
+        ${
+          reinvite
+            ? `<div class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-amber-500/25 pt-3 text-sm">
+                <p class="min-w-0 flex-1">Sebagian masalah di atas karena role bot belum punya izin yang dibutuhkan. Undang ulang bot memakai tautan berizin lengkap: pilih server ini, tekan Authorize, lalu tekan Refresh Discord Data. Pengaturan yang sudah ada tidak hilang.</p>
+                ${reinviteLinkHtml(c, `${BTN_SECONDARY} min-h-[44px] shrink-0`)}
+              </div>`
+            : ''
+        }
       </section>`
     : '';
 

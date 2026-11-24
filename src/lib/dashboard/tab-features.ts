@@ -14,6 +14,7 @@ import {
   isSnowflake,
   LOCK_FALLBACK_NOTE,
   missingPermissions,
+  permissionFix,
   NOT_USED,
   parseSecuritySummary,
   relativeTime,
@@ -30,7 +31,7 @@ import {
   type SettingProp,
 } from './model';
 import { previewHtml, previewKind, type PreviewContext } from './message-preview';
-import { featureIcon, featureIssues, SECTION_OF_TAB, SPAN_LAST, type PageCtx, type Tab } from './server-shared';
+import { featureIcon, featureIssues, reinviteLinkHtml, SECTION_OF_TAB, SPAN_LAST, type PageCtx, type Tab } from './server-shared';
 import { CARD, esc, icon, pill } from './ui';
 
 /** Isi tab fitur: pengantar bagian lalu kartu tiap fitur dari registry bot. */
@@ -144,7 +145,11 @@ export function panelHtml(c: PageCtx, tab: Tab): string {
       </label>
       ${p.help ? `<p class="mt-1.5 text-xs text-ink-500 dark:text-cream-300/60">${esc(p.help)}</p>` : ''}
       ${!d.snapshot?.refreshed_at ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Daftar channel belum dimuat. Tekan Refresh Discord Data.</p>` : ''}
-      ${missing.length ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Izin bot kurang di #${esc(ch!.name)}: ${esc(missing.join(', '))}.</p>` : ''}`;
+      ${missing.length ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Izin bot kurang di #${esc(ch!.name)}: ${esc(missing.join(', '))}.${
+        permissionFix(d.snapshot, missing, c.text.invitePermissions ?? '0') === 'channel'
+          ? ' Role bot sudah punya izin itu, jadi ubah izin di Edit Channel › Permissions atau pilih channel lain.'
+          : c.inviteUrl ? ` ${reinviteLinkHtml(c)}` : ''
+      }</p>` : ''}`;
   }
 
   /** Centang "Tidak dipakai" untuk fitur sosial yang OFF. */
@@ -489,7 +494,8 @@ export function panelHtml(c: PageCtx, tab: Tab): string {
         ${
           status.messages.length
             ? `<ul class="mt-3 space-y-1.5 text-xs ${status.level === 'error' ? 'text-red-700 dark:text-red-300' : 'text-amber-800 dark:text-amber-300'}">
-                ${status.messages.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>`
+                ${status.messages.map((m) => `<li>${esc(m)}</li>`).join('')}
+                ${status.reinvite && c.inviteUrl ? `<li>${reinviteLinkHtml(c, 'inline-flex min-h-[44px] items-center font-medium underline sm:min-h-0')}</li>` : ''}</ul>`
             : ''
         }
       </article>`;

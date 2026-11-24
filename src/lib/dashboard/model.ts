@@ -495,6 +495,61 @@ export function missingPermissions(channel: SnapshotChannel | null | undefined, 
     .map((p) => p.name);
 }
 
+/**
+ * Bit Discord untuk label izin yang dipakai registry dan validator bot
+ * (src/dashboard/registry.js, validator.js). Dipakai untuk menilai apakah izin
+ * yang kurang bisa dipulihkan dengan mengundang ulang bot.
+ */
+export const PERMISSION_BITS: Readonly<Record<string, bigint>> = Object.freeze({
+  'Create Invite': 1n << 0n,
+  'Kick Members': 1n << 1n,
+  Administrator: 1n << 3n,
+  'Manage Channels': 1n << 4n,
+  'Manage Server': 1n << 5n,
+  'Add Reactions': 1n << 6n,
+  'View Audit Log': 1n << 7n,
+  'View Channel': 1n << 10n,
+  'Send Messages': 1n << 11n,
+  'Manage Messages': 1n << 13n,
+  'Embed Links': 1n << 14n,
+  'Attach Files': 1n << 15n,
+  'Read Message History': 1n << 16n,
+  'Mention Everyone': 1n << 17n,
+  'Use External Emojis': 1n << 18n,
+  Connect: 1n << 20n,
+  Speak: 1n << 21n,
+  'Manage Roles': 1n << 28n,
+  'Manage Threads': 1n << 34n,
+  'Create Public Threads': 1n << 35n,
+  'Create Private Threads': 1n << 36n,
+  'Send Messages in Threads': 1n << 38n,
+  'Pin Messages': 1n << 51n,
+});
+
+/**
+ * Cara memulihkan izin bot yang kurang:
+ * - `reinvite`: role bot di tingkat server belum punya izin itu, dan tautan
+ *   undangan bot memintanya. Undang ulang bot memperbaikinya.
+ * - `channel`: role bot sudah punya izinnya, tetapi pengaturan channel
+ *   menolaknya. Undang ulang tidak membantu; ubah izin di channel itu.
+ * - `unknown`: izin bot tingkat server belum terbaca (snapshot lama).
+ *   Undang ulang tetap ditawarkan karena tidak merugikan.
+ */
+export type PermissionFix = 'reinvite' | 'channel' | 'unknown';
+
+export function permissionFix(snapshot: Snapshot | null | undefined, missing: string[], invitePermissions: string): PermissionFix {
+  const invite = bits(invitePermissions) ?? 0n;
+  const known = missing.map((n) => PERMISSION_BITS[n]).filter((b): b is bigint => b !== undefined);
+  // Undang ulang hanya berguna bila tautan undangan memang meminta izin itu.
+  const offered = known.filter((b) => (invite & b) === b);
+  const guild = bits(snapshot?.bot_permissions);
+  // Label yang belum dikenal website: jangan menebak, beri kedua saran.
+  if (known.length < missing.length) return 'unknown';
+  if (guild === null) return offered.length ? 'unknown' : 'channel';
+  if ((guild & PERMISSION_BITS.Administrator) !== 0n) return 'channel';
+  return offered.some((b) => (guild & b) === 0n) ? 'reinvite' : 'channel';
+}
+
 export function channelById(snapshot: Snapshot | null | undefined, id: string | null | undefined): SnapshotChannel | null {
   if (!snapshot || !id) return null;
   return snapshot.channels.find((c) => c.id === id) ?? null;
@@ -795,6 +850,17 @@ export function serverIssues(config: ConfigInfo | null): Issue[] {
 export interface TextContext {
   registry: Feature[];
   snapshot: Snapshot | null;
+  /** Angka izin di tautan undangan bot (untuk saran "undang ulang"). */
+  invitePermissions?: string;
+}
+
+/** Saran perbaikan izin yang kurang; teks yang sama dipakai di semua tempat. */
+export const REINVITE_LABEL = 'Undang ulang dengan izin lengkap';
+
+/** Izin yang kurang pada issue ini bisa dipulihkan dengan undang ulang? */
+export function issueFix(issue: Issue, ctx: TextContext): PermissionFix | null {
+  if (issue.code !== 'MISSING_PERMISSIONS' && issue.code !== 'MISSING_GUILD_PERMISSIONS') return null;
+  return permissionFix(ctx.snapshot, issue.missing ?? [], ctx.invitePermissions ?? '0');
 }
 
 function featureName(ctx: TextContext, key: string | undefined): string {
@@ -835,10 +901,19 @@ export function describeIssue(issue: Issue, ctx: TextContext): string {
   const name = featureName(ctx, issue.feature);
   const ch = channelLabel(ctx, issue.channel_id, issue.channel_name);
   switch (issue.code) {
-    case 'MISSING_PERMISSIONS':
-      return `${name} belum dapat diterapkan. Bot tidak memiliki permission ${listJoin(issue.missing ?? [])} di ${ch}. Perbarui permission bot di channel itu atau pilih channel lain.`;
-    case 'MISSING_GUILD_PERMISSIONS':
-      return `${name} belum dapat diterapkan. Bot tidak memiliki izin server ${listJoin(issue.missing ?? [])}. Beri izin itu ke role bot di Pengaturan Server › Role.`;
+    case 'MISSING_PERMISSIONS': {
+      const head = `${name} belum dapat diterapkan. Bot tidak memiliki permission ${listJoin(issue.missing ?? [])} di ${ch}.`;
+      const fix = issueFix(issue, ctx);
+      if (fix === 'reinvite') return `${head} Role bot belum punya izin itu. Tekan ${REINVITE_LABEL}, pilih server ini, lalu Authorize. Setelah itu tekan Refresh Discord Data.`;
+      if (fix === 'unknown') return `${head} Coba ${REINVITE_LABEL} lalu tekan Refresh Discord Data. Bila masih kurang, izin itu ditolak oleh pengaturan channel: buka Edit Channel › Permissions di ${ch}, tambahkan role bot, lalu izinkan permission tersebut.`;
+      return `${head} Role bot sudah punya izin itu, tetapi pengaturan channel menolaknya, jadi undang ulang tidak membantu. Buka Edit Channel › Permissions di ${ch}, tambahkan role bot, izinkan permission tersebut, atau pilih channel lain.`;
+    }
+    case 'MISSING_GUILD_PERMISSIONS': {
+      const head = `${name} belum dapat diterapkan. Bot tidak memiliki izin server ${listJoin(issue.missing ?? [])}.`;
+      return issueFix(issue, ctx) === 'channel'
+        ? `${head} Beri izin itu ke role bot di Pengaturan Server › Role.`
+        : `${head} Tekan ${REINVITE_LABEL}, pilih server ini, lalu Authorize. Cara lain: beri izin itu ke role bot di Pengaturan Server › Role.`;
+    }
     case 'CHANNEL_NOT_FOUND':
       return `${name}: channel ${ch} tidak ditemukan di server (mungkin sudah dihapus). Tekan Refresh Discord Data lalu pilih channel lain.`;
     case 'CHANNEL_TYPE_INVALID':
