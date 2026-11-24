@@ -45,7 +45,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       : pill(s.testUsers ? `tertutup, ${s.testUsers} akun uji` : 'tertutup', 'warn');
     body.innerHTML = [
       section('Status', `<p class="text-sm">${status}</p>
-        <p class="mt-2 text-sm text-ink-500 dark:text-cream-300/60">Selama gerbang aktivasi belum terpenuhi, hanya akun uji yang bisa memakai Wallet. Akun uji diatur di halaman Konfigurasi.</p>`),
+        <p class="mt-2 text-sm text-ink-500 dark:text-cream-300/60">Selama sakelar publik mati, hanya akun uji yang bisa memakai Wallet. Sakelar publik dan akun uji diatur di halaman Konfigurasi.</p>`),
       section('Vani Poin', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${stat('Total VP beredar', fmtAngka(s.outstanding), 'tersedia + tertahan = kewajiban rupiah')}
         ${stat('Tersedia', fmtAngka(s.available))}
