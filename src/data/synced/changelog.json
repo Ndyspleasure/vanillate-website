@@ -1,5 +1,65 @@
 [
   {
+    "version": "3.59.1",
+    "date": "2026-11-24",
+    "title": "Perbaikan kecil dan peningkatan stabilitas",
+    "highlights": [
+      "🛠️ Peningkatan alat tim untuk mengenali pemain paling aktif di komunitas"
+    ]
+  },
+  {
+    "version": "3.59.0",
+    "date": "2026-11-24",
+    "title": "Persiapan Vanillate Wallet untuk semua pemain",
+    "highlights": [
+      "💜 Vanillate Wallet siap dibuka bertahap untuk semua pemain, diumumkan saat aktif",
+      "🛠️ Peningkatan stabilitas di balik layar"
+    ]
+  },
+  {
+    "version": "3.58.15",
+    "date": "2026-11-24",
+    "title": "Perbaikan kecil dan peningkatan stabilitas",
+    "highlights": [
+      "🛠️ Peningkatan stabilitas dan perbaikan kecil di balik layar"
+    ]
+  },
+  {
+    "version": "3.58.14",
+    "date": "2026-11-24",
+    "title": "Perbaikan Sapa Voice yang gagal masuk ke voice",
+    "highlights": [
+      "🛠️ Sapa Voice tidak lagi mencoba masuk ke voice yang sudah penuh, dan mencoba lagi nanti bila ada tempat",
+      "🔊 Bot tidak lagi tertinggal diam di voice setelah gagal tersambung (juga untuk Tebak Lagu)"
+    ]
+  },
+  {
+    "version": "3.58.13",
+    "date": "2026-11-24",
+    "title": "Peningkatan stabilitas",
+    "highlights": [
+      "🛠️ Peningkatan stabilitas sistem"
+    ]
+  },
+  {
+    "version": "3.58.12",
+    "date": "2026-11-24",
+    "title": "Peningkatan keamanan dan stabilitas",
+    "highlights": [
+      "🛡️ Pemeriksaan data akun diperkuat",
+      "🛠️ Peningkatan stabilitas sistem"
+    ]
+  },
+  {
+    "version": "3.58.11",
+    "date": "2026-11-23",
+    "title": "Peningkatan keamanan dan stabilitas",
+    "highlights": [
+      "🛡️ Perlindungan akun dan pencatatan transaksi diperkuat",
+      "🛠️ Peningkatan stabilitas sistem"
+    ]
+  },
+  {
     "version": "3.58.10",
     "date": "2026-11-23",
     "title": "Peningkatan keamanan dan stabilitas",
