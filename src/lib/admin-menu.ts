@@ -81,6 +81,7 @@ export const adminMenu: MenuNode[] = [
               { key: "wallet-ringkasan", label: "Ringkasan", href: "/admin/wallet" },
               { key: "wallet-pencairan", label: "Pencairan", href: "/admin/wallet/pencairan" },
               { key: "wallet-member", label: "Member", href: "/admin/wallet/member", match: "wallet-pemain" },
+              { key: "wallet-hadiah", label: "Hadiah Massal", href: "/admin/wallet/hadiah" },
               { key: "wallet-laporan", label: "Laporan", href: "/admin/wallet/laporan" },
               { key: "wallet-konfigurasi", label: "Konfigurasi", href: "/admin/wallet/konfigurasi" },
               { key: "wallet-audit", label: "Riwayat moderasi", href: "/admin/wallet/audit" },
