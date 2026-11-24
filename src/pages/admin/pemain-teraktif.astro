@@ -1,0 +1,103 @@
+---
+// Pemain Teraktif: peringkat aktivitas seluruh ekosistem (Game Hub + Social
+// Hub) dari bot, keputusan pemilik 2026-11-24. Satu perintah
+// `sys.players.active` (khusus owner, hasil sementara karena berisi Discord ID
+// dan nama; bot mengosongkannya dari bot_commands beberapa menit kemudian).
+// Sumber: Sambung Kata, Vanillate Dungeon, Vanillate Story, Tahu Bulat, Streak
+// Harian, Counting. Bobot bisa diubah per permintaan. Dibaca hanya saat owner
+// menekan Tampilkan, tanpa polling (bot meng-cache 60 detik).
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Pemain Teraktif" active="pemain-teraktif">
+  <AdminPageHeader
+    eyebrow="Komunitas"
+    title="Pemain Teraktif"
+    description="Peringkat pemain paling aktif di seluruh Game Hub dan Social Hub. Khusus owner."
+  />
+  <div class="px-6 lg:px-10 py-8 max-w-6xl space-y-8">
+    <div class="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-5 py-4">
+      <p class="text-sm text-ink-600 dark:text-cream-200/80 leading-relaxed">
+        <strong>Data pribadi.</strong> Daftar ini berisi Discord ID dan nama pemain. Gunakan untuk keperluan internal tim
+        (misalnya hadiah komunitas) dan jangan dibagikan ke luar tim.
+      </p>
+    </div>
+    <div id="pt-form"></div>
+    <div id="pt-out"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { formCard, pasangAksi, table, pill, KELAS, unduhTeks } from '@/lib/dev-panel/ui';
+
+  // Urutan dan bobot bawaan sama dengan SOURCES di bot (src/cms/handlers/activity.js).
+  const SUMBER: [string, string, string, string][] = [
+    ['sambungkata', 'Sambung Kata', 'game', '1'],
+    ['dungeon', 'Vanillate Dungeon', 'run', '1'],
+    ['story', 'Vanillate Story', 'hari cerita', '1'],
+    ['tahu', 'Tahu Bulat', 'penjualan', '0.2'],
+    ['streak', 'Streak Harian', 'hari streak', '2'],
+    ['counting', 'Counting', 'hitungan benar', '0.1'],
+  ];
+  let role = 'viewer';
+  let terakhir: any = null;
+
+  const sel = (v: unknown) => (v == null || v === '' ? '' : String(v));
+  const csvSel = (v: unknown) => {
+    let s = sel(v);
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  function unduhCsv() {
+    if (!terakhir) return;
+    const kepala = ['peringkat', 'discord_id', 'nama', 'skor', ...SUMBER.map(([k]) => k), 'terakhir_aktif'];
+    const baris = (terakhir.rows ?? []).map((r: any) => [r.rank, r.userId, r.name, r.score, ...SUMBER.map(([k]) => r[k]), r.lastActive].map(csvSel).join(','));
+    unduhTeks(`pemain-teraktif-${terakhir.days || 'semua'}hari.csv`, [kepala.join(','), ...baris].join('\n'), 'text/csv;charset=utf-8');
+  }
+
+  function tampil(x: any) {
+    terakhir = x;
+    const out = document.getElementById('pt-out')!;
+    const rows = (x.rows ?? []).map((r: any) => [
+      esc(r.rank),
+      `<div>${esc(r.name ?? 'tanpa nama')}</div><div class="font-mono text-xs ${KELAS.muted}">${esc(r.userId)}</div>`,
+      `<strong>${esc(fmtAngka(r.score))}</strong>`,
+      SUMBER.filter(([k]) => Number(r[k]) > 0).map(([k, label, unit]) => `<span class="mr-2 whitespace-nowrap text-xs">${esc(label)}: ${esc(fmtAngka(r[k]))} ${esc(unit)}</span>`).join('') || `<span class="text-xs ${KELAS.muted}">belum ada</span>`,
+      r.lastActive ? esc(fmtWaktu(r.lastActive)) : `<span class="text-xs ${KELAS.muted}">tidak tercatat</span>`,
+    ]);
+    out.innerHTML = `<div class="flex flex-wrap items-center gap-3 mb-3">
+        <p class="text-sm">${pill(x.days ? `aktif ${esc(x.days)} hari terakhir` : 'sepanjang waktu', 'ok')} ${esc(fmtAngka(x.rows?.length ?? 0))} dari ${esc(fmtAngka(x.matched ?? 0))} pemain${x.cached ? ` <span class="${KELAS.muted}">(dari cache, maks. 1 menit)</span>` : ''}</p>
+        <button type="button" id="pt-csv" class="${KELAS.tombol}">Unduh CSV</button>
+      </div>
+      ${table(['#', 'Pemain', 'Skor', 'Rincian', 'Terakhir aktif'], rows, 'Belum ada pemain yang cocok dengan saringan ini.')}`;
+    document.getElementById('pt-csv')?.addEventListener('click', unduhCsv);
+  }
+
+  function muat() {
+    const form = document.getElementById('pt-form')!;
+    if (role !== 'owner') { form.innerHTML = stateBlock('empty', 'Halaman ini khusus owner.'); return; }
+    form.innerHTML = formCard({
+      id: 'pt-cari', title: 'Saringan dan bobot', submit: 'Tampilkan', ownerOnly: true,
+      desc: 'Skor = jumlah setiap aktivitas dikali bobotnya. Aktivitas dihitung dari total yang tersimpan di bot. Saringan hari memakai waktu aktif terakhir dari game dan Streak (Counting tidak menyimpan waktu, jadi tidak membuat pemain dianggap aktif). Werewolf, Pengacara, UNO, Tebak Lagu, Tebak Gambar, dan Tebak Kata tidak menyimpan statistik per pemain, jadi belum ikut dihitung.',
+      fields: [
+        { name: 'days', label: 'Aktif dalam', type: 'select', value: '30', options: [
+          { value: '7', label: '7 hari terakhir' }, { value: '30', label: '30 hari terakhir' },
+          { value: '90', label: '90 hari terakhir' }, { value: '0', label: 'Sepanjang waktu' },
+        ] },
+        { name: 'limit', label: 'Jumlah pemain (maks. 200)', type: 'number', value: '200' },
+        ...SUMBER.map(([k, label, unit, def]) => ({ name: `w_${k}`, label: `Bobot ${label} (per ${unit})`, type: 'number' as const, value: def })),
+      ],
+    });
+    pasangAksi(document.getElementById('pt-cari') as HTMLFormElement, {
+      type: 'sys.players.active',
+      send: { timeoutMs: 60_000 },
+      success: (r) => { tampil(r.result ?? {}); return 'Selesai.'; },
+    });
+  }
+
+  document.addEventListener('admin:ready', (e) => { role = (e as CustomEvent).detail?.role ?? 'viewer'; muat(); });
+</script>
