@@ -3,8 +3,8 @@
 // Nilai VP (`sys.wallet.config.set`) dan daftar akun uji
 // (`sys.wallet.testers.set`), tujuan penarikan yang dibuka
 // (`sys.wallet.methods.set`), sakelar cek nama BRI (`sys.wallet.namecheck.set`,
-// bawaan mati sampai onboarding produksi BRI selesai). Sakelar publik SENGAJA tidak ada di sini:
-// pembukaan untuk umum menunggu gerbang aktivasi (docs/wallet-security-review.md §9.3).
+// bawaan mati sampai onboarding produksi BRI selesai), sakelar publik Wallet,
+// Penarikan, dan Transfer (`sys.wallet.public.set`, keputusan pemilik 2026-11-24).
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
@@ -43,8 +43,16 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const s = o.result;
     const v = s.config?.values ?? {};
     body.innerHTML = [
-      section('Akses', `<p class="text-sm">${s.publicOpen ? pill('dibuka untuk publik', 'ok') : pill('tertutup untuk publik', 'warn')} · ${esc(s.testUsers)} akun uji</p>
-        <p class="mt-2 text-sm ${KELAS.muted}">Sakelar publik tidak tersedia di sini. Wallet baru dibuka setelah syarat hukum, keamanan, Terms, Privacy, dan kesiapan penarikan terpenuhi (gerbang aktivasi).</p>`),
+      section('Akses publik', `<p class="text-sm">${s.publicOpen ? pill('Wallet dibuka untuk publik', 'ok') : pill('Wallet tertutup untuk publik', 'warn')}
+          ${s.withdrawals?.publicOpen ? pill('penarikan publik', 'ok') : pill('penarikan hanya akun uji', 'warn')}
+          ${s.transfers?.publicOpen ? pill('transfer publik', 'ok') : pill('transfer hanya akun uji', 'warn')} · ${esc(s.testUsers)} akun uji</p>
+        ${formCard({ id: 'wk-public', title: 'Sakelar publik', submit: 'Simpan sakelar publik', ownerOnly: true,
+          desc: 'Wallet: semua pemain bisa membuka /dompet, menyetujui aturan, dan mengumpulkan VP. Penarikan dan Transfer hanya berlaku bila Wallet menyala. Akun uji selalu bisa memakai semuanya. Mematikan sakelar tidak menghapus saldo atau penarikan yang sedang diproses.',
+          fields: [
+            { name: 'wallet', label: 'Buka Wallet untuk publik', type: 'checkbox', value: String(!!s.publicOpen) },
+            { name: 'withdraw', label: 'Buka penarikan ke rupiah untuk publik', type: 'checkbox', value: String(!!s.withdrawals?.publicOpen) },
+            { name: 'transfer', label: 'Buka transfer antarpemain untuk publik', type: 'checkbox', value: String(!!s.transfers?.publicOpen) },
+          ] })}`),
       section('Akun uji', formCard({ id: 'wk-testers', title: 'Daftar akun uji', submit: 'Simpan akun uji', ownerOnly: true,
         desc: 'Discord ID yang boleh memakai Wallet selama tertutup, dipisah koma atau baris baru (maks. 20). Kosongkan untuk menutup semua. VP akun uji tercatat permanen di ledger.',
         fields: [{ name: 'ids', label: 'Discord ID', type: 'textarea', placeholder: '1036585958553964574' }] })),
@@ -74,6 +82,15 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       type: 'sys.wallet.testers.set',
       confirm: 'Simpan daftar akun uji?',
       success: (r) => `Tersimpan: ${(r.result?.testUsers ?? []).length} akun uji.`,
+      onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
+    });
+    pasangAksi(document.getElementById('wk-public') as HTMLFormElement, {
+      type: 'sys.wallet.public.set',
+      confirm: 'Simpan sakelar publik Wallet? Perubahan langsung berlaku untuk semua pemain.',
+      success: (r) => {
+        const x = r.result?.publicOpen ?? {};
+        return `Wallet ${x.wallet ? 'publik' : 'tertutup'}, penarikan ${x.withdraw ? 'publik' : 'akun uji'}, transfer ${x.transfer ? 'publik' : 'akun uji'}.`;
+      },
       onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
     });
     pasangAksi(document.getElementById('wk-bri-switch') as HTMLFormElement, {
