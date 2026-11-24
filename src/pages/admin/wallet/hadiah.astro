@@ -124,7 +124,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       ${(r.failed ?? []).length ? `<div class="mt-4">${table(['Discord ID', 'Alasan gagal'], r.failed.map((x: any) => [
         `<a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(x.userId)}"><code class="text-xs">${esc(x.userId)}</code></a>`, esc(x.error ?? ''),
       ]))}</div>` : ''}
-      <p class="mt-3 text-xs text-ink-500 dark:text-cream-300/60">DM terkirim ke ${fmtAngka(r.announced)} pemain (DM tertutup dilewati diam-diam). Rincian per pemain ada di Riwayat moderasi dan Log Dompet.</p>`;
+      <p class="mt-3 text-xs text-ink-500 dark:text-cream-300/60">DM sampai ke ${fmtAngka(r.dmSent)} pemain${r.dmFailed ? `, ${fmtAngka(r.dmFailed)} tidak sampai (DM tertutup atau akun tidak ditemukan; VP tetap masuk)` : ''}. Rincian per pemain ada di Riwayat moderasi dan Log Dompet.</p>`;
   });
 
   document.addEventListener('admin:ready', (e) => {
