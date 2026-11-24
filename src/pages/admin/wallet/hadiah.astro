@@ -1,0 +1,136 @@
+---
+// 💜 Vanillate Wallet › Hadiah Massal (`/admin/wallet/hadiah`, khusus owner).
+// Jumlah VP yang sama ke banyak pemain sekaligus lewat `sys.wallet.gift.bulk`
+// (maks. 200 pemain, total maks. 1.000.000 VP per perintah). Bot memasukkan VP
+// satu transaksi per pemain dengan kunci idempoten (perintah yang diulang tidak
+// dobel), mencatat riwayat moderasi, lalu mengirim DM berurutan. Hasil berisi
+// Discord ID sehingga dikosongkan bot beberapa menit setelah dikirim (SEC-T01).
+// Biaya: satu INSERT perintah + polling hasil selama perintah berjalan saja.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+---
+
+<AdminLayout title="Hadiah Massal" active="wallet-hadiah">
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Hadiah Massal" description="Kirim jumlah VP yang sama ke banyak pemain sekaligus. Khusus owner." />
+  <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-6">
+    <div id="wh-locked"></div>
+    <form id="wh-form" class="hidden rounded-2xl border border-ink-900/10 dark:border-cream-100/10 p-5 space-y-4">
+      <div>
+        <label for="wh-ids" class="block text-xs font-medium mb-1">Daftar Discord ID</label>
+        <textarea id="wh-ids" name="userIds" rows="8" placeholder="Tempel Discord ID (satu per baris atau dipisah koma), atau isi CSV" class="w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm font-mono outline-none focus:border-amber-500"></textarea>
+        <div class="mt-2 flex flex-wrap items-center gap-3 text-xs">
+          <label class="cursor-pointer underline">Unggah CSV<input id="wh-file" type="file" accept=".csv,.txt,text/csv,text/plain" class="hidden" /></label>
+          <span class="text-ink-500 dark:text-cream-300/60">Setiap deret 15 sampai 22 digit dipakai sebagai Discord ID. ID ganda dibuang.</span>
+        </div>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="wh-amount" class="block text-xs font-medium mb-1">Jumlah VP per pemain</label>
+          <input id="wh-amount" name="amount" type="number" min="1" step="1" required value="1000" class="w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+        </div>
+        <div>
+          <label for="wh-reason" class="block text-xs font-medium mb-1">Alasan (terlihat pemain di DM dan riwayat)</label>
+          <input id="wh-reason" name="reason" required maxlength="200" placeholder="Hadiah pemain teraktif 7 hari" class="w-full rounded-lg border border-ink-900/15 dark:border-cream-100/15 bg-cream-100/40 dark:bg-ink-900/40 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+        </div>
+      </div>
+      <div id="wh-preview" class="text-sm"></div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="wh-submit" type="submit" class="rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors bg-amber-500 text-ink-950 hover:bg-amber-400">Kirim hadiah</button>
+        <p id="wh-status" class="text-xs" role="status" aria-live="polite"></p>
+      </div>
+      <p class="text-xs text-ink-500 dark:text-cream-300/60">Maksimal 200 pemain dan 1.000.000 VP per kiriman. VP masuk dulu untuk semua pemain, lalu bot mengirim DM satu per satu (sekitar 50 per menit), jadi biarkan halaman ini terbuka sampai selesai. Bila halaman tertutup, bot tetap menyelesaikannya; hasilnya bisa dicek di Riwayat moderasi.</p>
+    </form>
+    <div id="wh-result"></div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka } from '@/lib/admin-auth';
+  import { kirimPerintah } from '@/lib/dev-panel/client';
+  import { stat, table } from '@/lib/dev-panel/ui';
+  import { parseUserIds, countDuplicates, checkBulk } from '@/lib/wallet-bulk';
+
+  const form = document.getElementById('wh-form') as HTMLFormElement;
+  const idsEl = document.getElementById('wh-ids') as HTMLTextAreaElement;
+  const amountEl = document.getElementById('wh-amount') as HTMLInputElement;
+  const reasonEl = document.getElementById('wh-reason') as HTMLInputElement;
+  const preview = document.getElementById('wh-preview')!;
+  const statusEl = document.getElementById('wh-status')!;
+  const submit = document.getElementById('wh-submit') as HTMLButtonElement;
+  const result = document.getElementById('wh-result')!;
+  let sending = false;
+
+  const amountOf = () => Number(amountEl.value);
+  function cek() {
+    const ids = parseUserIds(idsEl.value);
+    const c = checkBulk(ids, amountOf(), reasonEl.value);
+    const dup = countDuplicates(idsEl.value);
+    preview.innerHTML = ids.length
+      ? `<p><strong>${fmtAngka(c.count)}</strong> pemain × <strong>${fmtAngka(amountOf() || 0)}</strong> VP = <strong>${fmtAngka(c.total)} VP</strong> (setara Rp${fmtAngka(c.total)} bila dicairkan)${dup ? `, ${fmtAngka(dup)} ID ganda dibuang` : ''}.</p>
+         ${c.error ? `<p class="text-red-600 dark:text-red-400 text-xs mt-1">${esc(c.error)}</p>` : ''}`
+      : '<p class="text-xs text-ink-500 dark:text-cream-300/60">Belum ada Discord ID.</p>';
+    submit.disabled = sending || !c.ok;
+    return { ids, c };
+  }
+  for (const el of [idsEl, amountEl, reasonEl]) el.addEventListener('input', cek);
+  document.getElementById('wh-file')!.addEventListener('change', async (e) => {
+    const f = (e.target as HTMLInputElement).files?.[0];
+    if (!f) return;
+    if (f.size > 512 * 1024) { statusEl.textContent = 'Berkas terlalu besar (maks. 512 KB).'; return; }
+    idsEl.value = await f.text();
+    (e.target as HTMLInputElement).value = '';
+    cek();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { ids, c } = cek();
+    if (!c.ok || sending) return;
+    const amount = amountOf();
+    const reason = reasonEl.value.trim();
+    if (!window.confirm(`Kirim ${fmtAngka(amount)} VP ke ${fmtAngka(c.count)} pemain (total ${fmtAngka(c.total)} VP)?\nAlasan: ${reason}`)) return;
+    if (window.prompt('VP tidak bisa ditarik kembali kecuali lewat Penyesuaian per pemain. Ketik HADIAH untuk melanjutkan:')?.trim() !== 'HADIAH') {
+      statusEl.textContent = 'Dibatalkan, konfirmasi tidak cocok.';
+      return;
+    }
+    sending = true;
+    submit.disabled = true;
+    result.innerHTML = '';
+    statusEl.textContent = 'Menunggu bot...';
+    const o = await kirimPerintah('sys.wallet.gift.bulk', { userIds: ids, amount, reason }, {
+      timeoutMs: 15 * 60_000,
+      onUpdate: (row) => {
+        const p: any = row.progress;
+        statusEl.textContent = p?.total != null
+          ? `VP sudah masuk ke ${fmtAngka(p.credited ?? 0)} pemain. Mengirim DM ${fmtAngka(p.done ?? 0)} dari ${fmtAngka(p.total)}...`
+          : (row.status === 'processing' ? 'Bot sedang memproses...' : 'Menunggu bot...');
+      },
+    });
+    sending = false;
+    if (!o.ok || !o.result) {
+      statusEl.textContent = o.timedOut ? 'Bot belum selesai. Cek Riwayat moderasi beberapa menit lagi; jangan kirim ulang.' : (o.error ?? 'Gagal.');
+      cek();
+      return;
+    }
+    const r: any = o.result;
+    statusEl.textContent = 'Selesai.';
+    idsEl.value = '';
+    cek();
+    result.innerHTML = `<div class="grid gap-4 sm:grid-cols-4">
+        ${stat('Pemain', fmtAngka(r.count))}${stat('VP masuk', fmtAngka(r.credited), `total ${fmtAngka(r.total)} VP`)}
+        ${stat('Sudah pernah', fmtAngka(r.duplicate), 'perintah sama, tidak dobel')}${stat('Gagal', fmtAngka((r.failed ?? []).length))}
+      </div>
+      ${(r.failed ?? []).length ? `<div class="mt-4">${table(['Discord ID', 'Alasan gagal'], r.failed.map((x: any) => [
+        `<a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(x.userId)}"><code class="text-xs">${esc(x.userId)}</code></a>`, esc(x.error ?? ''),
+      ]))}</div>` : ''}
+      <p class="mt-3 text-xs text-ink-500 dark:text-cream-300/60">DM terkirim ke ${fmtAngka(r.announced)} pemain (DM tertutup dilewati diam-diam). Rincian per pemain ada di Riwayat moderasi dan Log Dompet.</p>`;
+  });
+
+  document.addEventListener('admin:ready', (e) => {
+    const role = (e as CustomEvent).detail?.role ?? 'viewer';
+    if (role !== 'owner') { document.getElementById('wh-locked')!.innerHTML = stateBlock('empty', 'Halaman ini khusus owner.'); return; }
+    form.classList.remove('hidden');
+    cek();
+  });
+</script>
