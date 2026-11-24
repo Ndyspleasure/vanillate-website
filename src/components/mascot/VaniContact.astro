@@ -386,40 +386,48 @@ const peekSrc = url('/mascot/vani/vani-peek.png');
         if (!root.contains(e.target as Node)) close();
       };
 
-      // Gelembung bantuan. Ditutup admin = tidak muncul lagi di tab ini.
+      // Gelembung bantuan (event "vani:help", src/lib/dashboard/help-nudge.ts).
+      // Tiap alasan tampil sekali: sapaan pertama sekali per browser,
+      // kegagalan berulang sekali per tab.
       const bubble = root.querySelector<HTMLElement>('[data-vc-bubble]');
       const bubbleMsg = root.querySelector<HTMLElement>('[data-vc-bubble-msg]');
-      const DISMISS_KEY = 'vc-help-bubble-dismissed';
-      const dismissed = (): boolean => {
+      let hideTimer = 0;
+      const store = (scope: string): Storage | null => {
         try {
-          return sessionStorage.getItem(DISMISS_KEY) === '1';
+          return scope === 'local' ? localStorage : sessionStorage;
         } catch {
-          return false;
+          return null;
         }
       };
-      const hideBubble = (remember: boolean) => {
+      const hideBubble = () => {
+        window.clearTimeout(hideTimer);
         if (bubble) bubble.hidden = true;
-        if (!remember) return;
-        try {
-          sessionStorage.setItem(DISMISS_KEY, '1');
-        } catch {
-          /* penyimpanan tidak tersedia: cukup sembunyikan */
-        }
       };
       window.addEventListener('vani:help', (e) => {
-        if (!bubble || dismissed() || !panel.hidden) return;
-        const text = (e as CustomEvent<{ text?: string }>).detail?.text;
-        if (bubbleMsg && typeof text === 'string' && text.trim()) bubbleMsg.textContent = text;
+        const d = (e as CustomEvent<{ text?: string; reason?: string; scope?: string; autoHideSec?: number }>).detail ?? {};
+        if (!bubble || !panel.hidden) return;
+        const reason = typeof d.reason === 'string' ? d.reason : 'help';
+        const key = `vc-help-shown-${reason}`;
+        const s = store(d.scope === 'local' ? 'local' : 'session');
+        try {
+          if (s?.getItem(key) === '1') return;
+          s?.setItem(key, '1');
+        } catch {
+          /* penyimpanan tidak tersedia: tetap tampilkan */
+        }
+        if (bubbleMsg && typeof d.text === 'string' && d.text.trim()) bubbleMsg.textContent = d.text;
+        window.clearTimeout(hideTimer);
         bubble.hidden = false;
+        if (typeof d.autoHideSec === 'number' && d.autoHideSec > 0) hideTimer = window.setTimeout(hideBubble, d.autoHideSec * 1000);
       });
       root.querySelector('[data-vc-bubble-open]')?.addEventListener('click', () => {
-        hideBubble(true);
+        hideBubble();
         open();
       });
-      root.querySelector('[data-vc-bubble-close]')?.addEventListener('click', () => hideBubble(true));
+      root.querySelector('[data-vc-bubble-close]')?.addEventListener('click', () => hideBubble());
 
       btn.addEventListener('click', () => {
-        hideBubble(true);
+        hideBubble();
         if (panel.hidden) open();
         else close();
       });

@@ -120,9 +120,10 @@ export function mountServerPage(cfg: PageConfig): void {
   // Dibaca lewat fungsi: TypeScript tidak tahu load() mengubah `data`.
   const current = (): GuildData | null => data;
   // Gagal berkali-kali mengatur server: arahkan ke tombol bantuan Vani.
+  showVaniHelp('welcome', 1500);
   const failures = failureTracker();
   const noteFailure = (id: string) => {
-    if (failures.record(id)) showVaniHelp();
+    if (failures.record(id)) showVaniHelp('failure');
   };
   let localFailSeq = 0;
   const ctx = (): TextContext => ({ registry: data?.registry ?? [], snapshot: data?.snapshot ?? null, invitePermissions: cfg.permissions });
