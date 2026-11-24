@@ -1,5 +1,50 @@
 [
   {
+    "version": "3.61.3",
+    "date": "2026-11-24",
+    "title": "Pemantauan antrean penarikan Vanillate Wallet",
+    "highlights": [
+      "🛠️ Tim kini langsung tahu bila permintaan penarikan VP belum sampai ke Admin"
+    ]
+  },
+  {
+    "version": "3.61.2",
+    "date": "2026-11-24",
+    "title": "Perbaikan antrean penarikan Vanillate Wallet",
+    "highlights": [
+      "🛠️ Permintaan penarikan VP yang sempat tidak sampai ke Admin kini dikirim ulang otomatis",
+      "💜 Proses penarikan lebih andal dan lebih mudah dipantau tim"
+    ]
+  },
+  {
+    "version": "3.61.1",
+    "date": "2026-11-24",
+    "title": "Pembaruan aturan Vanillate Wallet",
+    "highlights": [
+      "📜 Aturan Wallet diperbarui (VP di akun Discord yang terhapus hangus). Buka /dompet dan setujui aturan terbaru untuk lanjut mengumpulkan VP",
+      "💜 Saldo VP kamu tetap utuh, tidak ada yang berubah"
+    ]
+  },
+  {
+    "version": "3.61.0",
+    "date": "2026-11-24",
+    "title": "Aturan VP untuk akun Discord yang terhapus",
+    "highlights": [
+      "🗑️ VP di akun Discord yang sudah dihapus kini hangus otomatis",
+      "🛡️ Akun yang masih aktif tetap aman, VP hanya hangus bila Discord memastikan akunnya sudah tidak ada"
+    ]
+  },
+  {
+    "version": "3.60.0",
+    "date": "2026-11-24",
+    "title": "VP aktivitas harian dari semua game dan Hadiah Massal",
+    "highlights": [
+      "✨ Tahu Bulat, Vanillate Story, Vanillate Dungeon solo, dan Sambung Kata Global kini ikut memberi VP aktivitas harian",
+      "🎁 Tim bisa mengirim Hadiah VP ke banyak pemain sekaligus, lengkap dengan DM pemberitahuan",
+      "🛠️ Pemberitahuan +VP tampil langsung di layar game"
+    ]
+  },
+  {
     "version": "3.59.1",
     "date": "2026-11-24",
     "title": "Perbaikan kecil dan peningkatan stabilitas",
