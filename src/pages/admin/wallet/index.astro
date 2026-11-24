@@ -69,6 +69,9 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       section('Cek saldo (opname)', `<p class="text-sm text-ink-500 dark:text-cream-300/60">Mencocokkan saldo setiap dompet dengan catatan transaksi. Hanya laporan: dompet tidak dibekukan dari sini (pembekuan otomatis tetap lewat cek harian). Khusus owner, tercatat.</p>
         <div class="mt-3 flex items-center gap-3"><button id="wl-opname" type="button" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Jalankan cek saldo</button><span id="wl-opname-status" class="text-xs"></span></div>
         <div id="wl-opname-out" class="mt-3"></div>`),
+      section('Akun Discord terhapus', `<p class="text-sm">VP di akun Discord yang sudah dihapus hangus, diperiksa sekali sehari. Hangus otomatis hanya bila Discord menyatakan akunnya tidak ada. Akun yang namanya berpola akun terhapus hanya ditandai di sini, karena pola nama itu bisa dipilih pemain sendiri; hanguskan setelah Anda yakin. Setiap penghapusan tercatat di Riwayat moderasi dan Log Dompet.</p>
+        <div class="mt-3 flex items-center gap-3"><button id="wl-deleted" type="button" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Periksa sekarang</button><span id="wl-deleted-status" class="text-xs"></span></div>
+        <div id="wl-deleted-out" class="mt-3"></div>`),
       section('Rekening', `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${stat('Rekening aktif', fmtAngka(s.methodsActive ?? 0))}
         ${stat('Peninjauan menunggu', fmtAngka(s.reviewsPending ?? 0), 'diputuskan di profil pemain atau channel Peninjauan Rekening')}
@@ -83,6 +86,8 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
+    if (t?.id === 'wl-deleted') return void cekTerhapus(t as HTMLButtonElement);
+    if (t?.dataset?.hangus) return void hanguskan(t as HTMLButtonElement);
     if (t?.id !== 'wl-opname') return;
     const st = document.getElementById('wl-opname-status')!;
     const out = document.getElementById('wl-opname-out')!;
@@ -98,6 +103,38 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       : `<p class="text-sm">${pill(r.mismatches.length + ' dompet selisih', 'bad')} Periksa dompet berikut dan laporkan ke developer:</p>
          <ul class="mt-2 text-sm list-disc pl-5">${r.mismatches.map((m: any) => `<li><a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(m.userId)}">${esc(m.userId)}</a></li>`).join('')}</ul>`;
   });
+  async function cekTerhapus(btn: HTMLButtonElement) {
+    if (!window.confirm('Periksa semua dompet bersaldo ke Discord sekarang? VP di akun yang sudah terhapus akan hangus dan tidak bisa dikembalikan otomatis.')) return;
+    const st = document.getElementById('wl-deleted-status')!;
+    const out = document.getElementById('wl-deleted-out')!;
+    btn.disabled = true;
+    st.textContent = 'Menunggu bot... (sekitar 1 detik per dompet)';
+    const o = await kirimPerintah('sys.wallet.deleted.check', {}, { timeoutMs: 12 * 60_000 });
+    btn.disabled = false;
+    if (!o.ok || !o.result) { st.textContent = o.timedOut ? 'Bot belum selesai. Cek Riwayat moderasi beberapa menit lagi.' : (o.error ?? 'Gagal (khusus owner).'); return; }
+    const r = o.result;
+    st.textContent = `Diperiksa ${fmtAngka(r.checked)} dompet${r.skipped ? `, ${fmtAngka(r.skipped)} dilewati karena Discord tidak menjawab` : ''}.`;
+    const link = (id: string) => `<a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(id)}">${esc(id)}</a>`;
+    const hangus = (r.forfeited ?? []).length
+      ? `<p class="text-sm">${pill(r.forfeited.length + ' akun terhapus', 'warn')} Total ${fmtAngka(r.totalForfeited)} VP hangus.</p>
+         <ul class="mt-2 text-sm list-disc pl-5">${r.forfeited.map((f: any) => `<li>${link(f.userId)}: ${fmtAngka(f.amount)} VP${f.held ? `, ${fmtAngka(f.held)} VP masih tertahan di penarikan (tolak penarikannya)` : ''}</li>`).join('')}</ul>`
+      : `<p class="text-sm">${pill('tidak ada', 'ok')} Tidak ada akun yang pasti terhapus.</p>`;
+    const diduga = (r.suspected ?? []).length
+      ? `<p class="mt-3 text-sm">${pill(r.suspected.length + ' perlu konfirmasi', 'info')} Nama berpola akun terhapus. VP belum dihanguskan.</p>
+         <ul class="mt-2 text-sm space-y-2">${r.suspected.map((f: any) => `<li class="flex flex-wrap items-center gap-2">${link(f.userId)}: ${fmtAngka(f.available)} VP${f.held ? `, ${fmtAngka(f.held)} tertahan` : ''}
+           <button type="button" data-hangus="${esc(f.userId)}" class="rounded-full border border-red-500/40 text-red-600 dark:text-red-400 px-3 py-0.5 text-xs">Hanguskan</button></li>`).join('')}</ul>`
+      : '';
+    out.innerHTML = hangus + diduga;
+  }
+
+  async function hanguskan(btn: HTMLButtonElement) {
+    const userId = btn.dataset.hangus!;
+    if (!window.confirm(`Hanguskan VP akun ${userId}? Bot memeriksa ulang ke Discord dulu. VP yang hangus tidak bisa dikembalikan otomatis.`)) return;
+    btn.disabled = true;
+    const o = await kirimPerintah('sys.wallet.deleted.forfeit', { userId });
+    if (!o.ok) { btn.disabled = false; window.alert(o.error ?? 'Gagal.'); return; }
+    btn.replaceWith(document.createTextNode(` hangus ${fmtAngka(o.result?.amount ?? 0)} VP`));
+  }
   document.addEventListener('admin:ready', () => { void muat(); });
   document.getElementById('wl-reload')?.addEventListener('click', () => { void muat(); });
 </script>

@@ -28,7 +28,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
   import { table } from '@/lib/dev-panel/ui';
 
   const AKSI: Record<string, string> = {
-    gift: 'Hadiah dari Admin', gift_bulk: 'Hadiah Massal', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji',
+    gift: 'Hadiah dari Admin', gift_bulk: 'Hadiah Massal', deleted_forfeit: 'Akun Discord terhapus, VP hangus', adjust: 'Penyesuaian', config: 'Konfigurasi', testers: 'Akun uji',
     reveal: 'Buka nomor rekening', method_review_approve: 'Peninjauan rekening disetujui',
     method_review_reject: 'Peninjauan rekening ditolak', methods_open: 'Tujuan penarikan', namecheck_switch: 'Sakelar cek nama', public_switch: 'Sakelar publik', namecheck_test: 'Uji cek nama BRI', opname: 'Cek saldo (opname)',
     restriction: 'Akun dibatasi', restriction_end: 'Partisipasi dihentikan', restriction_review_done: 'Peninjauan selesai',
@@ -49,6 +49,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     const d = x.detail ?? {};
     if (x.action === 'gift') return `+${fmtAngka(d.amount)} VP${d.bulk ? ' (massal)' : ''}`;
     if (x.action === 'gift_bulk') return `${fmtAngka(d.credited)} pemain × ${fmtAngka(d.amount)} VP = ${fmtAngka(d.total)} VP${d.failed ? `, ${fmtAngka(d.failed)} gagal` : ''}`;
+    if (x.action === 'deleted_forfeit') return `-${fmtAngka(d.amount)} VP${d.held ? `, ${fmtAngka(d.held)} tertahan` : ''}`;
     if (x.action === 'adjust') return `${d.delta > 0 ? '+' : ''}${fmtAngka(d.delta)} VP`;
     if (x.action === 'config') return `versi ${esc(d.version)}`;
     if (x.action === 'testers') return `${(d.after ?? []).length} akun uji`;
