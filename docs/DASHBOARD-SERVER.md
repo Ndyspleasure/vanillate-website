@@ -477,6 +477,7 @@ Butuh Playwright dan Chromium di mesin (bukan dependensi repo). Data di
 | **Langkah awal** | Ringkasan, selama ada yang belum selesai | `setupSteps`: bot terpasang, data Discord dimuat, fitur sosial diputuskan, bot sudah menerapkan. Bisa disembunyikan per browser (`localStorage`) | Nol permintaan |
 | **Arti status dan tombol** | Kepala halaman | Teks dari `STATUS_META` | Nol |
 | **Peta Channel** | Server Hub, Alat | Kartu di HP, baris di layar lebar, dengan jumlah tujuan yang perlu diperiksa | Nol permintaan |
+| **Undang ulang dengan izin lengkap** | Perlu perhatian, kartu fitur, pilihan channel, Ringkasan, Peta Channel | Saat izin bot kurang, `permissionFix` membandingkan izin yang kurang dengan izin role bot di tingkat server (`snapshot.bot_permissions`). Bila role bot belum punya izinnya dan tautan undangan memintanya, tampil tautan undang ulang (`inviteUrl` dengan `guild_id`, izin dari data produk). Bila role bot sudah punya izinnya, berarti channel yang menolak, jadi yang tampil adalah langkah Edit Channel › Permissions (undang ulang tidak mengubah izin channel). Label izin dipetakan di `PERMISSION_BITS`; tes `tests/dashboard-reinvite.test.ts` memastikan tautan undangan memuat semuanya | Nol permintaan |
 
 Hal yang butuh data atau RPC baru dari bot dicatat di
 `docs/DASHBOARD-PERMINTAAN-BOT.md`, tidak dibangun diam-diam di website.

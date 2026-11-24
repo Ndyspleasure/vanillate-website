@@ -17,6 +17,8 @@ import {
   cloneState,
   describeError,
   describeIssue,
+  issueFix,
+  REINVITE_LABEL,
   diffStates,
   displayStatus,
   formatWib,
@@ -116,7 +118,7 @@ export function mountServerPage(cfg: PageConfig): void {
 
   // Dibaca lewat fungsi: TypeScript tidak tahu load() mengubah `data`.
   const current = (): GuildData | null => data;
-  const ctx = (): TextContext => ({ registry: data?.registry ?? [], snapshot: data?.snapshot ?? null });
+  const ctx = (): TextContext => ({ registry: data?.registry ?? [], snapshot: data?.snapshot ?? null, invitePermissions: cfg.permissions });
   const changes = () => (data ? diffStates(base, draft, data.registry) : []);
   const dirty = () => changes().length > 0;
   const editable = () => Boolean(data?.bot.installed);
@@ -169,6 +171,7 @@ export function mountServerPage(cfg: PageConfig): void {
       saving,
       text: ctx(),
       registry: [...d.registry].sort((a, b) => a.sort - b.sort || a.key.localeCompare(b.key)),
+      inviteUrl: inviteUrl(cfg.clientId, cfg.permissions, guildId),
       serverNow,
       render: renderAll,
       clearAttempt(featureKey) {
@@ -532,7 +535,8 @@ export function mountServerPage(cfg: PageConfig): void {
       const k = `${i.code}|${i.feature ?? ''}|${i.purpose ?? ''}|${i.channel_id ?? ''}`;
       if (seen.has(k)) return;
       seen.add(k);
-      out.push({ text: describeIssue(i, ctx()), tone });
+      const fix = issueFix(i, ctx());
+      out.push({ text: describeIssue(i, ctx()), tone, ...(fix && fix !== 'channel' ? { action: 'reinvite' } : {}) });
     };
 
     if (!d.bot.installed) {
@@ -574,6 +578,8 @@ export function mountServerPage(cfg: PageConfig): void {
     const link = 'inline-flex min-h-[44px] items-center font-medium text-amber-700 underline sm:min-h-0 dark:text-amber-300';
     const row = (i: (typeof items)[number]) => `<li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${i.tone === 'danger' ? 'bg-red-500' : i.tone === 'warning' ? 'bg-amber-500' : 'bg-ink-400'}" aria-hidden="true"></span>
       <span class="min-w-0">${esc(i.text)}${i.action === 'invite' && invite ? ` <a href="${esc(invite)}" target="_blank" rel="noopener noreferrer" class="${link}">Undang bot</a>` : ''}${
+        i.action === 'reinvite' && invite ? ` <a href="${esc(invite)}" target="_blank" rel="noopener noreferrer" class="${link}">${esc(REINVITE_LABEL)}</a>` : ''
+      }${
         i.action === 'reload-latest' ? ` <button type="button" data-action="reload-latest" class="${link}">Muat versi terbaru</button>` : ''
       }${i.action === 'resync' ? ` <button type="button" data-action="resync" class="${link}">Retry Sync</button>` : ''}</span></li>`;
     return `

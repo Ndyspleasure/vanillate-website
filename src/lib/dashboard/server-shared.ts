@@ -8,6 +8,8 @@ import type { IconName } from '@data/icons';
 import {
   channelById,
   describeIssue,
+  issueFix,
+  REINVITE_LABEL,
   diffStates,
   permissionWarnings,
   serverIssues,
@@ -79,6 +81,8 @@ export interface PageCtx {
   text: TextContext;
   /** Registry terurut. */
   registry: Feature[];
+  /** Tautan undangan bot berizin lengkap ke server ini (null bila tidak tersedia). */
+  inviteUrl: string | null;
   serverNow(): number;
   render(): void;
   /** Hapus pesan gagal simpan milik satu fitur (setelah fitur itu disunting). */
@@ -90,7 +94,7 @@ export interface PageCtx {
 export type FeatureLevel = 'ok' | 'warn' | 'error' | 'off' | 'dirty';
 
 /** Status satu fitur dari draft: valid, belum disimpan, atau perlu perhatian beserta pesannya. */
-export function featureIssues(c: PageCtx, f: Feature): { level: FeatureLevel; messages: string[] } {
+export function featureIssues(c: PageCtx, f: Feature): { level: FeatureLevel; messages: string[]; reinvite: boolean } {
   const d = c.data;
   const s = c.draft[f.key];
   const messages: string[] = [];
@@ -110,7 +114,10 @@ export function featureIssues(c: PageCtx, f: Feature): { level: FeatureLevel; me
     }
   }
   const seen = new Set<string>();
+  let reinvite = false;
   const push = (i: Issue) => {
+    const fix = issueFix(i, c.text);
+    if (fix && fix !== 'channel') reinvite = true;
     const t = describeIssue(i, c.text);
     if (!seen.has(t)) {
       seen.add(t);
@@ -124,5 +131,10 @@ export function featureIssues(c: PageCtx, f: Feature): { level: FeatureLevel; me
   if (errs.length || fromBot.length) level = 'error';
   else if (s.enabled && warns.length) level = 'warn';
   else if (changed) level = 'dirty';
-  return { level, messages };
+  return { level, messages, reinvite: reinvite && messages.length > 0 };
+}
+
+/** Tautan "Undang ulang dengan izin lengkap" (kosong bila tidak ada tautan). */
+export function reinviteLinkHtml(c: PageCtx, cls = 'font-medium underline'): string {
+  return c.inviteUrl ? `<a href="${esc(c.inviteUrl)}" target="_blank" rel="noopener noreferrer" class="${cls}">${esc(REINVITE_LABEL)}</a>` : '';
 }
