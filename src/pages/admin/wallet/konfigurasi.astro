@@ -16,7 +16,7 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 <script>
   import { esc, stateBlock } from '@/lib/admin-ui';
   import { kirimPerintah } from '@/lib/dev-panel/client';
-  import { section, formCard, pasangAksi, pill, KELAS } from '@/lib/dev-panel/ui';
+  import { section, formCard, pasangAksi, pill, table, KELAS } from '@/lib/dev-panel/ui';
 
   const KUNCI: [string, string, string][] = [
     ['vote_vp', 'VP per vote Top.gg', 'Bawaan 50'],
@@ -47,6 +47,15 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       section('Akun uji', formCard({ id: 'wk-testers', title: 'Daftar akun uji', submit: 'Simpan akun uji', ownerOnly: true,
         desc: 'Discord ID yang boleh memakai Wallet selama tertutup, dipisah koma atau baris baru (maks. 20). Kosongkan untuk menutup semua. VP akun uji tercatat permanen di ledger.',
         fields: [{ name: 'ids', label: 'Discord ID', type: 'textarea', placeholder: '1036585958553964574' }] })),
+      section('Cek nama BRI', `<p class="text-sm">${s.nameCheck?.configured ? pill(`terpasang (${esc(s.nameCheck.env)})`, 'ok') : pill('kredensial BRI belum lengkap', 'warn')}
+          ${s.nameCheck?.breakerOpen ? pill('dijeda sementara karena gagal beruntun', 'bad') : ''}</p>
+        ${formCard({ id: 'wk-bri', title: 'Uji cek nama BRI', submit: 'Jalankan uji', ownerOnly: true,
+          desc: 'Mencoba beberapa variasi (versi path, tanda tangan, Partner ID, format waktu) ke rekening contoh sandbox dan menampilkan kode dari BRI. Tidak menampilkan nama atau nomor, tidak memakai kuota pemain, tercatat. Bisa sampai 1 menit.',
+          fields: [
+            { name: 'provider', label: 'Bank', type: 'select', value: 'bri', options: [{ value: 'bri', label: 'BRI (rekening contoh 888801000157508)' }, { value: 'bca', label: 'BCA' }, { value: 'bni', label: 'BNI' }, { value: 'mandiri', label: 'Mandiri' }] },
+            { name: 'number', label: 'Nomor contoh (opsional)', placeholder: 'kosongkan untuk rekening contoh BRI' },
+          ] })}
+        <div id="wk-bri-out" class="mt-3"></div>`),
       section('Tujuan penarikan', `${s.keysReady ? '' : `<p class="mb-3 text-sm">${pill('kunci enkripsi belum dipasang', 'warn')} Pemain belum bisa mendaftarkan rekening sampai WALLET_ENC_KEY, WALLET_BIDX_KEY, dan WALLET_PIN_PEPPER dipasang di .env VPS.</p>`}
         ${formCard({ id: 'wk-methods', title: 'Bank dan e-wallet yang dibuka', submit: 'Simpan tujuan', ownerOnly: true,
           desc: 'Hanya tujuh tujuan yang disetujui pemilik. Tujuan yang ditutup tidak bisa dipilih untuk rekening baru; rekening yang sudah terdaftar tidak berubah.',
@@ -60,6 +69,34 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       confirm: 'Simpan daftar akun uji?',
       success: (r) => `Tersimpan: ${(r.result?.testUsers ?? []).length} akun uji.`,
       onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
+    });
+    pasangAksi(document.getElementById('wk-bri') as HTMLFormElement, {
+      type: 'sys.wallet.namecheck.test',
+      send: { timeoutMs: 120_000 },
+      success: (r) => {
+        const x = r.result ?? {};
+        const out = document.getElementById('wk-bri-out')!;
+        const VAR = (a: any) => `${esc(a.path)} · ${esc(a.alg)}/${esc(a.enc)} · partner ${a.partner === 'clientId' ? 'Client ID' : 'konfigurasi'} · waktu ${a.millis ? 'dengan' : 'tanpa'} milidetik`;
+        if (!x.configured) { out.innerHTML = stateBlock('error', 'Kredensial BRI di .env belum lengkap.'); return 'Belum terpasang.'; }
+        if (!x.token?.ok) { out.innerHTML = stateBlock('error', `Token gagal: ${esc(x.token?.why ?? '')} ${esc(x.token?.msg ?? '')}`); return 'Token gagal.'; }
+        const saran: string[] = [];
+        const w = x.working;
+        if (w) {
+          const intern = x.provider === 'bri';
+          saran.push(`BRI_SNAP_PATH_${intern ? 'INTERNAL' : 'EXTERNAL'}=${w.path}`);
+          saran.push(`BRI_SNAP_SIG_ALG_${intern ? 'INTERNAL' : 'EXTERNAL'}=${w.alg}`);
+          saran.push(`BRI_SNAP_SIG_ENCODING=${w.enc}`);
+          saran.push(`BRI_SNAP_INQUIRY_TS_MILLIS=${w.millis ? '1' : '0'}`);
+          if (w.partner === 'clientId') saran.push('BRI_SNAP_SANDBOX_PARTNER_ID=<isi sama dengan Client ID>');
+        }
+        out.innerHTML = `${w ? `<div class="${KELAS.kartu} text-sm"><p>${pill('berhasil', 'ok')} Variasi yang diterima BRI: ${VAR(w)}</p>
+            <p class="mt-2">Pastikan baris ini ada di .env VPS, lalu Restart:</p><pre class="mt-1 text-xs whitespace-pre-wrap select-all">${esc(saran.join('\n'))}</pre></div>`
+          : stateBlock('error', 'Belum ada variasi yang diterima BRI. Kirim tabel di bawah ke developer.')}
+          <div class="mt-3">${table(['Variasi', 'HTTP', 'Kode', 'Pesan BRI'], (x.attempts ?? []).map((a: any) => [
+            `<span class="text-xs">${VAR(a)}</span>`, esc(a.http ?? ''), `<code>${esc(a.code ?? '')}</code>`, esc(a.msg ?? ''),
+          ]))}</div>`;
+        return w ? 'Ada variasi yang berhasil.' : 'Selesai, belum berhasil.';
+      },
     });
     pasangAksi(document.getElementById('wk-methods') as HTMLFormElement, {
       type: 'sys.wallet.methods.set',
