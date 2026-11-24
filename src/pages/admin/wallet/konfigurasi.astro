@@ -2,7 +2,8 @@
 // 💜 Vanillate Wallet › Konfigurasi (khusus owner).
 // Nilai VP (`sys.wallet.config.set`) dan daftar akun uji
 // (`sys.wallet.testers.set`), tujuan penarikan yang dibuka
-// (`sys.wallet.methods.set`). Sakelar publik SENGAJA tidak ada di sini:
+// (`sys.wallet.methods.set`), sakelar cek nama BRI (`sys.wallet.namecheck.set`,
+// bawaan mati sampai onboarding produksi BRI selesai). Sakelar publik SENGAJA tidak ada di sini:
 // pembukaan untuk umum menunggu gerbang aktivasi (docs/wallet-security-review.md §9.3).
 import AdminLayout from '@layouts/AdminLayout.astro';
 import AdminPageHeader from '@components/AdminPageHeader.astro';
@@ -48,7 +49,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
         desc: 'Discord ID yang boleh memakai Wallet selama tertutup, dipisah koma atau baris baru (maks. 20). Kosongkan untuk menutup semua. VP akun uji tercatat permanen di ledger.',
         fields: [{ name: 'ids', label: 'Discord ID', type: 'textarea', placeholder: '1036585958553964574' }] })),
       section('Cek nama BRI', `<p class="text-sm">${s.nameCheck?.configured ? pill(`terpasang (${esc(s.nameCheck.env)})`, 'ok') : pill('kredensial BRI belum lengkap', 'warn')}
+          ${s.nameCheck?.enabled ? pill('cek nama menyala', 'ok') : pill('cek nama mati', 'warn')}
           ${s.nameCheck?.breakerOpen ? pill('dijeda sementara karena gagal beruntun', 'bad') : ''}</p>
+        ${s.nameCheck?.envForcedOff ? `<p class="mt-2 text-sm ${KELAS.muted}">Dimatikan paksa lewat WALLET_NAMECHECK_ENABLED=0 di .env VPS, jadi sakelar di bawah tidak berpengaruh sampai baris itu dihapus.</p>` : ''}
+        ${formCard({ id: 'wk-bri-switch', title: 'Sakelar cek nama rekening', submit: 'Simpan sakelar', ownerOnly: true,
+          desc: 'Menyala: saat pemain mendaftarkan rekening bank, bot menanyakan nama pemilik ke BRI. Mati: bot tidak menghubungi BRI, rekening tersimpan sebagai nama belum terverifikasi, dan Admin mencocokkan nama saat transfer lewat Tandai nama cocok. Nyalakan setelah onboarding produksi BRI selesai. Uji di bawah tetap bisa dijalankan walau sakelar mati.',
+          fields: [{ name: 'enabled', label: 'Nyalakan cek nama BRI', type: 'checkbox', value: String(!!s.nameCheck?.enabled) }] })}
         ${formCard({ id: 'wk-bri', title: 'Uji cek nama BRI', submit: 'Jalankan uji', ownerOnly: true,
           desc: 'Mencoba beberapa variasi (versi path, tanda tangan, Partner ID, format waktu) ke rekening contoh sandbox dan menampilkan kode dari BRI. Tidak menampilkan nama atau nomor, tidak memakai kuota pemain, tercatat. Bisa sampai 1 menit.',
           fields: [
@@ -68,6 +74,12 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
       type: 'sys.wallet.testers.set',
       confirm: 'Simpan daftar akun uji?',
       success: (r) => `Tersimpan: ${(r.result?.testUsers ?? []).length} akun uji.`,
+      onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
+    });
+    pasangAksi(document.getElementById('wk-bri-switch') as HTMLFormElement, {
+      type: 'sys.wallet.namecheck.set',
+      confirm: 'Simpan sakelar cek nama rekening?',
+      success: (r) => (r.result?.nameCheck?.enabled ? 'Cek nama menyala.' : 'Cek nama mati.'),
       onDone: (r) => { if (r.ok) setTimeout(() => void muat(), 1200); },
     });
     pasangAksi(document.getElementById('wk-bri') as HTMLFormElement, {
