@@ -27,6 +27,7 @@ import {
   wireAvatars,
 } from './ui';
 import { NEXT_KEY } from './login-redirect';
+import { showVaniHelp } from './help-nudge';
 
 
 interface PageConfig {
@@ -40,6 +41,8 @@ interface PageConfig {
 }
 
 export function mountServersPage(cfg: PageConfig): void {
+  // Sapaan sekali per browser: arahkan ke tombol bantuan Vani.
+  showVaniHelp('welcome', 1500);
   const { root } = cfg;
   let data: ServersResponse | null = null;
   let query = '';
