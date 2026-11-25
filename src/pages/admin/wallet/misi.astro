@@ -1,0 +1,248 @@
+---
+// 💜 Vanillate Wallet › Misi Cuan (khusus owner). Spesifikasi "Dapatkan VP"
+// 2026-11-25, docs/wallet.md §3.5 di repo bot.
+//   • Daftar misi + formulir buat/ubah (`sys.wallet.missions`, `sys.wallet.mission.save`).
+//   • Antrean pengajuan per status (`sys.wallet.mission.submissions`, hasil
+//     ephemeral karena berisi Discord ID dan bukti). Bukti gambar TIDAK pernah
+//     lewat CMS: tersimpan di channel staff Misi Cuan, di sini hanya tautan ke
+//     kartunya.
+//   • Setujui/Tolak (`sys.wallet.mission.decide`) memanggil logika yang sama
+//     dengan tombol di Discord; VP lewat ledger tepat sekali.
+// Biaya: baca saat halaman dibuka atau tombol ditekan, tanpa polling.
+import AdminLayout from '@layouts/AdminLayout.astro';
+import AdminPageHeader from '@components/AdminPageHeader.astro';
+import { KELAS } from '@/lib/dev-panel/ui';
+---
+
+<AdminLayout title="Misi Cuan" active="wallet-misi">
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Misi Cuan" description="Misi manual di halaman Dapatkan VP. Pemain mengirim bukti, Admin memeriksa, VP masuk sekali setelah disetujui. Khusus owner." />
+  <div class="px-6 lg:px-10 py-8 max-w-6xl space-y-8">
+    <div id="wm-missions"></div>
+
+    <section class={KELAS.kartu} id="wm-form-wrap">
+      <h2 class="text-base font-semibold mb-1" id="wm-form-title">Buat misi baru</h2>
+      <p class={`${KELAS.muted} text-xs mb-4`}>Nominal reward di pengajuan yang sudah masuk tidak ikut berubah saat misi diubah. Misi tidak bisa dihapus, matikan lewat centang Aktif.</p>
+      <form id="wm-form" class="grid gap-4 md:grid-cols-2" novalidate>
+        <input type="hidden" name="id" />
+        <label class="md:col-span-1"><span class={KELAS.label}>Nama misi (3 sampai 60)</span><input name="title" maxlength="60" class={KELAS.input} required /></label>
+        <label class="md:col-span-1"><span class={KELAS.label}>Reward (VP)</span><input name="rewardVp" type="number" min="1" max="1000000" step="1" class={KELAS.input} required /></label>
+        <label class="md:col-span-2"><span class={KELAS.label}>Deskripsi singkat (tampil di daftar, maks. 200)</span><input name="description" maxlength="200" class={KELAS.input} required /></label>
+        <label class="md:col-span-2"><span class={KELAS.label}>Instruksi langkah demi langkah (maks. 1500)</span><textarea name="instructions" rows="5" maxlength="1500" class={KELAS.input} required></textarea></label>
+        <label class="md:col-span-2"><span class={KELAS.label}>Persyaratan (opsional, maks. 800)</span><textarea name="requirements" rows="3" maxlength="800" class={KELAS.input}></textarea></label>
+        <label class="md:col-span-2"><span class={KELAS.label}>Tautan tujuan (opsional, https://)</span><input name="targetUrl" type="url" maxlength="500" placeholder="https://" class={KELAS.input} /></label>
+        <fieldset class="md:col-span-2">
+          <legend class={KELAS.label}>Bukti yang diminta (semua yang dicentang wajib dikirim pemain)</legend>
+          <div class="flex flex-wrap gap-4 text-sm">
+            <label class="inline-flex items-center gap-2"><input type="checkbox" name="proofImage" checked /> Tangkapan layar</label>
+            <label class="inline-flex items-center gap-2"><input type="checkbox" name="proofLink" /> Tautan</label>
+            <label class="inline-flex items-center gap-2"><input type="checkbox" name="proofText" /> Keterangan</label>
+          </div>
+        </fieldset>
+        <label><span class={KELAS.label}>Mulai (opsional)</span><input name="startsAt" type="datetime-local" class={KELAS.input} /></label>
+        <label><span class={KELAS.label}>Berakhir (opsional)</span><input name="endsAt" type="datetime-local" class={KELAS.input} /></label>
+        <label><span class={KELAS.label}>Kuota peserta disetujui (opsional)</span><input name="quota" type="number" min="1" max="100000" step="1" class={KELAS.input} /></label>
+        <label><span class={KELAS.label}>Urutan (kecil tampil dulu)</span><input name="sortOrder" type="number" min="-1000" max="1000" step="1" value="0" class={KELAS.input} /></label>
+        <label class="inline-flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" name="active" checked /> Aktif (tampil ke pemain)</label>
+        <p class={`${KELAS.muted} text-xs md:col-span-2`}>Contoh misi ulasan: minta ulasan yang jujur. Jangan mensyaratkan rating positif atau isi ulasan tertentu sebagai imbalan.</p>
+        <div class="md:col-span-2 flex flex-wrap items-center gap-3">
+          <button type="submit" class={KELAS.tombol} id="wm-save">Simpan misi</button>
+          <button type="button" class={KELAS.tombolNetral} id="wm-reset">Kosongkan formulir</button>
+          <p id="wm-form-status" class="text-xs" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="space-y-4">
+      <div class="flex flex-wrap items-center gap-2" id="wm-filter">
+        <button type="button" data-status="pending" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Menunggu review</button>
+        <button type="button" data-status="approved" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Disetujui</button>
+        <button type="button" data-status="rejected" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Ditolak</button>
+        <button type="button" data-status="all" class="rounded-full border border-ink-900/15 dark:border-cream-100/15 px-4 py-1.5 text-sm">Semua</button>
+        <button type="button" id="wm-reload" class={KELAS.tombolNetral}>Muat ulang</button>
+      </div>
+      <div id="wm-subs"></div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import { esc, stateBlock } from '@/lib/admin-ui';
+  import { fmtAngka, fmtWaktu } from '@/lib/admin-auth';
+  import { kirimPerintah } from '@/lib/dev-panel/client';
+  import { section, table, pill, KELAS } from '@/lib/dev-panel/ui';
+  import { checkMission, missionState, discordMessageUrl, isoToLocal, SUB_STATUS } from '@/lib/wallet-mission';
+
+  let role = 'viewer';
+  let filter = 'pending';
+  let missions: any[] = [];
+
+  const form = document.getElementById('wm-form') as HTMLFormElement;
+  const formStatus = document.getElementById('wm-form-status')!;
+  const field = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+
+  function stateTone(s: string): 'ok' | 'warn' | 'bad' | 'muted' {
+    return s === 'Aktif' ? 'ok' : s === 'Terjadwal' ? 'warn' : 'muted';
+  }
+
+  async function muatMisi() {
+    const box = document.getElementById('wm-missions')!;
+    if (role !== 'owner') { box.innerHTML = stateBlock('empty', 'Halaman ini khusus owner.'); return; }
+    box.innerHTML = stateBlock('loading', 'Meminta daftar misi dari bot...');
+    const o = await kirimPerintah('sys.wallet.missions', {});
+    if (!o.ok || !o.result) { box.innerHTML = stateBlock('error', o.error ?? 'Daftar misi tidak tersedia.'); return; }
+    missions = o.result.missions ?? [];
+    const warn = o.result.channelReady ? '' : `<p class="text-sm">${pill('Channel staff Misi Cuan belum diatur', 'bad')} Pemain belum bisa mengirim bukti sampai WALLET_MISSION_CHANNEL_ID diisi di host bot.</p>`;
+    box.innerHTML = warn + section('Daftar misi', table(['Misi', 'Reward', 'Bukti', 'Periode', 'Peserta', 'Keadaan', ''], missions.map((m) => {
+      const st = missionState(m);
+      const bukti = [m.proof.image ? 'gambar' : '', m.proof.link ? 'tautan' : '', m.proof.text ? 'keterangan' : ''].filter(Boolean).join(', ');
+      const periode = m.startsAt || m.endsAt
+        ? `<span class="text-xs">${m.startsAt ? esc(fmtWaktu(new Date(m.startsAt).toISOString())) : 'sekarang'} sampai ${m.endsAt ? esc(fmtWaktu(new Date(m.endsAt).toISOString())) : 'tidak dibatasi'}</span>`
+        : '<span class="text-xs">Tidak dibatasi</span>';
+      return [
+        `<strong>${esc(m.title)}</strong><br><span class="text-xs">${esc(m.description)}</span>`,
+        `${fmtAngka(m.rewardVp)} VP`,
+        `<span class="text-xs">${esc(bukti)}</span>`,
+        periode,
+        `${fmtAngka(m.approvedCount)}${m.quota != null ? ` / ${fmtAngka(m.quota)}` : ''}${m.pendingCount ? `<br>${pill(`${fmtAngka(m.pendingCount)} menunggu`, 'warn')}` : ''}`,
+        pill(st, stateTone(st)),
+        `<button type="button" data-edit="${esc(m.id)}" class="text-sm underline">Ubah</button>`,
+      ];
+    }), 'Belum ada misi. Pemain melihat teks "Belum ada misi untuk saat ini".'), 'Maksimal 8 misi aktif tampil di Discord, urut menurut kolom Urutan.');
+    box.querySelectorAll<HTMLButtonElement>('button[data-edit]').forEach((b) => b.addEventListener('click', () => isiFormulir(Number(b.dataset.edit))));
+  }
+
+  function kosongkan() {
+    form.reset();
+    field('id').value = '';
+    field('proofImage').checked = true;
+    field('active').checked = true;
+    field('sortOrder').value = '0';
+    document.getElementById('wm-form-title')!.textContent = 'Buat misi baru';
+    formStatus.textContent = '';
+  }
+
+  function isiFormulir(id: number) {
+    const m = missions.find((x) => x.id === id);
+    if (!m) return;
+    field('id').value = String(m.id);
+    field('title').value = m.title;
+    field('rewardVp').value = String(m.rewardVp);
+    field('description').value = m.description;
+    (form.elements.namedItem('instructions') as HTMLTextAreaElement).value = m.instructions;
+    (form.elements.namedItem('requirements') as HTMLTextAreaElement).value = m.requirements ?? '';
+    field('targetUrl').value = m.targetUrl ?? '';
+    field('proofImage').checked = !!m.proof.image;
+    field('proofLink').checked = !!m.proof.link;
+    field('proofText').checked = !!m.proof.text;
+    field('startsAt').value = isoToLocal(m.startsAt);
+    field('endsAt').value = isoToLocal(m.endsAt);
+    field('quota').value = m.quota != null ? String(m.quota) : '';
+    field('sortOrder').value = String(m.sortOrder ?? 0);
+    field('active').checked = !!m.active;
+    document.getElementById('wm-form-title')!.textContent = `Ubah misi: ${m.title}`;
+    formStatus.textContent = '';
+    document.getElementById('wm-form-wrap')!.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (role !== 'owner') return;
+    const v = checkMission({
+      id: field('id').value,
+      title: field('title').value,
+      description: field('description').value,
+      instructions: (form.elements.namedItem('instructions') as HTMLTextAreaElement).value,
+      requirements: (form.elements.namedItem('requirements') as HTMLTextAreaElement).value,
+      targetUrl: field('targetUrl').value,
+      rewardVp: field('rewardVp').value,
+      proofImage: field('proofImage').checked,
+      proofLink: field('proofLink').checked,
+      proofText: field('proofText').checked,
+      startsAt: field('startsAt').value,
+      endsAt: field('endsAt').value,
+      quota: field('quota').value,
+      sortOrder: field('sortOrder').value,
+      active: field('active').checked,
+    });
+    if (!v.ok) { formStatus.textContent = v.error ?? 'Periksa isian.'; return; }
+    const btn = document.getElementById('wm-save') as HTMLButtonElement;
+    btn.disabled = true;
+    formStatus.textContent = 'Menunggu bot...';
+    const o = await kirimPerintah('sys.wallet.mission.save', v.payload!);
+    btn.disabled = false;
+    if (!o.ok) { formStatus.textContent = o.error ?? 'Gagal menyimpan.'; return; }
+    kosongkan();
+    formStatus.textContent = 'Tersimpan. Pemain melihat perubahan dalam 1 menit.';
+    void muatMisi();
+  });
+  document.getElementById('wm-reset')!.addEventListener('click', kosongkan);
+
+  async function muatPengajuan() {
+    const box = document.getElementById('wm-subs')!;
+    if (role !== 'owner') { box.innerHTML = ''; return; }
+    document.querySelectorAll<HTMLButtonElement>('#wm-filter button[data-status]').forEach((b) => { b.style.fontWeight = b.dataset.status === filter ? '700' : '400'; });
+    box.innerHTML = stateBlock('loading', 'Meminta pengajuan dari bot...');
+    const o = await kirimPerintah('sys.wallet.mission.submissions', { status: filter });
+    if (!o.ok || !o.result) { box.innerHTML = stateBlock('error', o.error ?? 'Pengajuan tidak tersedia.'); return; }
+    const guildId = o.result.guildId ?? null;
+    box.innerHTML = section('Pengajuan', table(['No.', 'Diajukan', 'Misi', 'Pemain', 'Bukti', 'Status', ''], (o.result.items ?? []).map((s: any) => {
+      const kartu = discordMessageUrl(guildId, s.channelId, s.messageId);
+      const bukti = [
+        s.proofLink ? `<a class="underline break-all" href="${esc(s.proofLink)}" target="_blank" rel="noopener noreferrer nofollow">${esc(s.proofLink)}</a>` : '',
+        s.proofText ? `<span class="whitespace-pre-line">${esc(s.proofText)}</span>` : '',
+        s.hasImage ? (kartu ? `<a class="underline" href="${esc(kartu)}" target="_blank" rel="noopener noreferrer">Gambar di Discord</a>` : 'Gambar di channel Misi Cuan') : '',
+      ].filter(Boolean).join('<br>');
+      const [label, tone] = SUB_STATUS[s.status] ?? [s.status, 'muted'];
+      const aksi = s.status === 'pending'
+        ? `<div class="flex flex-wrap gap-2"><button type="button" data-ok="${esc(s.id)}" class="${KELAS.tombol}">Setujui</button><button type="button" data-no="${esc(s.id)}" class="${KELAS.tombolBahaya}">Tolak</button></div>`
+        : (s.reason ? `<span class="text-xs">${esc(s.reason)}</span>` : '');
+      return [
+        `#${esc(s.id)}`,
+        `<span class="text-xs">${esc(fmtWaktu(s.createdAt))}</span>`,
+        `${esc(s.missionTitle ?? '')}<br><span class="text-xs">${fmtAngka(s.rewardVp)} VP</span>`,
+        `<a class="underline text-xs" href="/admin/wallet/pemain/?id=${encodeURIComponent(s.userId)}">${esc(s.userId)}</a>`,
+        `<span class="text-xs">${bukti}</span>`,
+        pill(label, tone),
+        aksi,
+      ];
+    }), filter === 'pending' ? 'Tidak ada pengajuan yang menunggu review.' : 'Belum ada data.'), 'Keputusan di sini sama dengan tombol di channel Misi Cuan. Data pengajuan dihapus dari CMS beberapa menit setelah dibaca.')
+      + '<p id="wm-sub-status" class="text-xs" role="status" aria-live="polite"></p>';
+
+    const st = document.getElementById('wm-sub-status')!;
+    const putus = async (id: number, approve: boolean) => {
+      const payload: Record<string, unknown> = { submissionId: id, approve };
+      if (approve) {
+        if (!window.confirm(`Setujui pengajuan #${id}? VP langsung masuk ke Wallet pemain.`)) return;
+      } else {
+        const reason = window.prompt('Alasan penolakan (terlihat pemain, minimal 3 karakter):')?.trim();
+        if (!reason || reason.length < 3) return;
+        payload.reason = reason;
+      }
+      box.querySelectorAll<HTMLButtonElement>('button[data-ok],button[data-no]').forEach((b) => { b.disabled = true; });
+      st.textContent = 'Menunggu bot...';
+      const r = await kirimPerintah('sys.wallet.mission.decide', payload);
+      if (!r.ok) {
+        st.textContent = r.error ?? 'Gagal.';
+        box.querySelectorAll<HTMLButtonElement>('button[data-ok],button[data-no]').forEach((b) => { b.disabled = false; });
+        return;
+      }
+      st.textContent = approve ? `Disetujui. ${fmtAngka(r.result?.amount ?? 0)} VP masuk, pemain diberi tahu lewat DM.` : 'Ditolak. Pemain diberi tahu lewat DM.';
+      void muatPengajuan();
+      void muatMisi();
+    };
+    box.querySelectorAll<HTMLButtonElement>('button[data-ok]').forEach((b) => b.addEventListener('click', () => void putus(Number(b.dataset.ok), true)));
+    box.querySelectorAll<HTMLButtonElement>('button[data-no]').forEach((b) => b.addEventListener('click', () => void putus(Number(b.dataset.no), false)));
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('#wm-filter button[data-status]').forEach((b) => b.addEventListener('click', () => {
+    filter = b.dataset.status ?? 'pending';
+    void muatPengajuan();
+  }));
+  document.getElementById('wm-reload')!.addEventListener('click', () => { void muatMisi(); void muatPengajuan(); });
+  document.addEventListener('admin:ready', (e) => {
+    role = (e as CustomEvent).detail?.role ?? 'viewer';
+    if (role !== 'owner') (document.getElementById('wm-form-wrap') as HTMLElement).hidden = true;
+    void muatMisi();
+    void muatPengajuan();
+  });
+</script>
