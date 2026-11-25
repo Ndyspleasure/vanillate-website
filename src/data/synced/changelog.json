@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.62.0",
+    "date": "2026-11-25",
+    "title": "Dapatkan VP baru dan Misi Cuan di Vanillate Wallet",
+    "highlights": [
+      "🎁 Halaman Dapatkan VP kini lebih rapi: Aktivitas Harian dan Vote Top.gg tampil dengan status tersedia, sudah diklaim, atau sisa waktu cooldown",
+      "🎯 Misi Cuan hadir: kerjakan misi, kirim bukti, dan dapatkan VP tambahan setelah Admin menyetujui",
+      "📩 Hasil pengajuan misi dikirim lewat DM, lengkap dengan alasan bila belum disetujui, dan kamu boleh mengajukan ulang"
+    ]
+  },
+  {
     "version": "3.61.3",
     "date": "2026-11-24",
     "title": "Pemantauan antrean penarikan Vanillate Wallet",
