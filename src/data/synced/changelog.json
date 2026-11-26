@@ -1,5 +1,25 @@
 [
   {
+    "version": "3.63.1",
+    "date": "2026-11-26",
+    "title": "Restart dan update bot lebih mulus",
+    "highlights": [
+      "🛠️ Bot tidak lagi kena batas kecepatan Discord tepat setelah restart atau update",
+      "⚡ Pemulihan Counting dan Streak Harian setelah bot hidup kembali berjalan bertahap, jadi balasan pertama lebih jarang telat",
+      "🔒 Pesan Counting yang masuk saat pemulihan tetap aman dan diproses berurutan"
+    ]
+  },
+  {
+    "version": "3.63.0",
+    "date": "2026-11-26",
+    "title": "Tampilan baru Vanillate Wallet dan DM yang lebih jelas",
+    "highlights": [
+      "✨ Semua halaman /dompet kini seragam: Penarikan, Status Penarikan, Riwayat, Rekening, dan Persetujuan tampil lebih rapi",
+      "📬 DM Wallet (vote, hadiah, transfer, penarikan, rekening, Misi Cuan) kini berupa kartu dengan jumlah besar, rincian, dan alasan yang jelas",
+      "🎨 Warna DM mengikuti kabarnya: hijau berhasil, merah ditolak, kuning ditahan atau dibatasi"
+    ]
+  },
+  {
     "version": "3.62.0",
     "date": "2026-11-25",
     "title": "Dapatkan VP baru dan Misi Cuan di Vanillate Wallet",
