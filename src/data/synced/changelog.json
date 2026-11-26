@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.66.0",
+    "date": "2026-11-26",
+    "title": "Dashboard /rank per hub dan hasil pertandingan",
+    "highlights": [
+      "🏆 Pilih hub dan game atau fitur di /rank. Papan langsung terbuka dengan tombol kategori, termasuk Win Rate, Coin, dan XP sesuai fitur.",
+      "🎮 Lihat skor pertandingan Sambung Kata dan Global Match, kontribusi event, poin sidang Pengacara, serta skor dan jawaban tercepat dari ketiga game tebak.",
+      "🕒 Setelah thread diarsipkan, peserta bisa membuka hasil terakhir dari server yang sama hingga 30 menit selama hasil masih tersimpan."
+    ]
+  },
+  {
     "version": "3.65.0",
     "date": "2026-11-26",
     "title": "Semua papan peringkat di /rank",
