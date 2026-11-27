@@ -1,5 +1,13 @@
 [
   {
+    "version": "3.66.1",
+    "date": "2026-11-27",
+    "title": "Pencarian member Wallet di panel admin lebih mudah",
+    "highlights": [
+      "🔎 Tim admin kini bisa mencari member Vanillate Wallet lewat username atau Player ID, tidak hanya Discord ID, jadi bantuan soal dompet lebih cepat ditangani"
+    ]
+  },
+  {
     "version": "3.66.0",
     "date": "2026-11-26",
     "title": "Dashboard /rank per hub dan hasil pertandingan",
