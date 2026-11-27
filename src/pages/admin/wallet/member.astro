@@ -7,12 +7,13 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
 ---
 
 <AdminLayout title="Member Wallet" active="wallet-member">
-  <AdminPageHeader eyebrow="Vanillate Wallet" title="Member" description="Daftar dompet, urut aktivitas terbaru. Cari dengan Discord ID. Khusus owner." />
+  <AdminPageHeader eyebrow="Vanillate Wallet" title="Member" description="Daftar dompet, urut aktivitas terbaru. Cari dengan username, Discord ID, atau Player ID. Khusus owner." />
   <div class="px-6 lg:px-10 py-8 max-w-5xl space-y-6">
     <form id="wm-search" class="flex flex-wrap gap-2">
-      <input name="search" inputmode="numeric" placeholder="Discord ID" class="flex-1 min-w-[12rem] rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-transparent px-3 py-2 text-sm" />
+      <input name="search" type="search" maxlength="40" autocomplete="off" placeholder="Username, Discord ID, atau Player ID (#A3K9)" class="flex-1 min-w-[12rem] rounded-xl border border-ink-900/15 dark:border-cream-100/15 bg-transparent px-3 py-2 text-sm" />
       <button class="rounded-full bg-ink-900 dark:bg-amber-500 text-cream-50 dark:text-ink-950 px-4 py-2 text-sm">Cari</button>
     </form>
+    <p id="wm-note" class="text-xs opacity-70"></p>
     <div id="wm-body"></div>
     <div class="flex gap-2"><button id="wm-prev" type="button" class="hidden rounded-full border px-4 py-1.5 text-sm">Sebelumnya</button><button id="wm-next" type="button" class="hidden rounded-full border px-4 py-1.5 text-sm">Berikutnya</button></div>
   </div>
@@ -36,11 +37,14 @@ import AdminPageHeader from '@components/AdminPageHeader.astro';
     if (!o.ok || !o.result) { body.innerHTML = stateBlock('error', o.error ?? 'Daftar tidak tersedia.'); return; }
     const r = o.result;
     body.innerHTML = table(['Pemain', 'Tersedia', 'Tertahan', 'Diperoleh', 'Dicairkan', 'Status', 'Terakhir'], (r.rows ?? []).map((m: any) => [
-      `<a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(m.userId)}"><code class="text-xs">${esc(m.userId)}</code></a>`,
+      `<a class="underline" href="/admin/wallet/pemain/?id=${encodeURIComponent(m.userId)}">${m.username ? `<span class="font-medium">${esc(m.username)}</span>` : '<span class="italic">tanpa nama</span>'}</a><span class="block font-mono text-[0.7rem] opacity-70">${m.playerId ? `${esc(m.playerId)} · ` : ''}${esc(m.userId)}</span>`,
       fmtAngka(m.available), fmtAngka(m.held), fmtAngka(m.earned), `Rp${fmtAngka(m.paid)}`,
       m.frozen ? pill('dibekukan', 'bad') : pill('aktif', 'ok'),
       `<span class="text-xs">${esc(fmtWaktu(m.updatedAt))}</span>`,
-    ]), search ? 'Discord ID ini belum punya dompet.' : 'Belum ada dompet.');
+    ]), search ? 'Tidak ada dompet yang cocok dengan pencarian ini.' : 'Belum ada dompet.');
+    document.getElementById('wm-note')!.textContent = r.mode === 'username'
+      ? (r.truncated ? 'Menampilkan 25 hasil pertama. Ketik username lebih lengkap untuk mempersempit.' : 'Username diambil dari data saat pemain pertama kali memakai bot, jadi bisa berbeda bila pemain sudah menggantinya.')
+      : '';
     document.getElementById('wm-prev')!.classList.toggle('hidden', page === 0 || !!search);
     document.getElementById('wm-next')!.classList.toggle('hidden', !r.hasMore);
   }
