@@ -772,13 +772,15 @@ export function mountServerPage(cfg: PageConfig): void {
   }
 
   /** Buka tab fitur lalu gulir ke kartunya. Di HP pop up dikecilkan supaya kartunya terlihat. */
-  function gotoFeature(featureKey: string): void {
+  async function gotoFeature(featureKey: string): Promise<void> {
     const f = data?.registry.find((x) => x.key === featureKey);
     if (!f) return;
     if (window.matchMedia?.('(max-width: 639px)').matches) {
       issuePanelOpen = false;
       issueClosing = false;
     }
+    // Modul tab fitur dimuat malas: tunggu dulu supaya kartunya sudah ada saat dicari.
+    await ensureModule('features');
     setTab(tabOfFeature(f), false);
     const card = root.querySelector<HTMLElement>(`#feat-${CSS.escape(featureKey)}`)?.closest<HTMLElement>('article');
     if (card) {
@@ -1010,7 +1012,7 @@ export function mountServerPage(cfg: PageConfig): void {
     if (target.closest('[data-reinvite]')) reinvitePending = true;
     if (target.closest('[data-issue-open]')) return openIssuePanel();
     const gotoBtn = target.closest<HTMLElement>('[data-issue-goto]');
-    if (gotoBtn) return gotoFeature(gotoBtn.dataset.issueGoto ?? '');
+    if (gotoBtn) return void gotoFeature(gotoBtn.dataset.issueGoto ?? '');
     const minimize = target.closest<HTMLElement>('[data-issue-minimize]');
     if (minimize && !minimize.dataset.tab) return minimizeIssuePanel();
     if (minimize) {
@@ -1058,6 +1060,8 @@ export function mountServerPage(cfg: PageConfig): void {
         renderAll();
         break;
       case 'reload':
+        // Dari kartu kendala (data sudah ada): jangan hapus draft tanpa konfirmasi.
+        if (dirty() && !confirm('Perubahan yang belum disimpan akan hilang. Lanjutkan?')) break;
         reload();
         break;
       case 'reload-latest':
