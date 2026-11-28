@@ -28,8 +28,17 @@ tanpa data pemain).
   mengunci halaman (`aria-modal="false"`), jadi admin tetap bisa mengatur fitur.
 - **X, Nanti saja, dan Escape hanya mengecilkan** pop up menjadi lencana
   `⚠ N kendala` di pojok kanan atas. Lencana tidak bisa ditutup selama masih ada
-  kendala 🔴 atau 🟡. Saat pertama dikecilkan, pop up dianimasikan ke arah
-  lencana dan muncul catatan "Pengingat dipindah ke sini" selama 6 detik.
+  kendala 🔴 atau 🟡. Saat pertama dikecilkan muncul catatan "Pengingat
+  dipindah ke sini" selama 6 detik.
+- **Animasi** (Web Animations API, tanpa pustaka): salinan pop up "terbang" ke
+  lencana (isi memudar, menyusut jadi kapsul, melengkung naik), lalu lencana
+  mendarat dengan pantulan, goyang kecil, dan dua cincin. Membuka lagi dari
+  lencana memakai kebalikannya (pop up tumbuh dari lencana). Semua animasi
+  dilewati bila sistem meminta `prefers-reduced-motion`.
+- **Nama fitur di kartu adalah tautan**: menekan "Counting →" membuka tab
+  fiturnya (menunggu modul tab dimuat), menggulir ke kartu fitur, memberi fokus,
+  dan menyorot kartu itu sebentar. Di HP pop up dikecilkan dulu supaya kartunya
+  terlihat.
 - **Pop up terbuka lagi** bila ada kendala 🔴 yang belum pernah dilihat di sesi
   ini (sidik kendala disimpan di `sessionStorage` `vn-issues-seen-<guild>`,
   maks. 200). Sesi browser baru berarti pop up muncul lagi untuk kendala lama.

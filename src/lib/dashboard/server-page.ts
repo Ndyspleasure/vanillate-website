@@ -609,7 +609,6 @@ export function mountServerPage(cfg: PageConfig): void {
 
   let issuePanelOpen = false;
   let issueClosing = false;
-  let badgePulse = false;
   let minimizeHinted = false;
   /** Catatan kecil di bawah lencana sesaat setelah pop up dikecilkan pertama kali. */
   let badgeHint = false;
@@ -665,14 +664,21 @@ export function mountServerPage(cfg: PageConfig): void {
   function guideCardHtml(g: Guide, i: number): string {
     const d = data!;
     const red = g.level === 'red';
-    const names = g.features.map((k) => d.registry.find((f) => f.key === k)?.name ?? k);
+    const feats = g.features.map((k) => ({ key: k, name: d.registry.find((f) => f.key === k)?.name ?? k, known: d.registry.some((f) => f.key === k) }));
     const contact = red && !g.actions.some((a) => a.kind === 'contact') ? actionHtml(g, { kind: 'contact' }) : '';
     return `<li class="rounded-xl border p-3 sm:p-4 ${red ? 'border-red-500/30 bg-red-500/[0.05]' : 'border-amber-500/30 bg-amber-500/[0.06]'}" data-focus="issue-${i}">
       <p class="flex items-start gap-2 font-medium ${red ? 'text-red-800 dark:text-red-200' : 'text-amber-900 dark:text-amber-200'}">
         <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full ${red ? 'bg-red-500' : 'bg-amber-500'}" aria-hidden="true"></span>
         <span class="min-w-0"><span class="sr-only">${red ? 'Penting: ' : 'Perlu dicek: '}</span>${esc(g.title)}</span>
       </p>
-      ${names.length ? `<p class="mt-1 pl-4 text-xs text-ink-500 dark:text-cream-300/70">Fitur: ${esc(names.join(', '))}</p>` : ''}
+      ${feats.length ? `<p class="mt-1.5 flex flex-wrap items-center gap-1.5 pl-4 text-xs text-ink-500 dark:text-cream-300/70"><span>Fitur:</span>${feats
+        .map((f) =>
+          f.known
+            ? `<button type="button" data-issue-goto="${esc(f.key)}" data-focus="issue-${i}-go-${esc(f.key)}" title="Buka pengaturan ${esc(f.name)}"
+                class="group inline-flex min-h-[44px] items-center gap-1 rounded-full sm:min-h-[30px] border border-amber-500/40 bg-white/70 px-2.5 py-0.5 font-medium text-amber-800 transition hover:-translate-y-px hover:border-amber-500 hover:bg-amber-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500 dark:bg-ink-900/60 dark:text-amber-300">${esc(f.name)}${icon('arrow-right', 'h-3 w-3 transition group-hover:translate-x-0.5')}<span class="sr-only">, buka pengaturannya</span></button>`
+            : `<span>${esc(f.name)}</span>`,
+        )
+        .join('')}</p>` : ''}
       <p class="mt-2 pl-4 text-sm text-ink-700 dark:text-cream-200">${esc(g.cause)}</p>
       ${g.steps.length ? `<ol class="mt-2 list-decimal space-y-1 pl-9 text-sm text-ink-700 dark:text-cream-200">${g.steps.map((st) => `<li>${esc(st)}</li>`).join('')}</ol>` : ''}
       ${checkedStill.has(g.id) ? `<p class="mt-2 pl-4 text-xs font-medium text-red-700 dark:text-red-300" role="status">Sudah dicek ulang, kendala ini masih ada.</p>` : ''}
@@ -690,9 +696,7 @@ export function mountServerPage(cfg: PageConfig): void {
       : `<p class="mt-3 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.07] p-3 text-sm font-medium text-emerald-800 dark:text-emerald-200" role="status">${icon('check')} Semua kendala sudah beres.</p>`;
     return `
       <div id="issue-panel" role="dialog" aria-modal="false" aria-labelledby="issue-panel-title" tabindex="-1" data-issue-panel
-        class="fixed inset-x-0 bottom-0 z-[45] flex max-h-[80vh] flex-col rounded-t-2xl border border-ink-900/10 bg-cream-50 shadow-2xl transition duration-200 ease-out sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-20 sm:max-h-none sm:w-[26rem] sm:rounded-2xl dark:border-cream-100/10 dark:bg-ink-900 ${
-          issueClosing ? 'pointer-events-none translate-y-4 scale-90 opacity-0 sm:-translate-y-6 sm:translate-x-6 sm:scale-50' : ''
-        }">
+        class="fixed inset-x-0 bottom-0 z-[45] flex max-h-[80vh] flex-col overflow-hidden rounded-t-2xl border border-ink-900/10 bg-cream-50 shadow-2xl sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-20 sm:max-h-none sm:w-[26rem] sm:rounded-2xl dark:border-cream-100/10 dark:bg-ink-900">
         <div class="flex items-start justify-between gap-3 border-b border-ink-900/10 px-4 py-3 dark:border-cream-100/10">
           <div class="min-w-0">
             <h2 id="issue-panel-title" class="flex items-center gap-2 font-display text-base font-semibold">${icon('triangle-alert', `h-4 w-4 ${red ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`)}
@@ -717,7 +721,7 @@ export function mountServerPage(cfg: PageConfig): void {
     return `<button type="button" data-issue-open data-focus="issue-badge" aria-haspopup="dialog" aria-controls="issue-panel"
       class="fixed right-3 top-20 z-30 inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold shadow-lg backdrop-blur transition sm:min-h-0 ${
         red ? 'border-red-500/40 bg-red-50/95 text-red-800 dark:bg-red-950/90 dark:text-red-200' : 'border-amber-500/40 bg-amber-50/95 text-amber-900 dark:bg-ink-900/95 dark:text-amber-200'
-      } ${badgePulse ? 'animate-bounce' : ''}">${icon('triangle-alert', 'h-4 w-4')} ${shown.length} kendala<span class="sr-only">, buka pengingat</span></button>${
+      }">${icon('triangle-alert', 'h-4 w-4')} ${shown.length} kendala<span class="sr-only">, buka pengingat</span></button>${
         badgeHint
           ? `<p class="fixed right-3 top-[8.25rem] z-30 max-w-[16rem] rounded-xl border border-ink-900/10 bg-white/95 px-3 py-2 text-xs text-ink-700 shadow-lg sm:top-[7.25rem] dark:border-cream-100/10 dark:bg-ink-900/95 dark:text-cream-200" role="status" data-issue-hint>Pengingat dipindah ke sini. Tekan lencana untuk membukanya lagi.</p>`
           : ''
@@ -731,44 +735,155 @@ export function mountServerPage(cfg: PageConfig): void {
     return issueBadgeHtml(list);
   }
 
+  const reducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+
+  /**
+   * Animasi lencana setelah pop up "mendarat": membesar memantul, bergoyang
+   * sedikit, dan memancarkan dua cincin. Murni tampilan (Web Animations API).
+   */
+  function celebrateBadge(badge: HTMLElement): void {
+    badge.animate(
+      [
+        { transform: 'scale(0.4)', opacity: 0 },
+        { transform: 'scale(1.18) rotate(-6deg)', opacity: 1, offset: 0.45 },
+        { transform: 'scale(0.94) rotate(4deg)', offset: 0.65 },
+        { transform: 'scale(1.04) rotate(-2deg)', offset: 0.82 },
+        { transform: 'scale(1) rotate(0deg)', opacity: 1 },
+      ],
+      { duration: 620, easing: 'cubic-bezier(.2,.8,.2,1)' },
+    );
+    const r = badge.getBoundingClientRect();
+    for (const delay of [120, 380]) {
+      const ring = document.createElement('span');
+      ring.setAttribute('aria-hidden', 'true');
+      ring.className = 'pointer-events-none fixed z-30 rounded-full border-2 border-red-500/70 dark:border-red-400/70';
+      Object.assign(ring.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+      document.body.appendChild(ring);
+      ring.animate(
+        [
+          { transform: 'scale(1)', opacity: 0.9 },
+          { transform: 'scale(1.6)', opacity: 0 },
+        ],
+        { duration: 700, delay, easing: 'cubic-bezier(.2,.6,.3,1)', fill: 'both' },
+      ).onfinish = () => ring.remove();
+    }
+  }
+
   function openIssuePanel(): void {
+    const badge = root.querySelector<HTMLElement>('[data-issue-open]');
+    const from = badge?.getBoundingClientRect() ?? null;
     issuePanelOpen = true;
     badgeHint = false;
     issueClosing = false;
     renderAll();
-    root.querySelector<HTMLElement>('[data-issue-panel]')?.focus({ preventScroll: true });
+    const panel = root.querySelector<HTMLElement>('[data-issue-panel]');
+    panel?.focus({ preventScroll: true });
+    // Pop up "tumbuh" dari lencana (kebalikan dari saat dikecilkan).
+    if (!panel || !from || reducedMotion()) return;
+    const to = panel.getBoundingClientRect();
+    const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+    const dy = from.top + from.height / 2 - (to.top + to.height / 2);
+    panel.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px) scale(${from.width / to.width}, ${from.height / to.height})`, borderRadius: '28px', opacity: 0.4 },
+        { transform: 'translate(0, 0) scale(1.015)', opacity: 1, offset: 0.75 },
+        { transform: 'translate(0, 0) scale(1)', borderRadius: '', opacity: 1 },
+      ],
+      { duration: 420, easing: 'cubic-bezier(.2,.9,.25,1)' },
+    );
   }
 
   function minimizeIssuePanel(): void {
     if (!issuePanelOpen || issueClosing) return;
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const finish = () => {
-      issueClosing = false;
-      issuePanelOpen = false;
-      badgePulse = !reduce;
+    const panel = root.querySelector<HTMLElement>('[data-issue-panel]');
+    const firstTime = !minimizeHinted && badgeGuides(currentGuides()).length > 0;
+    const showHint = () => {
+      if (!firstTime) return;
+      minimizeHinted = true;
+      badgeHint = true;
       renderAll();
       root.querySelector<HTMLElement>('[data-issue-open]')?.focus({ preventScroll: true });
-      if (!minimizeHinted && badgeGuides(currentGuides()).length) {
-        minimizeHinted = true;
-        badgeHint = true;
-        renderAll();
-        root.querySelector<HTMLElement>('[data-issue-open]')?.focus({ preventScroll: true });
-        window.setTimeout(() => {
-          badgeHint = false;
-          root.querySelector('[data-issue-hint]')?.remove();
-        }, 6000);
-      }
-      if (badgePulse) {
-        window.setTimeout(() => {
-          badgePulse = false;
-          root.querySelector('[data-issue-open]')?.classList.remove('animate-bounce');
-        }, 2000);
-      }
+      window.setTimeout(() => {
+        badgeHint = false;
+        root.querySelector('[data-issue-hint]')?.remove();
+      }, 6000);
     };
-    if (reduce) return finish();
+    const swap = () => {
+      issueClosing = false;
+      issuePanelOpen = false;
+      renderAll();
+      root.querySelector<HTMLElement>('[data-issue-open]')?.focus({ preventScroll: true });
+    };
+    if (!panel || reducedMotion()) {
+      swap();
+      return showHint();
+    }
+
+    // Salinan pop up "terbang" ke lencana: menyusut, membulat, sedikit
+    // melengkung naik, lalu lencana mendarat dengan pantulan dan cincin.
+    const from = panel.getBoundingClientRect();
+    const ghost = panel.cloneNode(true) as HTMLElement;
+    ghost.removeAttribute('id');
+    ghost.removeAttribute('data-issue-panel');
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.querySelectorAll('[id],[data-focus]').forEach((el) => {
+      el.removeAttribute('id');
+      el.removeAttribute('data-focus');
+    });
+    Object.assign(ghost.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, right: 'auto', bottom: 'auto', margin: '0', transformOrigin: 'center', pointerEvents: 'none' });
+    document.body.appendChild(ghost);
     issueClosing = true;
-    renderAll();
-    window.setTimeout(finish, 200);
+    swap();
+    issueClosing = true;
+    const badge = root.querySelector<HTMLElement>('[data-issue-open]');
+    if (!badge) {
+      ghost.remove();
+      issueClosing = false;
+      return;
+    }
+    badge.style.opacity = '0';
+    const to = badge.getBoundingClientRect();
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    const sx = to.width / from.width;
+    const sy = to.height / from.height;
+    // Isi kartu memudar lebih dulu supaya yang terbang terlihat seperti "kapsul".
+    for (const child of Array.from(ghost.children) as HTMLElement[]) {
+      child.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' });
+    }
+    const flight = ghost.animate(
+      [
+        { transform: 'translate(0, 0) scale(1, 1)', borderRadius: '16px', opacity: 1 },
+        { transform: `translate(${dx * 0.35}px, ${dy * 0.35 - 40}px) scale(${0.55 + sx * 0.45}, ${0.5 + sy * 0.5})`, borderRadius: '28px', opacity: 1, offset: 0.4 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, borderRadius: '9999px', opacity: 0.85 },
+      ],
+      { duration: 520, easing: 'cubic-bezier(.55,.05,.25,1)', fill: 'forwards' },
+    );
+    flight.onfinish = () => {
+      ghost.remove();
+      issueClosing = false;
+      const b = root.querySelector<HTMLElement>('[data-issue-open]');
+      if (b) {
+        b.style.opacity = '';
+        celebrateBadge(b);
+      }
+      window.setTimeout(showHint, 350);
+    };
+  }
+
+  /** Sorot sebentar kartu fitur yang dituju supaya mata langsung menemukannya. */
+  function spotlight(card: HTMLElement): void {
+    if (reducedMotion()) return;
+    card.animate(
+      [
+        { boxShadow: '0 0 0 0 rgba(245, 158, 11, 0)' },
+        { boxShadow: '0 0 0 4px rgba(245, 158, 11, 0.55)', offset: 0.25 },
+        { boxShadow: '0 0 0 2px rgba(245, 158, 11, 0.35)', offset: 0.6 },
+        { boxShadow: '0 0 0 4px rgba(245, 158, 11, 0.5)', offset: 0.8 },
+        { boxShadow: '0 0 0 0 rgba(245, 158, 11, 0)' },
+      ],
+      { duration: 1800, easing: 'ease-in-out' },
+    );
   }
 
   /** Buka tab fitur lalu gulir ke kartunya. Di HP pop up dikecilkan supaya kartunya terlihat. */
@@ -784,8 +899,9 @@ export function mountServerPage(cfg: PageConfig): void {
     setTab(tabOfFeature(f), false);
     const card = root.querySelector<HTMLElement>(`#feat-${CSS.escape(featureKey)}`)?.closest<HTMLElement>('article');
     if (card) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      card.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
       card.querySelector<HTMLElement>('input, select, button')?.focus({ preventScroll: true });
+      spotlight(card);
     }
   }
 
