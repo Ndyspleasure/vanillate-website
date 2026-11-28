@@ -28,26 +28,26 @@ on:
     - cron: '*/15 * * * *'
   workflow_dispatch:          # tombol "Run workflow" untuk terbit segera
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+permissions: {}
 
 concurrency:
   group: pages                # serialisasi dengan workflow deploy & sync-data
   cancel-in-progress: false
 
 jobs:
-  sync-and-deploy:
+  sync:
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+      revision: ${{ steps.commit.outputs.revision }}
     # Batas waktu: job macet tidak boleh menahan antrean `pages` (lihat unstick-pages.yml).
     timeout-minutes: 20
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           # Ambil `main` yang TERBARU, bukan snapshot dari saat run diantrekan.
           # Karena jadwal kerap tertunda, tanpa ini runner bisa bekerja di atas
@@ -55,10 +55,9 @@ jobs:
           ref: main
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Tarik konten dari Supabase
         run: node scripts/sync-content.mjs
@@ -111,34 +110,23 @@ jobs:
             exit 1
           fi
 
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "✓ Konten berubah — commit & deploy."
 
-      - name: Install dependencies
-        if: steps.commit.outputs.changed == 'true'
-        run: npm ci
-
-      - name: Build
-        if: steps.commit.outputs.changed == 'true'
-        run: npm run build
-        env:
-          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
-          PUBLIC_BOT_SUPABASE_URL: ${{ secrets.PUBLIC_BOT_SUPABASE_URL }}
-          PUBLIC_BOT_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_BOT_SUPABASE_ANON_KEY }}
-          PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.PUBLIC_GOOGLE_CLIENT_ID }}
-
-      - name: Setup Pages
-        if: steps.commit.outputs.changed == 'true'
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        if: steps.commit.outputs.changed == 'true'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        if: steps.commit.outputs.changed == 'true'
-        uses: actions/deploy-pages@v4
+  publish:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/publish-pages.yml
+    with:
+      revision: ${{ needs.sync.outputs.revision }}
+    secrets:
+      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+      PUBLIC_BOT_SUPABASE_URL: ${{ secrets.PUBLIC_BOT_SUPABASE_URL }}
+      PUBLIC_BOT_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_BOT_SUPABASE_ANON_KEY }}
+      PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.PUBLIC_GOOGLE_CLIENT_ID }}
