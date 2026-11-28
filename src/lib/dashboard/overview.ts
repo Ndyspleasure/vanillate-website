@@ -247,7 +247,7 @@ function row(label: string, hint: string, value: string): string {
 /** Belum ada ringkasan sama sekali (bot lama, belum refresh, atau bot belum terpasang). */
 function pendingCard(i: OverviewStatsInput): string {
   const text = i.botInstalled
-    ? 'Ringkasan statistik belum diterbitkan bot. Biasanya muncul dalam beberapa detik setelah halaman dibuka. Tekan Refresh Discord Data bila belum muncul.'
+    ? 'Ringkasan statistik belum diterbitkan bot. Biasanya muncul dalam beberapa detik setelah halaman dibuka. Tekan Cek lagi bila belum muncul.'
     : 'Ringkasan muncul setelah bot ada di server ini.';
   return `<div class="${CARD} p-4 sm:p-5" role="status">
     <h2 class="font-display text-base font-semibold sm:text-lg">Statistik server</h2>
@@ -261,5 +261,5 @@ export function overviewStatsHtml(i: OverviewStatsInput): string {
   return `
     <div class="grid gap-3 sm:gap-4 lg:grid-cols-3">${activityCard(i)}${growthCard(i)}</div>
     <div class="grid gap-3 sm:gap-4 lg:grid-cols-2">${securityCard(i)}${communityCard(i)}</div>
-    ${i.updatedAgo ? `<p class="text-xs ${MUTED}">Statistik diperbarui ${esc(i.updatedAgo)}. Dihitung ulang saat Ringkasan dibuka atau saat Refresh Discord Data ditekan.</p>` : ''}`;
+    ${i.updatedAgo ? `<p class="text-xs ${MUTED}">Statistik diperbarui ${esc(i.updatedAgo)}. Dihitung ulang saat Ringkasan dibuka atau saat Cek lagi ditekan.</p>` : ''}`;
 }

@@ -5,8 +5,8 @@
 // bekerja pada baris yang SUDAH dimuat, tanpa permintaan tambahan.
 
 import { auditList, auditState, auditV2Supported, DashboardError } from './api';
-import { AUDIT_ACTION, describeError, formatAuditChange, formatWib, type AuditRow, type Tone } from './model';
-import { AUDIT_KIND_LABEL, auditSourceLabel, auditToCsv, filterAudit, restoreState, revertChanges, revertible, type AuditKind } from './review-model';
+import { AUDIT_ACTION, describeError, formatWib, type AuditRow, type Tone } from './model';
+import { AUDIT_KIND_LABEL, auditSourceLabel, auditToCsv, filterAudit, formatAuditChange, restoreState, revertChanges, revertible, type AuditKind } from './review-model';
 import type { PageCtx } from './server-shared';
 import { BTN_SECONDARY, CARD, esc, icon, loadingBlock, pill, toast } from './ui';
 

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { describeIssue, issueFix, PERMISSION_BITS, permissionFix, type Snapshot } from '../src/lib/dashboard/model.ts';
+import { issueFix, PERMISSION_BITS, permissionFix, type Snapshot } from '../src/lib/dashboard/model.ts';
+import { describeIssue } from '../src/lib/dashboard/issue-guide.ts';
 import { botRegistry } from '../src/data/bot-registry.ts';
 
 const INVITE = '2252747126074611';
@@ -14,8 +15,10 @@ test('izin yang belum ada di role bot: undang ulang', () => {
 
 test('role bot sudah punya izin tetapi channel menolak: bukan undang ulang', () => {
   assert.equal(permissionFix(snap(all(['View Channel', 'Send Messages'])), ['Send Messages'], INVITE), 'channel');
-  // Administrator melewati semua penolakan channel.
-  assert.equal(permissionFix(snap(all(['Administrator'])), ['Send Messages'], INVITE), 'channel');
+});
+
+test('bot Administrator tidak bisa ditolak channel: data lama, bukan saran ubah channel', () => {
+  assert.equal(permissionFix(snap(all(['Administrator'])), ['Send Messages'], INVITE), 'stale');
 });
 
 test('tautan undangan tidak meminta izin itu: undang ulang tidak ditawarkan', () => {

@@ -17,7 +17,6 @@ import {
   AUDIT_ACTION,
   channelLabel,
   cloneState,
-  formatAuditChange,
   formatWib,
   isNotUsed,
   isSnowflake,
@@ -35,7 +34,41 @@ import {
   type GuildData,
   type SettingProp,
   type TextContext,
+  type Issue,
 } from './model.ts';
+import { describeIssue } from './issue-guide.ts';
+
+// ─── Riwayat: satu baris perubahan ──────────────────────────────────────────
+
+function show(value: unknown, isChannel: boolean, ctx: TextContext): string {
+  if (value === null || value === undefined) return isChannel ? 'tidak diatur' : 'kosong';
+  if (typeof value === 'boolean') return value ? 'ON' : 'OFF';
+  if (isChannel && typeof value === 'string') return channelLabel(ctx, value);
+  return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
+/** Satu baris perubahan audit, mis. "Sambung Kata · Channel khusus: #a → #b". */
+export function formatAuditChange(change: unknown, ctx: TextContext): string {
+  const c = change as { path?: string; from?: unknown; to?: unknown; previous_actor_id?: string; previous_actor_name?: string | null };
+  if (c?.previous_actor_id !== undefined) {
+    return `Sebelumnya atas nama ${c.previous_actor_name ?? c.previous_actor_id ?? 'tidak diketahui'}`;
+  }
+  if (!c?.path) return describeIssue(change as Issue, ctx);
+  const [fk, field, sub] = c.path.split('.');
+  const f = ctx.registry.find((x) => x.key === fk);
+  const name = f?.name ?? fk;
+  if (field === 'enabled') return `${name} · Status: ${show(c.from, false, ctx)} → ${show(c.to, false, ctx)}`;
+  if (field === 'channels') {
+    const label = f?.purposes.find((p) => p.key === sub)?.label ?? sub;
+    return `${name} · ${label}: ${show(c.from, true, ctx)} → ${show(c.to, true, ctx)}`;
+  }
+  if (field === 'settings' && sub === NOT_USED) {
+    return `${name} · Tidak dipakai: ${c.to === true ? 'ya' : 'tidak'}`;
+  }
+  // Judul setelan dari registry bot (bukan kunci mentah) bila masih terdaftar.
+  const title = (field === 'settings' && f && typedSettings(f).find((p) => p.key === sub)?.title) || sub || field;
+  return `${name} · ${title}: ${show(c.from, false, ctx)} → ${show(c.to, false, ctx)}`;
+}
 
 // ─── Tinjau perubahan (draft vs tersimpan) ───────────────────────────────────
 
@@ -319,7 +352,7 @@ export function setupSteps(data: Pick<GuildData, 'bot' | 'config' | 'registry' |
       label: 'Daftar channel dan role dari Discord dimuat',
       hint: 'Dipakai untuk pilihan channel, role, dan pemeriksaan izin bot.',
       done: Boolean(data.snapshot?.refreshed_at),
-      action: { label: 'Refresh Discord Data', do: 'discord-refresh' },
+      action: { label: 'Cek lagi', do: 'discord-refresh' },
     },
   ];
   const social = data.registry.filter((f) => f.section === 'social' && supportsNotUsed(f));

@@ -96,7 +96,7 @@ export function panelHtml(c: PageCtx, o: OverviewOptions): string {
         ${
           reinvite
             ? `<div class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-amber-500/25 pt-3 text-sm">
-                <p class="min-w-0 flex-1">Sebagian masalah di atas karena role bot belum punya izin yang dibutuhkan. Undang ulang bot memakai tautan berizin lengkap: pilih server ini, tekan Authorize, lalu tekan Refresh Discord Data. Pengaturan yang sudah ada tidak hilang.</p>
+                <p class="min-w-0 flex-1">Sebagian masalah di atas karena role bot belum punya izin yang dibutuhkan. Undang ulang bot memakai tautan berizin lengkap: pilih server ini, tekan Authorize (Otorisasi), lalu tekan Cek lagi. Pengaturan yang sudah ada tidak hilang.</p>
                 ${reinviteLinkHtml(c, `${BTN_SECONDARY} min-h-[44px] shrink-0`)}
               </div>`
             : ''

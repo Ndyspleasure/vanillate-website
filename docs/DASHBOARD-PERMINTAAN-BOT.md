@@ -7,7 +7,7 @@ butir memuat alasan dan perkiraan biaya supaya bisa dinilai sebelum dikerjakan.
 
 Status: **P1 dan P2 sudah dikerjakan** (repo bot `migrations/0029_dashboard_light_poll.sql`,
 website `src/lib/dashboard/api.ts`), berlaku setelah bot di-Update dan Restart.
-P3 dan P4 juga sudah dikerjakan (`migrations/0030_dashboard_audit_state.sql`). P5 masih catatan. Dashboard berjalan dengan atau tanpa butir ini.
+P3 dan P4 juga sudah dikerjakan (`migrations/0030_dashboard_audit_state.sql`). P5 masih catatan. P6 dikirim lewat PR repo bot (2026-11-28). Dashboard berjalan dengan atau tanpa butir ini.
 
 Angka ukuran di bawah diukur 2026-11-17 dari Database Bot (hanya `octet_length`
 agregat, tanpa membaca isi): `guild_feature_registry` 17 baris, total sekitar
@@ -107,6 +107,25 @@ berubah. Bila bot menulis ulang `security_summary` atau `stats_summary` secara
 berkala walau angkanya sama (hanya `updated_at` yang berubah), penghematan poll
 di sisi website berkurang. Mohon ringkasan hanya ditulis ulang saat diminta atau
 saat angkanya berubah. Seberapa sering ini terjadi di produksi **belum diukur**.
+
+## P6. Kode penyebab untuk `ROLE_UNUSABLE` (`reason_code`)
+
+**Masalah.** Bot mengirim penyebab role yang tidak bisa diberikan hanya sebagai
+kalimat (`reason`), padahal langkah perbaikannya berbeda per penyebab: izin
+Manage Roles kurang (undang ulang), posisi role bot terlalu rendah (seret role
+bot), role dikelola integrasi (pilih role lain). Dulu website selalu menyarankan
+"naikkan role bot", yang salah untuk dua penyebab pertama.
+
+**Permintaan.** Tambah satu kolom kecil `reason_code` di issue yang sudah dikirim
+(`MANAGE_ROLES_MISSING`, `ROLE_TOO_LOW`, `ROLE_MANAGED`, `EVERYONE`,
+`NOT_MENTIONABLE`). `reason` tetap dikirim untuk bot dan website lama.
+
+**Biaya.** Nol query, nol tabel. Beberapa byte per issue di `last_error`/`health`
+yang memang sudah ditulis.
+
+**Sisi website.** Sudah siap (`roleReason()` di `src/lib/dashboard/issue-guide.ts`):
+memakai `reason_code` bila ada, dan mengenali kalimat bot lama sebagai cadangan.
+Acuan `docs/DASHBOARD-PANDUAN-KENDALA.md` §3.
 
 ## Bukan permintaan (sudah cukup dengan RPC yang ada)
 

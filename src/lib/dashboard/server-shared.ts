@@ -7,7 +7,6 @@
 import type { IconName } from '@data/icons';
 import {
   channelById,
-  describeIssue,
   issueFix,
   REINVITE_LABEL,
   diffStates,
@@ -20,6 +19,7 @@ import {
   type Issue,
   type TextContext,
 } from './model';
+import { describeIssue } from './issue-guide';
 import { esc, icon } from './ui';
 
 export * from './nav-model';
@@ -117,7 +117,7 @@ export function featureIssues(c: PageCtx, f: Feature): { level: FeatureLevel; me
   let reinvite = false;
   const push = (i: Issue) => {
     const fix = issueFix(i, c.text);
-    if (fix && fix !== 'channel') reinvite = true;
+    if (fix === 'reinvite' || fix === 'unknown') reinvite = true;
     const t = describeIssue(i, c.text);
     if (!seen.has(t)) {
       seen.add(t);
@@ -136,5 +136,5 @@ export function featureIssues(c: PageCtx, f: Feature): { level: FeatureLevel; me
 
 /** Tautan "Undang ulang dengan izin lengkap" (kosong bila tidak ada tautan). */
 export function reinviteLinkHtml(c: PageCtx, cls = 'font-medium underline'): string {
-  return c.inviteUrl ? `<a href="${esc(c.inviteUrl)}" target="_blank" rel="noopener noreferrer" class="${cls}">${esc(REINVITE_LABEL)}</a>` : '';
+  return c.inviteUrl ? `<a href="${esc(c.inviteUrl)}" target="_blank" rel="noopener noreferrer" data-reinvite class="${cls}">${esc(REINVITE_LABEL)}</a>` : '';
 }

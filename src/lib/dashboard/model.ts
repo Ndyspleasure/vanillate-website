@@ -294,11 +294,23 @@ export function roleOptions(snapshot: Snapshot | null | undefined): SnapshotRole
  * posisinya tidak di bawah role tertinggi bot. Peringatan (bot memvalidasi ulang).
  */
 export function roleGrantProblem(snapshot: Snapshot | null | undefined, roleId: string | null | undefined): string | null {
+  return roleGrantIssue(snapshot, roleId)?.reason ?? null;
+}
+
+/** Alasan bot tidak bisa memberi role ini, beserta kodenya (dipakai buku panduan kendala). */
+export function roleGrantIssue(
+  snapshot: Snapshot | null | undefined,
+  roleId: string | null | undefined,
+): { reason: string; reason_code: 'MANAGE_ROLES_MISSING' | 'ROLE_MANAGED' | 'ROLE_TOO_LOW' } | null {
   const role = roleById(snapshot, roleId);
   if (!role) return null;
-  if (role.managed) return 'dikelola integrasi (bot tidak bisa memberikannya)';
+  if (role.managed) return { reason: 'dikelola integrasi (bot tidak bisa memberikannya)', reason_code: 'ROLE_MANAGED' };
+  const guild = bits(snapshot?.bot_permissions);
+  if (guild !== null && (guild & PERMISSION_BITS.Administrator) === 0n && (guild & PERMISSION_BITS['Manage Roles']) === 0n) {
+    return { reason: 'bot tidak punya izin Manage Roles', reason_code: 'MANAGE_ROLES_MISSING' };
+  }
   const top = snapshot?.bot_top_position;
-  if (typeof top === 'number' && role.position >= top) return 'posisinya sejajar atau di atas role tertinggi bot';
+  if (typeof top === 'number' && role.position >= top) return { reason: 'posisinya sejajar atau di atas role tertinggi bot', reason_code: 'ROLE_TOO_LOW' };
   return null;
 }
 
@@ -397,6 +409,8 @@ export interface Issue {
   min?: number | null;
   max?: number | null;
   reason?: string;
+  /** Penyebab ROLE_UNUSABLE dalam bentuk kode (bot baru); `reason` tetap cadangan. */
+  reason_code?: string;
   category?: string;
   level?: number;
 }
@@ -534,8 +548,11 @@ export const PERMISSION_BITS: Readonly<Record<string, bigint>> = Object.freeze({
  *   menolaknya. Undang ulang tidak membantu; ubah izin di channel itu.
  * - `unknown`: izin bot tingkat server belum terbaca (snapshot lama).
  *   Undang ulang tetap ditawarkan karena tidak merugikan.
+ * - `stale`: bot memegang Administrator, yang tidak bisa ditolak pengaturan
+ *   channel mana pun. Izin "kurang" berarti data Discord tersimpan sudah lama:
+ *   sarannya Cek lagi, bukan mengubah channel atau undang ulang.
  */
-export type PermissionFix = 'reinvite' | 'channel' | 'unknown';
+export type PermissionFix = 'reinvite' | 'channel' | 'unknown' | 'stale';
 
 export function permissionFix(snapshot: Snapshot | null | undefined, missing: string[], invitePermissions: string): PermissionFix {
   const invite = bits(invitePermissions) ?? 0n;
@@ -546,7 +563,7 @@ export function permissionFix(snapshot: Snapshot | null | undefined, missing: st
   // Label yang belum dikenal website: jangan menebak, beri kedua saran.
   if (known.length < missing.length) return 'unknown';
   if (guild === null) return offered.length ? 'unknown' : 'channel';
-  if ((guild & PERMISSION_BITS.Administrator) !== 0n) return 'channel';
+  if ((guild & PERMISSION_BITS.Administrator) !== 0n) return 'stale';
   return offered.some((b) => (guild & b) === 0n) ? 'reinvite' : 'channel';
 }
 
@@ -777,8 +794,8 @@ export function permissionWarnings(state: ConfigState, registry: Feature[], snap
     for (const p of typedSettings(f)) {
       if (p.type !== 'role' && p.type !== 'reward_list' && !GRANTED_ROLE_LISTS.has(p.key)) continue;
       for (const id of settingRoleIds(s.settings[p.key], p.type)) {
-        const reason = roleGrantProblem(snapshot, id);
-        if (reason) out.push({ code: 'ROLE_UNUSABLE', feature: f.key, key: p.key, role_id: id, reason });
+        const problem = roleGrantIssue(snapshot, id);
+        if (problem) out.push({ code: 'ROLE_UNUSABLE', feature: f.key, key: p.key, role_id: id, ...problem });
       }
     }
   }
@@ -863,22 +880,12 @@ export function issueFix(issue: Issue, ctx: TextContext): PermissionFix | null {
   return permissionFix(ctx.snapshot, issue.missing ?? [], ctx.invitePermissions ?? '0');
 }
 
-function featureName(ctx: TextContext, key: string | undefined): string {
-  if (!key) return 'Fitur';
-  return ctx.registry.find((f) => f.key === key)?.name ?? key;
-}
-
 export function channelLabel(ctx: TextContext, id: string | null | undefined, fallbackName?: string | null): string {
   if (!id) return 'tidak diatur';
   const ch = channelById(ctx.snapshot, id);
   if (ch) return `#${ch.name}`;
   if (fallbackName) return `#${fallbackName}`;
   return `#channel terhapus (${id})`;
-}
-
-function settingTitle(ctx: TextContext, issue: Issue): string {
-  const f = ctx.registry.find((x) => x.key === issue.feature);
-  return (f && typedSettings(f).find((p) => p.key === issue.key)?.title) || issue.key || 'setelan';
 }
 
 export function roleLabel(ctx: TextContext, id: string | null | undefined): string {
@@ -891,77 +898,7 @@ export function categoryLabel(category: string | undefined): string {
   return category === 'chat' ? 'Chat' : category === 'voice' ? 'Voice' : category === 'combined' ? 'Combined' : category ?? '';
 }
 
-function listJoin(items: string[]): string {
-  if (items.length <= 1) return items.join('');
-  return `${items.slice(0, -1).join(', ')} & ${items[items.length - 1]}`;
-}
-
-/** Kalimat yang menjelaskan sebuah masalah + cara memperbaikinya. */
-export function describeIssue(issue: Issue, ctx: TextContext): string {
-  const name = featureName(ctx, issue.feature);
-  const ch = channelLabel(ctx, issue.channel_id, issue.channel_name);
-  switch (issue.code) {
-    case 'MISSING_PERMISSIONS': {
-      const head = `${name} belum dapat diterapkan. Bot tidak memiliki permission ${listJoin(issue.missing ?? [])} di ${ch}.`;
-      const fix = issueFix(issue, ctx);
-      if (fix === 'reinvite') return `${head} Role bot belum punya izin itu. Tekan ${REINVITE_LABEL}, pilih server ini, lalu Authorize. Setelah itu tekan Refresh Discord Data.`;
-      if (fix === 'unknown') return `${head} Coba ${REINVITE_LABEL} lalu tekan Refresh Discord Data. Bila masih kurang, izin itu ditolak oleh pengaturan channel: buka Edit Channel › Permissions di ${ch}, tambahkan role bot, lalu izinkan permission tersebut.`;
-      return `${head} Role bot sudah punya izin itu, tetapi pengaturan channel menolaknya, jadi undang ulang tidak membantu. Buka Edit Channel › Permissions di ${ch}, tambahkan role bot, izinkan permission tersebut, atau pilih channel lain.`;
-    }
-    case 'MISSING_GUILD_PERMISSIONS': {
-      const head = `${name} belum dapat diterapkan. Bot tidak memiliki izin server ${listJoin(issue.missing ?? [])}.`;
-      return issueFix(issue, ctx) === 'channel'
-        ? `${head} Beri izin itu ke role bot di Pengaturan Server › Role.`
-        : `${head} Tekan ${REINVITE_LABEL}, pilih server ini, lalu Authorize. Cara lain: beri izin itu ke role bot di Pengaturan Server › Role.`;
-    }
-    case 'CHANNEL_NOT_FOUND':
-      return `${name}: channel ${ch} tidak ditemukan di server (mungkin sudah dihapus). Tekan Refresh Discord Data lalu pilih channel lain.`;
-    case 'CHANNEL_TYPE_INVALID':
-      return `${name}: ${ch} bukan channel teks biasa. Pilih channel teks (bukan voice, forum, atau kategori).`;
-    case 'CHANNEL_REQUIRED':
-      return `${name} butuh channel selama aktif. Pilih channel atau matikan fitur ini.`;
-    case 'CHANNEL_CONFLICT':
-      return `${name} dan ${featureName(ctx, issue.other_feature)} tidak boleh memakai channel yang sama (${ch}).`;
-    case 'SETTING_REQUIRED':
-      return `${name}: ${settingTitle(ctx, issue)} wajib diisi selama fitur aktif.`;
-    case 'SETTING_OUT_OF_RANGE':
-      return `${name}: ${settingTitle(ctx, issue)} harus antara ${issue.min ?? '…'} dan ${issue.max ?? '…'}.`;
-    case 'SETTING_INVALID':
-      return `${name}: nilai ${settingTitle(ctx, issue)} tidak valid.`;
-    case 'ROLE_NOT_FOUND':
-      return `${name}: role untuk ${settingTitle(ctx, issue)} tidak ditemukan di server (mungkin sudah dihapus). Tekan Refresh Discord Data lalu pilih role lain.`;
-    case 'ROLE_UNUSABLE':
-      if (issue.key === 'notify_roles') return `${name}: role ${roleLabel(ctx, issue.role_id)} tidak bisa dipakai sebagai penerima notifikasi. ${issue.reason ?? 'Pilih role lain.'}`;
-      return `${name}: role ${roleLabel(ctx, issue.role_id)} tidak bisa diberikan bot karena ${issue.reason ?? 'periksa izin Manage Roles dan posisi role bot'}. Naikkan role bot di atas role ini di Pengaturan Server › Role.`;
-    case 'REWARD_LIMIT':
-      return `${name}: reward ${categoryLabel(issue.category)} melebihi batas (maks. ${issue.max ?? '…'}). Hapus sebagian baris.`;
-    case 'REWARD_DUPLICATE':
-      return `${name}: ada dua reward ${categoryLabel(issue.category)} dengan level yang sama${issue.level ? ` (level ${issue.level})` : ''}. Satu level hanya boleh punya satu reward per kategori.`;
-    case 'ROLE_CONFLICT':
-      return issue.key === 'unverified_role'
-        ? `${name}: role belum terverifikasi tidak boleh sama dengan Verified Role. Pilih role lain.`
-        : issue.key === 'member_roles' || issue.key === 'bot_roles'
-          ? `${name}: role ${roleLabel(ctx, issue.role_id)} dipakai sebagai Verified Role, jadi tidak boleh diberikan otomatis ke member baru. Pilih role lain.`
-          : `${name}: role ${roleLabel(ctx, issue.role_id)} sudah dipakai sebagai Verified Role atau role belum terverifikasi, jadi tidak boleh dipakai sebagai reward level.`;
-    case 'NO_DISCORD_DATA':
-      return 'Daftar channel dari Discord belum tersedia. Tekan Refresh Discord Data dan tunggu beberapa detik.';
-    case 'BOT_NOT_IN_GUILD':
-      return 'Bot sudah tidak berada di server ini. Undang bot lagi untuk menerapkan konfigurasi.';
-    case 'ACTOR_FORBIDDEN':
-      return 'Bot menolak perubahan ini karena penyimpannya tidak lagi punya izin Manage Server di server ini. Admin lain bisa menekan Retry Sync untuk menyetujui & menerapkannya, atau mengubah lalu menyimpan ulang.';
-    case 'APPLY_FAILED':
-      return 'Bot gagal menerapkan konfigurasi ini. Konfigurasi lama tetap berlaku. Coba Retry Sync sebentar lagi.';
-    case 'UNKNOWN_FEATURE':
-      return `Fitur ${issue.feature ?? ''} tidak dikenal oleh bot versi ini.`.replace(/\s+/g, ' ');
-    case 'UNKNOWN_PURPOSE':
-    case 'INVALID_CHANNEL':
-    case 'INVALID_PAYLOAD':
-    case 'SETTINGS_INVALID':
-      return `${name}: data pengaturan tidak valid. Muat ulang halaman lalu coba lagi.`;
-    default:
-      return issue.detail ? `${name}: ${issue.detail}` : `${name}: terjadi masalah (${issue.code}).`;
-  }
-}
+// Teks kendala (judul, penyebab, langkah) ada di issue-guide.ts.
 
 /** Pesan untuk error RPC / Edge Function. */
 export function describeError(code: string | null | undefined, detail?: Record<string, unknown> | null): string {
@@ -997,7 +934,7 @@ export function describeError(code: string | null | undefined, detail?: Record<s
     case 'DISCORD_UNAVAILABLE':
       return 'Discord sedang tidak bisa dihubungi. Coba lagi beberapa saat lagi.';
     case 'SYNC_TIMEOUT':
-      return 'Bot belum menerapkan perubahan dalam waktu yang wajar. Coba Retry Sync, atau periksa apakah bot online.';
+      return 'Bot belum menerapkan perubahan dalam waktu yang wajar. Tekan Coba terapkan lagi, atau periksa apakah bot online.';
     case 'NETWORK':
       return 'Gagal terhubung ke server. Periksa koneksi internet lalu coba lagi.';
     case 'DATABASE_ERROR':
@@ -1060,36 +997,8 @@ export const AUDIT_ACTION: Record<string, string> = {
   'config.import': 'Mengimpor pengaturan lama',
   'sync.applied': 'Bot menerapkan revisi',
   'sync.failed': 'Bot gagal menerapkan revisi',
-  'sync.resync_requested': 'Meminta Retry Sync',
-  'sync.reauthorized': 'Menyetujui revisi tertunda (Retry Sync)',
+  'sync.resync_requested': 'Meminta bot menerapkan ulang',
+  'sync.reauthorized': 'Menyetujui revisi tertunda',
 };
 
-function show(value: unknown, isChannel: boolean, ctx: TextContext): string {
-  if (value === null || value === undefined) return isChannel ? 'tidak diatur' : 'kosong';
-  if (typeof value === 'boolean') return value ? 'ON' : 'OFF';
-  if (isChannel && typeof value === 'string') return channelLabel(ctx, value);
-  return typeof value === 'string' ? value : JSON.stringify(value);
-}
-
-/** Satu baris perubahan audit, mis. "Sambung Kata · Channel khusus: #a → #b". */
-export function formatAuditChange(change: unknown, ctx: TextContext): string {
-  const c = change as { path?: string; from?: unknown; to?: unknown; previous_actor_id?: string; previous_actor_name?: string | null };
-  if (c?.previous_actor_id !== undefined) {
-    return `Sebelumnya atas nama ${c.previous_actor_name ?? c.previous_actor_id ?? 'tidak diketahui'}`;
-  }
-  if (!c?.path) return describeIssue(change as Issue, ctx);
-  const [fk, field, sub] = c.path.split('.');
-  const f = ctx.registry.find((x) => x.key === fk);
-  const name = f?.name ?? fk;
-  if (field === 'enabled') return `${name} · Status: ${show(c.from, false, ctx)} → ${show(c.to, false, ctx)}`;
-  if (field === 'channels') {
-    const label = f?.purposes.find((p) => p.key === sub)?.label ?? sub;
-    return `${name} · ${label}: ${show(c.from, true, ctx)} → ${show(c.to, true, ctx)}`;
-  }
-  if (field === 'settings' && sub === NOT_USED) {
-    return `${name} · Tidak dipakai: ${c.to === true ? 'ya' : 'tidak'}`;
-  }
-  // Judul setelan dari registry bot (bukan kunci mentah) bila masih terdaftar.
-  const title = (field === 'settings' && f && typedSettings(f).find((p) => p.key === sub)?.title) || sub || field;
-  return `${name} · ${title}: ${show(c.from, false, ctx)} → ${show(c.to, false, ctx)}`;
-}
+// formatAuditChange ada di review-model.ts (butuh teks kendala dari issue-guide.ts).

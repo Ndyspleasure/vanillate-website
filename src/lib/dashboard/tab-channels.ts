@@ -2,6 +2,7 @@
 // Hanya membaca data yang sudah dimuat halaman (tanpa permintaan tambahan).
 
 import { channelById, channelLabel, missingPermissions, permissionFix } from './model';
+import { CHECK_LABEL, permissionLabel } from './issue-guide';
 import { featureLabel, reinviteLinkHtml, tabOfFeature, type PageCtx } from './server-shared';
 import { BTN_SECONDARY, CARD, esc, pill } from './ui';
 
@@ -10,6 +11,7 @@ export function panelHtml(c: PageCtx): string {
   let problems = 0;
   let reinvite = false;
   let channelDenied = false;
+  let stale = false;
   const rows = c.registry.flatMap((f) =>
     f.purposes.map((p) => {
       const s = c.base[f.key];
@@ -26,10 +28,12 @@ export function panelHtml(c: PageCtx): string {
         problems += 1;
       } else {
         const missing = missingPermissions(ch, p);
-        status = missing.length ? pill(`Izin kurang: ${missing.join(', ')}`, 'warning') : pill('OK', 'success');
+        status = missing.length ? pill(`Izin kurang: ${missing.map(permissionLabel).join(', ')}`, 'warning') : pill('OK', 'success');
         if (missing.length) {
           problems += 1;
-          if (permissionFix(d.snapshot, missing, c.text.invitePermissions ?? '0') === 'channel') channelDenied = true;
+          const fix = permissionFix(d.snapshot, missing, c.text.invitePermissions ?? '0');
+          if (fix === 'channel') channelDenied = true;
+          else if (fix === 'stale') stale = true;
           else reinvite = true;
         }
       }
@@ -53,15 +57,19 @@ export function panelHtml(c: PageCtx): string {
     <p class="max-w-3xl text-sm text-ink-600 dark:text-cream-300">Peta lengkap channel yang dipakai setiap fitur bot di server ini, dicek dengan data Discord terakhir yang dikirim bot. Channel yang hilang atau izin bot yang kurang langsung kelihatan di sini. Ubah lewat Game Hub, Social Hub, atau submenu fiturnya di Server Hub.</p>
     ${summary ? `<p class="mt-2 text-xs text-ink-500 dark:text-cream-300/60">${esc(summary)}</p>` : ''}
     ${
-      reinvite || channelDenied
+      reinvite || channelDenied || stale
         ? `<div class="mt-3 rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-4 text-sm sm:p-5">
             <p class="font-medium text-amber-900 dark:text-amber-200">Cara memperbaiki izin bot</p>
             <ol class="mt-2 list-decimal space-y-1.5 pl-5 text-ink-700 dark:text-cream-200">
-              ${reinvite ? `<li>Role bot belum punya sebagian izin. Undang ulang bot memakai tautan berizin lengkap, pilih server ini, lalu tekan Authorize. Pengaturan bot yang sudah ada tidak hilang.</li>` : ''}
-              ${channelDenied ? `<li>Bila role bot sudah punya izinnya tetapi channel menolak, buka channel itu di Discord, pilih Edit Channel › Permissions, tambahkan role bot, lalu izinkan permission yang tertulis di kolom Status.</li>` : ''}
-              <li>Kembali ke sini dan tekan Refresh Discord Data supaya status di tabel ini diperbarui.</li>
+              ${reinvite ? `<li>Role bot belum punya sebagian izin. Undang ulang bot memakai tautan berizin lengkap, pilih server ini, lalu tekan Authorize (Otorisasi). Pengaturan bot yang sudah ada tidak hilang.</li>` : ''}
+              ${channelDenied ? `<li>Bila role bot sudah punya izinnya tetapi channel menolak, buka channel itu di Discord, pilih Edit Channel › Permissions (Izin), tambahkan role bot, lalu beri centang hijau pada izin yang tertulis di kolom Status.</li>` : ''}
+              ${stale ? `<li>Bot memegang izin Administrator, jadi izin yang tercatat kurang berarti data Discord sudah lama. Cukup tekan ${CHECK_LABEL}.</li>` : ''}
+              <li>Kembali ke sini dan tekan ${CHECK_LABEL} supaya status di tabel ini diperbarui.</li>
             </ol>
-            ${reinvite && c.inviteUrl ? `<div class="mt-3">${reinviteLinkHtml(c, `${BTN_SECONDARY} min-h-[44px]`)}</div>` : ''}
+            <div class="mt-3 flex flex-wrap gap-2">
+              ${reinvite && c.inviteUrl ? reinviteLinkHtml(c, `${BTN_SECONDARY} min-h-[44px]`) : ''}
+              <button type="button" data-action="discord-refresh" class="${BTN_SECONDARY} min-h-[44px]">${CHECK_LABEL}</button>
+            </div>
           </div>`
         : ''
     }
