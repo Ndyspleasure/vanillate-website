@@ -1,5 +1,23 @@
 [
   {
+    "version": "3.66.3",
+    "date": "2026-11-28",
+    "title": "Bersihkan tombol peringkat lama",
+    "highlights": [
+      "🏆 Gunakan /rank untuk membuka papan peringkat game, aktivitas sosial, dan XP server.",
+      "🧹 Bot membersihkan tombol peringkat dari pesan publik lama yang masih bisa diedit. Di pesan privat lama, tekan tombol untuk menghapusnya dan melihat petunjuk /rank."
+    ]
+  },
+  {
+    "version": "3.66.2",
+    "date": "2026-11-28",
+    "title": "Petunjuk perbaikan di Vanillate Dashboard lebih tepat",
+    "highlights": [
+      "🛠️ Vanillate Dashboard kini memberi langkah perbaikan yang tepat saat role tidak bisa diberikan bot (izin Manage Roles, posisi role, atau role integrasi)",
+      "📢 Kendala pengaturan server tampil sebagai pengingat yang jelas di dashboard, lengkap dengan tombol langsung ke fitur yang bermasalah"
+    ]
+  },
+  {
     "version": "3.66.1",
     "date": "2026-11-27",
     "title": "Pencarian member Wallet di panel admin lebih mudah",
