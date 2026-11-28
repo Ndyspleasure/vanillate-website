@@ -1,0 +1,81 @@
+name: Build dan terbitkan GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      revision:
+        required: true
+        type: string
+    secrets:
+      PUBLIC_SUPABASE_URL:
+        required: false
+      PUBLIC_SUPABASE_ANON_KEY:
+        required: false
+      PUBLIC_BOT_SUPABASE_URL:
+        required: false
+      PUBLIC_BOT_SUPABASE_ANON_KEY:
+        required: false
+      PUBLIC_GOOGLE_CLIENT_ID:
+        required: false
+
+permissions: {}
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    # Batas waktu: job macet tidak boleh menahan antrean `pages` (lihat unstick-pages.yml).
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          # Kunci publik Supabase untuk panel /admin. Keduanya memang ikut
+          # terkirim ke browser — itu wajar untuk anon key. Yang menjaga data
+          # adalah Row Level Security di Supabase, bukan kerahasiaan kunci ini.
+          # Bila secret belum diisi, build tetap jalan dan form login otomatis
+          # menampilkan panduan setup.
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          PUBLIC_BOT_SUPABASE_URL: ${{ secrets.PUBLIC_BOT_SUPABASE_URL }}
+          PUBLIC_BOT_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_BOT_SUPABASE_ANON_KEY }}
+          # Client ID Google (publik) untuk tombol resmi "Sign in with Google" di
+          # /chat. Kosong = login memakai redirect OAuth Supabase seperti biasa.
+          PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.PUBLIC_GOOGLE_CLIENT_ID }}
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: ./dist
+
+  deploy:
+    permissions:
+      pages: write
+      id-token: write
+    # Batas waktu: job macet tidak boleh menahan antrean `pages` (lihat unstick-pages.yml).
+    timeout-minutes: 20
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
