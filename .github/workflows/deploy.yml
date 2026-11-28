@@ -14,10 +14,7 @@ on:
   repository_dispatch:
     types: [blog-publish]
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 concurrency:
   group: pages
@@ -29,53 +26,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    # Batas waktu: job macet tidak boleh menahan antrean `pages` (lihat unstick-pages.yml).
-    timeout-minutes: 20
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-        env:
-          # Kunci publik Supabase untuk panel /admin. Keduanya memang ikut
-          # terkirim ke browser — itu wajar untuk anon key. Yang menjaga data
-          # adalah Row Level Security di Supabase, bukan kerahasiaan kunci ini.
-          # Bila secret belum diisi, build tetap jalan dan form login otomatis
-          # menampilkan panduan setup.
-          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
-          PUBLIC_BOT_SUPABASE_URL: ${{ secrets.PUBLIC_BOT_SUPABASE_URL }}
-          PUBLIC_BOT_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_BOT_SUPABASE_ANON_KEY }}
-          # Client ID Google (publik) untuk tombol resmi "Sign in with Google" di
-          # /chat. Kosong = login memakai redirect OAuth Supabase seperti biasa.
-          PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.PUBLIC_GOOGLE_CLIENT_ID }}
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
-  deploy:
-    # Batas waktu: job macet tidak boleh menahan antrean `pages` (lihat unstick-pages.yml).
-    timeout-minutes: 20
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+  publish:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/publish-pages.yml
+    with:
+      revision: ${{ github.sha }}
+    secrets:
+      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+      PUBLIC_BOT_SUPABASE_URL: ${{ secrets.PUBLIC_BOT_SUPABASE_URL }}
+      PUBLIC_BOT_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_BOT_SUPABASE_ANON_KEY }}
+      PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.PUBLIC_GOOGLE_CLIENT_ID }}
