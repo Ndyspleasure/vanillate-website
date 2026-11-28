@@ -16,9 +16,6 @@ import {
   channelById,
   cloneState,
   describeError,
-  describeIssue,
-  issueFix,
-  REINVITE_LABEL,
   diffStates,
   displayStatus,
   formatWib,
@@ -38,11 +35,26 @@ import {
   type TextContext,
   type Tone,
 } from './model';
+import {
+  actionLabel,
+  badgeGuides,
+  buildGuides,
+  CHECK_LABEL,
+  contactMessage,
+  hasUnseen,
+  pageGuides,
+  popupGuides,
+  RETRY_APPLY_LABEL,
+  type Guide,
+  type GuideAction,
+  type IssueSource,
+} from './issue-guide';
+import { buildWhatsappUrl } from '@data/support';
 import { failureTracker, showVaniHelp } from './help-nudge';
 import { rememberNextAndGoToLogin } from './login-redirect';
 import { createPoller, FAST_MS, nextDelay } from './polling';
 import { describeChange, recoverDraft } from './review-model';
-import { HUBS, hubOf, parseTabHash, SECTION_OF_TAB, SERVER_GROUPS, type Hub, type PageCtx, type Tab } from './server-shared';
+import { HUBS, hubOf, parseTabHash, SECTION_OF_TAB, SERVER_GROUPS, tabOfFeature, type Hub, type PageCtx, type Tab } from './server-shared';
 import { isStatsStale, parseStatsSummary } from './stats-model';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, esc, guildAvatar, icon, loadingBlock, pill, spinner, toast, wireAvatars } from './ui';
 import type { ShareController } from './share-server';
@@ -61,9 +73,6 @@ interface PageConfig {
   clientId: string;
   permissions: string;
 }
-
-/** Jumlah masalah yang langsung tampil; sisanya dilipat supaya isi tab tidak terdorong jauh di HP. */
-const ATTENTION_SHOWN = 2;
 
 /** Urutan status di bantuan "Arti status" (sama dengan alur simpan). */
 const STATUS_HELP: SyncStatus[] = ['DRAFT', 'SAVED', 'SYNCING', 'ACTIVE', 'NEEDS_ATTENTION', 'BOT_OFFLINE', 'NOT_INSTALLED'];
@@ -239,7 +248,7 @@ export function mountServerPage(cfg: PageConfig): void {
     }
   }
 
-  /** Bot belum memproses revisi tersimpan atau permintaan Retry Sync. */
+  /** Bot belum memproses revisi tersimpan atau permintaan Coba terapkan lagi. */
   function waitingForBot(): boolean {
     const c = data?.config;
     if (!c) return false;
@@ -299,10 +308,12 @@ export function mountServerPage(cfg: PageConfig): void {
       if ((data.snapshot?.refreshed_at ?? null) !== refreshWatch.prev) {
         const quiet = refreshWatch.quiet;
         refreshWatch = null;
+        finishCheck();
         if (!quiet) toast('Data channel dari Discord diperbarui.', 'success');
       } else if (Date.now() > refreshWatch.until) {
         const quiet = refreshWatch.quiet;
         refreshWatch = null;
+        checkPendingIds = null;
         if (!quiet) toast(data.bot.online ? 'Bot belum mengirim data channel. Coba lagi sebentar lagi.' : 'Bot sedang offline. Data channel diperbarui saat bot online.', 'warning', 6000);
       }
     }
@@ -313,7 +324,7 @@ export function mountServerPage(cfg: PageConfig): void {
     }
     const justApplied = Boolean(was && now && was.applied_revision < now.applied_revision);
     if (was && now && !justApplied && now.sync_status === 'NEEDS_ATTENTION' && was.sync_status !== 'NEEDS_ATTENTION') {
-      toast('Bot menemukan masalah saat menerapkan konfigurasi. Lihat bagian Perlu perhatian.', 'danger', 6000);
+      toast('Bot menemukan kendala saat menerapkan konfigurasi. Lihat pengingat kendala.', 'danger', 6000);
     }
     if (now && now.revision > (was?.revision ?? 0) && was && !justSaved && now.updated_source !== 'web') {
       toast('Konfigurasi baru saja diubah dari luar dashboard (bot atau tim Vanillate).', 'info', 6000);
@@ -400,9 +411,9 @@ export function mountServerPage(cfg: PageConfig): void {
         ${icon('arrow-left')} Semua server
       </a>
       <div class="mt-1 sm:mt-4" data-region="header">${headerHtml()}</div>
-      <div data-region="attention">${attentionHtml()}</div>
       ${navHtml(Boolean(bar))}
-      ${bar}`;
+      ${bar}
+      <div data-region="issues">${issueCenterHtml()}</div>`;
     wireAvatars(root);
     for (const [k, top] of scrolls) {
       const el = root.querySelector<HTMLElement>(`[data-scroll-keep="${CSS.escape(k)}"]`);
@@ -522,92 +533,384 @@ export function mountServerPage(cfg: PageConfig): void {
         }</p>
         <div class="mt-3 flex flex-wrap items-center gap-2 sm:mt-4">
           <button type="button" data-action="resync" class="${BTN_SECONDARY} min-h-[44px] sm:min-h-0" ${c && d.bot.installed ? '' : 'disabled'}
-            title="Minta bot memuat dan menerapkan ulang revisi terbaru. Pakai bila status tidak kunjung Aktif.">${icon('refresh-cw')} Retry Sync</button>
+            title="Minta bot memuat dan menerapkan ulang revisi terbaru. Pakai bila status tidak kunjung Aktif.">${icon('refresh-cw')} ${RETRY_APPLY_LABEL}</button>
           <button type="button" data-action="discord-refresh" class="${BTN_SECONDARY} min-h-[44px] sm:min-h-0" ${d.bot.installed && !refreshWatch ? '' : 'disabled'}
             title="Minta bot mengirim ulang daftar channel, role, dan izin bot dari Discord. Pakai setelah membuat channel atau mengubah izin.">
-            ${refreshWatch ? spinner() : icon('refresh-cw')} Refresh Discord Data</button>
+            ${refreshWatch ? spinner() : icon('refresh-cw')} ${CHECK_LABEL}</button>
         </div>
         <details class="mt-2 text-xs text-ink-600 dark:text-cream-300" ${openDetails.has('status') ? 'open' : ''} data-keep-open="status">
           <summary class="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 font-medium text-ink-600 hover:text-ink-900 sm:min-h-0 sm:py-1 dark:text-cream-300 dark:hover:text-cream-50" data-focus="status-help">${icon('circle-help', 'h-3.5 w-3.5')} Arti status dan tombol</summary>
           <dl class="mt-1 grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
             ${STATUS_HELP.map((s) => `<div class="flex gap-2"><dt class="shrink-0 font-semibold">${esc(STATUS_META[s].label)}</dt><dd class="text-ink-500 dark:text-cream-300/70">${esc(STATUS_META[s].hint)}</dd></div>`).join('')}
-            <div class="flex gap-2"><dt class="shrink-0 font-semibold">Retry Sync</dt><dd class="text-ink-500 dark:text-cream-300/70">Meminta bot memuat dan menerapkan ulang revisi terbaru.</dd></div>
-            <div class="flex gap-2"><dt class="shrink-0 font-semibold">Refresh Discord Data</dt><dd class="text-ink-500 dark:text-cream-300/70">Meminta bot mengirim ulang daftar channel, role, dan izin bot.</dd></div>
+            <div class="flex gap-2"><dt class="shrink-0 font-semibold">${RETRY_APPLY_LABEL}</dt><dd class="text-ink-500 dark:text-cream-300/70">Meminta bot memuat dan menerapkan ulang revisi terbaru.</dd></div>
+            <div class="flex gap-2"><dt class="shrink-0 font-semibold">${CHECK_LABEL}</dt><dd class="text-ink-500 dark:text-cream-300/70">Meminta bot mengirim ulang daftar channel, role, dan izin bot.</dd></div>
           </dl>
         </details>
       </div>`;
   }
 
-  // ─── Perlu perhatian ─────────────────────────────────────────────────────
+  // ─── Pop up kendala + lencana ────────────────────────────────────────────
+  //
+  // Kendala 🔴 membuka pop up (panel samping, tidak mengunci halaman). Tombol X
+  // dan "Nanti saja" hanya mengecilkannya menjadi lencana yang tidak bisa
+  // ditutup selama kendala masih ada. Pop up terbuka lagi bila ada kendala 🔴
+  // baru yang belum dilihat, atau di sesi browser baru (sessionStorage).
+  // Semua dihitung dari data yang sudah dimuat: tanpa query atau polling baru.
 
-  function topIssues(): { text: string; tone: Tone; action?: string }[] {
+  function currentGuides(): Guide[] {
     const d = data!;
-    const out: { text: string; tone: Tone; action?: string }[] = [];
-    const seen = new Set<string>();
-    const add = (i: Issue, tone: Tone) => {
-      const k = `${i.code}|${i.feature ?? ''}|${i.purpose ?? ''}|${i.channel_id ?? ''}`;
-      if (seen.has(k)) return;
-      seen.add(k);
-      const fix = issueFix(i, ctx());
-      out.push({ text: describeIssue(i, ctx()), tone, ...(fix && fix !== 'channel' ? { action: 'reinvite' } : {}) });
-    };
-
-    if (!d.bot.installed) {
-      out.push({ text: 'Bot Vanillate belum ada di server ini. Undang bot dulu, lalu muat ulang halaman.', tone: 'neutral', action: 'invite' });
-      return out;
-    }
-    if (pageError) out.push({ text: describeError(pageError.code, pageError.detail), tone: 'danger' });
-    for (const i of attemptIssues) add(i, 'danger');
-    for (const i of serverIssues(d.config)) add(i, 'danger');
-    for (const i of permissionWarnings(base, d.registry, d.snapshot)) add(i, 'warning');
+    const items: { issue: Issue; source: IssueSource }[] = [];
+    for (const i of attemptIssues) items.push({ issue: i, source: 'draft' });
+    for (const i of serverIssues(d.config)) items.push({ issue: i, source: 'bot' });
+    for (const i of permissionWarnings(base, d.registry, d.snapshot)) items.push({ issue: i, source: 'live' });
     for (const f of d.registry) {
       const s = base[f.key];
       if (!s?.enabled || !d.snapshot?.refreshed_at) continue;
       for (const p of f.purposes) {
         const id = s.channels[p.key];
-        if (id && !channelById(d.snapshot, id)) add({ code: 'CHANNEL_NOT_FOUND', feature: f.key, purpose: p.key, channel_id: id }, 'warning');
+        if (id && !channelById(d.snapshot, id)) items.push({ issue: { code: 'CHANNEL_NOT_FOUND', feature: f.key, purpose: p.key, channel_id: id }, source: 'live' });
       }
     }
-    if (!d.snapshot?.refreshed_at) {
-      out.push({ text: 'Daftar channel dari Discord belum dimuat. Tekan Refresh Discord Data.', tone: 'info' });
-    }
-    if (!d.bot.online) {
-      out.push({ text: 'Bot sedang offline. Perubahan tetap bisa disimpan dan akan diterapkan otomatis saat bot kembali online.', tone: 'neutral' });
-    }
-    const c = d.config;
-    if (remoteChanged) {
-      out.push({ text: `Konfigurasi server ini diubah di tempat lain (revisi ${c?.revision ?? '?'}) saat kamu sedang mengedit. Muat versi terbaru sebelum menyimpan.`, tone: 'warning', action: 'reload-latest' });
-    }
-    if (syncTimedOut()) {
-      out.push({ text: describeError('SYNC_TIMEOUT'), tone: 'warning', action: 'resync' });
-    }
-    return out;
+    const page = pageGuides({
+      botInstalled: d.bot.installed,
+      botOnline: d.bot.online,
+      remoteChanged,
+      revision: d.config?.revision ?? null,
+      syncTimedOut: syncTimedOut(),
+      noDiscordData: !d.snapshot?.refreshed_at,
+      loadError: pageError ? describeError(pageError.code, pageError.detail) : null,
+    });
+    if (!d.bot.installed) return page;
+    return buildGuides(items, ctx(), page);
   }
 
-  function attentionHtml(): string {
-    const items = topIssues();
-    if (!items.length) return '';
+  const SEEN_KEY = `vn-issues-seen-${guildId}`;
+  const seenIssues = new Set<string>();
+  try {
+    for (const id of JSON.parse(sessionStorage.getItem(SEEN_KEY) ?? '[]') as string[]) seenIssues.add(id);
+  } catch {
+    /* penyimpanan diblokir: pop up tampil sekali per pemuatan halaman */
+  }
+  function markSeen(list: Guide[]): void {
+    let added = false;
+    for (const g of popupGuides(list)) {
+      if (!seenIssues.has(g.id)) {
+        seenIssues.add(g.id);
+        added = true;
+      }
+    }
+    if (!added) return;
+    try {
+      sessionStorage.setItem(SEEN_KEY, JSON.stringify([...seenIssues].slice(-200)));
+    } catch {
+      /* hanya diingat sampai halaman ditutup */
+    }
+  }
+
+  let issuePanelOpen = false;
+  let issueClosing = false;
+  let minimizeHinted = false;
+  /** Catatan kecil di bawah lencana sesaat setelah pop up dikecilkan pertama kali. */
+  let badgeHint = false;
+  /** Kendala yang masih ada setelah admin menekan Cek lagi. */
+  let checkedStill = new Set<string>();
+  let checkPendingIds: Set<string> | null = null;
+  let lastBadgeCount = -1;
+  /** Admin membuka tautan undangan: periksa sekali saat kembali ke tab ini. */
+  let reinvitePending = false;
+
+  /** Dipanggil tiap render: buka pop up untuk kendala 🔴 baru, catat yang sudah dilihat. */
+  function syncIssueState(list: Guide[]): void {
+    if (!issuePanelOpen && !issueClosing && hasUnseen(list, seenIssues)) issuePanelOpen = true;
+    if (issuePanelOpen) markSeen(list);
+    const n = badgeGuides(list).length;
+    if (lastBadgeCount > 0 && n === 0) toast('Semua kendala sudah beres.', 'success');
+    lastBadgeCount = n;
+    const ids = new Set(list.map((g) => g.id));
+    checkedStill = new Set([...checkedStill].filter((id) => ids.has(id)));
+  }
+
+  const discordChannelUrl = (channelId: string) => `https://discord.com/channels/${guildId}/${channelId}`;
+
+  function actionHtml(g: Guide, a: GuideAction, primary = false): string {
+    const cls = `${primary ? BTN_PRIMARY : BTN_SECONDARY} min-h-[44px] sm:min-h-0`;
+    const label = esc(actionLabel(a));
+    const ext = 'target="_blank" rel="noopener noreferrer"';
     const invite = inviteUrl(cfg.clientId, cfg.permissions, guildId);
-    const link = 'inline-flex min-h-[44px] items-center font-medium text-amber-700 underline sm:min-h-0 dark:text-amber-300';
-    const row = (i: (typeof items)[number]) => `<li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${i.tone === 'danger' ? 'bg-red-500' : i.tone === 'warning' ? 'bg-amber-500' : 'bg-ink-400'}" aria-hidden="true"></span>
-      <span class="min-w-0">${esc(i.text)}${i.action === 'invite' && invite ? ` <a href="${esc(invite)}" target="_blank" rel="noopener noreferrer" class="${link}">Undang bot</a>` : ''}${
-        i.action === 'reinvite' && invite ? ` <a href="${esc(invite)}" target="_blank" rel="noopener noreferrer" class="${link}">${esc(REINVITE_LABEL)}</a>` : ''
-      }${
-        i.action === 'reload-latest' ? ` <button type="button" data-action="reload-latest" class="${link}">Muat versi terbaru</button>` : ''
-      }${i.action === 'resync' ? ` <button type="button" data-action="resync" class="${link}">Retry Sync</button>` : ''}</span></li>`;
+    switch (a.kind) {
+      case 'reinvite':
+      case 'invite':
+        return invite ? `<a href="${esc(invite)}" ${ext} data-reinvite class="${cls}">${label}</a>` : '';
+      case 'open-channel':
+        return `<a href="${esc(discordChannelUrl(a.channelId))}" ${ext} class="${cls}">${icon('external-link', 'h-3.5 w-3.5')} ${label}</a>`;
+      case 'contact':
+        return `<a href="${esc(buildWhatsappUrl(contactMessage(guildId, g, ctx())))}" ${ext} class="${cls}">${label}</a>`;
+      case 'check':
+        return `<button type="button" data-action="discord-refresh" data-check-ids="${esc(g.id)}" class="${cls}" ${refreshWatch ? 'disabled' : ''}>${refreshWatch ? spinner() : icon('refresh-cw', 'h-3.5 w-3.5')} ${label}</button>`;
+      case 'goto':
+        return `<button type="button" data-issue-goto="${esc(a.feature)}" class="${cls}">${label}</button>`;
+      case 'retry-apply':
+      case 'apply-pending':
+        return `<button type="button" data-action="resync" class="${cls}">${label}</button>`;
+      case 'view-changes':
+        return `<button type="button" data-tab="audit-log" data-issue-minimize class="${cls}">${label}</button>`;
+      case 'reload-latest':
+        return `<button type="button" data-action="reload-latest" class="${cls}">${label}</button>`;
+      case 'reload':
+        return `<button type="button" data-action="reload" class="${cls}">${label}</button>`;
+    }
+  }
+
+  function guideCardHtml(g: Guide, i: number): string {
+    const d = data!;
+    const red = g.level === 'red';
+    const feats = g.features.map((k) => ({ key: k, name: d.registry.find((f) => f.key === k)?.name ?? k, known: d.registry.some((f) => f.key === k) }));
+    const contact = red && !g.actions.some((a) => a.kind === 'contact') ? actionHtml(g, { kind: 'contact' }) : '';
+    return `<li class="rounded-xl border p-3 sm:p-4 ${red ? 'border-red-500/30 bg-red-500/[0.05]' : 'border-amber-500/30 bg-amber-500/[0.06]'}" data-focus="issue-${i}">
+      <p class="flex items-start gap-2 font-medium ${red ? 'text-red-800 dark:text-red-200' : 'text-amber-900 dark:text-amber-200'}">
+        <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full ${red ? 'bg-red-500' : 'bg-amber-500'}" aria-hidden="true"></span>
+        <span class="min-w-0"><span class="sr-only">${red ? 'Penting: ' : 'Perlu dicek: '}</span>${esc(g.title)}</span>
+      </p>
+      ${feats.length ? `<p class="mt-1.5 flex flex-wrap items-center gap-1.5 pl-4 text-xs text-ink-500 dark:text-cream-300/70"><span>Fitur:</span>${feats
+        .map((f) =>
+          f.known
+            ? `<button type="button" data-issue-goto="${esc(f.key)}" data-focus="issue-${i}-go-${esc(f.key)}" title="Buka pengaturan ${esc(f.name)}"
+                class="group inline-flex min-h-[44px] items-center gap-1 rounded-full sm:min-h-[30px] border border-amber-500/40 bg-white/70 px-2.5 py-0.5 font-medium text-amber-800 transition hover:-translate-y-px hover:border-amber-500 hover:bg-amber-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500 dark:bg-ink-900/60 dark:text-amber-300">${esc(f.name)}${icon('arrow-right', 'h-3 w-3 transition group-hover:translate-x-0.5')}<span class="sr-only">, buka pengaturannya</span></button>`
+            : `<span>${esc(f.name)}</span>`,
+        )
+        .join('')}</p>` : ''}
+      <p class="mt-2 pl-4 text-sm text-ink-700 dark:text-cream-200">${esc(g.cause)}</p>
+      ${g.steps.length ? `<ol class="mt-2 list-decimal space-y-1 pl-9 text-sm text-ink-700 dark:text-cream-200">${g.steps.map((st) => `<li>${esc(st)}</li>`).join('')}</ol>` : ''}
+      ${checkedStill.has(g.id) ? `<p class="mt-2 pl-4 text-xs font-medium text-red-700 dark:text-red-300" role="status">Sudah dicek ulang, kendala ini masih ada.</p>` : ''}
+      ${g.actions.length || contact ? `<div class="mt-3 flex flex-wrap gap-2 pl-4">${g.actions.map((a) => actionHtml(g, a)).join('')}${contact}</div>` : ''}
+    </li>`;
+  }
+
+  function issuePanelHtml(list: Guide[]): string {
+    const shown = badgeGuides(list);
+    const red = popupGuides(list).length;
+    const top = shown[0];
+    const firstAction = top?.actions.find((a) => a.kind !== 'contact');
+    const body = shown.length
+      ? `<ul class="mt-3 space-y-3">${shown.map(guideCardHtml).join('')}</ul>`
+      : `<p class="mt-3 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.07] p-3 text-sm font-medium text-emerald-800 dark:text-emerald-200" role="status">${icon('check')} Semua kendala sudah beres.</p>`;
     return `
-      <div class="mt-3 rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-4 sm:mt-4 sm:p-5" role="region" aria-label="Perlu perhatian">
-        <p class="flex items-center gap-2 font-medium text-amber-900 dark:text-amber-200">${icon('triangle-alert')} Perlu perhatian</p>
-        <ul class="mt-2 space-y-2 text-sm sm:mt-3">${items.slice(0, ATTENTION_SHOWN).map(row).join('')}</ul>
-        ${
-          items.length > ATTENTION_SHOWN
-            ? `<details class="mt-1 text-sm" ${openDetails.has('attention') ? 'open' : ''} data-keep-open="attention">
-                <summary class="inline-flex min-h-[44px] cursor-pointer items-center font-medium text-amber-800 sm:min-h-0 sm:py-1 dark:text-amber-300" data-focus="attention-more">${items.length - ATTENTION_SHOWN} hal lain</summary>
-                <ul class="mt-1 space-y-2">${items.slice(ATTENTION_SHOWN).map(row).join('')}</ul>
-              </details>`
-            : ''
-        }
+      <div id="issue-panel" role="dialog" aria-modal="false" aria-labelledby="issue-panel-title" tabindex="-1" data-issue-panel
+        class="fixed inset-x-0 bottom-0 z-[45] flex max-h-[80vh] flex-col overflow-hidden rounded-t-2xl border border-ink-900/10 bg-cream-50 shadow-2xl sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-20 sm:max-h-none sm:w-[26rem] sm:rounded-2xl dark:border-cream-100/10 dark:bg-ink-900">
+        <div class="flex items-start justify-between gap-3 border-b border-ink-900/10 px-4 py-3 dark:border-cream-100/10">
+          <div class="min-w-0">
+            <h2 id="issue-panel-title" class="flex items-center gap-2 font-display text-base font-semibold">${icon('triangle-alert', `h-4 w-4 ${red ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`)}
+              ${shown.length ? `${shown.length} kendala perlu diperbaiki` : 'Kendala server'}</h2>
+            ${shown.length ? `<p class="mt-0.5 text-xs text-ink-500 dark:text-cream-300/70">Pengingat ini tetap ada di pojok kanan atas sampai kendalanya beres.</p>` : ''}
+          </div>
+          <button type="button" data-issue-minimize data-focus="issue-close" aria-label="Kecilkan pengingat"
+            class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-500 hover:bg-ink-900/5 sm:h-9 sm:w-9 dark:text-cream-300 dark:hover:bg-cream-100/5">${icon('x')}</button>
+        </div>
+        <div class="min-h-0 flex-1 overflow-y-auto px-4 pb-3" data-scroll-keep="issues">${body}</div>
+        <div class="flex flex-wrap justify-end gap-2 border-t border-ink-900/10 px-4 py-3 dark:border-cream-100/10">
+          <button type="button" data-issue-minimize class="${BTN_SECONDARY} min-h-[44px] sm:min-h-0">${shown.length ? 'Nanti saja' : 'Tutup'}</button>
+          ${top && firstAction ? actionHtml(top, firstAction, true).replace(esc(actionLabel(firstAction)), 'Perbaiki sekarang') : ''}
+        </div>
       </div>`;
+  }
+
+  function issueBadgeHtml(list: Guide[]): string {
+    const shown = badgeGuides(list);
+    if (!shown.length) return '';
+    const red = popupGuides(list).length > 0;
+    return `<button type="button" data-issue-open data-focus="issue-badge" aria-haspopup="dialog" aria-controls="issue-panel"
+      class="fixed right-3 top-20 z-30 inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold shadow-lg backdrop-blur transition sm:min-h-0 ${
+        red ? 'border-red-500/40 bg-red-50/95 text-red-800 dark:bg-red-950/90 dark:text-red-200' : 'border-amber-500/40 bg-amber-50/95 text-amber-900 dark:bg-ink-900/95 dark:text-amber-200'
+      }">${icon('triangle-alert', 'h-4 w-4')} ${shown.length} kendala<span class="sr-only">, buka pengingat</span></button>${
+        badgeHint
+          ? `<p class="fixed right-3 top-[8.25rem] z-30 max-w-[16rem] rounded-xl border border-ink-900/10 bg-white/95 px-3 py-2 text-xs text-ink-700 shadow-lg sm:top-[7.25rem] dark:border-cream-100/10 dark:bg-ink-900/95 dark:text-cream-200" role="status" data-issue-hint>Pengingat dipindah ke sini. Tekan lencana untuk membukanya lagi.</p>`
+          : ''
+      }`;
+  }
+
+  function issueCenterHtml(): string {
+    const list = currentGuides();
+    syncIssueState(list);
+    if (issuePanelOpen) return issuePanelHtml(list);
+    return issueBadgeHtml(list);
+  }
+
+  const reducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+
+  /**
+   * Animasi lencana setelah pop up "mendarat": membesar memantul, bergoyang
+   * sedikit, dan memancarkan dua cincin. Murni tampilan (Web Animations API).
+   */
+  function celebrateBadge(badge: HTMLElement): void {
+    badge.animate(
+      [
+        { transform: 'scale(0.4)', opacity: 0 },
+        { transform: 'scale(1.18) rotate(-6deg)', opacity: 1, offset: 0.45 },
+        { transform: 'scale(0.94) rotate(4deg)', offset: 0.65 },
+        { transform: 'scale(1.04) rotate(-2deg)', offset: 0.82 },
+        { transform: 'scale(1) rotate(0deg)', opacity: 1 },
+      ],
+      { duration: 620, easing: 'cubic-bezier(.2,.8,.2,1)' },
+    );
+    const r = badge.getBoundingClientRect();
+    for (const delay of [120, 380]) {
+      const ring = document.createElement('span');
+      ring.setAttribute('aria-hidden', 'true');
+      ring.className = 'pointer-events-none fixed z-30 rounded-full border-2 border-red-500/70 dark:border-red-400/70';
+      Object.assign(ring.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+      document.body.appendChild(ring);
+      ring.animate(
+        [
+          { transform: 'scale(1)', opacity: 0.9 },
+          { transform: 'scale(1.6)', opacity: 0 },
+        ],
+        { duration: 700, delay, easing: 'cubic-bezier(.2,.6,.3,1)', fill: 'both' },
+      ).onfinish = () => ring.remove();
+    }
+  }
+
+  function openIssuePanel(): void {
+    const badge = root.querySelector<HTMLElement>('[data-issue-open]');
+    const from = badge?.getBoundingClientRect() ?? null;
+    issuePanelOpen = true;
+    badgeHint = false;
+    issueClosing = false;
+    renderAll();
+    const panel = root.querySelector<HTMLElement>('[data-issue-panel]');
+    panel?.focus({ preventScroll: true });
+    // Pop up "tumbuh" dari lencana (kebalikan dari saat dikecilkan).
+    if (!panel || !from || reducedMotion()) return;
+    const to = panel.getBoundingClientRect();
+    const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+    const dy = from.top + from.height / 2 - (to.top + to.height / 2);
+    panel.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px) scale(${from.width / to.width}, ${from.height / to.height})`, borderRadius: '28px', opacity: 0.4 },
+        { transform: 'translate(0, 0) scale(1.015)', opacity: 1, offset: 0.75 },
+        { transform: 'translate(0, 0) scale(1)', borderRadius: '', opacity: 1 },
+      ],
+      { duration: 420, easing: 'cubic-bezier(.2,.9,.25,1)' },
+    );
+  }
+
+  function minimizeIssuePanel(): void {
+    if (!issuePanelOpen || issueClosing) return;
+    const panel = root.querySelector<HTMLElement>('[data-issue-panel]');
+    const firstTime = !minimizeHinted && badgeGuides(currentGuides()).length > 0;
+    const showHint = () => {
+      if (!firstTime) return;
+      minimizeHinted = true;
+      badgeHint = true;
+      renderAll();
+      root.querySelector<HTMLElement>('[data-issue-open]')?.focus({ preventScroll: true });
+      window.setTimeout(() => {
+        badgeHint = false;
+        root.querySelector('[data-issue-hint]')?.remove();
+      }, 6000);
+    };
+    const swap = () => {
+      issueClosing = false;
+      issuePanelOpen = false;
+      renderAll();
+      root.querySelector<HTMLElement>('[data-issue-open]')?.focus({ preventScroll: true });
+    };
+    if (!panel || reducedMotion()) {
+      swap();
+      return showHint();
+    }
+
+    // Salinan pop up "terbang" ke lencana: menyusut, membulat, sedikit
+    // melengkung naik, lalu lencana mendarat dengan pantulan dan cincin.
+    const from = panel.getBoundingClientRect();
+    const ghost = panel.cloneNode(true) as HTMLElement;
+    ghost.removeAttribute('id');
+    ghost.removeAttribute('data-issue-panel');
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.querySelectorAll('[id],[data-focus]').forEach((el) => {
+      el.removeAttribute('id');
+      el.removeAttribute('data-focus');
+    });
+    Object.assign(ghost.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, right: 'auto', bottom: 'auto', margin: '0', transformOrigin: 'center', pointerEvents: 'none' });
+    document.body.appendChild(ghost);
+    issueClosing = true;
+    swap();
+    issueClosing = true;
+    const badge = root.querySelector<HTMLElement>('[data-issue-open]');
+    if (!badge) {
+      ghost.remove();
+      issueClosing = false;
+      return;
+    }
+    badge.style.opacity = '0';
+    const to = badge.getBoundingClientRect();
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    const sx = to.width / from.width;
+    const sy = to.height / from.height;
+    // Isi kartu memudar lebih dulu supaya yang terbang terlihat seperti "kapsul".
+    for (const child of Array.from(ghost.children) as HTMLElement[]) {
+      child.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' });
+    }
+    const flight = ghost.animate(
+      [
+        { transform: 'translate(0, 0) scale(1, 1)', borderRadius: '16px', opacity: 1 },
+        { transform: `translate(${dx * 0.35}px, ${dy * 0.35 - 40}px) scale(${0.55 + sx * 0.45}, ${0.5 + sy * 0.5})`, borderRadius: '28px', opacity: 1, offset: 0.4 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, borderRadius: '9999px', opacity: 0.85 },
+      ],
+      { duration: 520, easing: 'cubic-bezier(.55,.05,.25,1)', fill: 'forwards' },
+    );
+    flight.onfinish = () => {
+      ghost.remove();
+      issueClosing = false;
+      const b = root.querySelector<HTMLElement>('[data-issue-open]');
+      if (b) {
+        b.style.opacity = '';
+        celebrateBadge(b);
+      }
+      window.setTimeout(showHint, 350);
+    };
+  }
+
+  /** Sorot sebentar kartu fitur yang dituju supaya mata langsung menemukannya. */
+  function spotlight(card: HTMLElement): void {
+    if (reducedMotion()) return;
+    card.animate(
+      [
+        { boxShadow: '0 0 0 0 rgba(245, 158, 11, 0)' },
+        { boxShadow: '0 0 0 4px rgba(245, 158, 11, 0.55)', offset: 0.25 },
+        { boxShadow: '0 0 0 2px rgba(245, 158, 11, 0.35)', offset: 0.6 },
+        { boxShadow: '0 0 0 4px rgba(245, 158, 11, 0.5)', offset: 0.8 },
+        { boxShadow: '0 0 0 0 rgba(245, 158, 11, 0)' },
+      ],
+      { duration: 1800, easing: 'ease-in-out' },
+    );
+  }
+
+  /** Buka tab fitur lalu gulir ke kartunya. Di HP pop up dikecilkan supaya kartunya terlihat. */
+  async function gotoFeature(featureKey: string): Promise<void> {
+    const f = data?.registry.find((x) => x.key === featureKey);
+    if (!f) return;
+    if (window.matchMedia?.('(max-width: 639px)').matches) {
+      issuePanelOpen = false;
+      issueClosing = false;
+    }
+    // Modul tab fitur dimuat malas: tunggu dulu supaya kartunya sudah ada saat dicari.
+    await ensureModule('features');
+    setTab(tabOfFeature(f), false);
+    const card = root.querySelector<HTMLElement>(`#feat-${CSS.escape(featureKey)}`)?.closest<HTMLElement>('article');
+    if (card) {
+      card.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+      card.querySelector<HTMLElement>('input, select, button')?.focus({ preventScroll: true });
+      spotlight(card);
+    }
+  }
+
+  /** Dipanggil saat Cek lagi selesai: tandai kendala yang ternyata masih ada. */
+  function finishCheck(): void {
+    if (!checkPendingIds || !data) return;
+    const ids = new Set(currentGuides().map((g) => g.id));
+    for (const id of checkPendingIds) if (ids.has(id)) checkedStill.add(id);
+    checkPendingIds = null;
   }
 
   // ─── Panel ───────────────────────────────────────────────────────────────
@@ -803,7 +1106,13 @@ export function mountServerPage(cfg: PageConfig): void {
   root.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     const tabBtn = target.closest<HTMLElement>('[data-tab]');
-    if (tabBtn) return setTab(tabBtn.dataset.tab as Tab | Hub);
+    if (tabBtn) {
+      if (tabBtn.hasAttribute('data-issue-minimize')) {
+        issuePanelOpen = false;
+        issueClosing = false;
+      }
+      return setTab(tabBtn.dataset.tab as Tab | Hub);
+    }
     if (!data) {
       if (target.closest('[data-action="reload"]')) reload();
       return;
@@ -815,6 +1124,19 @@ export function mountServerPage(cfg: PageConfig): void {
 
     const shareBtn = target.closest<HTMLButtonElement>('[data-share-action]');
     if (shareBtn && !shareBtn.disabled && mods.share?.onClick(shareBtn)) return;
+
+    if (target.closest('[data-reinvite]')) reinvitePending = true;
+    if (target.closest('[data-issue-open]')) return openIssuePanel();
+    const gotoBtn = target.closest<HTMLElement>('[data-issue-goto]');
+    if (gotoBtn) return void gotoFeature(gotoBtn.dataset.issueGoto ?? '');
+    const minimize = target.closest<HTMLElement>('[data-issue-minimize]');
+    if (minimize && !minimize.dataset.tab) return minimizeIssuePanel();
+    if (minimize) {
+      issuePanelOpen = false;
+      issueClosing = false;
+    }
+    const checkBtn = target.closest<HTMLElement>('[data-check-ids]');
+    if (checkBtn) checkPendingIds = new Set(currentGuides().map((g) => g.id));
 
     const btn = target.closest<HTMLButtonElement>('[data-action]');
     if (!btn) return;
@@ -854,6 +1176,8 @@ export function mountServerPage(cfg: PageConfig): void {
         renderAll();
         break;
       case 'reload':
+        // Dari kartu kendala (data sudah ada): jangan hapus draft tanpa konfirmasi.
+        if (dirty() && !confirm('Perubahan yang belum disimpan akan hilang. Lanjutkan?')) break;
         reload();
         break;
       case 'reload-latest':
@@ -920,6 +1244,23 @@ export function mountServerPage(cfg: PageConfig): void {
       const a = document.activeElement;
       if (deferredRender && !(a instanceof HTMLSelectElement && root.contains(a))) renderAll();
     }, 0);
+  });
+
+  root.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && issuePanelOpen && (e.target as HTMLElement).closest?.('[data-issue-panel]')) {
+      e.preventDefault();
+      minimizeIssuePanel();
+    }
+  });
+
+  // Kembali dari tautan undangan Discord: periksa sekali (bukan polling).
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !reinvitePending || !data) return;
+    reinvitePending = false;
+    // Bot baru diundang: muat ulang data server (bot.installed berubah).
+    if (!data.bot.installed) return void load(false).then(renderAll);
+    checkPendingIds = new Set(currentGuides().map((g) => g.id));
+    void discordRefresh();
   });
 
   window.addEventListener('hashchange', () => {

@@ -72,7 +72,8 @@ Setiap RPC user memanggil `guild_dashboard_assert_access(guild_id)`:
    berlaku masih Manage Server? (`ACTOR_FORBIDDEN` bila tidak). Perubahan dari
    Discord yang menumpuk di atas revisi itu tidak menghapus pemeriksaan ini —
    revisi gabungannya tetap atas nama penyimpan website. Admin lain yang
-   menekan **Retry Sync** mengambil alih (menyetujui) revisi itu.
+   menekan **Coba terapkan lagi** (tampil sebagai **Terapkan perubahan ini** pada
+   kendala `ACTOR_FORBIDDEN`) mengambil alih (menyetujui) revisi itu.
 
 `guild_id`/`channel_id` dari browser tidak pernah dipercaya: channel baru harus
 ada di snapshot Discord terbaru dari bot dengan tipe yang benar.
@@ -87,7 +88,7 @@ ada di snapshot Discord terbaru dari bot dengan tipe yang benar.
 | `guild_channel_config` | Channel per (fitur, purpose) |
 | `guild_config_audit` | Riwayat append-only: aktor, sumber, revisi, aksi, field yang berubah |
 | `guild_dashboard_access` / `guild_dashboard_tokens` | Hasil verifikasi akses & token OAuth (Edge Function saja) |
-| `guild_discord_snapshot` | Channel + izin bot per channel dari bot; `requested_at` = Refresh Discord Data |
+| `guild_discord_snapshot` | Channel + izin bot per channel dari bot; `requested_at` = tombol Cek lagi |
 | `guild_dashboard_bot_state` | Heartbeat bot (online bila < 90 detik) |
 
 Fitur baru cukup didaftarkan di bot (registry diturunkan dari daftar game &
@@ -122,9 +123,11 @@ kini bermasalah tidak menahan perubahan fitur lain.
 | `BOT_OFFLINE` | Heartbeat bot > 90 detik |
 | `NOT_INSTALLED` | Bot tidak ada di server |
 
-**Retry Sync** meminta bot memuat & menerapkan ulang revisi terbaru (untuk
-revisi website yang belum berlaku, sekaligus atas nama admin yang menekannya).
-**Refresh Discord Data** meminta bot menerbitkan ulang daftar channel & izin.
+**Coba terapkan lagi** (dulu Retry Sync) meminta bot memuat & menerapkan ulang
+revisi terbaru (untuk revisi website yang belum berlaku, sekaligus atas nama admin
+yang menekannya). **Cek lagi** (dulu Refresh Discord Data) meminta bot menerbitkan
+ulang daftar channel & izin. Kendala tampil sebagai pop up dan lencana; teks dan
+perilakunya di `docs/DASHBOARD-PANDUAN-KENDALA.md`.
 Keduanya bisa diulang segera setelah bot melayani permintaan sebelumnya.
 Revisi yang gagal diulang otomatis tiap 10 menit, jadi memperbaiki izin di
 Discord cukup — tanpa wajib menekan tombol.
@@ -199,7 +202,7 @@ disiapkan" (dicek otomatis lewat `/auth/v1/settings`), bukan error.
 4. Di Discord, jalankan `/sambungkata` dari channel lain → diarahkan ke channel
    tadi. Matikan UNO di dashboard → tombol UNO di `/game` nonaktif.
 5. Cabut izin *Send Messages* bot di channel itu → pilih ulang channel yang sama
-   di channel lain lalu simpan → `Perlu perhatian` dengan pesan izin yang hilang.
+   di channel lain lalu simpan → pop up kendala dengan pesan izin yang hilang.
 
 ## 5a. 📣 Share Server (tab `#share-server`)
 
@@ -337,7 +340,7 @@ Aturan:
   ringkasannya belum ada atau lebih tua dari `STATS_STALE_MS` (15 menit),
   halaman meminta refresh otomatis (diam, tanpa toast), paling sering sekali per jam
   per server per tab (`sessionStorage`), supaya bot lama yang belum menerbitkan
-  ringkasan tidak dibanjiri. Tombol Refresh Discord Data tetap ada.
+  ringkasan tidak dibanjiri. Tombol Cek lagi tetap ada.
 - Website harus aman terhadap bot yang lebih lama atau lebih baru: `stats_summary`
   kosong atau berversi lain ditampilkan sebagai "belum diterbitkan bot".
 - Teks pengguna tanpa tanda pisah (`—`, `–`, ` - `); grafik memakai SVG inline,
@@ -396,7 +399,7 @@ biaya utama dashboard**.
 
 | Keadaan | Jeda |
 |---|---|
-| Ada aksi yang ditunggu dari bot (Simpan, Retry Sync, Refresh Discord Data) | 2,5 dtk selama 20 dtk pertama, lalu 5 dtk, paling lama 60 dtk (30 dtk untuk Refresh) |
+| Ada aksi yang ditunggu dari bot (Simpan, Coba terapkan lagi, Cek lagi) | 2,5 dtk selama 20 dtk pertama, lalu 5 dtk, paling lama 60 dtk (30 dtk untuk Refresh) |
 | Revisi belum diterapkan tetapi jendela cepat sudah lewat (mis. bot offline) | 15 → 30 → 60 → 120 → 300 dtk |
 | Tidak ada yang ditunggu | 30 → 60 → 120 → 300 dtk |
 | Tab browser tersembunyi | Tidak ada permintaan dan tidak ada timer |
@@ -478,7 +481,7 @@ Butuh Playwright dan Chromium di mesin (bukan dependensi repo). Data di
 | **Arti status dan tombol** | Kepala halaman | Teks dari `STATUS_META` | Nol |
 | **Peta Channel** | Server Hub, Alat | Kartu di HP, baris di layar lebar, dengan jumlah tujuan yang perlu diperiksa | Nol permintaan |
 | **Gelembung bantuan Vani** | Semua halaman `/dashboard`, di atas tombol Vani "Hubungi kami" | Muncul di dua kesempatan saja (`src/lib/dashboard/help-nudge.ts`, event `vani:help`, ditampilkan `VaniContact.astro`). (1) **Sapaan**: pertama kali membuka dashboard di browser itu (`localStorage`), hilang sendiri setelah 15 detik. (2) **Kegagalan**: `failureTracker` di halaman server menghitung kegagalan berbeda (simpan ditolak, bot menolak menerapkan suatu revisi, sinkron macet); setelah 2 kegagalan muncul "Ada kendala atau masalah? Hubungi tim kami, tim kami siap membantu!" sekali per tab (`sessionStorage`) dan tetap tampil sampai ditutup. Menekan gelembung membuka panel kontak | Nol permintaan |
-| **Undang ulang dengan izin lengkap** | Perlu perhatian, kartu fitur, pilihan channel, Ringkasan, Peta Channel | Saat izin bot kurang, `permissionFix` membandingkan izin yang kurang dengan izin role bot di tingkat server (`snapshot.bot_permissions`). Bila role bot belum punya izinnya dan tautan undangan memintanya, tampil tautan undang ulang (`inviteUrl` dengan `guild_id`, izin dari data produk). Bila role bot sudah punya izinnya, berarti channel yang menolak, jadi yang tampil adalah langkah Edit Channel › Permissions (undang ulang tidak mengubah izin channel). Label izin dipetakan di `PERMISSION_BITS`; tes `tests/dashboard-reinvite.test.ts` memastikan tautan undangan memuat semuanya | Nol permintaan |
+| **Undang ulang dengan izin lengkap** | Pop up kendala, kartu fitur, pilihan channel, Ringkasan, Peta Channel | Saat izin bot kurang, `permissionFix` membandingkan izin yang kurang dengan izin role bot di tingkat server (`snapshot.bot_permissions`). Bila role bot belum punya izinnya dan tautan undangan memintanya, tampil tautan undang ulang (`inviteUrl` dengan `guild_id`, izin dari data produk). Bila role bot sudah punya izinnya, berarti channel yang menolak, jadi yang tampil adalah langkah Edit Channel › Permissions (undang ulang tidak mengubah izin channel). Bila bot memegang Administrator, hasilnya `stale` (data lama, saran Cek lagi), karena Administrator tidak bisa ditolak channel. Label izin dipetakan di `PERMISSION_BITS`; tes `tests/dashboard-reinvite.test.ts` memastikan tautan undangan memuat semuanya | Nol permintaan |
 
 Hal yang butuh data atau RPC baru dari bot dicatat di
 `docs/DASHBOARD-PERMINTAAN-BOT.md`, tidak dibangun diam-diam di website.

@@ -31,6 +31,7 @@ import {
   type SettingProp,
 } from './model';
 import { previewHtml, previewKind, type PreviewContext } from './message-preview';
+import { CHECK_LABEL, permissionLabel } from './issue-guide';
 import { featureIcon, featureIssues, reinviteLinkHtml, SECTION_OF_TAB, SPAN_LAST, type PageCtx, type Tab } from './server-shared';
 import { CARD, esc, icon, pill } from './ui';
 
@@ -76,7 +77,7 @@ export function panelHtml(c: PageCtx, tab: Tab): string {
     if (!s) {
       return `<div class="${CARD} mt-4 p-4 sm:mt-5 sm:p-5">
         <h3 class="font-display text-base font-semibold">Ringkasan data server</h3>
-        <p class="mt-1 text-sm text-ink-500 dark:text-cream-300/70">Belum ada ringkasan. Ringkasan muncul setelah Security Center diaktifkan dan bot menerbitkannya (kurang dari semenit). Tekan Refresh Discord Data bila belum muncul.</p>
+        <p class="mt-1 text-sm text-ink-500 dark:text-cream-300/70">Belum ada ringkasan. Ringkasan muncul setelah Security Center diaktifkan dan bot menerbitkannya (kurang dari semenit). Tekan Cek lagi bila belum muncul.</p>
       </div>`;
     }
     const tile = (label: string, value: number, hint = '') => `
@@ -144,12 +145,17 @@ export function panelHtml(c: PageCtx, tab: Tab): string {
         </select>
       </label>
       ${p.help ? `<p class="mt-1.5 text-xs text-ink-500 dark:text-cream-300/60">${esc(p.help)}</p>` : ''}
-      ${!d.snapshot?.refreshed_at ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Daftar channel belum dimuat. Tekan Refresh Discord Data.</p>` : ''}
-      ${missing.length ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Izin bot kurang di #${esc(ch!.name)}: ${esc(missing.join(', '))}.${
-        permissionFix(d.snapshot, missing, c.text.invitePermissions ?? '0') === 'channel'
-          ? ' Role bot sudah punya izin itu, jadi ubah izin di Edit Channel › Permissions atau pilih channel lain.'
-          : c.inviteUrl ? ` ${reinviteLinkHtml(c)}` : ''
-      }</p>` : ''}`;
+      ${!d.snapshot?.refreshed_at ? `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Daftar channel belum dimuat. Tekan Cek lagi.</p>` : ''}
+      ${missing.length ? (() => {
+        const fix = permissionFix(d.snapshot, missing, c.text.invitePermissions ?? '0');
+        return `<p class="mt-1.5 text-xs text-amber-800 dark:text-amber-300">Izin bot kurang di #${esc(ch!.name)}: ${esc(missing.map(permissionLabel).join(', '))}.${
+          fix === 'channel'
+            ? ' Role bot sudah punya izin itu, jadi ubah izin di Edit Channel › Permissions (Izin) atau pilih channel lain.'
+            : fix === 'stale'
+              ? ` Data izin bot mungkin sudah lama. Tekan ${CHECK_LABEL}.`
+              : c.inviteUrl ? ` ${reinviteLinkHtml(c)}` : ''
+        }</p>`;
+      })() : ''}`;
   }
 
   /** Centang "Tidak dipakai" untuk fitur sosial yang OFF. */
@@ -317,7 +323,7 @@ export function panelHtml(c: PageCtx, tab: Tab): string {
         .join('');
       return `
         <div class="mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 dark:border-cream-100/15 dark:bg-ink-800" data-scroll-keep="${esc(key)}">
-          ${rows || `<p class="px-2 py-1.5 text-xs text-ink-500 dark:text-cream-300/60">Belum ada ${noun} yang bisa dipilih. Tekan Refresh Discord Data.</p>`}
+          ${rows || `<p class="px-2 py-1.5 text-xs text-ink-500 dark:text-cream-300/60">Belum ada ${noun} yang bisa dipilih. Tekan Cek lagi.</p>`}
         </div>
         <p class="mt-1 text-xs text-ink-500 dark:text-cream-300/60">${chosen.length} dipilih${p.max_items != null ? ` dari maksimal ${p.max_items}` : ''}.</p>`;
     };

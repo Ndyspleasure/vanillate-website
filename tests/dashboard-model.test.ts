@@ -9,10 +9,8 @@ import {
   SECURITY_CATEGORIES,
   buildSavePayload,
   describeError,
-  describeIssue,
   diffStates,
   displayStatus,
-  formatAuditChange,
   formatWib,
   inviteUrl,
   isDirty,
@@ -35,6 +33,8 @@ import {
   type Feature,
   type Snapshot,
 } from '../src/lib/dashboard/model.ts';
+import { describeIssue } from '../src/lib/dashboard/issue-guide.ts';
+import { formatAuditChange } from '../src/lib/dashboard/review-model.ts';
 
 const VIEW = { bit: '1024', name: 'View Channel' };
 const SEND = { bit: '2048', name: 'Send Messages' };
@@ -138,7 +138,7 @@ test('izin bot yang kurang dihitung dari bitfield', () => {
   // Sambung Kata aktif tanpa channel → tidak dinilai; Counting di #umum kurang Send Messages.
   assert.equal(w.length, 1);
   assert.deepEqual(w[0].missing, ['Send Messages']);
-  assert.match(describeIssue(w[0], ctx), /Bot tidak memiliki permission Send Messages di #umum/);
+  assert.match(describeIssue(w[0], ctx), /izin Send Messages \(Kirim Pesan\).*#umum/);
 });
 
 test('channelOptions hanya channel teks, berurutan per kategori', () => {
@@ -178,7 +178,7 @@ test('pesan error jelas & bisa ditindaklanjuti', () => {
   assert.match(describeError('STALE_REVISION', { current_revision: 7 }), /revisi 7/);
   assert.match(describeError('ACCESS_DENIED'), /Manage Server/);
   assert.match(describeError('apa-ini'), /Coba lagi/);
-  assert.match(describeIssue({ code: 'CHANNEL_REQUIRED', feature: 'SOCIAL_STREAK' }, ctx), /Streak Harian butuh channel/);
+  assert.match(describeIssue({ code: 'CHANNEL_REQUIRED', feature: 'SOCIAL_STREAK' }, ctx), /Streak Harian belum punya channel/);
   assert.match(describeIssue({ code: 'CHANNEL_CONFLICT', feature: 'SOCIAL_STREAK', other_feature: 'SOCIAL_COUNT', channel_id: C2 }, ctx), /Streak Harian dan Counting/);
   assert.match(describeIssue({ code: 'CHANNEL_NOT_FOUND', feature: 'SAMBUNG_KATA', channel_id: '800000000000000099' }, ctx), /channel terhapus/);
 });
@@ -300,7 +300,7 @@ test('roleGrantProblem & peringatan: managed / posisi >= role bot', () => {
   assert.equal(roleGrantProblem(roleSnapshot, null), null);
   const w = permissionWarnings(vState({ verified_role: ROLE_B }), [verification], roleSnapshot);
   assert.deepEqual(w.map((i) => i.code), ['ROLE_UNUSABLE']);
-  assert.match(describeIssue(w[0], { registry: [verification], snapshot: roleSnapshot }), /@Admin tidak bisa diberikan bot/);
+  assert.match(describeIssue(w[0], { registry: [verification], snapshot: roleSnapshot }), /Role bot terlalu rendah.*@Admin/);
   assert.deepEqual(permissionWarnings(vState({ verified_role: ROLE_A }), [verification], roleSnapshot), []);
 });
 
@@ -308,8 +308,8 @@ test('roleOptions: posisi tertinggi dulu; describeIssue memberi kalimat untuk ko
   assert.deepEqual(roleOptions(roleSnapshot).map((r) => r.name), ['Admin', 'Verified', 'Bot-Integrasi']);
   const ctx = { registry: [verification], snapshot: roleSnapshot };
   assert.match(describeIssue({ code: 'SETTING_OUT_OF_RANGE', feature: 'VERIFICATION', key: 'steps', min: 1, max: 5 }, ctx), /Jumlah langkah harus antara 1 dan 5/);
-  assert.match(describeIssue({ code: 'SETTING_REQUIRED', feature: 'VERIFICATION', key: 'verified_role' }, ctx), /Verified Role wajib diisi/);
-  assert.match(describeIssue({ code: 'ROLE_NOT_FOUND', feature: 'VERIFICATION', key: 'verified_role' }, ctx), /Refresh Discord Data/);
+  assert.match(describeIssue({ code: 'SETTING_REQUIRED', feature: 'VERIFICATION', key: 'verified_role' }, ctx), /Verified Role belum diisi/);
+  assert.match(describeIssue({ code: 'ROLE_NOT_FOUND', feature: 'VERIFICATION', key: 'verified_role' }, ctx), /Cek lagi/);
 });
 
 test('buildSavePayload membawa setelan bertipe apa adanya', () => {
@@ -412,7 +412,7 @@ test('reward_list: batas per kategori, level unik, role konflik Verified Role, r
   assert.ok(codes([r('chat', 5, ROLE_A)]).includes('ROLE_CONFLICT'));
   const w = permissionWarnings(mk([r('chat', 5, ROLE_B)]), both, roleSnapshot).filter((i) => i.feature === 'LEVELING');
   assert.deepEqual(w.map((i) => i.code), ['ROLE_UNUSABLE']);
-  assert.match(describeIssue({ code: 'REWARD_LIMIT', feature: 'LEVELING', category: 'combined', max: 5 }, { registry: both, snapshot: roleSnapshot }), /Combined melebihi batas \(maks\. 5\)/);
+  assert.match(describeIssue({ code: 'REWARD_LIMIT', feature: 'LEVELING', category: 'combined', max: 5 }, { registry: both, snapshot: roleSnapshot }), /Hadiah Combined paling banyak 5 baris/);
   assert.match(describeIssue({ code: 'ROLE_CONFLICT', feature: 'LEVELING', role_id: ROLE_A }, { registry: both, snapshot: roleSnapshot }), /Verified Role/);
 });
 
@@ -457,7 +457,7 @@ test('role_list wajib (Security Center): daftar kosong ditolak, terisi lolos, ma
   assert.deepEqual(codes([ROLE_A]), []);
   assert.deepEqual(codes([], false), []);
   const ctx = { registry: [security], snapshot: roleSnapshot };
-  assert.match(describeIssue({ code: 'MISSING_GUILD_PERMISSIONS', feature: 'SECURITY', missing: ['View Audit Log'] }, ctx), /izin server View Audit Log/);
+  assert.match(describeIssue({ code: 'MISSING_GUILD_PERMISSIONS', feature: 'SECURITY', missing: ['View Audit Log'] }, ctx), /izin server View Audit Log \(Lihat Log Audit\)/);
   assert.match(describeIssue({ code: 'ROLE_UNUSABLE', feature: 'SECURITY', key: 'notify_roles', role_id: ROLE_A, reason: 'Role @everyone tidak boleh dipakai.' }, ctx), /penerima notifikasi/);
 });
 
